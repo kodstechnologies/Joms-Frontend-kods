@@ -21,7 +21,11 @@ import {
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { FinanceDetailRow as BaseDetailRow } from '@/modules/payments/components/finance-detail-layout'
+import {
+  FinanceDetailRow as BaseDetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeRefundStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
@@ -29,7 +33,7 @@ const DetailRow = (props: Parameters<typeof BaseDetailRow>[0]) => (
   <BaseDetailRow constrainValue {...props} />
 )
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const textPanelClass =
   'radius-lg border border-white/[0.06] bg-brand-bg p-4 text-body-sm text-brand-text/80'
@@ -116,94 +120,96 @@ export function RefundDetailViewPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <InnerCard title="Refund Information">
-          <DetailRow label="Refund ID" value={refund.refundId} />
-          <DetailRow label="Transaction ID" value={String(refund.paymentId || '—')} />
-          <DetailRow label="Requested Date" value={formatDate(refund.createdAt)} />
-          <DetailRow
-            label="Status"
-            value={
-              <FinanceStatusBadge
-                status={mapRefundStatus(refund.status)}
-                toneClass={financeRefundStatusClass(mapRefundStatus(refund.status))}
-              />
-            }
-          />
-        </InnerCard>
+      <FinanceDetailShell>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <InnerCard title="Refund Information">
+            <DetailRow label="Refund ID" value={refund.refundId} />
+            <DetailRow label="Transaction ID" value={String(refund.paymentId || '—')} />
+            <DetailRow label="Requested Date" value={formatDate(refund.createdAt)} />
+            <DetailRow
+              label="Status"
+              value={
+                <FinanceStatusBadge
+                  status={mapRefundStatus(refund.status)}
+                  toneClass={financeRefundStatusClass(mapRefundStatus(refund.status))}
+                />
+              }
+            />
+          </InnerCard>
 
-        <InnerCard title="Payment Context">
-          <DetailRow label="Requested By" value={requestedBy} />
-          <DetailRow label="Service / Module" value={titleCase(refund.module)} />
-          <DetailRow label="Refund Amount" value={amountLabel} />
-          <DetailRow label="Payment Method" value={refund.refundMode || 'Razorpay'} />
-          <DetailRow label="Refund Type" value={titleCase(refund.refundType)} />
-        </InnerCard>
-      </div>
-
-      <InnerCard title="Reason">
-        <TextBlock>{refund.reason || '—'}</TextBlock>
-      </InnerCard>
-
-      <InnerCard title="Admin Notes">
-        <TextBlock>{refund.adminNote || '—'}</TextBlock>
-      </InnerCard>
-
-      <footer className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
-          className="ui-cta ui-cta-secondary"
-        >
-          Close
-        </button>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="ui-cta ui-cta-positive"
-            disabled={!canAct || issueMutation.isPending}
-            onClick={() => setIsIssueRefundOpen(true)}
-          >
-            <Check className="size-4" />
-            Issue Refund
-          </button>
-          <button
-            type="button"
-            className="ui-cta ui-cta-negative"
-            disabled={!canAct || rejectMutation.isPending}
-            onClick={() => setIsDenyRefundOpen(true)}
-          >
-            <X className="size-4" />
-            Deny Refund
-          </button>
-          <button
-            type="button"
-            className="ui-cta ui-cta-secondary"
-            disabled={!canAct || issueMutation.isPending}
-            onClick={() => setIsPartialRefundOpen(true)}
-          >
-            <Flag className="size-4" />
-            Partial Refund
-          </button>
-          <button
-            type="button"
-            className="ui-cta ui-cta-secondary"
-            disabled={!canAct}
-            onClick={() =>
-              navigate(
-                escalateUrl(id, {
-                  kind: 'refund',
-                  resourceType: 'Refund',
-                  returnTo: `/finance/refunds/${id}`,
-                }),
-              )
-            }
-          >
-            <Flag className="size-4" />
-            Escalate
-          </button>
+          <InnerCard title="Payment Context">
+            <DetailRow label="Requested By" value={requestedBy} />
+            <DetailRow label="Service / Module" value={titleCase(refund.module)} />
+            <DetailRow label="Refund Amount" value={amountLabel} />
+            <DetailRow label="Payment Method" value={refund.refundMode || 'Razorpay'} />
+            <DetailRow label="Refund Type" value={titleCase(refund.refundType)} />
+          </InnerCard>
         </div>
-      </footer>
+
+        <InnerCard title="Reason">
+          <TextBlock>{refund.reason || '—'}</TextBlock>
+        </InnerCard>
+
+        <InnerCard title="Admin Notes">
+          <TextBlock>{refund.adminNote || '—'}</TextBlock>
+        </InnerCard>
+
+        <footer className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
+            className="ui-cta ui-cta-secondary"
+          >
+            Close
+          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="ui-cta ui-cta-positive"
+              disabled={!canAct || issueMutation.isPending}
+              onClick={() => setIsIssueRefundOpen(true)}
+            >
+              <Check className="size-4" />
+              Issue Refund
+            </button>
+            <button
+              type="button"
+              className="ui-cta ui-cta-negative"
+              disabled={!canAct || rejectMutation.isPending}
+              onClick={() => setIsDenyRefundOpen(true)}
+            >
+              <X className="size-4" />
+              Deny Refund
+            </button>
+            <button
+              type="button"
+              className="ui-cta ui-cta-secondary"
+              disabled={!canAct || issueMutation.isPending}
+              onClick={() => setIsPartialRefundOpen(true)}
+            >
+              <Flag className="size-4" />
+              Partial Refund
+            </button>
+            <button
+              type="button"
+              className="ui-cta ui-cta-secondary"
+              disabled={!canAct}
+              onClick={() =>
+                navigate(
+                  escalateUrl(id, {
+                    kind: 'refund',
+                    resourceType: 'Refund',
+                    returnTo: `/finance/refunds/${id}`,
+                  }),
+                )
+              }
+            >
+              <Flag className="size-4" />
+              Escalate
+            </button>
+          </div>
+        </footer>
+      </FinanceDetailShell>
 
       <IssueRefundModal
         open={isIssueRefundOpen}

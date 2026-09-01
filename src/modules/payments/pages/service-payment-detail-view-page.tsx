@@ -24,11 +24,13 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
 } from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeServicePaymentStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
@@ -132,156 +134,158 @@ export function ServicePaymentDetailViewPage() {
         </p>
       </header>
 
-      <section className={cn(cardClass, 'p-5')}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>{detail.serviceTitle}</h2>
-            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
-              {detail.serviceDescription}
-            </p>
+      <FinanceDetailShell>
+        <section className={cn(cardClass, 'p-5')}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className={sectionTitleClass}>{detail.serviceTitle}</h2>
+              <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
+                {detail.serviceDescription}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() =>
+                  void downloadKeyValueReport(
+                    'service_payment_report',
+                    flattenExportPairs({
+                      Payment: detail.paymentInformation,
+                      Service: detail.serviceInformation,
+                      Timeline: detail.timelineInformation,
+                      Parties: detail.parties,
+                      Financial: detail.financialBreakdown,
+                    }),
+                  )
+                }
+              >
+                <Download className="size-4" />
+                Download Report
+              </Button>
+              <Button onClick={() => setIsNoteModalOpen(true)}>
+                <SquarePen className="size-4" />
+                Add Notes
+              </Button>
+              <Button
+                onClick={() =>
+                  navigate(
+                    escalateUrl(payment._id, {
+                      kind: 'resource',
+                      resourceType: 'Payment',
+                      returnTo: `/finance/services/${id}`,
+                    }),
+                  )
+                }
+              >
+                <SquarePen className="size-4" />
+                Escalate
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={() =>
-                void downloadKeyValueReport(
-                  'service_payment_report',
-                  flattenExportPairs({
-                    Payment: detail.paymentInformation,
-                    Service: detail.serviceInformation,
-                    Timeline: detail.timelineInformation,
-                    Parties: detail.parties,
-                    Financial: detail.financialBreakdown,
-                  }),
-                )
-              }
-            >
-              <Download className="size-4" />
-              Download Report
-            </Button>
-            <Button onClick={() => setIsNoteModalOpen(true)}>
-              <SquarePen className="size-4" />
-              Add Notes
-            </Button>
-            <Button
-              onClick={() =>
-                navigate(
-                  escalateUrl(payment._id, {
-                    kind: 'resource',
-                    resourceType: 'Payment',
-                    returnTo: `/finance/services/${id}`,
-                  }),
-                )
-              }
-            >
-              <SquarePen className="size-4" />
-              Escalate
-            </Button>
+        </section>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <div className="flex flex-col gap-5">
+            <DetailCard title="Payment Information">
+              <DetailRow label="Payment ID" value={detail.paymentInformation.paymentId} />
+              <DetailRow label="Transaction ID" value={detail.paymentInformation.transactionId} />
+              <DetailRow label="Booking ID" value={detail.paymentInformation.bookingId} />
+              <DetailRow label="Payment Method" value={detail.paymentInformation.paymentMethod} />
+              <DetailRow label="Payment Gateway" value={detail.paymentInformation.paymentGateway} />
+              <DetailRow label="Created On" value={detail.paymentInformation.createdOn} />
+              <DetailRow
+                label="Settlement Status"
+                value={detail.paymentInformation.settlementStatus}
+              />
+              <DetailRow
+                label="Payment Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.paymentInformation.paymentStatus}
+                    toneClass={financeServicePaymentStatusClass(
+                      detail.paymentInformation.paymentStatus,
+                    )}
+                  />
+                }
+              />
+            </DetailCard>
+
+            <DetailCard title="Timeline Information">
+              <DetailRow label="Booking Date" value={detail.timelineInformation.bookingDate} />
+              <DetailRow label="Payment Date" value={detail.timelineInformation.paymentDate} />
+              <DetailRow
+                label="Service Completed On"
+                value={detail.timelineInformation.serviceCompletedOn}
+              />
+              <DetailRow
+                label="Payout Released On"
+                value={detail.timelineInformation.payoutReleasedOn}
+              />
+            </DetailCard>
+
+            <DetailCard title="Financial Breakdown">
+              <DetailRow label="Payout ID" value={detail.financialBreakdown.payoutId} />
+              <DetailRow label="Payout Method" value={detail.financialBreakdown.payoutMethod} />
+              <DetailRow
+                label="Service Completed On"
+                value={detail.financialBreakdown.serviceCompletedOn}
+              />
+              <DetailRow label="Payout Date" value={detail.financialBreakdown.payoutDate} />
+              <DetailRow
+                label="Payment Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.financialBreakdown.paymentStatus}
+                    toneClass={financeServicePaymentStatusClass(
+                      detail.financialBreakdown.paymentStatus,
+                    )}
+                  />
+                }
+              />
+            </DetailCard>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <DetailCard title="Service Information">
+              <DetailRow label="Service Name" value={detail.serviceInformation.serviceName} />
+              <DetailRow label="Service Type" value={detail.serviceInformation.serviceType} />
+              <DetailRow label="Category" value={detail.serviceInformation.category} />
+              <DetailRow label="Start Date" value={detail.serviceInformation.startDate} />
+              <DetailRow label="End Date" value={detail.serviceInformation.endDate} />
+              <DetailRow
+                label="Completion Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.serviceInformation.completionStatus}
+                    toneClass={financeServicePaymentStatusClass(
+                      detail.serviceInformation.completionStatus,
+                    )}
+                  />
+                }
+              />
+              <DetailRow
+                label="Payment Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.serviceInformation.paymentStatus}
+                    toneClass={financeServicePaymentStatusClass(
+                      detail.serviceInformation.paymentStatus,
+                    )}
+                  />
+                }
+              />
+            </DetailCard>
+
+            <DetailCard title="Parties">
+              <DetailRow label="Client ID" value={detail.parties.clientId} />
+              <DetailRow label="Client Name" value={detail.parties.clientName} />
+              <DetailRow label="Expert ID" value={detail.parties.expertId} />
+              <DetailRow label="Expert Name" value={detail.parties.expertName} />
+            </DetailCard>
           </div>
         </div>
-      </section>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <div className="flex flex-col gap-5">
-          <DetailCard title="Payment Information">
-            <DetailRow label="Payment ID" value={detail.paymentInformation.paymentId} />
-            <DetailRow label="Transaction ID" value={detail.paymentInformation.transactionId} />
-            <DetailRow label="Booking ID" value={detail.paymentInformation.bookingId} />
-            <DetailRow label="Payment Method" value={detail.paymentInformation.paymentMethod} />
-            <DetailRow label="Payment Gateway" value={detail.paymentInformation.paymentGateway} />
-            <DetailRow label="Created On" value={detail.paymentInformation.createdOn} />
-            <DetailRow
-              label="Settlement Status"
-              value={detail.paymentInformation.settlementStatus}
-            />
-            <DetailRow
-              label="Payment Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.paymentInformation.paymentStatus}
-                  toneClass={financeServicePaymentStatusClass(
-                    detail.paymentInformation.paymentStatus,
-                  )}
-                />
-              }
-            />
-          </DetailCard>
-
-          <DetailCard title="Timeline Information">
-            <DetailRow label="Booking Date" value={detail.timelineInformation.bookingDate} />
-            <DetailRow label="Payment Date" value={detail.timelineInformation.paymentDate} />
-            <DetailRow
-              label="Service Completed On"
-              value={detail.timelineInformation.serviceCompletedOn}
-            />
-            <DetailRow
-              label="Payout Released On"
-              value={detail.timelineInformation.payoutReleasedOn}
-            />
-          </DetailCard>
-
-          <DetailCard title="Financial Breakdown">
-            <DetailRow label="Payout ID" value={detail.financialBreakdown.payoutId} />
-            <DetailRow label="Payout Method" value={detail.financialBreakdown.payoutMethod} />
-            <DetailRow
-              label="Service Completed On"
-              value={detail.financialBreakdown.serviceCompletedOn}
-            />
-            <DetailRow label="Payout Date" value={detail.financialBreakdown.payoutDate} />
-            <DetailRow
-              label="Payment Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.financialBreakdown.paymentStatus}
-                  toneClass={financeServicePaymentStatusClass(
-                    detail.financialBreakdown.paymentStatus,
-                  )}
-                />
-              }
-            />
-          </DetailCard>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          <DetailCard title="Service Information">
-            <DetailRow label="Service Name" value={detail.serviceInformation.serviceName} />
-            <DetailRow label="Service Type" value={detail.serviceInformation.serviceType} />
-            <DetailRow label="Category" value={detail.serviceInformation.category} />
-            <DetailRow label="Start Date" value={detail.serviceInformation.startDate} />
-            <DetailRow label="End Date" value={detail.serviceInformation.endDate} />
-            <DetailRow
-              label="Completion Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.serviceInformation.completionStatus}
-                  toneClass={financeServicePaymentStatusClass(
-                    detail.serviceInformation.completionStatus,
-                  )}
-                />
-              }
-            />
-            <DetailRow
-              label="Payment Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.serviceInformation.paymentStatus}
-                  toneClass={financeServicePaymentStatusClass(
-                    detail.serviceInformation.paymentStatus,
-                  )}
-                />
-              }
-            />
-          </DetailCard>
-
-          <DetailCard title="Parties">
-            <DetailRow label="Client ID" value={detail.parties.clientId} />
-            <DetailRow label="Client Name" value={detail.parties.clientName} />
-            <DetailRow label="Expert ID" value={detail.parties.expertId} />
-            <DetailRow label="Expert Name" value={detail.parties.expertName} />
-          </DetailCard>
-        </div>
-      </div>
-
-      <FinanceInternalNotesCard resourceId={payment._id} />
+        <FinanceInternalNotesCard resourceId={payment._id} />
+      </FinanceDetailShell>
 
       <AddFinanceNoteModal
         open={isNoteModalOpen}

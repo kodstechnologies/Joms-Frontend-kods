@@ -39,6 +39,11 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 import { FINANCE_RECONCILIATION_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import {
+  FINANCE_STATUS_PILL_DANGER,
+  FINANCE_STATUS_PILL_PENDING,
+  FINANCE_STATUS_PILL_POSITIVE,
+} from '@/modules/payments/utils/finance-status-tones'
 
 const PAGE_SIZE = 10
 
@@ -49,12 +54,12 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
 
 function getDifferenceClassName(difference: FinanceReconciliationRow['difference']) {
   if (difference === 'Matched') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+    return FINANCE_STATUS_PILL_POSITIVE
   }
   if (difference === 'Pending') {
-    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
+    return FINANCE_STATUS_PILL_PENDING
   }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
+  return FINANCE_STATUS_PILL_DANGER
 }
 
 export function FinanceReconciliationPage() {

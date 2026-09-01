@@ -5,7 +5,11 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
-import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import {
+  FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeEscalationStatusClass } from '@/modules/payments/utils/finance-status-tones'
 import {
@@ -22,7 +26,7 @@ import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finan
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 const labelClass = 'text-body-sm text-muted'
@@ -341,200 +345,205 @@ export function FinanceEscalationDetailPage() {
         </p>
       </header>
 
-      <Card>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className={sectionTitleClass}>Escalation Details</h1>
-            <p className={sectionSubtitleClass}>
-              Complete information related to this escalated finance record.
-            </p>
-          </div>
-          <span className="text-body-sm-medium bg-brand-bg text-brand-text inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-3 py-1.5">
-            <Flag className="size-3.5" aria-hidden="true" />
-            Escalated to Admin
-          </span>
-        </div>
-
-        <div className="my-5 border-b border-white/[0.06]" />
-
-        <div className="-mx-1 overflow-x-auto px-1 pb-1">
-          <div className="flex min-w-max gap-6 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
-            <InfoItem label="Record ID" value={recordId} />
-            <InfoItem label="Transaction ID" value={payment?._id || escrow?.paymentId || id} />
-            <InfoItem label="Opened Date" value={openedDate} />
-            <InfoItem
-              label="Status"
-              value={
-                <FinanceStatusBadge status={status} toneClass={financeEscalationStatusClass} />
-              }
-            />
-            <InfoItem label="Module type" value={moduleType} />
-            <InfoItem label="Payment mode" value={paymentMode} />
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-5">
-          <Card>
-            <div className="mb-5">
-              <h2 className={sectionTitleClass}>Support Team Assessment</h2>
+      <FinanceDetailShell>
+        <Card>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className={sectionTitleClass}>Escalation Details</h1>
               <p className={sectionSubtitleClass}>
-                Escalated{assignedTo ? ` to ${assignedTo}` : ''} on {openedDate}
+                Complete information related to this escalated finance record.
               </p>
             </div>
+            <span className="text-body-sm-medium bg-brand-bg text-brand-text inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-3 py-1.5">
+              <Flag className="size-3.5" aria-hidden="true" />
+              Escalated to Admin
+            </span>
+          </div>
 
-            <div className="space-y-5">
-              <AssessmentBlock
-                icon={<FileText className="size-4" />}
-                title="Support Review Summary"
-              >
-                <TextPanel>{escalationNote}</TextPanel>
-              </AssessmentBlock>
-              <AssessmentBlock icon={<AlertCircle className="size-4" />} title="Escalation Reason">
-                <TextPanel>{priority} priority</TextPanel>
-              </AssessmentBlock>
-              <AssessmentBlock
-                icon={<Lightbulb className="size-4" />}
-                title="Support's Recommendation"
-              >
-                <TextPanel>
-                  <span className="text-body-sm-semibold text-brand-positive">
-                    Pending admin decision
-                  </span>
-                </TextPanel>
-              </AssessmentBlock>
-              <AssessmentBlock
-                icon={<FileText className="size-4" />}
-                title="Detailed Notes from Support"
-              >
-                <TextPanel>{escalationNote}</TextPanel>
-              </AssessmentBlock>
+          <div className="my-5 border-b border-white/[0.06]" />
+
+          <div className="-mx-1 overflow-x-auto px-1 pb-1">
+            <div className="flex min-w-max gap-6 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
+              <InfoItem label="Record ID" value={recordId} />
+              <InfoItem label="Transaction ID" value={payment?._id || escrow?.paymentId || id} />
+              <InfoItem label="Opened Date" value={openedDate} />
+              <InfoItem
+                label="Status"
+                value={
+                  <FinanceStatusBadge status={status} toneClass={financeEscalationStatusClass} />
+                }
+              />
+              <InfoItem label="Module type" value={moduleType} />
+              <InfoItem label="Payment mode" value={paymentMode} />
             </div>
-          </Card>
+          </div>
+        </Card>
 
-          <Card>
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className={sectionTitleClass}>Client Evidence</h2>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-5">
+            <Card>
+              <div className="mb-5">
+                <h2 className={sectionTitleClass}>Support Team Assessment</h2>
                 <p className={sectionSubtitleClass}>
-                  Uploaded screenshots and supporting documents
+                  Escalated{assignedTo ? ` to ${assignedTo}` : ''} on {openedDate}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="ui-cta ui-cta-secondary w-fit"
-              >
-                <Upload className="size-4" />
-                Upload documents
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleUpload}
-              />
-            </div>
 
-            {evidenceFiles.length === 0 ? (
-              <p className="text-body-sm text-muted">No documents uploaded yet.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {evidenceFiles.map((file) => {
-                  const selected = activeEvidenceId === file.id
-                  return (
-                    <button
-                      key={file.id}
-                      type="button"
-                      onClick={() => setSelectedEvidenceId(file.id)}
-                      className={cn(
-                        'radius-lg bg-brand-bg border p-4 text-left transition-colors',
-                        selected ? 'border-white' : 'border-white/[0.06] hover:border-white/20',
-                      )}
-                    >
-                      <FileText className="text-muted mb-3 size-8" aria-hidden="true" />
-                      <p className="text-body-sm-medium text-brand-text truncate">
-                        {file.fileName}
-                      </p>
-                      <p className="text-body-sm text-muted mt-2">
-                        {file.fileSize} · {file.date}
-                      </p>
-                    </button>
-                  )
-                })}
+              <div className="space-y-5">
+                <AssessmentBlock
+                  icon={<FileText className="size-4" />}
+                  title="Support Review Summary"
+                >
+                  <TextPanel>{escalationNote}</TextPanel>
+                </AssessmentBlock>
+                <AssessmentBlock
+                  icon={<AlertCircle className="size-4" />}
+                  title="Escalation Reason"
+                >
+                  <TextPanel>{priority} priority</TextPanel>
+                </AssessmentBlock>
+                <AssessmentBlock
+                  icon={<Lightbulb className="size-4" />}
+                  title="Support's Recommendation"
+                >
+                  <TextPanel>
+                    <span className="text-body-sm-semibold text-brand-positive">
+                      Pending admin decision
+                    </span>
+                  </TextPanel>
+                </AssessmentBlock>
+                <AssessmentBlock
+                  icon={<FileText className="size-4" />}
+                  title="Detailed Notes from Support"
+                >
+                  <TextPanel>{escalationNote}</TextPanel>
+                </AssessmentBlock>
               </div>
-            )}
-          </Card>
-        </div>
+            </Card>
 
-        <div className="flex flex-col gap-5">
-          <Card>
-            <h2 className={cn(sectionTitleClass, 'mb-4')}>User Information</h2>
-            <DetailRow label="User ID" value={userId} />
-            <DetailRow label="Name" value={userName} />
-            <DetailRow label="Email" value={userEmail} />
-          </Card>
-
-          <Card>
-            <h2 className={cn(sectionTitleClass, 'mb-4')}>Escalation Summary</h2>
-            <DetailRow label="Related Entity ID" value={payment?.referenceId || tax?._id || id} />
-            <DetailRow label="Assigned To" value={assignedTo} />
-            <DetailRow label="Amount" value={amount} />
-            <div className="mt-4 space-y-2">
-              <p className={labelClass}>Escalation notes</p>
-              <TextPanel>{escalationNote}</TextPanel>
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className={cn(sectionTitleClass, 'mb-5')}>Activity Timeline</h2>
-            <div className="space-y-0">
-              {timeline.map((item, index) => (
-                <div key={`${item.step}-${item.title}`} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="text-body-sm-semibold bg-brand-surface text-brand-text grid size-8 shrink-0 place-items-center rounded-full border border-white/15">
-                      {item.step}
-                    </div>
-                    {index < timeline.length - 1 ? (
-                      <div className="my-1 w-px flex-1 bg-white/10" />
-                    ) : null}
-                  </div>
-                  <div className="min-w-0 flex-1 pb-6">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-body-md-semibold text-brand-text">{item.title}</p>
-                      <span className="text-body-sm text-muted inline-flex items-center gap-1">
-                        <User className="size-3" aria-hidden="true" />
-                        {item.actor}
-                      </span>
-                    </div>
-                    <p className="text-body-sm text-muted mt-1">{item.timestamp}</p>
-                    <TextPanel className="mt-3">{item.description}</TextPanel>
-                  </div>
+            <Card>
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className={sectionTitleClass}>Client Evidence</h2>
+                  <p className={sectionSubtitleClass}>
+                    Uploaded screenshots and supporting documents
+                  </p>
                 </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="ui-cta ui-cta-secondary w-fit"
+                >
+                  <Upload className="size-4" />
+                  Upload documents
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleUpload}
+                />
+              </div>
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, crumb.to)}
-          className="ui-cta ui-cta-secondary"
-        >
-          Close
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsNoteModalOpen(true)}
-          className="ui-cta ui-cta-secondary"
-        >
-          Add Notes
-        </button>
-      </div>
+              {evidenceFiles.length === 0 ? (
+                <p className="text-body-sm text-muted">No documents uploaded yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {evidenceFiles.map((file) => {
+                    const selected = activeEvidenceId === file.id
+                    return (
+                      <button
+                        key={file.id}
+                        type="button"
+                        onClick={() => setSelectedEvidenceId(file.id)}
+                        className={cn(
+                          'radius-lg bg-brand-bg border p-4 text-left transition-colors',
+                          selected ? 'border-white' : 'border-white/[0.06] hover:border-white/20',
+                        )}
+                      >
+                        <FileText className="text-muted mb-3 size-8" aria-hidden="true" />
+                        <p className="text-body-sm-medium text-brand-text truncate">
+                          {file.fileName}
+                        </p>
+                        <p className="text-body-sm text-muted mt-2">
+                          {file.fileSize} · {file.date}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <Card>
+              <h2 className={cn(sectionTitleClass, 'mb-4')}>User Information</h2>
+              <DetailRow label="User ID" value={userId} />
+              <DetailRow label="Name" value={userName} />
+              <DetailRow label="Email" value={userEmail} />
+            </Card>
+
+            <Card>
+              <h2 className={cn(sectionTitleClass, 'mb-4')}>Escalation Summary</h2>
+              <DetailRow label="Related Entity ID" value={payment?.referenceId || tax?._id || id} />
+              <DetailRow label="Assigned To" value={assignedTo} />
+              <DetailRow label="Amount" value={amount} />
+              <div className="mt-4 space-y-2">
+                <p className={labelClass}>Escalation notes</p>
+                <TextPanel>{escalationNote}</TextPanel>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className={cn(sectionTitleClass, 'mb-5')}>Activity Timeline</h2>
+              <div className="space-y-0">
+                {timeline.map((item, index) => (
+                  <div key={`${item.step}-${item.title}`} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="text-body-sm-semibold bg-brand-surface text-brand-text grid size-8 shrink-0 place-items-center rounded-full border border-white/15">
+                        {item.step}
+                      </div>
+                      {index < timeline.length - 1 ? (
+                        <div className="my-1 w-px flex-1 bg-white/10" />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1 pb-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-body-md-semibold text-brand-text">{item.title}</p>
+                        <span className="text-body-sm text-muted inline-flex items-center gap-1">
+                          <User className="size-3" aria-hidden="true" />
+                          {item.actor}
+                        </span>
+                      </div>
+                      <p className="text-body-sm text-muted mt-1">{item.timestamp}</p>
+                      <TextPanel className="mt-3">{item.description}</TextPanel>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, crumb.to)}
+            className="ui-cta ui-cta-secondary"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsNoteModalOpen(true)}
+            className="ui-cta ui-cta-secondary"
+          >
+            Add Notes
+          </button>
+        </div>
+      </FinanceDetailShell>
 
       <AddFinanceNoteModal
         open={isNoteModalOpen}

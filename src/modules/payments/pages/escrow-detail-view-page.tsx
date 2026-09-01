@@ -26,11 +26,15 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
 import { downloadInvoiceDocument, invoiceFromEscrow } from '@/shared/utils/invoice-document'
-import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import {
+  FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeEscrowStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 
@@ -128,112 +132,116 @@ export function EscrowDetailViewPage() {
         </p>
       </header>
 
-      <section className={cn(cardClass, 'p-5')}>
-        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
-            <p className={sectionSubtitleClass}>Hold details for custom / milestone settlement</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button type="button" variant="secondary" onClick={handleDownloadInvoice}>
-              <Download className="size-4" />
-              Download Invoice
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => setActiveModal('note')}>
-              <SquarePen className="size-4" />
-              Add Internal Note
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() =>
-                navigate(
-                  escalateUrl(escrow._id, {
-                    kind: 'resource',
-                    resourceType: 'EscrowHold',
-                    returnTo: `/finance/escrow/${id}`,
-                  }),
-                )
-              }
-            >
-              <Flag className="size-4" />
-              Escalate
-            </Button>
-            {isHeld ? (
-              <PermissionGate
-                permission="finance.release_escrow"
-                minLevel={PERMISSION_LEVELS.SECONDARY_APPROVAL}
-              >
-                <Button
-                  type="button"
-                  disabled={releaseMutation.isPending}
-                  onClick={() => setActiveModal('release')}
-                >
-                  Release Escrow
-                </Button>
-              </PermissionGate>
-            ) : null}
-          </div>
-        </div>
-        <div className="mb-5 border-b border-white/5" />
-
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <div className="flex flex-col gap-5">
-            <InnerCard title="Escrow Information">
-              <DetailRow label="Escrow ID" value={escrow.escrowId} />
-              <DetailRow label="Transaction ID" value={transactionId} />
-              <DetailRow label="Type" value={titleCase(escrow.pricingType)} />
-              <DetailRow
-                label="Status"
-                value={
-                  <FinanceStatusBadge
-                    status={status}
-                    toneClass={financeEscrowStatusClass(status)}
-                  />
+      <FinanceDetailShell>
+        <section className={cn(cardClass, 'p-5')}>
+          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
+              <p className={sectionSubtitleClass}>Hold details for custom / milestone settlement</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" variant="secondary" onClick={handleDownloadInvoice}>
+                <Download className="size-4" />
+                Download Invoice
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setActiveModal('note')}>
+                <SquarePen className="size-4" />
+                Add Internal Note
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() =>
+                  navigate(
+                    escalateUrl(escrow._id, {
+                      kind: 'resource',
+                      resourceType: 'EscrowHold',
+                      returnTo: `/finance/escrow/${id}`,
+                    }),
+                  )
                 }
-              />
-              <DetailRow label="Created On" value={formatDate(heldAt)} />
-              <DetailRow label="Days in Escrow" value={`${daysInEscrow} Days`} />
-            </InnerCard>
-
-            <InnerCard title="Release Information">
-              <p className="text-body-sm text-brand-text">
-                Expected release date:{' '}
-                <span className="text-body-sm-medium">{formatDate(escrow.expectedReleaseAt)}</span>
-              </p>
-            </InnerCard>
+              >
+                <Flag className="size-4" />
+                Escalate
+              </Button>
+              {isHeld ? (
+                <PermissionGate
+                  permission="finance.release_escrow"
+                  minLevel={PERMISSION_LEVELS.SECONDARY_APPROVAL}
+                >
+                  <Button
+                    type="button"
+                    disabled={releaseMutation.isPending}
+                    onClick={() => setActiveModal('release')}
+                  >
+                    Release Escrow
+                  </Button>
+                </PermissionGate>
+              ) : null}
+            </div>
           </div>
+          <div className="mb-5 border-b border-white/5" />
 
-          <div className="flex flex-col gap-5">
-            <InnerCard title="Parties">
-              <DetailRow label="Client" value={clientName} />
-              <DetailRow label="Expert" value={expertName} />
-            </InnerCard>
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <div className="flex flex-col gap-5">
+              <InnerCard title="Escrow Information">
+                <DetailRow label="Escrow ID" value={escrow.escrowId} />
+                <DetailRow label="Transaction ID" value={transactionId} />
+                <DetailRow label="Type" value={titleCase(escrow.pricingType)} />
+                <DetailRow
+                  label="Status"
+                  value={
+                    <FinanceStatusBadge
+                      status={status}
+                      toneClass={financeEscrowStatusClass(status)}
+                    />
+                  }
+                />
+                <DetailRow label="Created On" value={formatDate(heldAt)} />
+                <DetailRow label="Days in Escrow" value={`${daysInEscrow} Days`} />
+              </InnerCard>
 
-            <InnerCard title="Financial Details">
-              <DetailRow label="Escrow Amount" value={formatInr(escrow.amountHeld)} />
-              <DetailRow label="Platform Fee" value={formatInr(escrow.platformFee ?? 0)} />
-              <DetailRow
-                label="Release Amount"
-                value={formatInr(escrow.releaseAmount ?? escrow.amountHeld)}
-                valueClassName="text-body-sm-semibold"
-              />
-            </InnerCard>
+              <InnerCard title="Release Information">
+                <p className="text-body-sm text-brand-text">
+                  Expected release date:{' '}
+                  <span className="text-body-sm-medium">
+                    {formatDate(escrow.expectedReleaseAt)}
+                  </span>
+                </p>
+              </InnerCard>
+            </div>
+
+            <div className="flex flex-col gap-5">
+              <InnerCard title="Parties">
+                <DetailRow label="Client" value={clientName} />
+                <DetailRow label="Expert" value={expertName} />
+              </InnerCard>
+
+              <InnerCard title="Financial Details">
+                <DetailRow label="Escrow Amount" value={formatInr(escrow.amountHeld)} />
+                <DetailRow label="Platform Fee" value={formatInr(escrow.platformFee ?? 0)} />
+                <DetailRow
+                  label="Release Amount"
+                  value={formatInr(escrow.releaseAmount ?? escrow.amountHeld)}
+                  valueClassName="text-body-sm-semibold"
+                />
+              </InnerCard>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <FinanceInternalNotesCard resourceId={escrow._id} />
+        <FinanceInternalNotesCard resourceId={escrow._id} />
 
-      <footer className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/services')}
-          className="ui-cta ui-cta-secondary"
-        >
-          Close
-        </button>
-      </footer>
+        <footer className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, '/finance/services')}
+            className="ui-cta ui-cta-secondary"
+          >
+            Close
+          </button>
+        </footer>
+      </FinanceDetailShell>
 
       <AddFinanceNoteModal
         open={activeModal === 'release'}

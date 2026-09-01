@@ -32,11 +32,15 @@ import {
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import {
+  FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeRefundStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 const labelClass = 'text-body-sm text-muted'
@@ -188,238 +192,245 @@ export function DisputeDetailViewPage() {
         </p>
       </header>
 
-      <Card>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className={sectionTitleClass}>Dispute Details</h1>
-            <p className={sectionSubtitleClass}>
-              Complete information related to the reported refund dispute.
-            </p>
-          </div>
-          <span className="text-body-sm-medium bg-brand-bg text-brand-text inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-3 py-1.5">
-            <Flag className="size-3.5" aria-hidden="true" />
-            Escalated to Admin
-          </span>
-        </div>
-
-        <div className="my-5 border-b border-white/[0.06]" />
-
-        <div className="-mx-1 overflow-x-auto px-1 pb-1">
-          <div className="flex min-w-max gap-6 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
-            <InfoItem label="Dispute ID" value={detail.disputeId} />
-            <InfoItem label="Transaction ID" value={detail.transactionId} />
-            <InfoItem label="Opened Date" value={detail.openedDate} />
-            <InfoItem
-              label="Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.status}
-                  toneClass={financeRefundStatusClass(detail.status)}
-                />
-              }
-            />
-            <InfoItem label="Module type" value={detail.moduleType} />
-            <InfoItem label="Payment mode" value={detail.paymentMode} />
-          </div>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-5">
-          <Card>
-            <div className="mb-5">
-              <h2 className={sectionTitleClass}>Support Team Assessment</h2>
+      <FinanceDetailShell>
+        <Card>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className={sectionTitleClass}>Dispute Details</h1>
               <p className={sectionSubtitleClass}>
-                Escalated by {detail.escalatedBy} on {detail.escalatedOn}
+                Complete information related to the reported refund dispute.
               </p>
             </div>
+            <span className="text-body-sm-medium bg-brand-bg text-brand-text inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-3 py-1.5">
+              <Flag className="size-3.5" aria-hidden="true" />
+              Escalated to Admin
+            </span>
+          </div>
 
-            <div className="space-y-5">
-              <AssessmentBlock
-                icon={<FileText className="size-4" />}
-                title="Support Review Summary"
-              >
-                <TextPanel>{detail.supportReviewSummary}</TextPanel>
-              </AssessmentBlock>
+          <div className="my-5 border-b border-white/[0.06]" />
 
-              <AssessmentBlock icon={<AlertCircle className="size-4" />} title="Escalation Reason">
-                <TextPanel>{detail.escalationReason}</TextPanel>
-              </AssessmentBlock>
-
-              <AssessmentBlock
-                icon={<Lightbulb className="size-4" />}
-                title="Support's Recommendation"
-              >
-                <TextPanel>
-                  <span className="text-body-sm-semibold text-brand-positive">
-                    {detail.supportRecommendation}
-                  </span>
-                </TextPanel>
-              </AssessmentBlock>
-
-              <AssessmentBlock
-                icon={<FileText className="size-4" />}
-                title="Detailed Notes from Support"
-              >
-                <TextPanel>{detail.detailedNotes}</TextPanel>
-              </AssessmentBlock>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="mb-5">
-              <h2 className={sectionTitleClass}>Client Evidence</h2>
-              <p className={sectionSubtitleClass}>
-                Submitted screenshots and contract showing deliverables not met
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {detail.evidenceFiles.map((file) => {
-                const selected = activeEvidenceId === file.id
-
-                return (
-                  <button
-                    key={file.id}
-                    type="button"
-                    onClick={() => setSelectedEvidenceId(file.id)}
-                    className={cn(
-                      'radius-lg bg-brand-bg border p-4 text-left transition-colors',
-                      selected ? 'border-white' : 'border-white/[0.06] hover:border-white/20',
-                    )}
-                  >
-                    <FileText className="text-muted mb-3 size-8" aria-hidden="true" />
-                    <p className="text-body-sm-medium text-brand-text truncate">{file.fileName}</p>
-                    <p className="text-body-sm text-muted mt-2">
-                      {file.fileSize} · {file.date}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
-          </Card>
-
-          <Card>
-            <div className="mb-4 flex items-center gap-2">
-              <Gavel className="text-muted size-4" aria-hidden="true" />
-              <h2 className="text-body-sm-semibold text-brand-text">Decision Controls</h2>
-            </div>
-
-            <div className="flex flex-col gap-[10px] sm:flex-row sm:flex-wrap">
-              <button
-                type="button"
-                disabled={!canAct || resolveMutation.isPending}
-                onClick={() => setIsApproveRefundOpen(true)}
-                className="ui-cta ui-cta-positive w-[138px] shrink-0"
-              >
-                Resolve Dispute
-                <Check
-                  className="icon-sm shrink-0 text-white"
-                  strokeWidth={2.5}
-                  aria-hidden="true"
-                />
-              </button>
-              <button
-                type="button"
-                disabled={!canAct || rejectMutation.isPending}
-                onClick={() => setIsRejectRefundOpen(true)}
-                className="ui-cta ui-cta-negative w-[131px] shrink-0"
-              >
-                Reject Dispute
-                <X className="icon-sm shrink-0 text-white" strokeWidth={2.5} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                disabled={!canAct || requestInfoMutation.isPending}
-                onClick={() => setIsRequestMoreInfoOpen(true)}
-                className="ui-cta ui-cta-secondary shrink-0"
-              >
-                Request More Info
-                <Flag
-                  fill="#FFFFFF"
-                  stroke="#FFFFFF"
-                  className="icon-sm shrink-0"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-              </button>
-              <button
-                type="button"
-                disabled={!canAct}
-                onClick={() =>
-                  navigate(
-                    escalateUrl(id, {
-                      kind: 'dispute',
-                      resourceType: 'Dispute',
-                      returnTo: `/finance/refunds/${id}/dispute`,
-                    }),
-                  )
+          <div className="-mx-1 overflow-x-auto px-1 pb-1">
+            <div className="flex min-w-max gap-6 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
+              <InfoItem label="Dispute ID" value={detail.disputeId} />
+              <InfoItem label="Transaction ID" value={detail.transactionId} />
+              <InfoItem label="Opened Date" value={detail.openedDate} />
+              <InfoItem
+                label="Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.status}
+                    toneClass={financeRefundStatusClass(detail.status)}
+                  />
                 }
-                className="ui-cta ui-cta-secondary shrink-0"
-              >
-                Escalate
-                <Flag
-                  fill="#FFFFFF"
-                  stroke="#FFFFFF"
-                  className="icon-sm shrink-0"
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-              </button>
+              />
+              <InfoItem label="Module type" value={detail.moduleType} />
+              <InfoItem label="Payment mode" value={detail.paymentMode} />
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
 
-        <div className="flex flex-col gap-5">
-          <Card>
-            <h2 className={cn(sectionTitleClass, 'mb-4')}>User Information</h2>
-            <DetailRow label="User ID" value={detail.userId} />
-            <DetailRow label="Name" value={detail.userName} />
-            <DetailRow label="Email" value={detail.userEmail} />
-          </Card>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-5">
+            <Card>
+              <div className="mb-5">
+                <h2 className={sectionTitleClass}>Support Team Assessment</h2>
+                <p className={sectionSubtitleClass}>
+                  Escalated by {detail.escalatedBy} on {detail.escalatedOn}
+                </p>
+              </div>
 
-          <Card>
-            <h2 className={cn(sectionTitleClass, 'mb-4')}>Dispute Summary</h2>
-            <DetailRow label="Related Entity ID" value={detail.relatedEntityId} />
-            <DetailRow label="Dispute Reason" value={detail.disputeReason} />
-            <DetailRow label="Assigned To" value={detail.assignedTo} />
-            <DetailRow label="Amount" value={detail.amount} />
-            <div className="mt-4 space-y-2">
-              <p className={labelClass}>User Message</p>
-              <TextPanel>{detail.userMessage}</TextPanel>
-            </div>
-          </Card>
+              <div className="space-y-5">
+                <AssessmentBlock
+                  icon={<FileText className="size-4" />}
+                  title="Support Review Summary"
+                >
+                  <TextPanel>{detail.supportReviewSummary}</TextPanel>
+                </AssessmentBlock>
 
-          <Card>
-            <h2 className={cn(sectionTitleClass, 'mb-5')}>Activity Timeline</h2>
-            <div className="space-y-0">
-              {detail.timeline.map((item, index) => (
-                <div key={item.step} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="text-body-sm-semibold bg-brand-surface text-brand-text grid size-8 shrink-0 place-items-center rounded-full border border-white/15">
-                      {item.step}
+                <AssessmentBlock
+                  icon={<AlertCircle className="size-4" />}
+                  title="Escalation Reason"
+                >
+                  <TextPanel>{detail.escalationReason}</TextPanel>
+                </AssessmentBlock>
+
+                <AssessmentBlock
+                  icon={<Lightbulb className="size-4" />}
+                  title="Support's Recommendation"
+                >
+                  <TextPanel>
+                    <span className="text-body-sm-semibold text-brand-positive">
+                      {detail.supportRecommendation}
+                    </span>
+                  </TextPanel>
+                </AssessmentBlock>
+
+                <AssessmentBlock
+                  icon={<FileText className="size-4" />}
+                  title="Detailed Notes from Support"
+                >
+                  <TextPanel>{detail.detailedNotes}</TextPanel>
+                </AssessmentBlock>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="mb-5">
+                <h2 className={sectionTitleClass}>Client Evidence</h2>
+                <p className={sectionSubtitleClass}>
+                  Submitted screenshots and contract showing deliverables not met
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {detail.evidenceFiles.map((file) => {
+                  const selected = activeEvidenceId === file.id
+
+                  return (
+                    <button
+                      key={file.id}
+                      type="button"
+                      onClick={() => setSelectedEvidenceId(file.id)}
+                      className={cn(
+                        'radius-lg bg-brand-bg border p-4 text-left transition-colors',
+                        selected ? 'border-white' : 'border-white/[0.06] hover:border-white/20',
+                      )}
+                    >
+                      <FileText className="text-muted mb-3 size-8" aria-hidden="true" />
+                      <p className="text-body-sm-medium text-brand-text truncate">
+                        {file.fileName}
+                      </p>
+                      <p className="text-body-sm text-muted mt-2">
+                        {file.fileSize} · {file.date}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+            </Card>
+
+            <Card>
+              <div className="mb-4 flex items-center gap-2">
+                <Gavel className="text-muted size-4" aria-hidden="true" />
+                <h2 className="text-body-sm-semibold text-brand-text">Decision Controls</h2>
+              </div>
+
+              <div className="flex flex-col gap-[10px] sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  disabled={!canAct || resolveMutation.isPending}
+                  onClick={() => setIsApproveRefundOpen(true)}
+                  className="ui-cta ui-cta-positive w-[138px] shrink-0"
+                >
+                  Resolve Dispute
+                  <Check
+                    className="icon-sm shrink-0 text-white"
+                    strokeWidth={2.5}
+                    aria-hidden="true"
+                  />
+                </button>
+                <button
+                  type="button"
+                  disabled={!canAct || rejectMutation.isPending}
+                  onClick={() => setIsRejectRefundOpen(true)}
+                  className="ui-cta ui-cta-negative w-[131px] shrink-0"
+                >
+                  Reject Dispute
+                  <X className="icon-sm shrink-0 text-white" strokeWidth={2.5} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  disabled={!canAct || requestInfoMutation.isPending}
+                  onClick={() => setIsRequestMoreInfoOpen(true)}
+                  className="ui-cta ui-cta-secondary shrink-0"
+                >
+                  Request More Info
+                  <Flag
+                    fill="#FFFFFF"
+                    stroke="#FFFFFF"
+                    className="icon-sm shrink-0"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </button>
+                <button
+                  type="button"
+                  disabled={!canAct}
+                  onClick={() =>
+                    navigate(
+                      escalateUrl(id, {
+                        kind: 'dispute',
+                        resourceType: 'Dispute',
+                        returnTo: `/finance/refunds/${id}/dispute`,
+                      }),
+                    )
+                  }
+                  className="ui-cta ui-cta-secondary shrink-0"
+                >
+                  Escalate
+                  <Flag
+                    fill="#FFFFFF"
+                    stroke="#FFFFFF"
+                    className="icon-sm shrink-0"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            </Card>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <Card>
+              <h2 className={cn(sectionTitleClass, 'mb-4')}>User Information</h2>
+              <DetailRow label="User ID" value={detail.userId} />
+              <DetailRow label="Name" value={detail.userName} />
+              <DetailRow label="Email" value={detail.userEmail} />
+            </Card>
+
+            <Card>
+              <h2 className={cn(sectionTitleClass, 'mb-4')}>Dispute Summary</h2>
+              <DetailRow label="Related Entity ID" value={detail.relatedEntityId} />
+              <DetailRow label="Dispute Reason" value={detail.disputeReason} />
+              <DetailRow label="Assigned To" value={detail.assignedTo} />
+              <DetailRow label="Amount" value={detail.amount} />
+              <div className="mt-4 space-y-2">
+                <p className={labelClass}>User Message</p>
+                <TextPanel>{detail.userMessage}</TextPanel>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className={cn(sectionTitleClass, 'mb-5')}>Activity Timeline</h2>
+              <div className="space-y-0">
+                {detail.timeline.map((item, index) => (
+                  <div key={item.step} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="text-body-sm-semibold bg-brand-surface text-brand-text grid size-8 shrink-0 place-items-center rounded-full border border-white/15">
+                        {item.step}
+                      </div>
+                      {index < detail.timeline.length - 1 ? (
+                        <div className="my-1 w-px flex-1 bg-white/10" />
+                      ) : null}
                     </div>
-                    {index < detail.timeline.length - 1 ? (
-                      <div className="my-1 w-px flex-1 bg-white/10" />
-                    ) : null}
-                  </div>
-                  <div className="min-w-0 flex-1 pb-6">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-body-md-semibold text-brand-text">{item.title}</p>
-                      <span className="text-body-sm text-muted inline-flex items-center gap-1">
-                        <User className="size-3" aria-hidden="true" />
-                        {item.actor}
-                      </span>
+                    <div className="min-w-0 flex-1 pb-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-body-md-semibold text-brand-text">{item.title}</p>
+                        <span className="text-body-sm text-muted inline-flex items-center gap-1">
+                          <User className="size-3" aria-hidden="true" />
+                          {item.actor}
+                        </span>
+                      </div>
+                      <p className="text-body-sm text-muted mt-1">{item.timestamp}</p>
+                      <TextPanel className="mt-3">{item.description}</TextPanel>
                     </div>
-                    <p className="text-body-sm text-muted mt-1">{item.timestamp}</p>
-                    <TextPanel className="mt-3">{item.description}</TextPanel>
                   </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+                ))}
+              </div>
+            </Card>
+          </div>
         </div>
-      </div>
+      </FinanceDetailShell>
 
       <ApproveRefundModal
         open={isApproveRefundOpen}
