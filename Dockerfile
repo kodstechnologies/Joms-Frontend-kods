@@ -8,6 +8,9 @@ RUN npm install --ignore-scripts
 
 COPY . .
 
+ARG VITE_GOOGLE_MAPS_API_KEY=AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus
+ENV VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY
+
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 

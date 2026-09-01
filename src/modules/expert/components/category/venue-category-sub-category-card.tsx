@@ -2,6 +2,7 @@ import { ChevronRight, PenTool } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import VenueCategoryViewSubCategoryActions from './venue-category-view-sub-category-actions'
+import { CategoryStatusBadge } from './category-list-shared'
 import { categoryViewTheme } from './category-view.theme'
 
 interface Props {
@@ -50,13 +51,7 @@ const VenueCategorySubCategoryCard = ({ id, name, status, addedOn, icon }: Props
           <div className="flex flex-wrap items-center gap-2">
             <h4 className="text-body-lg text-brand-text font-semibold">{name}</h4>
 
-            <span
-              className={`text-body-sm-semibold ${
-                status === 'Active' ? 'text-brand-positive' : 'text-brand-accent'
-              }`}
-            >
-              {status}
-            </span>
+            <CategoryStatusBadge status={status} />
           </div>
 
           <p className={`mt-1.5 ${categoryViewTheme.labelClass}`}>Added On {addedOn}</p>

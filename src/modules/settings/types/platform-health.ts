@@ -1,12 +1,5 @@
 export type PlatformHealthDateRange =
-  | 'today'
-  | 'last7days'
-  | 'last30days'
-  | 'thisMonth'
-  | 'lastMonth'
-  | 'quarter'
-  | 'year'
-  | 'custom'
+  'today' | 'last7days' | 'last30days' | 'thisMonth' | 'lastMonth' | 'quarter' | 'year' | 'custom'
 
 export type PlatformHealthMetricTrend = {
   value: string
@@ -65,9 +58,9 @@ export type PlatformHealthDashboard = {
     }>
     systemPerformance24h: Array<{
       time: string
-      memoryUsage: number
-      cpuUsage: number
-      requestsPerMin: number
+      apiResponseMs: number
+      errorRate: number
+      queueSeconds: number
     }>
     healthTrend: Array<{ date: string; healthScore: number; uptime: number; errorRate: number }>
     performance: Array<{

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -91,46 +91,12 @@ const SYSTEM_PERF_RIGHT_MAX = 3200
 const SYSTEM_PERF_RIGHT_TICKS = [0, 800, 1600, 2400, 3200]
 const SECURITY_TICKS = [0, 2, 4, 6, 8]
 
-const PLATFORM_TREND_BAR_SIZE = 70
+const PLATFORM_TREND_BAR_SIZE = 28
 const PLATFORM_TREND_BAR_GAP = 4
-const PLATFORM_TREND_CATEGORY_GAP = 40
-const SECURITY_BAR_SIZE = 40
+const PLATFORM_TREND_CATEGORY_GAP = '20%'
+const SECURITY_BAR_SIZE = 24
 const SECURITY_BAR_GAP = 4
-const SECURITY_CATEGORY_GAP = 40
-const CHART_HEIGHT = 420
-
-function calcGroupedBarChartMinWidth(
-  dataLength: number,
-  barsPerGroup: number,
-  barSize: number,
-  barGap: number,
-  categoryGap = 40,
-) {
-  if (dataLength <= 0) return 0
-  const groupBarWidth = barsPerGroup * barSize + Math.max(0, barsPerGroup - 1) * barGap
-  return dataLength * (groupBarWidth + categoryGap) + 72
-}
-
-function useChartContainerWidth() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(960)
-
-  useEffect(() => {
-    const node = ref.current
-    if (!node) return
-
-    const update = () => {
-      setWidth(node.clientWidth || 960)
-    }
-
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
-  return { ref, width }
-}
+const SECURITY_CATEGORY_GAP = '20%'
 
 function roundAxisTick(value: number) {
   return Math.round(value * 100) / 100
@@ -187,13 +153,18 @@ function resolvePlatformTrendUptimeAxis(data: Array<{ uptime?: number }>) {
   return { domain: [floor, ceil] as [number, number], ticks }
 }
 
-function resolveSystemPerfRightAxis(data: Array<{ requestsPerMin?: number }>) {
-  const peak = data.reduce((max, row) => Math.max(max, row.requestsPerMin || 0), 0)
+function resolveSystemPerfRightAxis(data: Array<{ apiResponseMs?: number }>) {
+  const peak = data.reduce((max, row) => Math.max(max, row.apiResponseMs || 0), 0)
   if (peak <= 0) {
     return {
-      domain: [0, SYSTEM_PERF_RIGHT_MAX] as [number, number],
-      ticks: SYSTEM_PERF_RIGHT_TICKS,
+      domain: [0, 100] as [number, number],
+      ticks: [0, 25, 50, 75, 100],
     }
+  }
+  if (peak <= 100) {
+    const max = Math.max(20, Math.ceil(peak / 10) * 10)
+    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
+    return { domain: [0, max] as [number, number], ticks }
   }
   if (peak <= SYSTEM_PERF_RIGHT_MAX) {
     const max = Math.max(80, Math.ceil(peak / 40) * 40)
@@ -380,7 +351,11 @@ export function PlatformHealthPage() {
   const infraColumnVisible = useMemo(() => new Set(visibleInfraColumnIds), [visibleInfraColumnIds])
 
   const charts = dashboardData?.charts
-  const infrastructure = dashboardData?.infrastructure || []
+  const infrastructure = useMemo(
+    () =>
+      (dashboardData?.infrastructure || []).filter((row) => row.id !== 'cache' && row.id !== 'cdn'),
+    [dashboardData?.infrastructure],
+  )
   const skeletonCount = filteredActiveMetricIds.length || DEFAULT_PLATFORM_HEALTH_METRIC_IDS.length
 
   const platformTrendAxis = useMemo(
@@ -405,40 +380,6 @@ export function PlatformHealthPage() {
 
   const platformTrendData = charts?.platformTrends || []
   const securityComplianceData = charts?.securityCompliance || []
-
-  const platformTrendChartMinWidth = useMemo(
-    () =>
-      calcGroupedBarChartMinWidth(
-        platformTrendData.length,
-        2,
-        PLATFORM_TREND_BAR_SIZE,
-        PLATFORM_TREND_BAR_GAP,
-        PLATFORM_TREND_CATEGORY_GAP,
-      ),
-    [platformTrendData.length],
-  )
-
-  const securityChartMinWidth = useMemo(
-    () =>
-      calcGroupedBarChartMinWidth(
-        securityComplianceData.length,
-        3,
-        SECURITY_BAR_SIZE,
-        SECURITY_BAR_GAP,
-        SECURITY_CATEGORY_GAP,
-      ),
-    [securityComplianceData.length],
-  )
-
-  const { ref: platformTrendChartRef, width: platformTrendChartContainerWidth } =
-    useChartContainerWidth()
-  const { ref: securityChartRef, width: securityChartContainerWidth } = useChartContainerWidth()
-
-  const platformTrendChartWidth = Math.max(
-    platformTrendChartMinWidth,
-    platformTrendChartContainerWidth,
-  )
-  const securityChartWidth = Math.max(securityChartMinWidth, securityChartContainerWidth)
 
   const refresh = () => {
     dashboardQuery.refetch()
@@ -516,11 +457,9 @@ export function PlatformHealthPage() {
         onRefresh={refresh}
         isLoading={isLoading}
       >
-        <div ref={platformTrendChartRef} className="h-[420px] w-full overflow-x-auto">
-          <div style={{ width: platformTrendChartWidth, height: CHART_HEIGHT }}>
+        <div className="h-[420px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              width={platformTrendChartWidth}
-              height={CHART_HEIGHT}
               data={platformTrendData}
               margin={{ left: 4, right: 16, top: 8, bottom: 0 }}
               barGap={PLATFORM_TREND_BAR_GAP}
@@ -592,7 +531,7 @@ export function PlatformHealthPage() {
                 isAnimationActive={false}
               />
             </ComposedChart>
-          </div>
+          </ResponsiveContainer>
         </div>
       </ChartPanel>
 
@@ -633,6 +572,7 @@ export function PlatformHealthPage() {
                 orientation="right"
                 domain={systemPerfRightAxis.domain}
                 ticks={systemPerfRightAxis.ticks}
+                tickFormatter={(value) => `${value} ms`}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
@@ -642,31 +582,21 @@ export function PlatformHealthPage() {
               <Area
                 yAxisId="left"
                 type="monotone"
-                dataKey="memoryUsage"
-                name="Memory usage"
+                dataKey="errorRate"
+                name="Error rate %"
                 stroke={CHART_COLORS.memory}
                 fill={CHART_COLORS.memory}
-                fillOpacity={0.2}
-                strokeWidth={2}
-              />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="cpuUsage"
-                name="CPU Usage"
-                stroke={CHART_COLORS.cpu}
-                fill={CHART_COLORS.cpu}
                 fillOpacity={0.2}
                 strokeWidth={2}
               />
               <Line
                 yAxisId="right"
                 type="monotone"
-                dataKey="requestsPerMin"
-                name="Request/min"
+                dataKey="apiResponseMs"
+                name="API response (ms)"
                 stroke={CHART_COLORS.requests}
                 strokeWidth={2}
-                dot={{ r: 4, fill: CHART_COLORS.requests, strokeWidth: 0 }}
+                dot={{ r: 3, fill: CHART_COLORS.requests, strokeWidth: 0 }}
                 isAnimationActive={false}
               />
             </ComposedChart>
@@ -681,11 +611,9 @@ export function PlatformHealthPage() {
         onRefresh={refresh}
         isLoading={isLoading}
       >
-        <div ref={securityChartRef} className="h-[420px] w-full overflow-x-auto">
-          <div style={{ width: securityChartWidth, height: CHART_HEIGHT }}>
+        <div className="h-[420px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              width={securityChartWidth}
-              height={CHART_HEIGHT}
               data={securityComplianceData}
               margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
               barGap={SECURITY_BAR_GAP}
@@ -738,7 +666,7 @@ export function PlatformHealthPage() {
                 isAnimationActive={false}
               />
             </ComposedChart>
-          </div>
+          </ResponsiveContainer>
         </div>
       </ChartPanel>
 

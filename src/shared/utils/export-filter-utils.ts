@@ -1251,6 +1251,46 @@ export function rowMatchesClientFilters<T>(
   return true
 }
 
+type LoginTrailsListQueryOptions = {
+  page?: number
+  limit?: number
+  search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  [key: string]: unknown
+}
+
+const LOGIN_TRAILS_LEGACY_SEARCH_MAP: Record<string, string> = {
+  searchById: 'id',
+  searchByName: 'adminName',
+  searchByDate: 'date',
+}
+
+export function buildLoginTrailsListQueryParams(
+  filterValues: FilterValues,
+  options: LoginTrailsListQueryOptions = {},
+): Record<string, unknown> {
+  const { page, limit, search, sortBy, sortOrder, ...rest } = options
+  const columnSearch: Record<string, string> = {}
+
+  Object.entries(rest).forEach(([key, value]) => {
+    if (typeof value !== 'string' || !value.trim()) return
+    const mappedKey = LOGIN_TRAILS_LEGACY_SEARCH_MAP[key] ?? key
+    columnSearch[mappedKey] = value.trim()
+  })
+
+  return {
+    ...buildPrefixedListQueryParams(filterValues, { page, limit, search }),
+    ...columnSearch,
+    ...(sortBy ? { sortBy } : {}),
+    ...(sortOrder ? { sortOrder } : {}),
+  }
+}
+
+export const createLoginTrailsFilteredExportHandler = createFinanceExportHandler(
+  buildLoginTrailsListQueryParams,
+)
+
 export function buildPrefixedListQueryParams(
   filterValues: FilterValues,
   options: FinanceListQueryOptions & Record<string, unknown> = {},
