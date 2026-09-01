@@ -38,7 +38,7 @@ export const runBackup = async (payload?: {
 
 export const restoreBackup = async (id: string, payload: { mode: string; confirm?: string }) => {
   const response = await settingsApiClient.post<ApiEnvelope<unknown>>(
-    `/settings/backups/${id}/restore`,
+    `/settings/backups/${encodeURIComponent(id)}/restore`,
     payload,
   )
   return response.data.data
@@ -46,7 +46,7 @@ export const restoreBackup = async (id: string, payload: { mode: string; confirm
 
 export const deleteBackup = async (id: string) => {
   const response = await settingsApiClient.delete<ApiEnvelope<{ id: string }>>(
-    `/settings/backups/${id}`,
+    `/settings/backups/${encodeURIComponent(id)}`,
   )
   return response.data.data
 }

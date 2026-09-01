@@ -13,6 +13,7 @@ import {
 import { backupDefaults } from '../mock/settings.defaults'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 export function BackupConfigurationPage() {
   const navigate = useNavigate()
@@ -24,9 +25,9 @@ export function BackupConfigurationPage() {
   const handleSave = async () => {
     try {
       await updateBackup.mutateAsync(backupConfig)
-      toast.success('Backup configuration saved')
-    } catch {
-      toast.error('Failed to save backup configuration')
+      toast.success('Saved')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Save failed'))
     }
   }
 
@@ -34,9 +35,9 @@ export function BackupConfigurationPage() {
     try {
       const result = await resetBackup.mutateAsync()
       setBackupConfig(result.config)
-      toast.success('Backup configuration reset to defaults')
-    } catch {
-      toast.error('Failed to reset backup configuration')
+      toast.success('Reset to defaults')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Reset failed'))
     }
   }
 
@@ -55,7 +56,7 @@ export function BackupConfigurationPage() {
 
       <SectionHeader
         title="Backup Configuration"
-        subtitle="Configure automatic backup schedule, scope, and retention"
+        subtitle="Schedule, scope, and retention"
         actions={[
           {
             label: 'Settings Logs',
@@ -67,7 +68,7 @@ export function BackupConfigurationPage() {
 
       {backupQuery.isLoading ? (
         <div className="rounded-2xl border border-white/10 bg-[#111111] p-8 text-sm text-slate-400">
-          Loading backup configuration...
+          Loading...
         </div>
       ) : (
         <>
