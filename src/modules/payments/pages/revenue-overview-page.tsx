@@ -53,6 +53,11 @@ import type { FilterValues } from '@/shared/types/data-filter'
 import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 import { FINANCE_PAYMENT_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import {
+  FINANCE_STATUS_PILL_DANGER,
+  FINANCE_STATUS_PILL_PENDING,
+  FINANCE_STATUS_PILL_POSITIVE,
+} from '@/modules/payments/utils/finance-status-tones'
 
 const PAGE_SIZE = 10
 
@@ -103,12 +108,12 @@ const EXPORT_COLUMN_MAP = buildExportColumnMapFromCatalog<RevenueExportRow>(
 
 function getStatusClassName(status: RevenueOverviewRow['status']) {
   if (status === 'Paid') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+    return FINANCE_STATUS_PILL_POSITIVE
   }
   if (status === 'Pending') {
-    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
+    return FINANCE_STATUS_PILL_PENDING
   }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
+  return FINANCE_STATUS_PILL_DANGER
 }
 
 export function RevenueOverviewPage() {

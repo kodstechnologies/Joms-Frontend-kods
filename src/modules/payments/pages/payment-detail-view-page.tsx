@@ -9,6 +9,8 @@ import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-n
 import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
 } from '@/modules/payments/components/finance-detail-layout'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
@@ -30,7 +32,7 @@ import {
   flattenExportPairs,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
@@ -41,8 +43,7 @@ const num = (value: unknown, fallback = 0) => {
 
 const round2 = (value: number) => Math.round(value * 100) / 100
 
-const str = (value: unknown) =>
-  typeof value === 'string' && value.trim() ? value.trim() : null
+const str = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : null)
 
 const formatPlainAmount = (value: number) =>
   Math.round(Math.abs(value)).toLocaleString('en-IN', { maximumFractionDigits: 0 })
@@ -152,7 +153,10 @@ export function PaymentDetailViewPage() {
 
   const gross = num(payment.amount)
   const discounts = num(
-    snapshot.discountAmount ?? snapshot.discounts ?? moduleData.discountAmount ?? moduleData.discounts,
+    snapshot.discountAmount ??
+      snapshot.discounts ??
+      moduleData.discountAmount ??
+      moduleData.discounts,
   )
   const refunds = num(
     snapshot.refundAmount ?? snapshot.refunds ?? moduleData.refundAmount ?? moduleData.refunds,
@@ -236,12 +240,8 @@ export function PaymentDetailViewPage() {
           bookingDates,
           duration: padDuration(durationHours),
           eventType:
-            str(snapshot.eventType) ||
-            str(snapshot.venueType) ||
-            str(snapshot.category) ||
-            '—',
-          cancellationPolicy:
-            str(snapshot.cancellationPolicy) || '48-hour Partial Refund',
+            str(snapshot.eventType) || str(snapshot.venueType) || str(snapshot.category) || '—',
+          cancellationPolicy: str(snapshot.cancellationPolicy) || '48-hour Partial Refund',
           venueId: venueCode(venueId),
           ownerId: venueCode(str(snapshot.ownerId) || partnerId || venueId),
         }
@@ -272,168 +272,173 @@ export function PaymentDetailViewPage() {
         </p>
       </header>
 
-      <section className={cn(cardClass, 'p-5')}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>Service Information</h2>
-            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
-              Provide details about your Consultation.
-            </p>
+      <FinanceDetailShell>
+        <section className={cn(cardClass, 'p-5')}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className={sectionTitleClass}>Service Information</h2>
+              <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
+                Provide details about your Consultation.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                onClick={() =>
+                  void downloadKeyValueReport(
+                    'payment_report',
+                    flattenExportPairs({
+                      Overview: {
+                        title: detail.serviceTitle,
+                        revenueId: detail.revenueId,
+                        sourceModule: detail.sourceModule,
+                        sourceType: detail.sourceType,
+                        sourceId: detail.sourceId,
+                        sourceName: detail.sourceName,
+                        hostOwner: detail.hostOwner,
+                        transactionDate: detail.transactionDate,
+                        currency: detail.currency,
+                        paymentStatus: detail.paymentStatus,
+                      },
+                      Breakdown: detail.revenueBreakdown,
+                      TaxAndFees: detail.taxFeeBreakdown,
+                      RevenueFlow: detail.revenueFlow,
+                      References: detail.transactionReferences,
+                      Venue: detail.additionalVenueContext,
+                    }),
+                  )
+                }
+              >
+                <Download className="size-4 shrink-0" />
+                Download Report
+              </Button>
+              <Button type="button" onClick={() => setIsNoteModalOpen(true)}>
+                <SquarePen className="size-4 shrink-0" />
+                Add Notes
+              </Button>
+              <Button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    escalateUrl(payment._id, {
+                      kind: 'resource',
+                      resourceType: 'Payment',
+                      returnTo: `/finance/revenue/${id}`,
+                    }),
+                  )
+                }
+              >
+                <SquareArrowOutUpRight className="size-4 shrink-0" />
+                Escalate
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              onClick={() =>
-                void downloadKeyValueReport(
-                  'payment_report',
-                  flattenExportPairs({
-                    Overview: {
-                      title: detail.serviceTitle,
-                      revenueId: detail.revenueId,
-                      sourceModule: detail.sourceModule,
-                      sourceType: detail.sourceType,
-                      sourceId: detail.sourceId,
-                      sourceName: detail.sourceName,
-                      hostOwner: detail.hostOwner,
-                      transactionDate: detail.transactionDate,
-                      currency: detail.currency,
-                      paymentStatus: detail.paymentStatus,
-                    },
-                    Breakdown: detail.revenueBreakdown,
-                    TaxAndFees: detail.taxFeeBreakdown,
-                    RevenueFlow: detail.revenueFlow,
-                    References: detail.transactionReferences,
-                    Venue: detail.additionalVenueContext,
-                  }),
-                )
+        </section>
+
+        <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-2">
+          <DetailCard title="Revenue Information">
+            <DetailRow label="Revenue ID" value={detail.revenueId} />
+            <DetailRow label="Source Module" value={detail.sourceModule} />
+            <DetailRow label="Source Type" value={detail.sourceType} />
+            <DetailRow label="Source ID" value={detail.sourceId} />
+            <DetailRow label="Source Name" value={detail.sourceName} />
+            <DetailRow label="Host / Owner" value={detail.hostOwner} />
+            <DetailRow label="Transaction Date" value={detail.transactionDate} />
+            <DetailRow label="Currency" value={detail.currency} />
+            <DetailRow
+              label="Payment Status"
+              value={
+                <FinanceStatusBadge
+                  status={detail.paymentStatus}
+                  toneClass={financePaymentDetailStatusClass(detail.paymentStatus)}
+                />
               }
-            >
-              <Download className="size-4 shrink-0" />
-              Download Report
-            </Button>
-            <Button type="button" onClick={() => setIsNoteModalOpen(true)}>
-              <SquarePen className="size-4 shrink-0" />
-              Add Notes
-            </Button>
-            <Button
-              type="button"
-              onClick={() =>
-                navigate(
-                  escalateUrl(payment._id, {
-                    kind: 'resource',
-                    resourceType: 'Payment',
-                    returnTo: `/finance/revenue/${id}`,
-                  }),
-                )
-              }
-            >
-              <SquareArrowOutUpRight className="size-4 shrink-0" />
-              Escalate
-            </Button>
-          </div>
+            />
+          </DetailCard>
+
+          <DetailCard title="Revenue Flow Summary">
+            <DetailRow label="Customer Paid" value={detail.revenueFlow.customerPaid} />
+            <DetailRow label="After Discounts" value={detail.revenueFlow.afterDiscounts} />
+            <DetailRow label="After Refunds" value={detail.revenueFlow.afterRefunds} />
+            <DetailRow label="Platform Commission" value={detail.revenueFlow.platformCommission} />
+            <DetailRow label="Gateway Deduction" value={detail.revenueFlow.gatewayDeduction} />
+            <DetailRow
+              label="Final Platform Earnings"
+              value={detail.revenueFlow.finalPlatformEarnings}
+              valueClassName="text-body-sm-semibold"
+            />
+            <DetailRow
+              label={detail.payoutLabel}
+              value={detail.revenueFlow.hostPayout}
+              valueClassName="text-body-sm-semibold"
+            />
+          </DetailCard>
+
+          <DetailCard title="Revenue Breakdown">
+            <DetailRow label="Gross Amount" value={detail.revenueBreakdown.grossAmount} />
+            <DetailRow label="Discounts" value={detail.revenueBreakdown.discounts} />
+            <DetailRow label="Refunds" value={detail.revenueBreakdown.refunds} />
+            <DetailRow
+              label="Net Revenue"
+              value={detail.revenueBreakdown.netRevenue}
+              valueClassName="text-body-sm-semibold"
+            />
+          </DetailCard>
+
+          <DetailCard title="Transaction References">
+            <DetailRow label="Gateway Name" value={detail.transactionReferences.gatewayName} />
+            <DetailRow
+              label="Gateway Transaction ID"
+              value={detail.transactionReferences.gatewayTransactionId}
+            />
+            <DetailRow
+              label="Platform Record ID"
+              value={detail.transactionReferences.platformRecordId}
+            />
+            <DetailRow
+              label="Settlement Date"
+              value={detail.transactionReferences.settlementDate}
+            />
+          </DetailCard>
+
+          <DetailCard title="Tax & Fee Breakdown">
+            <DetailRow
+              label={`Tax Collected (GST ${gstRate}%)`}
+              value={detail.taxFeeBreakdown.taxCollected}
+            />
+            <DetailRow
+              label="Payment Gateway Fee"
+              value={detail.taxFeeBreakdown.paymentGatewayFee}
+            />
+            <DetailRow
+              label={`Platform Fee (${commissionPct}%)`}
+              value={detail.taxFeeBreakdown.platformFee}
+            />
+            <DetailRow
+              label="Net Platform Earnings"
+              value={detail.taxFeeBreakdown.netPlatformEarnings}
+              valueClassName="text-body-sm-semibold"
+            />
+          </DetailCard>
+
+          <DetailCard title="Additional Venue Context">
+            <DetailRow
+              label="Booking Dates"
+              value={detail.additionalVenueContext?.bookingDates || '—'}
+            />
+            <DetailRow label="Duration" value={detail.additionalVenueContext?.duration || '—'} />
+            <DetailRow label="Event Type" value={detail.additionalVenueContext?.eventType || '—'} />
+            <DetailRow
+              label="Cancellation Policy"
+              value={detail.additionalVenueContext?.cancellationPolicy || '—'}
+            />
+            <DetailRow label="Venue ID" value={detail.additionalVenueContext?.venueId || '—'} />
+            <DetailRow label="Owner ID" value={detail.additionalVenueContext?.ownerId || '—'} />
+          </DetailCard>
         </div>
-      </section>
 
-      <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-2">
-        <DetailCard title="Revenue Information">
-          <DetailRow label="Revenue ID" value={detail.revenueId} />
-          <DetailRow label="Source Module" value={detail.sourceModule} />
-          <DetailRow label="Source Type" value={detail.sourceType} />
-          <DetailRow label="Source ID" value={detail.sourceId} />
-          <DetailRow label="Source Name" value={detail.sourceName} />
-          <DetailRow label="Host / Owner" value={detail.hostOwner} />
-          <DetailRow label="Transaction Date" value={detail.transactionDate} />
-          <DetailRow label="Currency" value={detail.currency} />
-          <DetailRow
-            label="Payment Status"
-            value={
-              <FinanceStatusBadge
-                status={detail.paymentStatus}
-                toneClass={financePaymentDetailStatusClass(detail.paymentStatus)}
-              />
-            }
-          />
-        </DetailCard>
-
-        <DetailCard title="Revenue Flow Summary">
-          <DetailRow label="Customer Paid" value={detail.revenueFlow.customerPaid} />
-          <DetailRow label="After Discounts" value={detail.revenueFlow.afterDiscounts} />
-          <DetailRow label="After Refunds" value={detail.revenueFlow.afterRefunds} />
-          <DetailRow label="Platform Commission" value={detail.revenueFlow.platformCommission} />
-          <DetailRow label="Gateway Deduction" value={detail.revenueFlow.gatewayDeduction} />
-          <DetailRow
-            label="Final Platform Earnings"
-            value={detail.revenueFlow.finalPlatformEarnings}
-            valueClassName="text-body-sm-semibold"
-          />
-          <DetailRow
-            label={detail.payoutLabel}
-            value={detail.revenueFlow.hostPayout}
-            valueClassName="text-body-sm-semibold"
-          />
-        </DetailCard>
-
-        <DetailCard title="Revenue Breakdown">
-          <DetailRow label="Gross Amount" value={detail.revenueBreakdown.grossAmount} />
-          <DetailRow label="Discounts" value={detail.revenueBreakdown.discounts} />
-          <DetailRow label="Refunds" value={detail.revenueBreakdown.refunds} />
-          <DetailRow
-            label="Net Revenue"
-            value={detail.revenueBreakdown.netRevenue}
-            valueClassName="text-body-sm-semibold"
-          />
-        </DetailCard>
-
-        <DetailCard title="Transaction References">
-          <DetailRow label="Gateway Name" value={detail.transactionReferences.gatewayName} />
-          <DetailRow
-            label="Gateway Transaction ID"
-            value={detail.transactionReferences.gatewayTransactionId}
-          />
-          <DetailRow
-            label="Platform Record ID"
-            value={detail.transactionReferences.platformRecordId}
-          />
-          <DetailRow label="Settlement Date" value={detail.transactionReferences.settlementDate} />
-        </DetailCard>
-
-        <DetailCard title="Tax & Fee Breakdown">
-          <DetailRow
-            label={`Tax Collected (GST ${gstRate}%)`}
-            value={detail.taxFeeBreakdown.taxCollected}
-          />
-          <DetailRow
-            label="Payment Gateway Fee"
-            value={detail.taxFeeBreakdown.paymentGatewayFee}
-          />
-          <DetailRow
-            label={`Platform Fee (${commissionPct}%)`}
-            value={detail.taxFeeBreakdown.platformFee}
-          />
-          <DetailRow
-            label="Net Platform Earnings"
-            value={detail.taxFeeBreakdown.netPlatformEarnings}
-            valueClassName="text-body-sm-semibold"
-          />
-        </DetailCard>
-
-        <DetailCard title="Additional Venue Context">
-          <DetailRow
-            label="Booking Dates"
-            value={detail.additionalVenueContext?.bookingDates || '—'}
-          />
-          <DetailRow label="Duration" value={detail.additionalVenueContext?.duration || '—'} />
-          <DetailRow label="Event Type" value={detail.additionalVenueContext?.eventType || '—'} />
-          <DetailRow
-            label="Cancellation Policy"
-            value={detail.additionalVenueContext?.cancellationPolicy || '—'}
-          />
-          <DetailRow label="Venue ID" value={detail.additionalVenueContext?.venueId || '—'} />
-          <DetailRow label="Owner ID" value={detail.additionalVenueContext?.ownerId || '—'} />
-        </DetailCard>
-      </div>
-
-      <FinanceInternalNotesCard resourceId={payment._id} />
+        <FinanceInternalNotesCard resourceId={payment._id} />
+      </FinanceDetailShell>
 
       <AddFinanceNoteModal
         open={isNoteModalOpen}

@@ -17,7 +17,11 @@ import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import {
+  FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeMembershipStatusClass } from '@/modules/payments/utils/finance-status-tones'
 import {
@@ -25,7 +29,7 @@ import {
   invoiceFromMembershipSubscription,
 } from '@/shared/utils/invoice-document'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
@@ -95,113 +99,117 @@ export function MembershipDetailViewPage() {
         </div>
       </header>
 
-      <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>Subscription Details</h2>
-            <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
+      <FinanceDetailShell>
+        <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className={sectionTitleClass}>Subscription Details</h2>
+              <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
+            </div>
+            <Button
+              onClick={() => {
+                if (!subscription) return
+                void downloadInvoiceDocument(
+                  invoiceFromMembershipSubscription(subscription, { logoUrl }),
+                  subscription.paymentInfo?.paymentId || subscription.subscriptionId,
+                )
+                  .then(() => toast.success('Invoice downloaded'))
+                  .catch(() => toast.error('Failed to download invoice'))
+              }}
+            >
+              <Download className="size-4" />
+              Download Invoice
+            </Button>
           </div>
-          <Button
-            onClick={() => {
-              if (!subscription) return
-              void downloadInvoiceDocument(
-                invoiceFromMembershipSubscription(subscription, { logoUrl }),
-                subscription.paymentInfo?.paymentId || subscription.subscriptionId,
-              )
-                .then(() => toast.success('Invoice downloaded'))
-                .catch(() => toast.error('Failed to download invoice'))
-            }}
-          >
-            <Download className="size-4" />
-            Download Invoice
-          </Button>
-        </div>
 
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">Subscription Information</h3>
-            <DetailRow label="Subscription ID" value={detail.subscriptionId} />
-            <DetailRow label="Plan" value={detail.plan} />
-            <DetailRow label="Start Date" value={detail.startDate} />
-            <DetailRow
-              label="Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.status}
-                  toneClass={financeMembershipStatusClass(detail.status)}
-                />
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">
+                Subscription Information
+              </h3>
+              <DetailRow label="Subscription ID" value={detail.subscriptionId} />
+              <DetailRow label="Plan" value={detail.plan} />
+              <DetailRow label="Start Date" value={detail.startDate} />
+              <DetailRow
+                label="Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.status}
+                    toneClass={financeMembershipStatusClass(detail.status)}
+                  />
+                }
+              />
+            </section>
+
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">Billing Details</h3>
+              <DetailRow label="Billing Cycle" value={detail.billingCycle} />
+              <DetailRow label="Amount" value={detail.amount} />
+              <DetailRow label="Payment Method" value={detail.paymentMethod} />
+              <DetailRow label="Last Payment" value={detail.lastPayment} />
+              <DetailRow label="Next Renewal" value={detail.nextRenewal} />
+            </section>
+
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">User Details</h3>
+              <DetailRow label="User Name" value={detail.userName} />
+              <DetailRow label="User ID" value={detail.userId} />
+              <DetailRow label="User Type" value={detail.userType} />
+            </section>
+
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">Plan Features</h3>
+              {detail.planFeatures.length ? (
+                <ul className="space-y-2">
+                  {detail.planFeatures.map((feature) => (
+                    <li
+                      key={feature}
+                      className="text-body-sm text-brand-text/80 flex items-start gap-2 leading-[17px]"
+                    >
+                      <Check className="text-brand-positive size-[20px] shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-body-sm text-muted">No plan features available.</p>
+              )}
+            </section>
+          </div>
+        </section>
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
+            className="ui-cta ui-cta-secondary"
+          >
+            Close
+          </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              disabled={!canManage || pauseMutation.isPending}
+              onClick={() => setPauseOpen(true)}
+              className="ui-cta ui-cta-primary"
+            >
+              Pause Subscription
+            </button>
+            <button
+              type="button"
+              disabled={
+                detail.rawStatus === 'cancelled' ||
+                detail.rawStatus === 'expired' ||
+                cancelMutation.isPending
               }
-            />
-          </section>
-
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">Billing Details</h3>
-            <DetailRow label="Billing Cycle" value={detail.billingCycle} />
-            <DetailRow label="Amount" value={detail.amount} />
-            <DetailRow label="Payment Method" value={detail.paymentMethod} />
-            <DetailRow label="Last Payment" value={detail.lastPayment} />
-            <DetailRow label="Next Renewal" value={detail.nextRenewal} />
-          </section>
-
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">User Details</h3>
-            <DetailRow label="User Name" value={detail.userName} />
-            <DetailRow label="User ID" value={detail.userId} />
-            <DetailRow label="User Type" value={detail.userType} />
-          </section>
-
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">Plan Features</h3>
-            {detail.planFeatures.length ? (
-              <ul className="space-y-2">
-                {detail.planFeatures.map((feature) => (
-                  <li
-                    key={feature}
-                    className="text-body-sm text-brand-text/80 flex items-start gap-2 leading-[17px]"
-                  >
-                    <Check className="text-brand-positive size-[20px] shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-body-sm text-muted">No plan features available.</p>
-            )}
-          </section>
+              onClick={() => setCancelOpen(true)}
+              className="ui-cta ui-cta-primary"
+            >
+              Cancel Subscription
+            </button>
+          </div>
         </div>
-      </section>
-
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
-          className="ui-cta ui-cta-secondary"
-        >
-          Close
-        </button>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            disabled={!canManage || pauseMutation.isPending}
-            onClick={() => setPauseOpen(true)}
-            className="ui-cta ui-cta-primary"
-          >
-            Pause Subscription
-          </button>
-          <button
-            type="button"
-            disabled={
-              detail.rawStatus === 'cancelled' ||
-              detail.rawStatus === 'expired' ||
-              cancelMutation.isPending
-            }
-            onClick={() => setCancelOpen(true)}
-            className="ui-cta ui-cta-primary"
-          >
-            Cancel Subscription
-          </button>
-        </div>
-      </div>
+      </FinanceDetailShell>
 
       <PauseSubscriptionModal
         open={pauseOpen}

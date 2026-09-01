@@ -11,11 +11,15 @@ import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadInvoiceDocument, invoiceFromFinanceInvoice } from '@/shared/utils/invoice-document'
-import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import {
+  FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeInvoiceStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
@@ -105,67 +109,72 @@ export function InvoiceDetailViewPage() {
         </div>
       </header>
 
-      <DetailCard
-        title="Invoice Details"
-        subtitle="Issued invoice for a successful payment"
-        onDownload={() => {
-          void downloadInvoiceDocument(
-            invoiceFromFinanceInvoice(invoice, { logoUrl }),
-            invoice.invoiceNumber,
-          )
-            .then(() => toast.success('Invoice downloaded'))
-            .catch(() => toast.error('Failed to download invoice'))
-        }}
-      >
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Information</h3>
-            <DetailRow label="Invoice ID" value={invoice.invoiceNumber} />
-            <DetailRow label="Type" value={titleCase(invoice.module)} />
-            <DetailRow
-              label="Issue Date"
-              value={formatDate(invoice.issuedAt || invoice.createdAt)}
-            />
-            <DetailRow label="Due Date" value={formatDate(invoice.dueDate)} />
-            <DetailRow
-              label="Status"
-              value={
-                <FinanceStatusBadge status={status} toneClass={financeInvoiceStatusClass(status)} />
-              }
-            />
-          </section>
+      <FinanceDetailShell>
+        <DetailCard
+          title="Invoice Details"
+          subtitle="Issued invoice for a successful payment"
+          onDownload={() => {
+            void downloadInvoiceDocument(
+              invoiceFromFinanceInvoice(invoice, { logoUrl }),
+              invoice.invoiceNumber,
+            )
+              .then(() => toast.success('Invoice downloaded'))
+              .catch(() => toast.error('Failed to download invoice'))
+          }}
+        >
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Information</h3>
+              <DetailRow label="Invoice ID" value={invoice.invoiceNumber} />
+              <DetailRow label="Type" value={titleCase(invoice.module)} />
+              <DetailRow
+                label="Issue Date"
+                value={formatDate(invoice.issuedAt || invoice.createdAt)}
+              />
+              <DetailRow label="Due Date" value={formatDate(invoice.dueDate)} />
+              <DetailRow
+                label="Status"
+                value={
+                  <FinanceStatusBadge
+                    status={status}
+                    toneClass={financeInvoiceStatusClass(status)}
+                  />
+                }
+              />
+            </section>
 
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">Recipient Details</h3>
-            <DetailRow label="Name" value={invoice.clientName || '—'} />
-            <DetailRow label="Email" value={invoice.partnerId || invoice.userId || '—'} />
-          </section>
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">Recipient Details</h3>
+              <DetailRow label="Name" value={invoice.clientName || '—'} />
+              <DetailRow label="Email" value={invoice.partnerId || invoice.userId || '—'} />
+            </section>
 
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Items</h3>
-            <DetailRow
-              label="Description"
-              value={primaryItem?.label || titleCase(invoice.module)}
-            />
-            <DetailRow label="Platform Fee" value={formatInr(0)} />
-            <DetailRow
-              label="Unit Price"
-              value={formatInr(primaryItem?.amount ?? invoice.subtotal ?? invoice.total)}
-            />
-          </section>
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Items</h3>
+              <DetailRow
+                label="Description"
+                value={primaryItem?.label || titleCase(invoice.module)}
+              />
+              <DetailRow label="Platform Fee" value={formatInr(0)} />
+              <DetailRow
+                label="Unit Price"
+                value={formatInr(primaryItem?.amount ?? invoice.subtotal ?? invoice.total)}
+              />
+            </section>
 
-          <section className={innerPanelClass}>
-            <h3 className="text-body-md-semibold text-brand-text mb-3">Financial Summary</h3>
-            <DetailRow label="Subtotal" value={formatInr(invoice.subtotal ?? invoice.total)} />
-            <DetailRow label="Tax (18% GST)" value={formatInr(invoice.taxAmount ?? 0)} />
-            <DetailRow
-              label="Total Amount"
-              value={formatInr(invoice.total)}
-              valueClassName="text-body-md-semibold"
-            />
-          </section>
-        </div>
-      </DetailCard>
+            <section className={innerPanelClass}>
+              <h3 className="text-body-md-semibold text-brand-text mb-3">Financial Summary</h3>
+              <DetailRow label="Subtotal" value={formatInr(invoice.subtotal ?? invoice.total)} />
+              <DetailRow label="Tax (18% GST)" value={formatInr(invoice.taxAmount ?? 0)} />
+              <DetailRow
+                label="Total Amount"
+                value={formatInr(invoice.total)}
+                valueClassName="text-body-md-semibold"
+              />
+            </section>
+          </div>
+        </DetailCard>
+      </FinanceDetailShell>
     </div>
   )
 }

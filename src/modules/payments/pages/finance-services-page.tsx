@@ -61,15 +61,19 @@ import {
   FINANCE_ESCROW_SORT_OVERRIDES,
   FINANCE_PAYMENT_SORT_OVERRIDES,
 } from '@/modules/payments/config/finance-table-sort-fields'
+import {
+  FINANCE_STATUS_PILL_PENDING,
+  FINANCE_STATUS_PILL_POSITIVE,
+} from '@/modules/payments/utils/finance-status-tones'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
 
 function getStatusClassName(status: FinanceServiceRow['status']) {
   if (status === 'Paid') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+    return FINANCE_STATUS_PILL_POSITIVE
   }
-  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
+  return FINANCE_STATUS_PILL_PENDING
 }
 
 export function FinanceServicesPage() {
