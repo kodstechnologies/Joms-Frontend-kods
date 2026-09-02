@@ -63,7 +63,21 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 
-const REFERRAL_SORT_FIELD_MAP = buildCatalogSortFieldMap(REFERRALS_TABLE_COLUMNS_CATALOG)
+const REFERRAL_SORT_FIELD_MAP = buildCatalogSortFieldMap(REFERRALS_TABLE_COLUMNS_CATALOG, {
+  'referred-at': 'referredAt',
+  'referred-user-name': 'referredUserName',
+  'referrer-user-id': 'referrerUserId',
+  'referral-expiry-date': 'referralExpiryDate',
+  'goal-completed-at': 'goalCompletedAt',
+  'last-activity': 'lastActivity',
+  'goal-progress': null,
+  'reward-status': null,
+  'reward-type': null,
+  'reward-value': null,
+  'referrer-type': null,
+  'referred-entity-type': null,
+  'signup-date': null,
+})
 import { cn } from '@/shared/lib/cn'
 
 const DEFAULT_METRIC_IDS =
@@ -385,8 +399,11 @@ export function ReferralManagementPage() {
   const { currentPage, setCurrentPage } = useReferralStore()
 
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const { buildSearchParams, globalSearch } = enhancedSearch
   const serverSort = useServerTableSort({
     sortFieldMap: REFERRAL_SORT_FIELD_MAP,
+    defaultSortBy: 'referred-at',
+    defaultSortOrder: 'desc',
     onPageReset: () => setCurrentPage(1),
   })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -411,10 +428,10 @@ export function ReferralManagementPage() {
       buildReferralListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        ...enhancedSearch.buildSearchParams(),
+        ...buildSearchParams(),
         ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
+    [appliedFilters, buildSearchParams, currentPage, serverSort.sortParams],
   )
   const { data: expertData, isLoading: expertLoading } = useExpertInvites(listQueryParams)
   const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
@@ -457,11 +474,11 @@ export function ReferralManagementPage() {
       EXPORT_COLUMN_MAP,
       'referrals_export',
       {
-        search: enhancedSearch.globalSearch || undefined,
+        search: globalSearch || undefined,
       },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
+  }, [catalogColumnIds, exportColumnIds, globalSearch])
 
   const {
     onAdvancedFilter,

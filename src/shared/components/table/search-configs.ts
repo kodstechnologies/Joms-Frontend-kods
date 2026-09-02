@@ -393,9 +393,10 @@ export const SETTINGS_LOGS_SEARCH_COLUMNS: SearchableColumn[] = [
 ]
 
 export const LOGIN_TRAILS_SEARCH_COLUMNS: SearchableColumn[] = [
-  { key: 'searchById', label: 'Trail ID', type: 'text', placeholder: 'Search by Trail ID...' },
-  { key: 'searchByName', label: 'User Name', type: 'text', placeholder: 'Search by name...' },
-  { key: 'searchByDate', label: 'Login Date', type: 'date' },
+  { key: 'id', label: 'Trail ID', type: 'text', placeholder: 'Search by Trail ID...' },
+  { key: 'adminName', label: 'Admin Name', type: 'text', placeholder: 'Search by admin name...' },
+  { key: 'adminEmail', label: 'Email', type: 'text', placeholder: 'Search by email...' },
+  { key: 'ipAddress', label: 'IP Address', type: 'text', placeholder: 'Search by IP address...' },
 ]
 export const SETTINGS_LOGIN_TRAILS_SEARCH_COLUMNS = LOGIN_TRAILS_SEARCH_COLUMNS
 

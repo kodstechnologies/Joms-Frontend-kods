@@ -9,7 +9,7 @@ export const categoryManagementTheme = {
   accentHover: 'var(--brand-gold-from)',
   inputBg: 'var(--brand-bg)',
   inputBorder: 'rgb(255 255 255 / 10%)',
-  statusAccepted: 'bg-brand-positive/15 text-brand-positive',
+  statusAccepted: 'bg-[#00A63E] text-white',
   statusPending: 'bg-brand-accent/15 text-brand-accent',
   statusDeleted: 'bg-brand-danger/15 text-brand-danger',
   pausedBar: 'border-brand-accent/60 bg-brand-accent/20',

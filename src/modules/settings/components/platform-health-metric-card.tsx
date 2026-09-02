@@ -4,7 +4,7 @@ import type { PlatformHealthMetric } from '@/modules/settings/types/platform-hea
 import { cn } from '@/shared/lib/cn'
 
 const METRIC_CARD_CLASS =
-  'rounded-brand-lg bg-brand-surface flex h-[130px] w-full max-w-[280px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10'
+  'rounded-brand-lg bg-brand-surface flex h-[130px] w-full flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10'
 
 export function PlatformHealthMetricCard({ metric }: { metric: PlatformHealthMetric }) {
   const trend = metric.trend

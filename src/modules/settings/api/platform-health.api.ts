@@ -1,4 +1,5 @@
 import { settingsApiClient } from '@/shared/lib/axios'
+import { normalizePlatformHealthDashboard } from '../utils/normalize-platform-health-dashboard'
 import type { PlatformHealthDashboard, PlatformHealthFilters } from '../types/platform-health'
 
 type ApiEnvelope<T> = {
@@ -24,5 +25,5 @@ export const fetchPlatformHealthDashboard = async (
     '/settings/platform-health/dashboard',
     { params: buildParams(filters) },
   )
-  return res.data.data
+  return normalizePlatformHealthDashboard(res.data.data)
 }

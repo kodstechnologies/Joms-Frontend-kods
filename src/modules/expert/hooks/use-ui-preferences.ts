@@ -49,6 +49,12 @@ import {
 } from '@/modules/settings/api/escalations-ui-preferences'
 import { ESCALATIONS_MODULE_KEY } from '@/modules/settings/config/escalations-metrics.config'
 import {
+  fetchSettingsLogsDashboardMetricPreferences,
+  resetSettingsLogsDashboardMetricPreferences,
+  saveSettingsLogsDashboardMetricPreferences,
+} from '@/modules/settings/api/settings-logs-ui-preferences'
+import { SETTINGS_LOGS_MODULE_KEY } from '@/modules/settings/config/settings-logs-metrics.config'
+import {
   fetchTicketManagementDashboardMetricPreferences,
   resetTicketManagementDashboardMetricPreferences,
   saveTicketManagementDashboardMetricPreferences,
@@ -121,6 +127,9 @@ function fetchDashboardMetricPreferencesForModule(moduleKey: string) {
   if (moduleKey === ESCALATIONS_MODULE_KEY) {
     return fetchEscalationsDashboardMetricPreferences()
   }
+  if (moduleKey === SETTINGS_LOGS_MODULE_KEY) {
+    return fetchSettingsLogsDashboardMetricPreferences()
+  }
   if (moduleKey === TICKET_MANAGEMENT_MODULE_KEY) {
     return fetchTicketManagementDashboardMetricPreferences()
   }
@@ -164,6 +173,9 @@ function saveDashboardMetricPreferencesForModule(moduleKey: string, activeMetric
   if (moduleKey === ESCALATIONS_MODULE_KEY) {
     return saveEscalationsDashboardMetricPreferences(activeMetricIds)
   }
+  if (moduleKey === SETTINGS_LOGS_MODULE_KEY) {
+    return saveSettingsLogsDashboardMetricPreferences(activeMetricIds)
+  }
   if (moduleKey === TICKET_MANAGEMENT_MODULE_KEY) {
     return saveTicketManagementDashboardMetricPreferences(activeMetricIds)
   }
@@ -206,6 +218,9 @@ function resetDashboardMetricPreferencesForModule(moduleKey: string) {
   }
   if (moduleKey === ESCALATIONS_MODULE_KEY) {
     return resetEscalationsDashboardMetricPreferences()
+  }
+  if (moduleKey === SETTINGS_LOGS_MODULE_KEY) {
+    return resetSettingsLogsDashboardMetricPreferences()
   }
   if (moduleKey === TICKET_MANAGEMENT_MODULE_KEY) {
     return resetTicketManagementDashboardMetricPreferences()

@@ -122,7 +122,7 @@ export function VersionHistoryPanel({ open, module, onClose }: VersionHistoryPan
           <div>
             <h2 className="text-h4 text-white">Version History</h2>
             <p className="text-muted mt-1 text-sm">
-              Track all changes and revisions made to this service before approval
+              Track all changes and revisions made to this settings module
             </p>
           </div>
         </div>

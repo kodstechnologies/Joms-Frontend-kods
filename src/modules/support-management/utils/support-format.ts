@@ -229,3 +229,81 @@ export const getReporterTypeLabel = (type: string) => {
   }
   return map[type] ?? type
 }
+
+type JsonContext = {
+  name?: string
+  date?: string
+  detail?: string
+  eventName?: string
+  eventDate?: string
+}
+
+const pickText = (...values: Array<string | null | undefined>) => {
+  for (const value of values) {
+    const text = String(value ?? '').trim()
+    if (text && text !== '—') return text
+  }
+  return ''
+}
+
+const truncateDetail = (value: string, max = 120) => {
+  if (value.length <= max) return value
+  return `${value.slice(0, max - 1).trim()}…`
+}
+
+const readJsonContext = (value: unknown): JsonContext | null => {
+  if (!value || typeof value !== 'object') return null
+  return value as JsonContext
+}
+
+export type TicketIntelligenceContext = {
+  eventName: string
+  eventDate: string
+  issueName: string
+  issueDetail: string
+}
+
+export function resolveTicketIntelligenceContext(
+  ticket?: {
+    eventContext?: JsonContext | null
+    issueContext?: JsonContext | null
+    category?: string | null
+    module?: string | null
+    issueType?: string | null
+    subject?: string | null
+    description?: string | null
+  } | null,
+  fallbackSubject?: string | null,
+): TicketIntelligenceContext {
+  const eventContext = readJsonContext(ticket?.eventContext)
+  const issueContext = readJsonContext(ticket?.issueContext)
+
+  const category = pickText(ticket?.category)
+  const module = pickText(ticket?.module)
+  const issueType = pickText(ticket?.issueType)
+  const subject = pickText(ticket?.subject, fallbackSubject)
+  const description = pickText(ticket?.description)
+
+  const eventName = pickText(
+    eventContext?.name,
+    eventContext?.eventName,
+    module === 'Events' ? category : '',
+    module === 'Events' ? subject : '',
+  )
+  const eventDate = pickText(eventContext?.date, eventContext?.eventDate)
+
+  const issueName = pickText(
+    issueContext?.name,
+    issueType,
+    category && category !== 'General' ? category : '',
+    subject,
+  )
+  const issueDetail = truncateDetail(pickText(issueContext?.detail, description) || '—')
+
+  return {
+    eventName: eventName || '—',
+    eventDate: eventDate || '—',
+    issueName: issueName || '—',
+    issueDetail,
+  }
+}
