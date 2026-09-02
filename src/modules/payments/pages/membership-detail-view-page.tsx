@@ -15,12 +15,11 @@ import { PauseSubscriptionModal } from '@/modules/payments/components/pause-subs
 import { mapSubscriptionToFinanceDetail } from '@/modules/payments/utils/finance-membership-mapper'
 import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
-import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
+  FinanceDetailCard as DetailCard,
   FinanceDetailRow as DetailRow,
   FinanceDetailShell,
-  financeDetailCardClass,
 } from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeMembershipStatusClass } from '@/modules/payments/utils/finance-status-tones'
@@ -29,10 +28,8 @@ import {
   invoiceFromMembershipSubscription,
 } from '@/shared/utils/invoice-document'
 
-const cardClass = financeDetailCardClass
-const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
+const sectionTitleClass = 'text-h4 text-brand-text leading-[26px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
-const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
@@ -100,83 +97,75 @@ export function MembershipDetailViewPage() {
       </header>
 
       <FinanceDetailShell>
-        <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className={sectionTitleClass}>Subscription Details</h2>
-              <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
-            </div>
-            <Button
-              onClick={() => {
-                if (!subscription) return
-                void downloadInvoiceDocument(
-                  invoiceFromMembershipSubscription(subscription, { logoUrl }),
-                  subscription.paymentInfo?.paymentId || subscription.subscriptionId,
-                )
-                  .then(() => toast.success('Invoice downloaded'))
-                  .catch(() => toast.error('Failed to download invoice'))
-              }}
-            >
-              <Download className="size-4" />
-              Download Invoice
-            </Button>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className={sectionTitleClass}>Subscription Details</h2>
+            <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
           </div>
+          <Button
+            onClick={() => {
+              if (!subscription) return
+              void downloadInvoiceDocument(
+                invoiceFromMembershipSubscription(subscription, { logoUrl }),
+                subscription.paymentInfo?.paymentId || subscription.subscriptionId,
+              )
+                .then(() => toast.success('Invoice downloaded'))
+                .catch(() => toast.error('Failed to download invoice'))
+            }}
+          >
+            <Download className="size-4" />
+            Download Filing Report
+          </Button>
+        </div>
 
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-            <section className={innerPanelClass}>
-              <h3 className="text-body-md-semibold text-brand-text mb-3">
-                Subscription Information
-              </h3>
-              <DetailRow label="Subscription ID" value={detail.subscriptionId} />
-              <DetailRow label="Plan" value={detail.plan} />
-              <DetailRow label="Start Date" value={detail.startDate} />
-              <DetailRow
-                label="Status"
-                value={
-                  <FinanceStatusBadge
-                    status={detail.status}
-                    toneClass={financeMembershipStatusClass(detail.status)}
-                  />
-                }
-              />
-            </section>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <DetailCard title="Subscription Information">
+            <DetailRow label="Subscription ID" value={detail.subscriptionId} />
+            <DetailRow label="Plan" value={detail.plan} />
+            <DetailRow label="Start Date" value={detail.startDate} />
+            <DetailRow
+              label="Status"
+              value={
+                <FinanceStatusBadge
+                  status={detail.status}
+                  toneClass={financeMembershipStatusClass(detail.status)}
+                />
+              }
+            />
+          </DetailCard>
 
-            <section className={innerPanelClass}>
-              <h3 className="text-body-md-semibold text-brand-text mb-3">Billing Details</h3>
-              <DetailRow label="Billing Cycle" value={detail.billingCycle} />
-              <DetailRow label="Amount" value={detail.amount} />
-              <DetailRow label="Payment Method" value={detail.paymentMethod} />
-              <DetailRow label="Last Payment" value={detail.lastPayment} />
-              <DetailRow label="Next Renewal" value={detail.nextRenewal} />
-            </section>
+          <DetailCard title="Billing Details">
+            <DetailRow label="Billing Cycle" value={detail.billingCycle} />
+            <DetailRow label="Amount" value={detail.amount} />
+            <DetailRow label="Payment Method" value={detail.paymentMethod} />
+            <DetailRow label="Last Payment" value={detail.lastPayment} />
+            <DetailRow label="Next Renewal" value={detail.nextRenewal} />
+          </DetailCard>
 
-            <section className={innerPanelClass}>
-              <h3 className="text-body-md-semibold text-brand-text mb-3">User Details</h3>
-              <DetailRow label="User Name" value={detail.userName} />
-              <DetailRow label="User ID" value={detail.userId} />
-              <DetailRow label="User Type" value={detail.userType} />
-            </section>
+          <DetailCard title="User Details">
+            <DetailRow label="User Name" value={detail.userName} />
+            <DetailRow label="User ID" value={detail.userId} />
+            <DetailRow label="User Type" value={detail.userType} />
+          </DetailCard>
 
-            <section className={innerPanelClass}>
-              <h3 className="text-body-md-semibold text-brand-text mb-3">Plan Features</h3>
-              {detail.planFeatures.length ? (
-                <ul className="space-y-2">
-                  {detail.planFeatures.map((feature) => (
-                    <li
-                      key={feature}
-                      className="text-body-sm text-brand-text/80 flex items-start gap-2 leading-[17px]"
-                    >
-                      <Check className="text-brand-positive size-[20px] shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-body-sm text-muted">No plan features available.</p>
-              )}
-            </section>
-          </div>
-        </section>
+          <DetailCard title="Plan Features">
+            {detail.planFeatures.length ? (
+              <ul className="space-y-3">
+                {detail.planFeatures.map((feature) => (
+                  <li
+                    key={feature}
+                    className="text-body-md text-brand-text flex items-start gap-2 leading-[22px]"
+                  >
+                    <Check className="text-brand-text mt-0.5 size-5 shrink-0" strokeWidth={2.5} />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-body-md text-muted">No plan features available.</p>
+            )}
+          </DetailCard>
+        </div>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button

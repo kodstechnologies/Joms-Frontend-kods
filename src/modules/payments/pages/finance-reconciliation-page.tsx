@@ -39,11 +39,12 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 import { FINANCE_RECONCILIATION_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
 import {
-  FINANCE_STATUS_PILL_DANGER,
-  FINANCE_STATUS_PILL_PENDING,
-  FINANCE_STATUS_PILL_POSITIVE,
-} from '@/modules/payments/utils/finance-status-tones'
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -51,16 +52,6 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
   FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG,
   FINANCE_RECONCILIATION_SORT_OVERRIDES,
 )
-
-function getDifferenceClassName(difference: FinanceReconciliationRow['difference']) {
-  if (difference === 'Matched') {
-    return FINANCE_STATUS_PILL_POSITIVE
-  }
-  if (difference === 'Pending') {
-    return FINANCE_STATUS_PILL_PENDING
-  }
-  return FINANCE_STATUS_PILL_DANGER
-}
 
 export function FinanceReconciliationPage() {
   const navigate = useNavigate()
@@ -201,17 +192,21 @@ export function FinanceReconciliationPage() {
         accessorKey: 'reconciliationId',
         header: 'Reconciliation ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.reconciliationId}
           </span>
         ),
       },
-      gateway: { accessorKey: 'gateway', header: 'Gateway' },
+      gateway: {
+        accessorKey: 'gateway',
+        header: 'Gateway',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.gateway}</FinanceTableCellText>,
+      },
       'transaction-id': {
         accessorKey: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-muted font-mono">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono')}>
             {row.original.transactionId}
           </span>
         ),
@@ -220,7 +215,7 @@ export function FinanceReconciliationPage() {
         accessorKey: 'platformRecordId',
         header: 'Platform Record ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-muted font-mono">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono')}>
             {row.original.platformRecordId}
           </span>
         ),
@@ -229,29 +224,24 @@ export function FinanceReconciliationPage() {
         accessorKey: 'gatewayAmount',
         header: 'Gateway Amount',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.gatewayAmount}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.gatewayAmount}
+          </span>
         ),
       },
       'platform-amount': {
         accessorKey: 'platformAmount',
         header: 'Platform Amount',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.platformAmount}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.platformAmount}
+          </span>
         ),
       },
       difference: {
         accessorKey: 'difference',
         header: 'Difference',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getDifferenceClassName(row.original.difference),
-            )}
-          >
-            {row.original.difference}
-          </span>
-        ),
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.difference} />,
       },
       'settlement-date': {
         id: 'settlement-date',
@@ -266,7 +256,10 @@ export function FinanceReconciliationPage() {
       status: {
         id: 'status',
         header: 'Status',
-        cell: ({ row }) => (row.original as { status?: string }).status || '—',
+        cell: ({ row }) => {
+          const status = (row.original as { status?: string }).status
+          return status ? <FinanceTableStatusBadge status={status} /> : '—'
+        },
       },
     }
 
@@ -323,6 +316,7 @@ export function FinanceReconciliationPage() {
       </div>
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}

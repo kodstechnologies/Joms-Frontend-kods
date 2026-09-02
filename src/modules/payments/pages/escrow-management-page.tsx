@@ -12,9 +12,9 @@ import {
 import type {
   EscrowBookingRow,
   EscrowHoldRow,
-  EscrowHoldStatus,
   EscrowManagementTab,
 } from '@/modules/payments/types/finance-table-rows'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
 import { fetchFinanceEscrow } from '@/modules/payments/api/finance-api'
 import { useFinanceEscrow } from '@/modules/payments/hooks/use-finance'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
@@ -49,6 +49,11 @@ import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 import { FINANCE_ESCROW_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -56,20 +61,6 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
   FINANCE_ESCROW_TABLE_COLUMNS_CATALOG,
   FINANCE_ESCROW_SORT_OVERRIDES,
 )
-
-function getEscrowStatusClassName(status: EscrowHoldStatus) {
-  if (status === 'Active' || status === 'Released') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-}
-
-function getBookingStatusClassName(status: EscrowBookingRow['status']) {
-  if (status === 'Paid') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-}
 
 export function EscrowManagementPage() {
   const navigate = useNavigate()
@@ -300,7 +291,7 @@ export function EscrowManagementPage() {
         header: 'Escrow ID',
         enableSorting: false,
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.escrowId}
           </span>
         ),
@@ -310,7 +301,7 @@ export function EscrowManagementPage() {
         header: 'Transaction ID',
         enableSorting: false,
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-muted font-mono">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono')}>
             {row.original.transactionId}
           </span>
         ),
@@ -326,7 +317,9 @@ export function EscrowManagementPage() {
         header: 'Amount',
         enableSorting: false,
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.amount}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.amount}
+          </span>
         ),
       },
       'hold-reason': {
@@ -353,16 +346,7 @@ export function EscrowManagementPage() {
         id: 'release-status',
         accessorKey: 'status',
         header: 'Release Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getEscrowStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
       'created-by': {
         id: 'created-by',
@@ -441,7 +425,7 @@ export function EscrowManagementPage() {
             accessorKey: 'serviceId',
             header: 'Service ID',
             cell: ({ row }) => (
-              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+              <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
                 {row.original.serviceId}
               </span>
             ),
@@ -450,39 +434,42 @@ export function EscrowManagementPage() {
             accessorKey: 'name',
             header: 'Name',
             cell: ({ row }) => (
-              <span className="text-brand-text font-medium">{row.original.name}</span>
+              <span className={FINANCE_TABLE_CELL_CLASS}>{row.original.name}</span>
             ),
           },
-          { accessorKey: 'expertName', header: 'Expert Name' },
+          {
+            accessorKey: 'expertName',
+            header: 'Expert Name',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.expertName}</FinanceTableCellText>
+            ),
+          },
           {
             accessorKey: 'bookingId',
             header: 'Booking ID',
             cell: ({ row }) => (
-              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+              <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
                 {row.original.bookingId}
               </span>
             ),
           },
-          { accessorKey: 'userName', header: 'User Name' },
+          {
+            accessorKey: 'userName',
+            header: 'User Name',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.userName}</FinanceTableCellText>,
+          },
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => (
-              <span
-                className={cn(
-                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                  getBookingStatusClassName(row.original.status),
-                )}
-              >
-                {row.original.status}
-              </span>
-            ),
+            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
           },
           {
             accessorKey: 'revenue',
             header: 'Revenue',
             cell: ({ row }) => (
-              <span className="text-brand-text font-semibold">{row.original.revenue}</span>
+              <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+                {row.original.revenue}
+              </span>
             ),
           },
           {
@@ -558,6 +545,7 @@ export function EscrowManagementPage() {
 
       {isEscrowTab ? (
         <DataTable
+          className={FINANCE_DATA_TABLE_CLASS}
           columns={escrowColumns}
           data={pageEscrowRows}
           getRowId={(row) => row.id}
@@ -587,6 +575,7 @@ export function EscrowManagementPage() {
         />
       ) : (
         <DataTable
+          className={FINANCE_DATA_TABLE_CLASS}
           columns={bookingColumns}
           data={pageBookingRows}
           getRowId={(row) => row.id}

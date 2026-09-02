@@ -109,6 +109,12 @@
   --brand-radius-popup: 16px;
   --brand-radius-pill: 30px;
 
+  --finance-table-status-badge-min-height: 25px;
+  --finance-table-status-badge-radius: var(--brand-radius-lg);
+  --finance-table-status-badge-padding-x: 10px;
+  --finance-table-status-badge-font-size: 12px;
+  --finance-table-status-badge-line-height: 18px;
+
   --brand-cta-height: 40px;
   --brand-input-height: 42px;
   --brand-icon-lg: 24px;
@@ -4054,35 +4060,87 @@ select::-ms-expand {
   color: #ffffff;
 }
 
-.membership-status-badge {
-  height: 25px;
-  border-radius: 10px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 600;
+.membership-table-cell,
+.finance-table-cell {
   display: inline-flex;
   align-items: center;
-  border: none;
+  min-height: 20px;
+  color: #ffffff;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
 }
 
-.membership-status-active {
-  background: rgb(0 166 62 / 20%);
+.finance-data-table .ui-data-table-table {
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.membership-data-table .ui-data-table-table tbody td,
+.finance-data-table .ui-data-table-table tbody td {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.membership-data-table .ui-data-table-table tbody tr,
+.finance-data-table .ui-data-table-table tbody tr {
+  color: #ffffff;
+}
+
+.finance-table-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: var(--finance-table-status-badge-min-height);
+  padding: 0 var(--finance-table-status-badge-padding-x);
+  border: 1px solid transparent;
+  border-radius: var(--finance-table-status-badge-radius);
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: var(--finance-table-status-badge-font-size);
+  line-height: var(--finance-table-status-badge-line-height);
+  letter-spacing: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.finance-data-table .finance-table-status-badge {
+  font-size: var(--finance-table-status-badge-font-size);
+  line-height: var(--finance-table-status-badge-line-height);
+  font-weight: 600;
+  border-radius: var(--finance-table-status-badge-radius);
+  min-height: var(--finance-table-status-badge-min-height);
+}
+
+.finance-table-status-badge--completed {
+  border-color: rgb(0 166 62 / 25%);
+  background: #00a63e33;
   color: #00a63e;
 }
 
-.membership-status-paused {
-  background: rgb(246 203 134 / 20%);
+.finance-table-status-badge--dispute {
+  border-color: rgb(245 73 0 / 25%);
+  background: #f549004d;
+  color: #f54900;
+}
+
+.finance-table-status-badge--failed {
+  border-color: rgb(211 25 28 / 25%);
+  background: #d3191c4d;
+  color: #d3191c;
+}
+
+.finance-table-status-badge--pending {
+  border-color: rgb(246 203 134 / 25%);
+  background: #f6cb864d;
   color: #f6cb86;
-}
-
-.membership-status-cancelled {
-  background: rgb(239 68 68 / 20%);
-  color: #ef4444;
-}
-
-.membership-status-expired {
-  background: rgb(45 212 191 / 20%);
-  color: #2dd4bf;
 }
 
 /* Table Button Styles — Advance Filters: white outline (not gold fill) */

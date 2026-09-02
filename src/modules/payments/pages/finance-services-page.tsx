@@ -57,24 +57,19 @@ import {
   createFinanceServicesFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { FINANCE_SERVICES_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
 import {
   FINANCE_ESCROW_SORT_OVERRIDES,
   FINANCE_PAYMENT_SORT_OVERRIDES,
 } from '@/modules/payments/config/finance-table-sort-fields'
-import {
-  FINANCE_STATUS_PILL_PENDING,
-  FINANCE_STATUS_PILL_POSITIVE,
-} from '@/modules/payments/utils/finance-status-tones'
 import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
-
-function getStatusClassName(status: FinanceServiceRow['status']) {
-  if (status === 'Paid') {
-    return FINANCE_STATUS_PILL_POSITIVE
-  }
-  return FINANCE_STATUS_PILL_PENDING
-}
 
 export function FinanceServicesPage() {
   const navigate = useNavigate()
@@ -314,7 +309,7 @@ export function FinanceServicesPage() {
         accessorKey: 'serviceId',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.serviceId}
           </span>
         ),
@@ -322,96 +317,157 @@ export function FinanceServicesPage() {
       name: {
         accessorKey: 'name',
         header: 'Name',
-        cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
+        cell: ({ row }) => <span className={FINANCE_TABLE_CELL_CLASS}>{row.original.name}</span>,
       },
-      'expert-name': { accessorKey: 'expertName', header: 'Expert Name' },
+      'expert-name': {
+        accessorKey: 'expertName',
+        header: 'Expert Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.expertName}</FinanceTableCellText>,
+      },
       'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.bookingId}
           </span>
         ),
       },
-      'user-name': { accessorKey: 'userName', header: 'User Name' },
+      'user-name': {
+        accessorKey: 'userName',
+        header: 'User Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.userName}</FinanceTableCellText>,
+      },
       status: {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
       revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.revenue}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.revenue}
+          </span>
         ),
       },
-      'transaction-id': { id: 'transaction-id', header: 'Transaction ID', cell: () => '—' },
-      module: { id: 'module', header: 'Module', cell: () => '—' },
+      'transaction-id': {
+        id: 'transaction-id',
+        header: 'Transaction ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      module: {
+        id: 'module',
+        header: 'Module',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'related-entity-id': {
         id: 'related-entity-id',
         header: 'Related Entity ID',
-        cell: ({ row }) => row.original.serviceId || '—',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.serviceId}</FinanceTableCellText>,
       },
-      'client-id': { id: 'client-id', header: 'Client ID', cell: () => '—' },
+      'client-id': {
+        id: 'client-id',
+        header: 'Client ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'client-name': {
         id: 'client-name',
         header: 'Client Name',
-        cell: ({ row }) => row.original.userName || '—',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.userName}</FinanceTableCellText>,
       },
-      'partner-id': { id: 'partner-id', header: 'Partner ID', cell: () => '—' },
+      'partner-id': {
+        id: 'partner-id',
+        header: 'Partner ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'partner-name': {
         id: 'partner-name',
         header: 'Partner Name',
-        cell: ({ row }) => row.original.expertName || '—',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.expertName}</FinanceTableCellText>,
       },
-      'transaction-date': { id: 'transaction-date', header: 'Transaction Date', cell: () => '—' },
+      'transaction-date': {
+        id: 'transaction-date',
+        header: 'Transaction Date',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'gross-amount': {
         id: 'gross-amount',
         header: 'Gross Amount',
-        cell: ({ row }) => row.original.revenue || '—',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.revenue}</FinanceTableCellText>,
       },
-      discount: { id: 'discount', header: 'Discount', cell: () => '—' },
-      tax: { id: 'tax', header: 'Tax', cell: () => '—' },
-      'gateway-charges': { id: 'gateway-charges', header: 'Gateway Charges', cell: () => '—' },
+      discount: {
+        id: 'discount',
+        header: 'Discount',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      tax: { id: 'tax', header: 'Tax', cell: () => <FinanceTableCellText>—</FinanceTableCellText> },
+      'gateway-charges': {
+        id: 'gateway-charges',
+        header: 'Gateway Charges',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'platform-commission-pct': {
         id: 'platform-commission-pct',
         header: 'Platform Commission %',
-        cell: () => '—',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
       },
       'platform-commission': {
         id: 'platform-commission',
         header: 'Platform Commission',
-        cell: () => '—',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
       },
-      'partner-payout': { id: 'partner-payout', header: 'Partner Payout', cell: () => '—' },
-      'refund-amount': { id: 'refund-amount', header: 'Refund Amount', cell: () => '—' },
-      'net-revenue': { id: 'net-revenue', header: 'Net Revenue', cell: () => '—' },
-      'net-profit': { id: 'net-profit', header: 'Net Profit', cell: () => '—' },
-      'payment-method': { id: 'payment-method', header: 'Payment Method', cell: () => '—' },
-      gateway: { id: 'gateway', header: 'Gateway', cell: () => '—' },
+      'partner-payout': {
+        id: 'partner-payout',
+        header: 'Partner Payout',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'refund-amount': {
+        id: 'refund-amount',
+        header: 'Refund Amount',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'net-revenue': {
+        id: 'net-revenue',
+        header: 'Net Revenue',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'net-profit': {
+        id: 'net-profit',
+        header: 'Net Profit',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'payment-method': {
+        id: 'payment-method',
+        header: 'Payment Method',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      gateway: {
+        id: 'gateway',
+        header: 'Gateway',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'transaction-status': {
         id: 'transaction-status',
         header: 'Transaction Status',
-        cell: ({ row }) => row.original.status || '—',
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
       'settlement-status': {
         id: 'settlement-status',
         header: 'Settlement Status',
-        cell: () => '—',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
       },
-      'settlement-date': { id: 'settlement-date', header: 'Settlement Date', cell: () => '—' },
-      'invoice-id': { id: 'invoice-id', header: 'Invoice ID', cell: () => '—' },
+      'settlement-date': {
+        id: 'settlement-date',
+        header: 'Settlement Date',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'invoice-id': {
+        id: 'invoice-id',
+        header: 'Invoice ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
     }
 
     const catalogIds = FINANCE_SERVICES_TABLE_COLUMNS_CATALOG.map((column) => column.id)
@@ -492,6 +548,7 @@ export function FinanceServicesPage() {
       </div>
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={liveRows}
         getRowId={(row) => row.id}
