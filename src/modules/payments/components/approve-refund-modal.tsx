@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
@@ -211,20 +211,25 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
                 placeholder="Enter Partial Refund"
                 className={cn('max-w-[382px]', refundType === 'full' && 'opacity-50')}
               />
-              <p className="text-body-sm text-muted mt-2">
+              <p className="text-body-sm text-brand-text mt-2">
                 Platform will retain: {retainedAmountLabel}
               </p>
             </div>
 
-            <div className="radius-md border-brand-accent/20 bg-brand-bg mt-4 border p-4">
+            <div className="mt-4 border-t border-white/10 pt-4">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="icon-sm text-brand-accent" aria-hidden="true" />
+                <span
+                  className="bg-brand-accent grid size-5 shrink-0 place-items-center rounded-full text-[11px] leading-none font-bold text-black"
+                  aria-hidden="true"
+                >
+                  !
+                </span>
                 <p className="text-body-sm-semibold text-brand-text">Validation Rules</p>
               </div>
-              <ul className="text-body-sm text-brand-text/80 mt-3 space-y-2">
+              <ul className="text-body-sm text-muted mt-3 list-disc space-y-2 pl-5">
                 <li>Cannot exceed {formatInr(maxRefundable)}</li>
                 <li>Cannot be 0</li>
-                <li>Remaining retained amount updates automatically ({retainedAmountLabel})</li>
+                <li>Show remaining retained amount automatically</li>
               </ul>
             </div>
           </div>

@@ -108,14 +108,14 @@ export function RequestMoreInformationModal({
             <span className="font-semibold">{data.denyFromName}</span>
           </p>
 
-          <div className="radius-lg bg-brand-bg space-y-3 border border-white/10 p-4">
+          <div className="radius-lg bg-brand-bg space-y-3 border border-white/10 p-4 sm:p-5">
             <DetailRow label="User" value={data.userName} />
             <DetailRow label="Reason" value={data.reason} />
             <DetailRow label="Current Evidence" value={`${data.evidenceCount} item(s) submitted`} />
           </div>
 
-          <div className="radius-md border-brand-accent/20 bg-brand-accent/10 border p-4">
-            <p className="text-body-md text-brand-accent">What happens next:</p>
+          <div className="radius-lg border-[0.5px] border-solid border-[#FFC849] bg-[#FFC849]/10 p-4 sm:p-5">
+            <p className="text-body-md-semibold text-[#FFC849]">What happens next:</p>
             <p className="text-body-md text-brand-text mt-2 max-w-[475px]">
               The dispute status will change to &quot;Pending User Response&quot; and the user will
               be notified to provide the requested information. The SLA timer will be paused until
@@ -152,7 +152,7 @@ export function RequestMoreInformationModal({
           <button type="button" onClick={handleClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
-          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-gold">
+          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-cancel">
             Submit
           </button>
         </div>
