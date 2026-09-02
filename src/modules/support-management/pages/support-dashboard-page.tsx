@@ -62,11 +62,13 @@ export function SupportDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-h2 text-brand-text tracking-tight">Support Management</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <h1 className="text-h2 text-brand-text font-semibold tracking-tight">
+            Support Management
+          </h1>
+          <p className="text-body-sm text-muted mt-1 leading-5">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight
           </p>

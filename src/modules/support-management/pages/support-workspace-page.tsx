@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { ReassignTicketModal, EscalateTicketModal } from '../components/reassign-ticket-modal'
 import { TicketCasePanel } from '../components/ticket-case-panel'
-import { TicketFilterPanel } from '../components/ticket-filter-panel'
+import {
+  EMPTY_WORKSPACE_QUEUE_FILTERS,
+  TicketFilterPanel,
+  type WorkspaceQueueFilters,
+} from '../components/ticket-filter-panel'
 import { TicketIntelligencePanel } from '../components/ticket-intelligence-panel'
 import { TicketMessagesPanel } from '../components/ticket-messages-panel'
 import { TicketQueuePanel } from '../components/ticket-queue-panel'
@@ -25,10 +29,19 @@ import {
   getApiErrorMessage,
   getPriorityLabel,
   getStatusLabel,
-  isTerminalTicketStatus,
+  resolveTicketIntelligenceContext,
 } from '../utils/support-format'
 import { openVenuePartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 import { cn } from '@/shared/lib/cn'
+
+const ticketDetailMatchesSelection = (
+  selectedId: string | undefined,
+  detailTicket: { id?: string; _id?: string } | undefined,
+) => {
+  if (!selectedId || !detailTicket) return false
+  const normalized = selectedId.trim()
+  return detailTicket.id === normalized || detailTicket._id === normalized
+}
 
 export function SupportWorkspacePage() {
   const navigate = useNavigate()
@@ -43,16 +56,52 @@ export function SupportWorkspacePage() {
     setShowFilters,
   } = useSupportStore()
 
-  const queueQuery = useSupportTickets({
-    page: 1,
-    limit: 50,
-    search: searchQuery || undefined,
-    tab: 'all',
-    activeOnly: true,
-    scope: 'workspace',
-  })
-  const queue = (queueQuery.data?.data?.queue ?? []).filter(
-    (ticket) => !isTerminalTicketStatus(ticket.status),
+  const [appliedFilters, setAppliedFilters] = useState<WorkspaceQueueFilters>(
+    EMPTY_WORKSPACE_QUEUE_FILTERS,
+  )
+  const [draftFilters, setDraftFilters] = useState<WorkspaceQueueFilters>(
+    EMPTY_WORKSPACE_QUEUE_FILTERS,
+  )
+
+  const queueQueryParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 50,
+      search: searchQuery || undefined,
+      tab: 'all' as const,
+      includeClosed: true,
+      scope: 'workspace' as const,
+      status: appliedFilters.status || undefined,
+      module: appliedFilters.module || undefined,
+      priority: appliedFilters.priority || undefined,
+    }),
+    [appliedFilters.module, appliedFilters.priority, appliedFilters.status, searchQuery],
+  )
+
+  const queueQuery = useSupportTickets(queueQueryParams)
+  const queue = queueQuery.data?.data?.queue ?? []
+  const totalTickets = queueQuery.data?.data?.meta?.total ?? queue.length
+
+  useEffect(() => {
+    if (!showFilters) return
+    setDraftFilters(appliedFilters)
+  }, [appliedFilters, showFilters])
+
+  const handleApplyFilters = useCallback(() => {
+    setAppliedFilters(draftFilters)
+    setShowFilters(false)
+    toast.success('Filters applied')
+  }, [draftFilters, setShowFilters])
+
+  const handleClearFilters = useCallback(() => {
+    setDraftFilters(EMPTY_WORKSPACE_QUEUE_FILTERS)
+    setAppliedFilters(EMPTY_WORKSPACE_QUEUE_FILTERS)
+    setShowFilters(false)
+    toast.message('Filters cleared')
+  }, [setShowFilters])
+
+  const hasActiveFilters = Boolean(
+    appliedFilters.status || appliedFilters.module || appliedFilters.priority,
   )
 
   useEffect(() => {
@@ -64,13 +113,27 @@ export function SupportWorkspacePage() {
 
   const detailQuery = useSupportTicket(selectedTicketId || undefined)
   const detail = detailQuery.data?.data
-  const detailMatchesSelection =
-    Boolean(selectedTicketId) && detail?.ticket?.id === selectedTicketId
+  const detailMatchesSelection = ticketDetailMatchesSelection(selectedTicketId, detail?.ticket)
+
+  const handleRefreshQueue = useCallback(async () => {
+    try {
+      await Promise.all([
+        queueQuery.refetch(),
+        selectedTicketId ? detailQuery.refetch() : Promise.resolve(),
+      ])
+      toast.success('Queue refreshed')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to refresh queue'))
+    }
+  }, [detailQuery, queueQuery, selectedTicketId])
+
   const ticket = detailMatchesSelection ? detail?.ticket : undefined
   const messages = detailMatchesSelection ? (detail?.messages ?? []) : []
   const activities = detailMatchesSelection ? (detail?.activities ?? []) : []
-  const messagesLoading =
-    Boolean(selectedTicketId) && (detailQuery.isFetching || !detailMatchesSelection)
+  const detailLoading =
+    Boolean(selectedTicketId) &&
+    (detailQuery.isLoading || (detailQuery.isFetching && !detailMatchesSelection))
+  const messagesLoading = detailLoading
 
   const sendMutation = useSendSupportMessage()
   const escalateMutation = useEscalateSupportTicket()
@@ -102,12 +165,17 @@ export function SupportWorkspacePage() {
 
   const selectedQueue = queue.find((t) => t.id === selectedTicketId) ?? queue[0] ?? null
 
+  const intelligenceContext = useMemo(
+    () => resolveTicketIntelligenceContext(ticket, selectedQueue?.subject),
+    [ticket, selectedQueue?.subject],
+  )
+
   return (
     <div className="-my-4 flex h-[calc(100dvh-var(--brand-topbar-height))] min-h-0 flex-col gap-3 overflow-hidden md:-my-6">
       <div className="shrink-0">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-h2 text-brand-text font-semibold tracking-tight">
-            Support Management
+            Support Management 00
           </h1>
           <span className="text-body-sm-semibold border-brand-positive/30 bg-brand-positive/10 text-brand-positive inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5">
             <span className="bg-brand-positive size-1.5 rounded-full" />
@@ -136,8 +204,8 @@ export function SupportWorkspacePage() {
         </p>
       </div>
 
-      <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-12 lg:grid-rows-1">
-        <div className="flex h-full min-h-0 flex-col lg:col-span-3">
+      <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-[337px_minmax(0,1fr)_334px] lg:grid-rows-1">
+        <div className="flex h-full min-h-0 flex-col">
           <TicketQueuePanel
             tickets={queue}
             selectedId={selectedQueue?.id ?? ''}
@@ -146,37 +214,47 @@ export function SupportWorkspacePage() {
             onSelect={setSelectedTicketId}
             onToggleFilters={() => setShowFilters(!showFilters)}
             onRefresh={() => {
-              void queueQuery.refetch()
+              void handleRefreshQueue()
             }}
             disableClientFilter
             showFilters={showFilters}
+            hasActiveFilters={hasActiveFilters}
+            isRefreshing={queueQuery.isFetching}
+            totalCount={totalTickets}
             isLoading={queueQuery.isLoading}
             filterPanel={
               <TicketFilterPanel
-                onApply={() => setShowFilters(false)}
-                onClear={() => setShowFilters(false)}
+                values={draftFilters}
+                onChange={(field, value) => {
+                  setDraftFilters((current) => ({ ...current, [field]: value }))
+                }}
+                onApply={handleApplyFilters}
+                onClear={handleClearFilters}
               />
             }
           />
         </div>
 
-        <div className="radius-lg bg-brand-surface flex h-full min-h-0 flex-col gap-3 overflow-hidden border border-white/10 p-4 lg:col-span-5">
-          <div className="radius-lg bg-brand-bg flex shrink-0 gap-1 border border-white/5 p-1">
-            {(['intelligence', 'messages'] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setWorkspaceTab(tab)}
-                className={cn(
-                  'text-body-md-medium flex-1 rounded-lg px-4 py-2.5 capitalize transition-colors',
-                  workspaceTab === tab
-                    ? 'bg-brand-surface text-brand-text'
-                    : 'text-brand-text hover:bg-white/5',
-                )}
-              >
-                {tab === 'intelligence' ? 'Intelligence' : 'Messages'}
-              </button>
-            ))}
+        <div className="mx-auto flex h-full min-h-0 w-full max-w-[597px] flex-col gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111112] p-4">
+          <div className="flex h-10 shrink-0 gap-1 rounded-lg border border-white/[0.06] bg-[#18181A] p-1">
+            {(['intelligence', 'messages'] as const).map((tab) => {
+              const isActive = workspaceTab === tab
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setWorkspaceTab(tab)}
+                  className={cn(
+                    'flex flex-1 items-center justify-center rounded-md px-4 py-1.5 text-[12px] leading-[18px] font-medium capitalize transition-colors',
+                    isActive
+                      ? 'text-brand-text bg-[#252528] shadow-sm'
+                      : 'text-muted hover:text-brand-text hover:bg-white/[0.02]',
+                  )}
+                >
+                  {tab === 'intelligence' ? 'Intelligence' : 'Messages'}
+                </button>
+              )
+            })}
           </div>
 
           <div className="min-h-0 flex-1 overflow-hidden">
@@ -189,12 +267,13 @@ export function SupportWorkspacePage() {
                 ticketId={ticket?.id ?? selectedQueue.id}
                 createdAt={ticket?.createdAt ?? selectedQueue.createdAt}
                 dueIn={ticket?.dueIn ?? '—'}
-                eventName={ticket?.eventContext?.name || '—'}
-                eventDate={ticket?.eventContext?.date || '—'}
-                issueName={ticket?.issueContext?.name || ticket?.issueType || '—'}
-                issueDetail={ticket?.issueContext?.detail || ticket?.description || '—'}
+                status={ticket?.status ?? selectedQueue?.status}
+                eventName={intelligenceContext.eventName}
+                eventDate={intelligenceContext.eventDate}
+                issueName={intelligenceContext.issueName}
+                issueDetail={intelligenceContext.issueDetail}
                 activities={activities}
-                isLoading={messagesLoading}
+                isLoading={detailLoading}
               />
             ) : (
               <TicketMessagesPanel
@@ -203,10 +282,12 @@ export function SupportWorkspacePage() {
                 ticketId={ticket?.id ?? selectedQueue.id}
                 createdAt={ticket?.createdAt ?? selectedQueue.createdAt}
                 dueIn={ticket?.dueIn ?? '—'}
+                status={ticket?.status ?? selectedQueue?.status}
                 assignedTo={ticket?.assignedTo ?? 'Unassigned'}
                 messages={messages}
                 isLoading={messagesLoading}
                 isSending={sendMutation.isPending}
+                active={workspaceTab === 'messages'}
                 onSend={async (content) => {
                   if (!selectedTicketId) return
                   try {
@@ -232,7 +313,7 @@ export function SupportWorkspacePage() {
           </div>
         </div>
 
-        <div className="flex h-full min-h-0 flex-col lg:col-span-4">
+        <div className="flex h-full min-h-0 flex-col">
           <TicketCasePanel
             key={selectedTicketId || 'no-ticket'}
             reporterName={ticket?.reporter ?? selectedQueue?.reporter ?? '—'}

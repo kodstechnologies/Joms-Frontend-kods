@@ -1,7 +1,15 @@
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Clock, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+
+import {
+  CaseEscalationIcon,
+  CaseIssueTypeIcon,
+  CaseModuleIcon,
+  CasePriorityIcon,
+  CaseTicketStatusIcon,
+} from './case-panel-field-icons'
 
 import {
   PRIORITY_SELECT_OPTIONS,
@@ -13,6 +21,14 @@ import {
   type SelectOption,
 } from '../utils/support-format'
 import { SupportAvatar } from './support-avatar'
+import { cn } from '@/shared/lib/cn'
+
+const truncateReporterId = (id: string, visible = 8) => {
+  const value = String(id || '').trim()
+  if (!value || value === '—') return value
+  if (value.length <= visible + 1) return value
+  return `${value.slice(0, visible)}…`
+}
 
 type TicketCasePanelProps = {
   reporterName: string
@@ -75,69 +91,94 @@ export function TicketCasePanel({
   const actionsDisabled = fieldsDisabled
 
   return (
-    <div className="radius-lg bg-brand-surface flex h-full min-h-0 flex-col overflow-hidden border border-white/10">
-      <div className="shrink-0 space-y-5 border-b border-white/5 p-4">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#111112]">
+      <div className="shrink-0 space-y-5 border-b border-white/[0.06] p-4">
         <div>
-          <p className="text-body-sm-semibold text-muted tracking-widest uppercase">
+          <p className="text-body-xs text-muted font-medium tracking-wide uppercase">
             Case Reporter
           </p>
-          <div className="mt-3 flex items-center gap-3">
-            <SupportAvatar name={reporterName} src={reporterAvatarUrl} sizeClassName="size-10" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-body-md-semibold text-brand-text">{reporterName}</span>
-                <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex h-5 items-center rounded px-2 uppercase">
+          <div className="mt-3 flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <SupportAvatar
+                name={reporterName}
+                src={reporterAvatarUrl}
+                sizeClassName="size-10 shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-body-sm text-brand-text truncate font-semibold">
+                  {reporterName}
+                </p>
+                <span className="border-brand-positive/30 bg-brand-positive/10 text-brand-positive mt-1.5 inline-flex h-[18px] max-w-full items-center rounded-full border px-2 text-[10px] font-semibold tracking-wide whitespace-nowrap uppercase">
                   {getReporterTypeLabel(reporterType)}
                 </span>
               </div>
-              <p className="text-body-sm text-muted">User ID: {reporterId}</p>
+            </div>
+            <div className="max-w-[110px] shrink-0 text-right">
+              <p className="text-muted text-[10px] font-medium tracking-wide uppercase">
+                System ID
+              </p>
+              <p
+                className="text-muted mt-0.5 truncate text-[10px]"
+                title={`User ID: ${reporterId}`}
+              >
+                User ID: {truncateReporterId(reporterId)}
+              </p>
             </div>
           </div>
           <div className="mt-3 flex gap-2">
-            <Link to={`/support/past-tickets/${reporterId}`}>
-              <button type="button" className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs">
-                Past Tickets ({pastTicketsCount})
+            <Link to={`/support/past-tickets/${reporterId}`} className="min-w-0 flex-1">
+              <button
+                type="button"
+                className="bg-brand-accent flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-black transition-opacity hover:opacity-90"
+              >
+                <Clock className="size-3.5 shrink-0" />
+                <span className="truncate">Past Tickets</span>
+                <span className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-black/20 text-[9px] font-bold">
+                  {pastTicketsCount}
+                </span>
               </button>
             </Link>
             <button
               type="button"
-              className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs"
+              className="bg-brand-accent flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-black transition-opacity hover:opacity-90"
               onClick={onViewProfile ?? (() => toast.message('Profile unavailable'))}
             >
-              View Profile
+              <User className="size-3.5 shrink-0" />
+              <span className="truncate">View Profile</span>
             </button>
           </div>
         </div>
 
         <div>
           <div className="flex items-center justify-between">
-            <p className="text-body-sm-semibold text-muted tracking-widest uppercase">
+            <p className="text-body-xs text-muted font-medium tracking-wide uppercase">
               Assigned To
             </p>
             <button
               type="button"
-              className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              className="text-body-sm text-brand-text underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={actionsDisabled || !onReassign}
               onClick={onReassign}
             >
               Reassign
             </button>
           </div>
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-2 flex h-[42px] items-center gap-2.5 rounded-lg border border-white/[0.06] bg-[#18181A] px-3">
             <SupportAvatar
               name={assignedTo}
               src={assignedToAvatarUrl}
-              sizeClassName="size-8"
+              sizeClassName="size-7"
               fallback="icon"
             />
-            <span className="text-body-md text-brand-text">{assignedTo}</span>
+            <span className="text-body-sm text-brand-text truncate">{assignedTo}</span>
           </div>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
+      <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto overscroll-contain p-4">
         <SelectField
           label="Ticket Status"
+          icon={<CaseTicketStatusIcon />}
           value={statusValue || status}
           options={[
             { value: 'open', label: 'Open' },
@@ -151,6 +192,7 @@ export function TicketCasePanel({
         />
         <SelectField
           label="Priority"
+          icon={<CasePriorityIcon />}
           value={priority}
           options={PRIORITY_SELECT_OPTIONS}
           disabled={fieldsDisabled}
@@ -158,6 +200,7 @@ export function TicketCasePanel({
         />
         <SelectField
           label="Module"
+          icon={<CaseModuleIcon />}
           value={module}
           options={toSelectOptions(SUPPORT_MODULE_OPTIONS, module)}
           placeholder="Select module"
@@ -166,6 +209,7 @@ export function TicketCasePanel({
         />
         <SelectField
           label="Issue Type"
+          icon={<CaseIssueTypeIcon />}
           value={issueType}
           options={toSelectOptions(SUPPORT_ISSUE_TYPE_OPTIONS, issueType)}
           placeholder="Select issue type"
@@ -174,7 +218,7 @@ export function TicketCasePanel({
         />
 
         <label className="block space-y-2">
-          <span className="text-body-sm text-muted">Comments</span>
+          <span className="text-body-xs text-muted">Comments</span>
           <textarea
             value={commentDraft}
             disabled={fieldsDisabled || !onCommentsChange}
@@ -184,15 +228,16 @@ export function TicketCasePanel({
               if (!onCommentsChange || commentDraft === comments) return
               onCommentsChange(commentDraft)
             }}
-            className="ui-textarea text-brand-text h-24 resize-none disabled:opacity-60"
+            className="text-body-sm text-brand-text placeholder:text-muted/60 min-h-[120px] w-full resize-none rounded-lg border border-white/[0.08] bg-[#18181A] px-3 py-2.5 outline-none disabled:opacity-60"
           />
-          <span className="text-body-sm text-muted block">
+          <span className="text-body-xs text-muted block">
             Saved on this ticket only. Not sent to chat or Zoho.
           </span>
         </label>
 
         <SelectField
           label="Escalation Pathway"
+          icon={<CaseEscalationIcon />}
           value={escalationPathway}
           options={toSelectOptions(SUPPORT_ESCALATION_PATHWAY_OPTIONS, escalationPathway)}
           disabled={fieldsDisabled}
@@ -200,7 +245,7 @@ export function TicketCasePanel({
         />
       </div>
 
-      <div className="flex shrink-0 gap-2 border-t border-white/5 p-4">
+      <div className="flex shrink-0 gap-2 border-t border-white/[0.06] p-4">
         <button
           type="button"
           className="ui-cta ui-cta-primary flex-1 disabled:cursor-not-allowed disabled:opacity-50"
@@ -237,6 +282,7 @@ function SelectField({
   onChange,
   placeholder,
   disabled = false,
+  icon,
 }: {
   label: string
   value: string
@@ -244,21 +290,28 @@ function SelectField({
   onChange?: (value: string) => void
   placeholder?: string
   disabled?: boolean
+  icon?: React.ReactNode
 }) {
   const resolvedValue = value && value !== '—' ? value : ''
   if (options?.length && onChange) {
     return (
       <label className="block space-y-1.5">
-        <span className="text-body-sm text-muted">{label}</span>
-        <div className="radius-md bg-brand-bg relative flex h-[42px] items-center border border-white/10 px-3">
+        <span className="text-body-xs text-muted">{label}</span>
+        <div className="relative flex h-[42px] items-center rounded-lg border border-white/[0.08] bg-[#18181A] px-3">
+          {icon ? (
+            <span className="pointer-events-none relative z-[1] mr-2 shrink-0">{icon}</span>
+          ) : null}
           <select
             value={resolvedValue}
             disabled={disabled}
             onChange={(event) => onChange(event.target.value)}
-            className="text-body-md text-brand-text absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent px-3 pr-8 outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            className={cn(
+              'text-body-sm text-brand-text absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent pr-8 outline-none disabled:cursor-not-allowed disabled:opacity-60',
+              icon ? 'pl-10' : 'pl-3',
+            )}
           >
             {placeholder ? (
-              <option value="" className="bg-brand-bg text-brand-text">
+              <option value="" className="text-brand-text bg-[#18181A]">
                 {placeholder}
               </option>
             ) : null}
@@ -266,7 +319,7 @@ function SelectField({
               <option
                 key={option.value}
                 value={option.value}
-                className="bg-brand-bg text-brand-text"
+                className="text-brand-text bg-[#18181A]"
               >
                 {option.label}
               </option>
@@ -280,9 +333,9 @@ function SelectField({
 
   return (
     <label className="block space-y-1.5">
-      <span className="text-body-sm text-muted">{label}</span>
-      <div className="radius-md bg-brand-bg flex h-[42px] items-center justify-between border border-white/10 px-3">
-        <span className="text-body-md text-brand-text">{value || placeholder || '—'}</span>
+      <span className="text-body-xs text-muted">{label}</span>
+      <div className="flex h-[42px] items-center justify-between rounded-lg border border-white/[0.08] bg-[#18181A] px-3">
+        <span className="text-body-sm text-brand-text">{value || placeholder || '—'}</span>
         <ChevronDown className="text-muted size-4 shrink-0" />
       </div>
     </label>
