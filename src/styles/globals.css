@@ -3061,6 +3061,10 @@ select.settings-control,
   padding-left: 44px;
 }
 
+.ui-input.ui-input-icon-currency {
+  padding-left: 38px;
+}
+
 .ui-input.ui-input-icon-left.h-9 {
   padding-left: 40px;
 }

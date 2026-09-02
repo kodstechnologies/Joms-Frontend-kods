@@ -1,4 +1,4 @@
-import { AlertCircle, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
@@ -197,21 +197,24 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
 
           <div className="space-y-2.5">
             <p className="text-body-md-semibold text-brand-text">User Statement</p>
-            <div className="radius-md bg-brand-surface border border-white/10 p-4">
-              <p className="text-body-md text-brand-text/80">{data.userStatement}</p>
+            <div className="radius-lg bg-brand-bg border border-white/10 p-4">
+              <p className="text-body-md text-muted">{data.userStatement || '—'}</p>
             </div>
           </div>
 
-          <div className="radius-md border-brand-danger/20 bg-brand-surface border p-4">
+          <div>
             <div className="flex items-center gap-2">
-              <AlertCircle className="icon-sm text-brand-danger shrink-0" aria-hidden="true" />
-              <p className="text-body-md-semibold text-brand-danger">Important Notice</p>
+              <span
+                className="grid size-5 shrink-0 place-items-center rounded-full bg-[#B92630] text-[11px] leading-none font-bold text-white"
+                aria-hidden="true"
+              >
+                !
+              </span>
+              <p className="text-body-md-semibold text-brand-text">Important Notice</p>
             </div>
-            <ul className="mt-3 space-y-2 pl-4">
+            <ul className="text-body-sm text-brand-text mt-3 list-disc space-y-2 pl-5">
               {IMPORTANT_NOTICE_ITEMS.map((item) => (
-                <li key={item} className="text-body-sm text-brand-text/80 list-disc">
-                  {item}
-                </li>
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
