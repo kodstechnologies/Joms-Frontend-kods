@@ -1,4 +1,4 @@
-import { refundSummaryFixtures } from '@/modules/payments/config/finance-refunds.config'
+import { refundSummarySamples } from '@/modules/payments/config/finance-refunds.config'
 import type {
   RefundChargebackRow,
   RefundSummaryMetric,
@@ -9,7 +9,7 @@ import { FINANCE_REFUNDS_METRICS_CATALOG } from '@/modules/payments/config/finan
 
 export type FinanceRefundsMetricCard = RefundSummaryMetric & { id: string }
 
-const fixtureByLabel = new Map(refundSummaryFixtures.map((metric) => [metric.label, metric]))
+const sampleByLabel = new Map(refundSummarySamples.map((metric) => [metric.label, metric]))
 
 function addTrend(metric: RefundSummaryMetric): RefundSummaryMetric {
   const change = metric.change.replace(/^▲\s*/, '')
@@ -46,7 +46,7 @@ export function buildFinanceRefundsMetricCards(params: {
   }
 
   return FINANCE_REFUNDS_METRICS_CATALOG.map((item) => {
-    const sample = addTrend(fixtureByLabel.get(item.label)!)
+    const sample = addTrend(sampleByLabel.get(item.label)!)
 
     return {
       id: item.id,

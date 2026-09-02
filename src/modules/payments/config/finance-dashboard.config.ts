@@ -7,7 +7,7 @@ export type TrendMetric = {
   changeNote?: string
 }
 
-export const summaryCardFixtures: TrendMetric[] = [
+export const summaryCardSamples: TrendMetric[] = [
   {
     label: 'Total In Escrow',
     value: '₹8,43,290',
@@ -31,7 +31,7 @@ export const summaryCardFixtures: TrendMetric[] = [
   },
 ]
 
-export const revenueProfitFixtures: TrendMetric[] = [
+export const revenueProfitChartSamples: TrendMetric[] = [
   {
     label: 'Total Platform Revenue',
     value: '₹0',
@@ -62,7 +62,7 @@ export const revenueProfitFixtures: TrendMetric[] = [
   },
 ]
 
-export const payoutsCashFlowFixtures: TrendMetric[] = [
+export const payoutsCashFlowChartSamples: TrendMetric[] = [
   {
     label: 'Pending Payouts',
     value: '₹0',

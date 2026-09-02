@@ -1,7 +1,7 @@
 import {
-  payoutsCashFlowFixtures,
-  revenueProfitFixtures,
-  summaryCardFixtures,
+  payoutsCashFlowChartSamples,
+  revenueProfitChartSamples,
+  summaryCardSamples,
   type TrendMetric,
 } from '@/modules/payments/config/finance-dashboard.config'
 import type { FinanceDashboardSummary } from '@/modules/payments/types/finance-api'
@@ -15,9 +15,9 @@ export { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP }
 const designSamplesById = new Map<string, TrendMetric>()
 
 for (const metric of [
-  ...summaryCardFixtures,
-  ...revenueProfitFixtures,
-  ...payoutsCashFlowFixtures,
+  ...summaryCardSamples,
+  ...revenueProfitChartSamples,
+  ...payoutsCashFlowChartSamples,
 ]) {
   const catalogId = labelToMetricId(metric.label)
   if (catalogId) designSamplesById.set(catalogId, metric)

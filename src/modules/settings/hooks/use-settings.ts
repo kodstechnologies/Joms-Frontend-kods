@@ -17,7 +17,7 @@ import {
   updateSettings,
 } from '../api/settings-api'
 import type { ModuleSettingsMap, SettingsModule } from '../types/settings'
-import { mergeWithDefaults } from '../utils/branding-defaults'
+import { mergeWithDefaults } from '../utils/branding-config'
 
 export const settingsKeys = {
   all: ['settings'] as const,
