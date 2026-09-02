@@ -1,4 +1,4 @@
-import { securityDefaults } from '@/modules/settings/mock/settings.defaults'
+import { securityDefaults } from '@/modules/settings/defaults/settings.defaults'
 import type { SecuritySettings } from '@/modules/settings/types/settings'
 
 type LegacyMfa = SecuritySettings['mfa'] & { requireForAllAdmins?: boolean }

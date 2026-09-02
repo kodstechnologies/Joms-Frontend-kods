@@ -100,10 +100,6 @@ import {
 } from '@/modules/payments/config/finance-escrow-metrics.config'
 import { FINANCE_ESCROW_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-escrow-table-columns.config'
 import {
-  FINANCE_EVENTS_MODULE_KEY,
-  FINANCE_EVENTS_TABLE_COLUMNS_CATALOG,
-} from '@/modules/payments/config/finance-events-table-columns.config'
-import {
   FINANCE_PAYOUTS_MODULE_KEY,
   FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG,
   FINANCE_PAYOUTS_MAX_ACTIVE_METRICS,
@@ -356,18 +352,6 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       defaultActive: item.defaultActive,
     })),
     columns: FINANCE_ESCROW_TABLE_COLUMNS_CATALOG.map((item) => ({
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      description: item.description,
-      defaultVisible: item.defaultVisible,
-    })),
-  },
-  'finance-events': {
-    moduleKey: FINANCE_EVENTS_MODULE_KEY,
-    moduleName: 'Finance Events',
-    returnTo: '/finance/events',
-    columns: FINANCE_EVENTS_TABLE_COLUMNS_CATALOG.map((item) => ({
       id: item.id,
       label: item.label,
       type: item.type,

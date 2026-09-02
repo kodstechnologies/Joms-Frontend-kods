@@ -1,6 +1,5 @@
 import type {
   EscrowHoldRow,
-  FinanceEventRow,
   FinanceReconciliationRow,
   FinanceServiceRow,
   FinanceVenueRow,
@@ -12,7 +11,6 @@ import { FINANCE_VENUES_TABLE_COLUMNS_CATALOG } from '../config/finance-venues-t
 import { FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG } from '../config/finance-refunds-table-columns.config'
 import { FINANCE_TAX_TABLE_COLUMNS_CATALOG } from '../config/finance-tax-table-columns.config'
 import { FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG } from '../config/finance-reconciliation-table-columns.config'
-import { FINANCE_EVENTS_TABLE_COLUMNS_CATALOG } from '../config/finance-events-table-columns.config'
 import { FINANCE_ESCROW_TABLE_COLUMNS_CATALOG } from '../config/finance-escrow-table-columns.config'
 import {
   buildExportColumnMapFromCatalog,
@@ -84,18 +82,6 @@ export const FINANCE_RECONCILIATION_EXPORT_COLUMN_MAP: ExportColumnMap<FinanceRe
     'gateway-amount': (row) => row.gatewayAmount,
     difference: (row) => row.difference,
     status: (row) => row.difference,
-  })
-
-export const FINANCE_EVENTS_EXPORT_COLUMN_MAP: ExportColumnMap<FinanceEventRow> =
-  buildExportColumnMapFromCatalog(FINANCE_EVENTS_TABLE_COLUMNS_CATALOG, {
-    'promotion-id': (row) => row.eventId,
-    module: (row) => row.organizer,
-    'promotion-type': (row) => row.platformFee,
-    'entity-name': (row) => row.eventName,
-    'start-date': (row) => row.eventDate,
-    'amount-paid': (row) => row.ticketSales,
-    revenue: (row) => row.netRevenue,
-    status: (row) => row.status,
   })
 
 export const FINANCE_ESCROW_EXPORT_COLUMN_MAP: ExportColumnMap<EscrowHoldRow> =

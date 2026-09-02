@@ -2,7 +2,7 @@ import { AlertTriangle, FileText, X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { MembershipPlan } from '../types/membership'
-import { DELETE_REASON_OPTIONS, PAUSE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
+import { DELETE_REASON_OPTIONS, PAUSE_REASON_OPTIONS } from '../defaults/membership-options'
 import { formatCurrency } from '../utils/membership-format'
 import { cn } from '@/shared/lib/cn'
 

@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
-import { financeServiceTabs } from '@/modules/payments/mock/finance-services.mock'
+import { FINANCE_SERVICE_TABS } from '@/modules/payments/config/finance-services-table-columns.config'
 import type {
   FinanceServiceRow,
   FinanceServiceTab,
@@ -474,7 +474,7 @@ export function FinanceServicesPage() {
       </div>
 
       <div className="radius-lg bg-brand-surface flex h-[47px] w-full max-w-[1268px] items-center justify-around border border-white/[0.06] p-1">
-        {financeServiceTabs.map((tab) => (
+        {FINANCE_SERVICE_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"

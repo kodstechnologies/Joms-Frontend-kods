@@ -1,45 +1,7 @@
 import type {
   EscrowBookingRow,
-  EscrowHoldRow,
-  EscrowHoldStatus,
   EscrowManagementTab,
 } from '@/modules/payments/types/finance-table-rows'
-
-const serviceTypes = ['Fixed Service', 'Custom Service']
-const holdReasons = [
-  'Dispute filed by customer',
-  'On-Going Project',
-  'Pending verification',
-  'Awaiting completion',
-]
-const holdStatuses: EscrowHoldStatus[] = ['Active', 'Released', 'Dispute', 'Active', 'Released']
-
-function createEscrowRows(tab: EscrowManagementTab, count: number): EscrowHoldRow[] {
-  return Array.from({ length: count }, (_, index) => {
-    const rowIndex = index + 1
-    const typeIndex = index % serviceTypes.length
-
-    return {
-      id: `${tab}-escrow-${rowIndex.toString().padStart(2, '0')}`,
-      tab,
-      escrowId: `ESC${rowIndex.toString().padStart(3, '0')}`,
-      transactionId: `TXN_${8820 + rowIndex}`,
-      type: serviceTypes[typeIndex],
-      amount: '₹1,25,000',
-      holdReason: holdReasons[typeIndex],
-      initiatedDate: '01/02/2025',
-      expectedRelease: '01/05/2025',
-      status: holdStatuses[index % holdStatuses.length],
-    }
-  })
-}
-
-export const escrowHoldRowsMock: EscrowHoldRow[] = [
-  ...createEscrowRows('all', 20),
-  ...createEscrowRows('escrow', 20),
-  ...createEscrowRows('by-service', 15),
-  ...createEscrowRows('by-consultation', 14),
-]
 
 const serviceNames = [
   'Business Coaching Session',
@@ -77,13 +39,14 @@ function createBookingRows(tab: EscrowManagementTab, count: number): EscrowBooki
   })
 }
 
-export const escrowBookingRowsMock: EscrowBookingRow[] = [
+/** Booking tab preview rows — Figma escrow management layout. */
+export const escrowBookingPreviewRows: EscrowBookingRow[] = [
   ...createBookingRows('all', 20),
   ...createBookingRows('by-service', 15),
   ...createBookingRows('by-consultation', 14),
 ]
 
-export const escrowManagementTabs: Array<{ id: EscrowManagementTab; label: string }> = [
+export const escrowViewTabs: Array<{ id: EscrowManagementTab; label: string }> = [
   { id: 'all', label: 'All Transaction' },
   { id: 'escrow', label: 'Escrow Holds' },
   { id: 'by-service', label: 'Booking By Service' },

@@ -20,14 +20,14 @@ import { useNavigate } from 'react-router-dom'
 import type { ComponentType, PropsWithChildren, ReactNode } from 'react'
 
 import {
-  escrowStatusMock,
-  monthlyComparisonMock,
-  revenueByCategoryMock,
-  revenueFeeTrendsMock,
-  weeklyPayoutScheduleMock,
+  escrowStatusBreakdown,
+  monthlyComparisonSeries,
+  revenueByCategorySeries,
+  revenueFeeTrendSeries,
+  weeklyPayoutSeries,
   type RevenueCategoryPoint,
   type TrendMetric,
-} from '@/modules/payments/mock/finance-dashboard.mock'
+} from '@/modules/payments/fixtures/finance-dashboard.fixtures'
 import {
   DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
   FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP,
@@ -483,7 +483,7 @@ export function FinanceDashboardPage() {
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
-                    data={revenueFeeTrendsMock}
+                    data={revenueFeeTrendSeries}
                     margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                   >
                     <defs>
@@ -542,7 +542,7 @@ export function FinanceDashboardPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={revenueByCategoryMock}
+                        data={revenueByCategorySeries}
                         dataKey="amount"
                         nameKey="name"
                         innerRadius={60}
@@ -550,7 +550,7 @@ export function FinanceDashboardPage() {
                         stroke="rgba(255,255,255,0.06)"
                         strokeWidth={2}
                       >
-                        {revenueByCategoryMock.map((item) => (
+                        {revenueByCategorySeries.map((item) => (
                           <Cell key={item.name} fill={item.color} />
                         ))}
                       </Pie>
@@ -558,7 +558,7 @@ export function FinanceDashboardPage() {
                   </ResponsiveContainer>
                 </div>
                 <div className="w-full flex-1">
-                  <CategoryLegend items={revenueByCategoryMock} />
+                  <CategoryLegend items={revenueByCategorySeries} />
                 </div>
               </div>
             </ChartCard>
@@ -568,7 +568,7 @@ export function FinanceDashboardPage() {
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={monthlyComparisonMock}
+                  data={monthlyComparisonSeries}
                   margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                   barGap={6}
                 >
@@ -628,7 +628,7 @@ export function FinanceDashboardPage() {
               isRefreshing={isRefetching}
             >
               <div className="space-y-5">
-                {escrowStatusMock.map((item) => {
+                {escrowStatusBreakdown.map((item) => {
                   const widthPercent = Math.round((item.value / totalEscrowAmount) * 100)
 
                   return (
@@ -665,7 +665,7 @@ export function FinanceDashboardPage() {
               <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={weeklyPayoutScheduleMock}
+                    data={weeklyPayoutSeries}
                     margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                   >
                     <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />

@@ -10,7 +10,7 @@ import {
   minimumLengthOptions,
   passwordExpiryOptions,
   sessionTimeoutOptions,
-} from '../mock/security-options.mock'
+} from '../defaults/security-options'
 import type { SecuritySettings } from '../types/settings'
 import { SettingsToggle } from './settings-toggle-row'
 

@@ -60,15 +60,6 @@ function displayValue(id: string, value: string | number | null | undefined): st
   return String(value)
 }
 
-export function buildSupportDashboardMetricCardsMock(): SupportDashboardMetricCard[] {
-  return SUPPORT_DASHBOARD_METRIC_IDS.map((id) => ({
-    id,
-    title: labelById.get(id) ?? id,
-    value: emptyValueFor(id),
-    trend: defaultTrend,
-  }))
-}
-
 export function buildSupportDashboardMetricCardsFromApi(
   cards: SupportStatCard[],
 ): SupportDashboardMetricCard[] {

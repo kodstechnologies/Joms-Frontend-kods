@@ -1,9 +1,9 @@
 import {
-  payoutsCashFlowCardsMock,
-  revenueProfitCardsMock,
-  topSummaryCardsMock,
+  payoutsCashFlowFixtures,
+  revenueProfitFixtures,
+  summaryCardFixtures,
   type TrendMetric,
-} from '@/modules/payments/mock/finance-dashboard.mock'
+} from '@/modules/payments/fixtures/finance-dashboard.fixtures'
 import type { FinanceDashboardSummary } from '@/modules/payments/types/finance-api'
 import { formatInr } from '@/modules/payments/utils/finance-mappers'
 import { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP } from '@/modules/payments/config/finance-dashboard-metrics.config'
@@ -12,15 +12,15 @@ export type FinanceDashboardMetricCard = TrendMetric & { id: string }
 
 export { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP }
 
-const mockById = new Map<string, TrendMetric>()
+const designSamplesById = new Map<string, TrendMetric>()
 
 for (const metric of [
-  ...topSummaryCardsMock,
-  ...revenueProfitCardsMock,
-  ...payoutsCashFlowCardsMock,
+  ...summaryCardFixtures,
+  ...revenueProfitFixtures,
+  ...payoutsCashFlowFixtures,
 ]) {
   const catalogId = labelToMetricId(metric.label)
-  if (catalogId) mockById.set(catalogId, metric)
+  if (catalogId) designSamplesById.set(catalogId, metric)
 }
 
 function labelToMetricId(label: string): string | null {
@@ -44,7 +44,7 @@ function labelToMetricId(label: string): string | null {
   return map[label] ?? null
 }
 
-function withMockTrend(metric: TrendMetric | undefined | null, fallbackLabel = '—'): TrendMetric {
+function withDesignTrend(metric: TrendMetric | undefined | null, fallbackLabel = '—'): TrendMetric {
   if (!metric) {
     return placeholder(fallbackLabel)
   }
@@ -60,7 +60,7 @@ function withMockTrend(metric: TrendMetric | undefined | null, fallbackLabel = '
 }
 
 function placeholder(label: string, value = '—'): TrendMetric {
-  return withMockTrend({
+  return withDesignTrend({
     label,
     value,
     change: '—',
@@ -69,8 +69,8 @@ function placeholder(label: string, value = '—'): TrendMetric {
   })
 }
 
-function mockOrPlaceholder(id: string, label: string, mockValue?: string): TrendMetric {
-  return mockById.get(id) ?? placeholder(label, mockValue)
+function designSampleOrPlaceholder(id: string, label: string, sampleValue?: string): TrendMetric {
+  return designSamplesById.get(id) ?? placeholder(label, sampleValue)
 }
 
 export function resolveFinanceDashboardMetricId(id: string): string {
@@ -83,7 +83,7 @@ export function buildFinanceDashboardMetricCards(
   const cards: FinanceDashboardMetricCard[] = []
 
   const push = (id: string, metric: TrendMetric | undefined | null, fallbackLabel?: string) => {
-    cards.push({ id, ...withMockTrend(metric, fallbackLabel) })
+    cards.push({ id, ...withDesignTrend(metric, fallbackLabel) })
   }
 
   push(
@@ -96,7 +96,7 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('total-amount-in-escrow', 'Total Amount in Escrow', '₹8,43,290'),
+      : designSampleOrPlaceholder('total-amount-in-escrow', 'Total Amount in Escrow', '₹8,43,290'),
   )
 
   push(
@@ -109,7 +109,7 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('pending-payouts', 'Pending Payouts', '₹8,43,290'),
+      : designSampleOrPlaceholder('pending-payouts', 'Pending Payouts', '₹8,43,290'),
   )
 
   push(
@@ -122,10 +122,10 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('disputed-amount', 'Disputed Amount', '₹8,43,290'),
+      : designSampleOrPlaceholder('disputed-amount', 'Disputed Amount', '₹8,43,290'),
   )
 
-  push('gmv', mockOrPlaceholder('gmv', 'Gross Merchandise Value (GMV)', '₹10,00,000'))
+  push('gmv', designSampleOrPlaceholder('gmv', 'Gross Merchandise Value (GMV)', '₹10,00,000'))
 
   push(
     'total-platform-revenue',
@@ -137,7 +137,7 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('total-platform-revenue', 'Total Platform Revenue'),
+      : designSampleOrPlaceholder('total-platform-revenue', 'Total Platform Revenue'),
   )
 
   push(
@@ -150,7 +150,7 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue'),
+      : designSampleOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue'),
   )
 
   const grossMarginValue =
@@ -168,7 +168,7 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('platform-gross-margin', 'Platform Gross Margin', '0%'),
+      : designSampleOrPlaceholder('platform-gross-margin', 'Platform Gross Margin', '0%'),
   )
 
   const netProfitValue = summary
@@ -185,12 +185,12 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('net-profit', 'Net Profit'),
+      : designSampleOrPlaceholder('net-profit', 'Net Profit'),
   )
 
   push(
     'average-payout-cycle-time',
-    mockOrPlaceholder('average-payout-cycle-time', 'Average Payout Cycle Time', '24-48 hrs'),
+    designSampleOrPlaceholder('average-payout-cycle-time', 'Average Payout Cycle Time', '24-48 hrs'),
   )
 
   const refundRateValue =
@@ -208,21 +208,21 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : mockOrPlaceholder('refund-rate', 'Refund Rate', '0%'),
+      : designSampleOrPlaceholder('refund-rate', 'Refund Rate', '0%'),
   )
 
-  push('chargeback-rate', mockOrPlaceholder('chargeback-rate', 'Chargeback Rate', '0%'))
-  mockOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue (MRR)')
+  push('chargeback-rate', designSampleOrPlaceholder('chargeback-rate', 'Chargeback Rate', '0%'))
+  designSampleOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue (MRR)')
 
   push(
     'platform-gross-margin',
-    mockOrPlaceholder('platform-gross-margin', 'Platform Gross Margin', '42.5%'),
+    designSampleOrPlaceholder('platform-gross-margin', 'Platform Gross Margin', '42.5%'),
   )
 
-  push('net-profit', mockOrPlaceholder('net-profit', 'Net Profit'))
+  push('net-profit', designSampleOrPlaceholder('net-profit', 'Net Profit'))
   push('net-revenue', placeholder('Net Revenue', '₹3,12,400'))
-  push('refund-rate', mockOrPlaceholder('refund-rate', 'Refund Rate', '2.4%'))
-  push('chargeback-rate', mockOrPlaceholder('chargeback-rate', 'Chargeback Rate', '0.8%'))
+  push('refund-rate', designSampleOrPlaceholder('refund-rate', 'Refund Rate', '2.4%'))
+  push('chargeback-rate', designSampleOrPlaceholder('chargeback-rate', 'Chargeback Rate', '0.8%'))
   push('failed-transactions', placeholder('Failed Transactions', '14'))
 
   push(
@@ -241,7 +241,7 @@ export function buildFinanceDashboardMetricCards(
   push('payouts-released-this-month', placeholder('Payouts Released This Month', '₹2,10,000'))
   push(
     'average-payout-cycle-time',
-    mockOrPlaceholder('average-payout-cycle-time', 'Average Payout Cycle Time', '3 Days 04:00'),
+    designSampleOrPlaceholder('average-payout-cycle-time', 'Average Payout Cycle Time', '3 Days 04:00'),
   )
   push('escrow-release-rate', placeholder('Escrow Release Rate', '78.2%'))
   push('platform-commission-earned', placeholder('Platform Commission Earned', '₹1,15,986'))

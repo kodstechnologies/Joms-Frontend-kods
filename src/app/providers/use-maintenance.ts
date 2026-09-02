@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 
-import { platformDefaults } from '@/modules/settings/mock/settings.defaults'
+import { platformDefaults } from '@/modules/settings/defaults/settings.defaults'
 
 export type MaintenanceStatus = {
   active: boolean

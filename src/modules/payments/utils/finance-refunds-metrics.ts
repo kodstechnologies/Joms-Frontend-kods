@@ -1,4 +1,4 @@
-import { refundSummaryMetricsMock } from '@/modules/payments/mock/finance-refunds.mock'
+import { refundSummaryFixtures } from '@/modules/payments/fixtures/finance-refunds.fixtures'
 import type {
   RefundChargebackRow,
   RefundSummaryMetric,
@@ -9,7 +9,7 @@ import { FINANCE_REFUNDS_METRICS_CATALOG } from '@/modules/payments/config/finan
 
 export type FinanceRefundsMetricCard = RefundSummaryMetric & { id: string }
 
-const mockByLabel = new Map(refundSummaryMetricsMock.map((metric) => [metric.label, metric]))
+const fixtureByLabel = new Map(refundSummaryFixtures.map((metric) => [metric.label, metric]))
 
 function addTrend(metric: RefundSummaryMetric): RefundSummaryMetric {
   const change = metric.change.replace(/^▲\s*/, '')
@@ -46,14 +46,14 @@ export function buildFinanceRefundsMetricCards(params: {
   }
 
   return FINANCE_REFUNDS_METRICS_CATALOG.map((item) => {
-    const mock = addTrend(mockByLabel.get(item.label)!)
+    const sample = addTrend(fixtureByLabel.get(item.label)!)
 
     return {
       id: item.id,
       label: item.label,
-      value: liveValues[item.id] ?? mock.value,
-      change: mock.change,
-      changeNote: mock.changeNote,
+      value: liveValues[item.id] ?? sample.value,
+      change: sample.change,
+      changeNote: sample.changeNote,
     }
   })
 }

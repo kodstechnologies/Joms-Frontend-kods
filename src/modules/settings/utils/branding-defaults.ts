@@ -1,4 +1,4 @@
-import { platformDefaults } from '@/modules/settings/mock/settings.defaults'
+import { platformDefaults } from '@/modules/settings/defaults/settings.defaults'
 import type {
   BackupSettings,
   ExpertSettings,
@@ -20,7 +20,7 @@ import {
   securityDefaults,
   serviceDefaults,
   venueDefaults,
-} from '@/modules/settings/mock/settings.defaults'
+} from '@/modules/settings/defaults/settings.defaults'
 
 export const GENERAL_BRANDING = {
   productTitle: 'Command Operations Centre',

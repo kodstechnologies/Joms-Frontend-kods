@@ -11,7 +11,7 @@ import {
   resolveBranding,
   type BrandingState,
 } from '@/modules/settings/utils/branding-defaults'
-import { platformDefaults } from '@/modules/settings/mock/settings.defaults'
+import { platformDefaults } from '@/modules/settings/defaults/settings.defaults'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 function upsertFavicon(href: string) {

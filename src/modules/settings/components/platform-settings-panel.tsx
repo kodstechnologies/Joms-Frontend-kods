@@ -24,7 +24,7 @@ import {
   refreshIntervalOptions,
   timezoneOptions,
   type ExportFormatOption,
-} from '../mock/platform-options.mock'
+} from '../defaults/platform-options'
 import { resolveDefaultExportFormat } from '../utils/export-format'
 import type { PlatformSettings } from '../types/settings'
 import { Button } from '@/shared/components/ui/button'

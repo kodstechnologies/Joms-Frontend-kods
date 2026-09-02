@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { settingsApiClient } from '@/shared/lib/axios'
 import type { ServiceSettings } from '../types/settings'
-import { serviceDefaults } from '../mock/settings.defaults'
+import { serviceDefaults } from '../defaults/settings.defaults'
 
 export type ServicePublicSettings = ServiceSettings
 

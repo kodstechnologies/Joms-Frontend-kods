@@ -1,3 +1,4 @@
+/** Design-time chart and metric samples — values match Figma finance dashboard spec. */
 export type TrendMetric = {
   label: string
   value: string
@@ -6,7 +7,7 @@ export type TrendMetric = {
   changeNote?: string
 }
 
-export const topSummaryCardsMock: TrendMetric[] = [
+export const summaryCardFixtures: TrendMetric[] = [
   {
     label: 'Total In Escrow',
     value: '₹8,43,290',
@@ -30,7 +31,7 @@ export const topSummaryCardsMock: TrendMetric[] = [
   },
 ]
 
-export const revenueProfitCardsMock: TrendMetric[] = [
+export const revenueProfitFixtures: TrendMetric[] = [
   {
     label: 'Total Platform Revenue',
     value: '₹0',
@@ -61,7 +62,7 @@ export const revenueProfitCardsMock: TrendMetric[] = [
   },
 ]
 
-export const payoutsCashFlowCardsMock: TrendMetric[] = [
+export const payoutsCashFlowFixtures: TrendMetric[] = [
   {
     label: 'Pending Payouts',
     value: '₹0',
@@ -98,7 +99,7 @@ export type RevenueFeeTrendPoint = {
   revenue: number
 }
 
-export const revenueFeeTrendsMock: RevenueFeeTrendPoint[] = [
+export const revenueFeeTrendSeries: RevenueFeeTrendPoint[] = [
   { date: 'Jan 1', platformFee: 8000, revenue: 22000 },
   { date: 'Jan 3', platformFee: 2000, revenue: 33253 },
   { date: 'Jan 5', platformFee: 12000, revenue: 33253 },
@@ -114,7 +115,7 @@ export type RevenueCategoryPoint = {
   color: string
 }
 
-export const revenueByCategoryMock: RevenueCategoryPoint[] = [
+export const revenueByCategorySeries: RevenueCategoryPoint[] = [
   { name: 'Services', percent: 45, amount: 450000, color: '#FBC078' },
   { name: 'Memberships', percent: 28, amount: 280000, color: '#1447E6' },
   { name: 'Events', percent: 18, amount: 180000, color: '#00A63E' },
@@ -128,7 +129,7 @@ export type MonthlyComparisonPoint = {
   totalRevenue: number
 }
 
-export const monthlyComparisonMock: MonthlyComparisonPoint[] = [
+export const monthlyComparisonSeries: MonthlyComparisonPoint[] = [
   { month: 'Sep', mrr: 58785, netProfit: 48345, totalRevenue: 58785 },
   { month: 'Oct', mrr: 65000, netProfit: 52000, totalRevenue: 68000 },
   { month: 'Nov', mrr: 72000, netProfit: 58000, totalRevenue: 75000 },
@@ -143,7 +144,7 @@ export type EscrowStatusItem = {
   color: string
 }
 
-export const escrowStatusMock: EscrowStatusItem[] = [
+export const escrowStatusBreakdown: EscrowStatusItem[] = [
   { label: 'Active Services', value: 450000, color: '#FBC078' },
   { label: 'Milestone hold', value: 280000, color: '#1447E6' },
   { label: 'Dispute hold', value: 45500, color: '#F54900' },
@@ -155,7 +156,7 @@ export type WeeklyPayoutPoint = {
   amount: number
 }
 
-export const weeklyPayoutScheduleMock: WeeklyPayoutPoint[] = [
+export const weeklyPayoutSeries: WeeklyPayoutPoint[] = [
   { day: 'Mon', amount: 42000 },
   { day: 'Tue', amount: 58785 },
   { day: 'Wed', amount: 52100 },

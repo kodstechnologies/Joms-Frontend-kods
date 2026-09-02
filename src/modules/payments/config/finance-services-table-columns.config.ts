@@ -63,6 +63,15 @@ export const FINANCE_SERVICES_TABLE_COLUMNS_CATALOG: FinanceServicesTableColumnC
   col('invoice-id', 'Invoice ID', 'Text', 'Related invoice identifier'),
 ]
 
+import type { FinanceServiceTab } from '@/modules/payments/types/finance-table-rows'
+
+export const FINANCE_SERVICE_TABS: Array<{ id: FinanceServiceTab; label: string }> = [
+  { id: 'all', label: 'All Transaction' },
+  { id: 'escrow', label: 'Escrow Holds' },
+  { id: 'by-service', label: 'Booking By Service' },
+  { id: 'by-consultation', label: 'Booking By Consultation' },
+]
+
 export const FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'service-id': 'service-id',
 }
