@@ -1,6 +1,6 @@
-import type { ExportFormatOption } from '../defaults/platform-options'
+import type { ExportFormatOption } from '../config/platform-options'
 import type { PlatformSettings } from '../types/settings'
-import { platformDefaults } from '../defaults/settings.defaults'
+import { platformDefaults } from '../config/settings.config'
 
 export function resolveDefaultExportFormat(value?: string | null): ExportFormatOption {
   const normalized = String(value || '')

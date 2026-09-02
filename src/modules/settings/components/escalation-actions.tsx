@@ -7,7 +7,7 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { useOpenEscalation } from '@/modules/my-tasks/hooks/use-open-escalation'
 
-import type { Escalation } from '../defaults/escalation-data'
+import type { Escalation } from '../config/escalation-data'
 
 type EscalationActionsProps = {
   escalation: Escalation

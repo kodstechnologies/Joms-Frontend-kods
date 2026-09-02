@@ -6,7 +6,7 @@ import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { fetchSettings } from '@/modules/settings/api/settings-api'
 import { settingsKeys } from '@/modules/settings/hooks/use-settings'
 import type { SecuritySettings } from '@/modules/settings/types/settings'
-import { securityDefaults } from '@/modules/settings/defaults/settings.defaults'
+import { securityDefaults } from '@/modules/settings/config/settings.config'
 import {
   DEFAULT_PASSWORD_POLICY,
   DEFAULT_SESSION_TIMEOUT_MINUTES,

@@ -3,7 +3,7 @@ import {
   revenueProfitFixtures,
   summaryCardFixtures,
   type TrendMetric,
-} from '@/modules/payments/fixtures/finance-dashboard.fixtures'
+} from '@/modules/payments/config/finance-dashboard.config'
 import type { FinanceDashboardSummary } from '@/modules/payments/types/finance-api'
 import { formatInr } from '@/modules/payments/utils/finance-mappers'
 import { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP } from '@/modules/payments/config/finance-dashboard-metrics.config'

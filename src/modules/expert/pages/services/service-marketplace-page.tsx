@@ -18,7 +18,7 @@ import { toast } from 'sonner'
 import type {
   MarketplaceMetric,
   ServiceConsultationTrendPoint,
-} from '@/modules/expert/defaults/service-marketplace.fixtures'
+} from '@/modules/expert/config/service-marketplace.config'
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'

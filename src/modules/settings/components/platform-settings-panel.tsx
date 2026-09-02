@@ -24,7 +24,7 @@ import {
   refreshIntervalOptions,
   timezoneOptions,
   type ExportFormatOption,
-} from '../defaults/platform-options'
+} from '../config/platform-options'
 import { resolveDefaultExportFormat } from '../utils/export-format'
 import type { PlatformSettings } from '../types/settings'
 import { Button } from '@/shared/components/ui/button'

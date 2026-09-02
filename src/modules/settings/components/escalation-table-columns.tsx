@@ -1,7 +1,7 @@
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { EscalationActions } from './escalation-actions'
-import type { Escalation } from '../defaults/escalation-data'
+import type { Escalation } from '../config/escalation-data'
 
 export const escalationColumns: ColumnDef<Escalation>[] = [
   {

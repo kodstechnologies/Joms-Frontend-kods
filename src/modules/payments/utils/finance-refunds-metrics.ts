@@ -1,4 +1,4 @@
-import { refundSummaryFixtures } from '@/modules/payments/fixtures/finance-refunds.fixtures'
+import { refundSummaryFixtures } from '@/modules/payments/config/finance-refunds.config'
 import type {
   RefundChargebackRow,
   RefundSummaryMetric,

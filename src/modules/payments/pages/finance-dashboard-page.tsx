@@ -27,7 +27,7 @@ import {
   weeklyPayoutSeries,
   type RevenueCategoryPoint,
   type TrendMetric,
-} from '@/modules/payments/fixtures/finance-dashboard.fixtures'
+} from '@/modules/payments/config/finance-dashboard.config'
 import {
   DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
   FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP,

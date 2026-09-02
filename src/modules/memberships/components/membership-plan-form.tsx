@@ -3,7 +3,7 @@ import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { guardUploadFile } from '@/shared/lib/upload-file'
-import { DEFAULT_BILLING_CYCLES } from '../defaults/membership-options'
+import { DEFAULT_BILLING_CYCLES } from '../config/membership-options'
 import type {
   MembershipPlan,
   MembershipPlanConfig,

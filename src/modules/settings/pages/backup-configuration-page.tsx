@@ -10,7 +10,7 @@ import {
   useSettingsModule,
   useUpdateSettings,
 } from '../hooks/use-settings'
-import { backupDefaults } from '../defaults/settings.defaults'
+import { backupDefaults } from '../config/settings.config'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { getApiErrorMessage } from '@/shared/lib/api-error'

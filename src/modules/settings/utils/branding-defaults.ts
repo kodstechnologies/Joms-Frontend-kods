@@ -1,4 +1,4 @@
-import { platformDefaults } from '@/modules/settings/defaults/settings.defaults'
+import { platformDefaults } from '@/modules/settings/config/settings.config'
 import type {
   BackupSettings,
   ExpertSettings,
@@ -20,7 +20,7 @@ import {
   securityDefaults,
   serviceDefaults,
   venueDefaults,
-} from '@/modules/settings/defaults/settings.defaults'
+} from '@/modules/settings/config/settings.config'
 
 export const GENERAL_BRANDING = {
   productTitle: 'Command Operations Centre',

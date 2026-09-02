@@ -10,7 +10,7 @@ import {
   minimumLengthOptions,
   passwordExpiryOptions,
   sessionTimeoutOptions,
-} from '../defaults/security-options'
+} from '../config/security-options'
 import type { SecuritySettings } from '../types/settings'
 import { SettingsToggle } from './settings-toggle-row'
 

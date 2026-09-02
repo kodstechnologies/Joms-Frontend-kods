@@ -7,7 +7,7 @@ import {
   backupFrequencyOptions,
   backupRetentionOptions,
   backupStorageOptions,
-} from '../defaults/backup.defaults'
+} from '../config/backup.config'
 import type { BackupSettings } from '../types/settings'
 import { cn } from '@/shared/lib/cn'
 

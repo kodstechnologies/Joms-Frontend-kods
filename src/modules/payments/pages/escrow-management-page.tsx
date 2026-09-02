@@ -8,7 +8,7 @@ import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons
 import {
   escrowBookingPreviewRows,
   escrowViewTabs,
-} from '@/modules/payments/fixtures/finance-escrow.fixtures'
+} from '@/modules/payments/config/finance-escrow.config'
 import type {
   EscrowBookingRow,
   EscrowHoldRow,
