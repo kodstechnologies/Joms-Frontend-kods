@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -65,7 +65,28 @@ export const useUpdateSupportTicket = () => {
       id: string
       payload: Parameters<typeof updateSupportTicket>[1]
     }) => updateSupportTicket(id, payload),
-    onSuccess: () => invalidateSupport(queryClient),
+    onSuccess: (response, vars) => {
+      const updated = response?.data
+      if (updated) {
+        queryClient.setQueryData(
+          ['support-ticket', vars.id],
+          (current: Awaited<ReturnType<typeof fetchSupportTicket>> | undefined) => {
+            if (!current?.data?.ticket) return current
+            return {
+              ...current,
+              data: {
+                ...current.data,
+                ticket: { ...current.data.ticket, ...updated },
+                queueItem: current.data.queueItem
+                  ? { ...current.data.queueItem, ...updated }
+                  : current.data.queueItem,
+              },
+            }
+          },
+        )
+      }
+      queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+    },
   })
 }
 
@@ -169,6 +190,14 @@ export const useSupportAgents = (enabled = true) =>
 export const useLiveSupportUpdates = () => {
   const queryClient = useQueryClient()
   const token = useAuthStore((state) => state.token)
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
+    },
+    [],
+  )
 
   const refresh = useCallback(() => {
     invalidateSupport(queryClient)
@@ -176,12 +205,15 @@ export const useLiveSupportUpdates = () => {
 
   const refreshTicket = useCallback(
     (ticketId?: string) => {
-      if (ticketId) {
-        queryClient.invalidateQueries({ queryKey: ['support-ticket', ticketId] })
-        queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
-        return
-      }
-      refresh()
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
+      refreshTimerRef.current = setTimeout(() => {
+        if (ticketId) {
+          queryClient.invalidateQueries({ queryKey: ['support-ticket', ticketId] })
+          queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+          return
+        }
+        refresh()
+      }, 400)
     },
     [queryClient, refresh],
   )

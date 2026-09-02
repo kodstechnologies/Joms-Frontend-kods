@@ -1,8 +1,9 @@
-import { Clock, Send } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Send } from 'lucide-react'
 
 import type { ChatMessage } from '../types/support'
 import { SupportAvatar } from './support-avatar'
+import { TicketDueStatusBadge } from './ticket-due-status-badge'
 import { cn } from '@/shared/lib/cn'
 
 type TicketMessagesPanelProps = {
@@ -10,11 +11,13 @@ type TicketMessagesPanelProps = {
   ticketId: string
   createdAt: string
   dueIn: string
+  status?: string | null
   messages: ChatMessage[]
   assignedTo: string
   onSend?: (content: string) => void | Promise<void>
   isSending?: boolean
   isLoading?: boolean
+  active?: boolean
 }
 
 export function TicketMessagesPanel({
@@ -22,13 +25,24 @@ export function TicketMessagesPanel({
   ticketId,
   createdAt,
   dueIn,
+  status,
   messages,
   assignedTo,
   onSend,
   isSending = false,
   isLoading = false,
+  active = true,
 }: TicketMessagesPanelProps) {
   const [draft, setDraft] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!active || isLoading || !messages.length) return
+    const frame = window.requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [active, isLoading, messages, ticketId])
 
   const handleSend = async () => {
     const content = draft.trim()
@@ -40,23 +54,20 @@ export function TicketMessagesPanel({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-h3 text-brand-text">{title}</h2>
-          <p className="text-body-sm text-muted mt-1">
+        <div className="min-w-0">
+          <h2 className="text-brand-text text-[20px] leading-[28px] font-semibold">{title}</h2>
+          <p className="text-muted mt-1 text-[11px] leading-4">
             #{ticketId} | Created: {createdAt}
           </p>
         </div>
-        <span className="text-body-sm-semibold border-brand-accent/30 bg-brand-accent/10 text-brand-accent inline-flex items-center gap-1.5 rounded-full border px-3 py-1">
-          <Clock className="size-3.5" />
-          {dueIn} Due in
-        </span>
+        <TicketDueStatusBadge dueIn={dueIn} status={status} />
       </div>
 
-      <p className="text-body-sm text-muted my-4 shrink-0 text-center">
+      <p className="text-body-xs text-muted my-3 shrink-0 text-center leading-5">
         Ticket Assigned To {assignedTo}
       </p>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain pr-1">
         {isLoading ? (
           <p className="text-body-sm text-muted py-8 text-center">Loading messages…</p>
         ) : messages.length === 0 ? (
@@ -69,18 +80,27 @@ export function TicketMessagesPanel({
               key={msg.id}
               className={cn('flex gap-3', msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row')}
             >
-              <SupportAvatar name={msg.sender} src={msg.senderAvatarUrl} sizeClassName="size-8" />
+              <SupportAvatar
+                name={msg.sender}
+                src={msg.senderAvatarUrl}
+                sizeClassName="size-[50px] shrink-0"
+              />
               <div
                 className={cn(
-                  'max-w-[80%] space-y-1',
+                  'max-w-[399px] space-y-1',
                   msg.role === 'agent' ? 'text-right' : 'text-left',
                 )}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-body-sm-semibold text-brand-text">{msg.sender}</span>
+                <div
+                  className={cn(
+                    'flex items-center gap-2',
+                    msg.role === 'agent' ? 'justify-end' : 'justify-start',
+                  )}
+                >
+                  <span className="text-body-sm text-brand-text font-semibold">{msg.sender}</span>
                   <span
                     className={cn(
-                      'text-body-sm-semibold rounded px-1.5 py-0.5 uppercase',
+                      'inline-flex h-[18px] items-center rounded px-1.5 text-[10px] font-semibold uppercase',
                       msg.role === 'user'
                         ? 'bg-brand-positive/20 text-brand-positive'
                         : 'bg-brand-action/20 text-brand-action',
@@ -89,10 +109,10 @@ export function TicketMessagesPanel({
                     {msg.role}
                   </span>
                   {msg.online ? (
-                    <span className="text-body-sm text-brand-positive">Online</span>
+                    <span className="text-body-xs text-brand-positive">Online</span>
                   ) : null}
                 </div>
-                <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/5 px-4 py-3">
+                <div className="text-body-sm text-brand-text/90 rounded-lg border border-white/[0.06] bg-[#18181A] px-4 py-3">
                   {msg.content &&
                   msg.content !== '[Image]' &&
                   msg.content !== '[Attachment]' &&
@@ -122,14 +142,15 @@ export function TicketMessagesPanel({
                     )
                   })}
                 </div>
-                <span className="text-body-sm text-muted">{msg.time}</span>
+                <span className="text-body-xs text-muted">{msg.time}</span>
               </div>
             </div>
           ))
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      <div className="mt-4 shrink-0 border-t border-white/5 pt-4">
+      <div className="mt-4 shrink-0 border-t border-white/[0.06] pt-4">
         <div className="relative">
           <input
             value={draft}
@@ -141,14 +162,14 @@ export function TicketMessagesPanel({
               }
             }}
             placeholder="Start Typing..."
-            className="ui-input h-11 w-full rounded-xl pr-12"
+            className="text-brand-text placeholder:text-muted h-[47px] w-full rounded-xl border border-white/[0.08] bg-[#18181A] pr-14 pl-4 text-sm outline-none"
           />
           <button
             type="button"
             onClick={() => void handleSend()}
-            className="text-brand-accent hover:text-brand-gold-from absolute top-1/2 right-3 -translate-y-1/2"
+            className="absolute top-1/2 right-3 flex size-6 -translate-y-1/2 items-center justify-center text-white hover:text-white/80"
           >
-            <Send className="size-4" />
+            <Send className="size-6" strokeWidth={1.75} />
           </button>
         </div>
       </div>

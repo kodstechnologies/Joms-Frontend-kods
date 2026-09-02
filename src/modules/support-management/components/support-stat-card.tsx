@@ -21,7 +21,7 @@ export function SupportStatCard({
 }: SupportStatCardProps) {
   if (isLoading) {
     return (
-      <div className="radius-lg bg-brand-surface flex min-h-[130px] animate-pulse flex-col justify-center border border-white/[0.06] p-5">
+      <div className="flex min-h-[118px] animate-pulse flex-col justify-center rounded-xl border border-white/[0.08] bg-[#111112] p-4">
         <div className="h-3.5 w-28 rounded bg-white/10" />
         <div className="mt-3 h-8 w-24 rounded bg-white/10" />
         <div className="mt-3 flex items-center gap-2">
@@ -35,10 +35,12 @@ export function SupportStatCard({
   const isUp = direction === 'up'
 
   return (
-    <div className="radius-lg bg-brand-surface flex min-h-[130px] flex-col justify-center border border-white/[0.06] p-5">
-      <p className="text-body-sm-medium text-muted">{title}</p>
-      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
-      <div className="mt-3 flex items-center gap-2">
+    <div className="flex min-h-[118px] flex-col justify-center rounded-xl border border-white/[0.08] bg-[#111112] p-4">
+      <p className="text-body-xs text-muted">{title}</p>
+      <p className="text-brand-text mt-2 text-[28px] leading-[34px] font-semibold tracking-tight">
+        {value}
+      </p>
+      <div className="mt-2 flex items-center gap-2">
         <span
           className={cn(
             'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
