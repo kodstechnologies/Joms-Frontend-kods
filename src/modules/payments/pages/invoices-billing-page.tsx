@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useBranding } from '@/app/providers/use-branding'
-import type { InvoiceRow, InvoiceStatus } from '@/modules/payments/types/finance-table-rows'
+import type { InvoiceRow } from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceInvoiceById, fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
 import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
@@ -34,6 +34,12 @@ import {
   createFinanceInvoicesFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { downloadInvoiceDocument, invoiceFromFinanceInvoice } from '@/shared/utils/invoice-document'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -77,12 +83,6 @@ function SummaryCard({
       </div>
     </div>
   )
-}
-
-function getStatusClassName(status: InvoiceStatus) {
-  if (status === 'Paid') return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  if (status === 'Pending') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function InvoicesBillingPage() {
@@ -267,35 +267,50 @@ export function InvoicesBillingPage() {
             accessorKey: 'invoiceId',
             header: 'Invoice ID',
             cell: ({ row }) => (
-              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+              <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
                 {row.original.invoiceId}
               </span>
             ),
           },
-          { accessorKey: 'clientName', header: 'Client Name' },
+          {
+            accessorKey: 'clientName',
+            header: 'Client Name',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.clientName}</FinanceTableCellText>
+            ),
+          },
           {
             accessorKey: 'amount',
             header: 'Amount',
             cell: ({ row }) => (
-              <span className="font-semibold text-white">{row.original.amount}</span>
+              <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+                {row.original.amount}
+              </span>
             ),
           },
-          { accessorKey: 'issueDate', header: 'Issue Date' },
-          { accessorKey: 'dueDate', header: 'Due Date' },
-          { accessorKey: 'description', header: 'Description' },
+          {
+            accessorKey: 'issueDate',
+            header: 'Issue Date',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.issueDate}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'dueDate',
+            header: 'Due Date',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.dueDate}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'description',
+            header: 'Description',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.description}</FinanceTableCellText>
+            ),
+          },
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => (
-              <span
-                className={cn(
-                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                  getStatusClassName(row.original.status),
-                )}
-              >
-                {row.original.status}
-              </span>
-            ),
+            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
           },
           {
             id: 'actions',
@@ -349,6 +364,7 @@ export function InvoicesBillingPage() {
       {isError ? <p className="text-body-sm text-brand-danger">Failed to load invoices.</p> : null}
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}

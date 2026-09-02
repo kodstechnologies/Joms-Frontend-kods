@@ -5,10 +5,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { financeCategoryRowsMock } from '@/modules/payments/mock/finance-category.mock'
-import type {
-  FinanceCategoryRow,
-  FinanceCategoryStatus,
-} from '@/modules/payments/types/finance-table-rows'
+import type { FinanceCategoryRow } from '@/modules/payments/types/finance-table-rows'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -27,6 +24,12 @@ import {
   createClientFilteredExportHandler,
   rowMatchesClientFilters,
 } from '@/shared/utils/export-filter-utils'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -64,12 +67,6 @@ const EXPORT_COLUMN_MAP: Record<
   taxRate: { header: 'Tax Rate', accessor: (row) => exportDisplayValue(row.taxRate) },
   payoutCycle: { header: 'Payout Cycle', accessor: (row) => exportDisplayValue(row.payoutCycle) },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-}
-
-function getStatusClassName(status: FinanceCategoryStatus) {
-  if (status === 'Active')
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
 }
 
 export function FinanceCategoryPage() {
@@ -180,25 +177,48 @@ export function FinanceCategoryPage() {
     () =>
       withServerSortMeta(
         [
-          { accessorKey: 'categoryName', header: 'Category Name' },
-          { accessorKey: 'module', header: 'Module' },
-          { accessorKey: 'platformFee', header: 'Platform Fee' },
-          { accessorKey: 'commissionRate', header: 'Commission Rate' },
-          { accessorKey: 'taxRate', header: 'Tax Rate' },
-          { accessorKey: 'payoutCycle', header: 'Payout Cycle' },
+          {
+            accessorKey: 'categoryName',
+            header: 'Category Name',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.categoryName}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'module',
+            header: 'Module',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.module}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'platformFee',
+            header: 'Platform Fee',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.platformFee}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'commissionRate',
+            header: 'Commission Rate',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.commissionRate}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'taxRate',
+            header: 'Tax Rate',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.taxRate}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'payoutCycle',
+            header: 'Payout Cycle',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.payoutCycle}</FinanceTableCellText>
+            ),
+          },
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => (
-              <span
-                className={cn(
-                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                  getStatusClassName(row.original.status),
-                )}
-              >
-                {row.original.status}
-              </span>
-            ),
+            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
           },
           {
             id: 'actions',
@@ -229,6 +249,7 @@ export function FinanceCategoryPage() {
       </div>
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}

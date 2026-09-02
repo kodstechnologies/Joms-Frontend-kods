@@ -12,7 +12,6 @@ import type { SubscriptionStatus } from '@/modules/memberships/types/membership-
 import {
   mapSubscriptionToFinanceRow,
   type FinanceMembershipRow,
-  type FinanceMembershipStatus,
 } from '@/modules/payments/utils/finance-membership-mapper'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -33,6 +32,9 @@ import {
   buildFinanceMembershipsListQueryParams,
   createFinanceMembershipsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
+import { FINANCE_DATA_TABLE_CLASS } from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -65,14 +67,6 @@ const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }
   { label: 'Cancelled', value: 'cancelled' },
   { label: 'Expired', value: 'expired' },
 ]
-
-function getStatusClassName(status: FinanceMembershipStatus) {
-  if (status === 'Active') return 'membership-status-badge membership-status-active'
-  if (status === 'Paused') return 'membership-status-badge membership-status-paused'
-  if (status === 'Suspended') return 'membership-status-badge membership-status-paused'
-  if (status === 'Cancelled') return 'membership-status-badge membership-status-cancelled'
-  return 'membership-status-badge membership-status-expired'
-}
 
 export function MembershipManagementPage() {
   const navigate = useNavigate()
@@ -203,29 +197,55 @@ export function MembershipManagementPage() {
             accessorKey: 'subscriptionId',
             header: 'Subscription ID',
             cell: ({ row }) => (
-              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+              <FinanceTableCellText className="font-mono uppercase">
                 {row.original.subscriptionId}
-              </span>
+              </FinanceTableCellText>
             ),
           },
-          { accessorKey: 'name', header: 'Name' },
-          { accessorKey: 'planName', header: 'Plan Name' },
+          {
+            accessorKey: 'name',
+            header: 'Name',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.name}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'planName',
+            header: 'Plan Name',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.planName}</FinanceTableCellText>,
+          },
           {
             accessorKey: 'amount',
             header: 'Amount',
             cell: ({ row }) => (
-              <span className="text-brand-text font-semibold">{row.original.amount}</span>
+              <FinanceTableCellText className="font-semibold">
+                {row.original.amount}
+              </FinanceTableCellText>
             ),
           },
-          { accessorKey: 'billingCycle', header: 'Billing Cycle' },
-          { accessorKey: 'startDate', header: 'Start Date' },
-          { accessorKey: 'nextBilling', header: 'Next Billing' },
+          {
+            accessorKey: 'billingCycle',
+            header: 'Billing Cycle',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.billingCycle}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'startDate',
+            header: 'Start Date',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.startDate}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'nextBilling',
+            header: 'Next Billing',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.nextBilling}</FinanceTableCellText>
+            ),
+          },
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => (
-              <span className={getStatusClassName(row.original.status)}>{row.original.status}</span>
-            ),
+            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
           },
           {
             id: 'actions',
@@ -298,6 +318,7 @@ export function MembershipManagementPage() {
       </div>
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}

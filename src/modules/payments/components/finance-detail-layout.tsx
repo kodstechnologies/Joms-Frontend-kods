@@ -2,13 +2,14 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/shared/lib/cn'
 
-const financeDetailShellClass = 'flex flex-col gap-5 rounded-2xl bg-[#181818] p-5 sm:p-6'
+const financeDetailShellClass =
+  'flex flex-col gap-5 radius-popup border border-white/[0.06] bg-brand-surface p-5 sm:p-6'
 
-export const financeDetailCardClass = 'rounded-lg bg-[#050505] p-4 sm:p-5'
+export const financeDetailCardClass = 'radius-lg border border-white/[0.06] bg-brand-bg p-4 sm:p-5'
 
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
-const labelClass = 'text-body-sm text-muted'
-const valueClass = 'text-body-sm-medium text-brand-text'
+const labelClass = 'text-body-md text-muted leading-[22px]'
+const valueClass = 'text-body-md-medium text-brand-text leading-[22px]'
 
 export function FinanceDetailShell({
   children,
@@ -23,7 +24,7 @@ export function FinanceDetailShell({
 export function FinanceDetailCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className={cn(financeDetailCardClass, 'p-5')}>
-      <h2 className={cn(sectionTitleClass, 'mb-4')}>{title}</h2>
+      <h2 className={cn(sectionTitleClass, 'mb-4 border-b border-white/[0.06] pb-3')}>{title}</h2>
       {children}
     </section>
   )

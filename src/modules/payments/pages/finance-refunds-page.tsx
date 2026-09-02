@@ -20,10 +20,8 @@ import {
   DISPUTE_STATUS_OPTIONS,
   REFUND_STATUS_OPTIONS,
 } from '@/modules/payments/constants/refund-status-options'
-import type {
-  RefundChargebackRow,
-  RefundChargebackStatus,
-} from '@/modules/payments/types/finance-table-rows'
+import type { RefundChargebackRow } from '@/modules/payments/types/finance-table-rows'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
 import {
   useAddFinanceNote,
   useEscalateFinance,
@@ -85,6 +83,11 @@ import {
   createFinanceRefundsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { FINANCE_REFUND_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -92,22 +95,6 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
   FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG,
   FINANCE_REFUND_SORT_OVERRIDES,
 )
-
-function getStatusClassName(status: RefundChargebackStatus) {
-  if (status === 'Resolved') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Rejected') {
-    return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-  }
-  if (status === 'Pending') {
-    return 'border-brand-teal/25 bg-brand-teal/10 text-brand-teal'
-  }
-  if (status === 'Open') {
-    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-action/25 bg-brand-action/10 text-brand-action'
-}
 
 function SummaryCard({
   label,
@@ -465,7 +452,7 @@ export function FinanceRefundsPage() {
         accessorKey: 'recordId',
         header: 'Refund ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.recordId}
           </span>
         ),
@@ -501,7 +488,9 @@ export function FinanceRefundsPage() {
         accessorKey: 'amount',
         header: 'Refund Amount',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.amount}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.amount}
+          </span>
         ),
       },
       'refund-mode': {
@@ -538,16 +527,7 @@ export function FinanceRefundsPage() {
         id: 'status',
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
     }
 
@@ -615,6 +595,7 @@ export function FinanceRefundsPage() {
       ) : null}
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
