@@ -62,6 +62,11 @@ scripts/ux04-partner-harness.mjs
 scripts/lighthouse-authed-a11y.mjs
 scripts/payment-test.harness.html
 scripts/serve-payment-test.mjs
+scripts/doables-local-smoke.mjs
+scripts/edge-viewport-smoke.mjs
+scripts/firefox-viewport-smoke.mjs
+scripts/net-conditions-closeout.mjs
+scripts/nonprod-auth-care-pack.mjs
 public/payment-test.html
 src/coverage-*.test.ts
 src/coverage-*.test.tsx
