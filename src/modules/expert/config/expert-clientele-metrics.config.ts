@@ -8,99 +8,93 @@ export type ExpertClienteleMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const EXPERT_CLIENTELE_METRICS_CATALOG: ExpertClienteleMetricCatalogItem[] = [
-  {
-    id: 'services-listed',
-    label: 'Number of Services Listed',
-    type: 'Count',
-    description: 'Total services listed by the expert',
-    defaultActive: true,
-  },
-  {
-    id: 'consultations-listed',
-    label: 'Number of Consultations Listed',
-    type: 'Count',
-    description: 'Total consultations listed by the expert',
-    defaultActive: true,
-  },
-  {
-    id: 'unique-clients',
-    label: 'Number of Unique Clients',
-    type: 'Count',
-    description: 'Distinct clients who booked with the expert',
-    defaultActive: true,
-  },
-  {
-    id: 'client-satisfaction-score',
-    label: 'Client Satisfaction Score',
-    type: 'Percentage',
-    description: 'Overall client satisfaction score',
-    defaultActive: true,
-  },
-  {
-    id: 'total-orders-bookings',
-    label: 'Total Orders & Bookings',
-    type: 'Count',
-    description: 'All orders and bookings placed',
-    defaultActive: true,
-  },
-  {
-    id: 'active-orders-bookings',
-    label: 'Active Orders & Bookings',
-    type: 'Count',
-    description: 'Currently active orders and bookings',
-    defaultActive: true,
-  },
-  {
-    id: 'completed-orders-bookings',
-    label: 'Completed Orders & Bookings',
-    type: 'Count',
-    description: 'Successfully completed orders and bookings',
-    defaultActive: true,
-  },
-  {
-    id: 'cancelled-orders-bookings',
-    label: 'Cancelled / Terminated Orders',
-    type: 'Count',
-    description: 'Cancelled or terminated orders and bookings',
-    defaultActive: true,
-  },
-  {
-    id: 'clients-by-membership',
-    label: 'Clients by Membership',
-    type: 'Count',
-    description: 'Client count grouped by membership tier',
-    defaultActive: true,
-  },
-  {
-    id: 'repeat-client-percent',
-    label: 'Repeat Client %',
-    type: 'Percentage',
-    description: 'Percentage of returning clients',
-    defaultActive: true,
-  },
-  {
-    id: 'nps',
-    label: 'Net Promoter Score',
-    type: 'Count',
-    description: 'Net promoter score from client feedback',
-    defaultActive: true,
-  },
-  {
-    id: 'avg-rating',
-    label: 'Avg. Rating',
-    type: 'Average',
-    description: 'Average client rating',
-    defaultActive: true,
-  },
-  {
-    id: 'no-of-reviews',
-    label: 'No. of Reviews',
-    type: 'Count',
-    description: 'Total number of client reviews',
-    defaultActive: true,
-  },
+type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
+
+const METRIC_ROWS: MetricRow[] = [
+  [
+    'services-listed',
+    'Number of Services Listed',
+    'Count',
+    'Total services listed by the expert',
+    true,
+  ],
+  [
+    'consultations-listed',
+    'Number of Consultations Listed',
+    'Count',
+    'Total consultations listed by the expert',
+    true,
+  ],
+  [
+    'unique-clients',
+    'Number of Unique Clients',
+    'Count',
+    'Distinct clients who booked with the expert',
+    true,
+  ],
+  [
+    'client-satisfaction-score',
+    'Client Satisfaction Score',
+    'Percentage',
+    'Overall client satisfaction score',
+    true,
+  ],
+  [
+    'total-orders-bookings',
+    'Total Orders & Bookings',
+    'Count',
+    'All orders and bookings placed',
+    true,
+  ],
+  [
+    'active-orders-bookings',
+    'Active Orders & Bookings',
+    'Count',
+    'Currently active orders and bookings',
+    true,
+  ],
+  [
+    'completed-orders-bookings',
+    'Completed Orders & Bookings',
+    'Count',
+    'Successfully completed orders and bookings',
+    true,
+  ],
+  [
+    'cancelled-orders-bookings',
+    'Cancelled / Terminated Orders',
+    'Count',
+    'Cancelled or terminated orders and bookings',
+    true,
+  ],
+  [
+    'clients-by-membership',
+    'Clients by Membership',
+    'Count',
+    'Client count grouped by membership tier',
+    true,
+  ],
+  [
+    'repeat-client-percent',
+    'Repeat Client %',
+    'Percentage',
+    'Percentage of returning clients',
+    true,
+  ],
+  ['nps', 'Net Promoter Score', 'Count', 'Net promoter score from client feedback', true],
+  ['avg-rating', 'Avg. Rating', 'Average', 'Average client rating', true],
+  ['no-of-reviews', 'No. of Reviews', 'Count', 'Total number of client reviews', true],
 ]
+
+export const EXPERT_CLIENTELE_METRICS_CATALOG: ExpertClienteleMetricCatalogItem[] = METRIC_ROWS.map(
+  ([id, label, type, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+  }),
+)
 
 export const EXPERT_CLIENTELE_METRIC_IDS = EXPERT_CLIENTELE_METRICS_CATALOG.map(
   (metric) => metric.id,

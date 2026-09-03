@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -7,22 +7,12 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import {
-  buildVenueListQueryParams,
-  createVenueFilteredExportHandler,
-} from '@/shared/utils/export-filter-utils'
-import { fetchVenues } from '../../api/venue-api'
-
-import { useVenues } from '../../hooks/use-venues'
+import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { VENUE_PENDING_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_PENDING_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -32,7 +22,6 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import {
   VENUE_PENDING_APPROVALS_MODULE_KEY,
   DEFAULT_VENUE_PENDING_APPROVALS_VISIBLE_COLUMN_IDS,
@@ -94,79 +83,34 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) =
 export function VenuePendingApprovalsPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: VENUE_PENDING_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-
-  const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_PENDING_APPROVALS_MODULE_KEY)
-
-  const venueQueryParams = useMemo(
-    () =>
-      buildVenueListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
-        status: 'in_review',
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
-
-  const { data, isLoading } = useVenues(venueQueryParams)
-
-  const venues = useMemo(() => data?.data ?? [], [data?.data])
-  const meta = data?.meta
-  const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
-  const allVisibleVenuesSelected =
-    visibleVenueIds.length > 0 && visibleVenueIds.every((id) => selectedVenueIds.includes(id))
-  const someVisibleVenuesSelected = visibleVenueIds.some((id) => selectedVenueIds.includes(id))
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
-
-  const handleExportData = useMemo(
-    () =>
-      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'pending_venues_export', {
-        status: 'in_review',
-      }),
-    [],
-  )
 
   const {
+    currentPage,
+    setCurrentPage,
+    activeDropdownId,
+    setActiveDropdownId,
+    selectedVenueIds,
+    serverSort,
+    enhancedSearch,
+    venues,
+    meta,
+    isLoading,
+    tableColumnPreferencesQuery,
+    allVisibleVenuesSelected,
+    someVisibleVenuesSelected,
+    toggleVisibleVenues,
+    toggleVenueSelection,
     onAdvancedFilter,
     onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'venue-management',
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
+    exportFilterModals,
+  } = useVenueStatusList({
+    preferencesKey: VENUE_PENDING_APPROVALS_MODULE_KEY,
+    filterModuleKey: 'venue-management',
+    status: 'in_review',
+    sortFieldMap: VENUE_PENDING_SORT_FIELDS,
+    exportFileName: 'pending_venues_export',
+    exportColumnMap: EXPORT_COLUMN_MAP,
   })
-
-  const toggleVisibleVenues = useCallback(() => {
-    setSelectedVenueIds((currentIds) => {
-      if (allVisibleVenuesSelected) {
-        return currentIds.filter((id) => !visibleVenueIds.includes(id))
-      }
-
-      return Array.from(new Set([...currentIds, ...visibleVenueIds]))
-    })
-  }, [allVisibleVenuesSelected, visibleVenueIds])
-
-  const toggleVenueSelection = useCallback((venueId: string) => {
-    setSelectedVenueIds((currentIds) =>
-      currentIds.includes(venueId)
-        ? currentIds.filter((id) => id !== venueId)
-        : [...currentIds, venueId],
-    )
-  }, [])
 
   const columns = useMemo<ColumnDef<Venue>[]>(() => {
     const selectColumn: ColumnDef<Venue> = {
