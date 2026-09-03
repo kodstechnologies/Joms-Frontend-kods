@@ -8,36 +8,24 @@ export type EscalationsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const ESCALATIONS_METRICS_CATALOG: EscalationsMetricCatalogItem[] = [
-  {
-    id: 'total-escalation',
-    label: 'Total Escalation',
-    type: 'Count',
-    description: 'Total escalation cases',
-    defaultActive: true,
-  },
-  {
-    id: 'open-escalation',
-    label: 'Open Escalation',
-    type: 'Count',
-    description: 'Currently open escalation cases',
-    defaultActive: true,
-  },
-  {
-    id: 'in-review',
-    label: 'In Review',
-    type: 'Count',
-    description: 'Escalations currently in review',
-    defaultActive: true,
-  },
-  {
-    id: 'resolved',
-    label: 'Resolved',
-    type: 'Count',
-    description: 'Resolved escalation cases',
-    defaultActive: true,
-  },
+type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
+
+const METRIC_ROWS: MetricRow[] = [
+  ['total-escalation', 'Total Escalation', 'Count', 'Total escalation cases', true],
+  ['open-escalation', 'Open Escalation', 'Count', 'Currently open escalation cases', true],
+  ['in-review', 'In Review', 'Count', 'Escalations currently in review', true],
+  ['resolved', 'Resolved', 'Count', 'Resolved escalation cases', true],
 ]
+
+export const ESCALATIONS_METRICS_CATALOG: EscalationsMetricCatalogItem[] = METRIC_ROWS.map(
+  ([id, label, type, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+  }),
+)
 
 export const ESCALATIONS_METRIC_IDS = ESCALATIONS_METRICS_CATALOG.map((metric) => metric.id)
 

@@ -8,64 +8,45 @@ export type SupportDashboardMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const SUPPORT_DASHBOARD_METRICS_CATALOG: SupportDashboardMetricCatalogItem[] = [
-  {
-    id: 'total-tickets',
-    label: 'Total Tickets',
-    type: 'Count',
-    description: 'Total tickets in the system',
-    defaultActive: true,
-  },
-  {
-    id: 'open-tickets',
-    label: 'Open Tickets',
-    type: 'Count',
-    description: 'Currently open tickets (Open, Assigned, In Progress, Pending Customer)',
-    defaultActive: true,
-  },
-  {
-    id: 'tickets-in-progress',
-    label: 'Tickets In Progress',
-    type: 'Count',
-    description: 'Active tickets being worked on',
-    defaultActive: true,
-  },
-  {
-    id: 'assigned-to-me',
-    label: 'Assigned to Me',
-    type: 'Count',
-    description: 'Tickets assigned to the logged-in admin',
-    defaultActive: true,
-  },
-  {
-    id: 'escalated-by-me',
-    label: 'Escalated by Me',
-    type: 'Count',
-    description: 'Tickets escalated by the logged-in admin',
-    defaultActive: true,
-  },
-  {
-    id: 'average-first-response-time',
-    label: 'Average First Response Time',
-    type: 'Duration',
-    description: 'Average time to first response',
-    defaultActive: true,
-  },
-  {
-    id: 'average-resolution-time',
-    label: 'Average Resolution Time',
-    type: 'Duration',
-    description: 'Average resolution duration',
-    defaultActive: true,
-  },
-  {
-    id: 'tickets-resolved-today',
-    label: 'Tickets Resolved Today',
-    type: 'Count',
-    description: 'Tickets resolved today',
-    defaultActive: true,
-  },
+type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
+
+const METRIC_ROWS: MetricRow[] = [
+  ['total-tickets', 'Total Tickets', 'Count', 'Total tickets in the system', true],
+  [
+    'open-tickets',
+    'Open Tickets',
+    'Count',
+    'Currently open tickets (Open, Assigned, In Progress, Pending Customer)',
+    true,
+  ],
+  ['tickets-in-progress', 'Tickets In Progress', 'Count', 'Active tickets being worked on', true],
+  ['assigned-to-me', 'Assigned to Me', 'Count', 'Tickets assigned to the logged-in admin', true],
+  ['escalated-by-me', 'Escalated by Me', 'Count', 'Tickets escalated by the logged-in admin', true],
+  [
+    'average-first-response-time',
+    'Average First Response Time',
+    'Duration',
+    'Average time to first response',
+    true,
+  ],
+  [
+    'average-resolution-time',
+    'Average Resolution Time',
+    'Duration',
+    'Average resolution duration',
+    true,
+  ],
+  ['tickets-resolved-today', 'Tickets Resolved Today', 'Count', 'Tickets resolved today', true],
 ]
+
+export const SUPPORT_DASHBOARD_METRICS_CATALOG: SupportDashboardMetricCatalogItem[] =
+  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+  }))
 
 export const SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'total-open-tickets': 'open-tickets',

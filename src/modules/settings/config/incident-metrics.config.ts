@@ -8,36 +8,24 @@ export type IncidentMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const INCIDENT_METRICS_CATALOG: IncidentMetricCatalogItem[] = [
-  {
-    id: 'open-incidents',
-    label: 'Open Incidents',
-    type: 'Count',
-    description: 'Currently open and investigating incidents',
-    defaultActive: true,
-  },
-  {
-    id: 'critical',
-    label: 'Critical',
-    type: 'Count',
-    description: 'Unresolved critical incidents',
-    defaultActive: true,
-  },
-  {
-    id: 'resolved-mtd',
-    label: 'Resolved (MTD)',
-    type: 'Count',
-    description: 'Resolved this month',
-    defaultActive: true,
-  },
-  {
-    id: 'mttr',
-    label: 'MTTR',
-    type: 'Average',
-    description: 'Mean time to resolve this month',
-    defaultActive: true,
-  },
+type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
+
+const METRIC_ROWS: MetricRow[] = [
+  ['open-incidents', 'Open Incidents', 'Count', 'Currently open and investigating incidents', true],
+  ['critical', 'Critical', 'Count', 'Unresolved critical incidents', true],
+  ['resolved-mtd', 'Resolved (MTD)', 'Count', 'Resolved this month', true],
+  ['mttr', 'MTTR', 'Average', 'Mean time to resolve this month', true],
 ]
+
+export const INCIDENT_METRICS_CATALOG: IncidentMetricCatalogItem[] = METRIC_ROWS.map(
+  ([id, label, type, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+  }),
+)
 
 export const INCIDENT_METRIC_IDS = INCIDENT_METRICS_CATALOG.map((metric) => metric.id)
 

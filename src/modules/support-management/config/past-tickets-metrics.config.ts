@@ -8,36 +8,24 @@ export type PastTicketsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const PAST_TICKETS_METRICS_CATALOG: PastTicketsMetricCatalogItem[] = [
-  {
-    id: 'closed',
-    label: 'Closed',
-    type: 'Count',
-    description: 'Closed tickets',
-    defaultActive: true,
-  },
-  {
-    id: 'resolved',
-    label: 'Resolved',
-    type: 'Count',
-    description: 'Resolved tickets',
-    defaultActive: true,
-  },
-  {
-    id: 'avg-resolution',
-    label: 'Avg. Resolution',
-    type: 'Average',
-    description: 'Average resolution time',
-    defaultActive: true,
-  },
-  {
-    id: 'reopened',
-    label: 'Reopened',
-    type: 'Count',
-    description: 'Reopened tickets',
-    defaultActive: true,
-  },
+type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
+
+const METRIC_ROWS: MetricRow[] = [
+  ['closed', 'Closed', 'Count', 'Closed tickets', true],
+  ['resolved', 'Resolved', 'Count', 'Resolved tickets', true],
+  ['avg-resolution', 'Avg. Resolution', 'Average', 'Average resolution time', true],
+  ['reopened', 'Reopened', 'Count', 'Reopened tickets', true],
 ]
+
+export const PAST_TICKETS_METRICS_CATALOG: PastTicketsMetricCatalogItem[] = METRIC_ROWS.map(
+  ([id, label, type, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+  }),
+)
 
 export const PAST_TICKETS_METRIC_IDS = PAST_TICKETS_METRICS_CATALOG.map((metric) => metric.id)
 

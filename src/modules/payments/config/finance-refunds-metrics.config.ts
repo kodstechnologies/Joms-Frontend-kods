@@ -8,36 +8,30 @@ export type FinanceRefundsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const FINANCE_REFUNDS_METRICS_CATALOG: FinanceRefundsMetricCatalogItem[] = [
-  {
-    id: 'pending-refunds',
-    label: 'Pending Refunds',
-    type: 'Count',
-    description: 'Refunds awaiting processing or approval',
-    defaultActive: true,
-  },
-  {
-    id: 'active-disputes',
-    label: 'Active Disputes',
-    type: 'Count',
-    description: 'Currently open dispute cases',
-    defaultActive: true,
-  },
-  {
-    id: 'amount-in-disputed',
-    label: 'Amount in Disputed',
-    type: 'Currency',
-    description: 'Total amount under active disputes',
-    defaultActive: true,
-  },
-  {
-    id: 'resolved',
-    label: 'Resolved',
-    type: 'Currency',
-    description: 'Total resolved refund and dispute amount',
-    defaultActive: true,
-  },
+type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
+
+const METRIC_ROWS: MetricRow[] = [
+  ['pending-refunds', 'Pending Refunds', 'Count', 'Refunds awaiting processing or approval', true],
+  ['active-disputes', 'Active Disputes', 'Count', 'Currently open dispute cases', true],
+  [
+    'amount-in-disputed',
+    'Amount in Disputed',
+    'Currency',
+    'Total amount under active disputes',
+    true,
+  ],
+  ['resolved', 'Resolved', 'Currency', 'Total resolved refund and dispute amount', true],
 ]
+
+export const FINANCE_REFUNDS_METRICS_CATALOG: FinanceRefundsMetricCatalogItem[] = METRIC_ROWS.map(
+  ([id, label, type, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+  }),
+)
 
 export const FINANCE_REFUNDS_METRIC_IDS = FINANCE_REFUNDS_METRICS_CATALOG.map((metric) => metric.id)
 
