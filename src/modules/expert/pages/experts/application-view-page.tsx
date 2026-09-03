@@ -622,6 +622,13 @@ export function ExpertApplicationViewPage() {
 
       {activeTab === 'kyc' && showKycDetails && (
         <div className="space-y-5">
+          {((kyc as { isExempt?: boolean })?.isExempt ||
+            (kyc as { kycMandatory?: boolean })?.kycMandatory === false) && (
+            <div className="border-brand-positive/30 bg-brand-positive/10 text-brand-positive flex items-center gap-2 rounded-xl border px-4 py-3 text-[13px]">
+              <ShieldCheck className="size-4 shrink-0" />
+              <span>KYC verification is exempted / not mandatory per platform settings.</span>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="KYC Details"
