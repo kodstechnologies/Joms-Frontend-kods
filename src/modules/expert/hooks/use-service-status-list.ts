@@ -24,6 +24,10 @@ type UseServiceStatusListArgs = {
   catalogColumnIds: string[]
   exportFileName: string
   exportColumnMap?: ExportColumnMap
+  /** When false, export every mapped column (pending approvals). Default true. */
+  restrictExportToVisibleColumns?: boolean
+  /** When false, omit live search from export base params. Default true. */
+  includeSearchInExport?: boolean
 }
 
 export function useServiceStatusList({
@@ -33,6 +37,8 @@ export function useServiceStatusList({
   catalogColumnIds,
   exportFileName,
   exportColumnMap = SERVICE_EXPORT_COLUMN_MAP,
+  restrictExportToVisibleColumns = true,
+  includeSearchInExport = true,
 }: UseServiceStatusListArgs) {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -84,11 +90,22 @@ export function useServiceStatusList({
         exportFileName,
         {
           status,
-          ...enhancedSearch.buildSearchParams(),
+          ...(includeSearchInExport ? enhancedSearch.buildSearchParams() : {}),
         },
-        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+        restrictExportToVisibleColumns
+          ? { columnIds: exportColumnIds, catalogOrder: catalogColumnIds }
+          : undefined,
       ),
-    [catalogColumnIds, enhancedSearch, exportColumnIds, exportColumnMap, exportFileName, status],
+    [
+      catalogColumnIds,
+      enhancedSearch,
+      exportColumnIds,
+      exportColumnMap,
+      exportFileName,
+      includeSearchInExport,
+      restrictExportToVisibleColumns,
+      status,
+    ],
   )
 
   const {

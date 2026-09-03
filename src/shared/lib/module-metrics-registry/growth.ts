@@ -13,7 +13,7 @@ import {
   MEMBERSHIPS_MODULE_KEY,
   MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/memberships/config/membership-metrics.config'
-import type { ModuleMetricsDefinition } from './types'
+import { mapColumnsCatalog, mapMetricsCatalog, type ModuleMetricsDefinition } from './types'
 
 export const GROWTH_MODULE_METRICS: Record<string, ModuleMetricsDefinition> = {
   referrals: {
@@ -21,53 +21,23 @@ export const GROWTH_MODULE_METRICS: Record<string, ModuleMetricsDefinition> = {
     moduleName: 'Referral Management',
     returnTo: '/referrals/management',
     maxActiveMetrics: REFERRALS_MAX_ACTIVE_METRICS,
-    metrics: REFERRALS_DASHBOARD_METRICS_CATALOG.map((item) => ({
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      description: item.description,
-      defaultActive: item.defaultActive,
-    })),
-    columns: REFERRALS_TABLE_COLUMNS_CATALOG.map((item) => ({
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      description: item.description,
-      defaultVisible: item.defaultVisible,
-    })),
+    metrics: mapMetricsCatalog(REFERRALS_DASHBOARD_METRICS_CATALOG),
+    columns: mapColumnsCatalog(REFERRALS_TABLE_COLUMNS_CATALOG),
   },
   memberships: {
     moduleKey: MEMBERSHIPS_MODULE_KEY,
     moduleName: 'Membership Management',
     returnTo: '/memberships/experts',
     maxActiveMetrics: MEMBERSHIP_MAX_ACTIVE_METRICS,
-    metrics: MEMBERSHIP_METRICS_CATALOG.map((item) => ({
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      description: item.description,
-      defaultActive: item.defaultActive,
-    })),
-    columns: MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((item) => ({
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      description: item.description,
-      defaultVisible: item.defaultVisible,
-    })),
+    metrics: mapMetricsCatalog(MEMBERSHIP_METRICS_CATALOG),
+    columns: mapColumnsCatalog(MEMBERSHIPS_TABLE_COLUMNS_CATALOG),
   },
   'executive-overview': {
     moduleKey: EXECUTIVE_OVERVIEW_MODULE_KEY,
     moduleName: 'Executive Overview',
     returnTo: '/dashboard/executive',
     maxActiveMetrics: EXECUTIVE_OVERVIEW_METRICS_CATALOG.length,
-    metrics: EXECUTIVE_OVERVIEW_METRICS_CATALOG.map((item) => ({
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      description: item.description,
-      defaultActive: item.defaultActive,
-    })),
+    metrics: mapMetricsCatalog(EXECUTIVE_OVERVIEW_METRICS_CATALOG),
     columns: [],
   },
 }

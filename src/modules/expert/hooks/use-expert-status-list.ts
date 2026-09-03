@@ -27,6 +27,8 @@ type UseExpertStatusListArgs = {
   exportColumnMap?: ExportColumnMap
   /** Extra client filter after fetch (e.g. suspended list). */
   filterExperts?: (experts: Expert[]) => Expert[]
+  /** When false, export every mapped column. Default true. */
+  restrictExportToVisibleColumns?: boolean
 }
 
 export function useExpertStatusList({
@@ -37,6 +39,7 @@ export function useExpertStatusList({
   exportFileName,
   exportColumnMap = EXPERT_EXPORT_COLUMN_MAP,
   filterExperts,
+  restrictExportToVisibleColumns = true,
 }: UseExpertStatusListArgs) {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -100,7 +103,9 @@ export function useExpertStatusList({
         {
           ...enhancedSearch.buildSearchParams(),
         },
-        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+        restrictExportToVisibleColumns
+          ? { columnIds: exportColumnIds, catalogOrder: catalogColumnIds }
+          : undefined,
       ),
     [
       catalogColumnIds,
@@ -109,6 +114,7 @@ export function useExpertStatusList({
       exportColumnMap,
       exportFileName,
       filterExperts,
+      restrictExportToVisibleColumns,
       status,
     ],
   )
