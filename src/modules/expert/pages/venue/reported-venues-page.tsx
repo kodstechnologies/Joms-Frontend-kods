@@ -1,21 +1,17 @@
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { fetchVenueReports } from '../../api/venue-api'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
 import {
   VenueReportDetailModal,
   type VenueReportItem,
 } from '../../components/venue-report-detail-modal'
 import { ExpertListHeader } from '../experts/expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { VENUE_REPORTED_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_REPORTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -26,7 +22,6 @@ import {
 
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { Button } from '@/shared/components/ui/button'
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import {
   VENUE_REPORTED_MODULE_KEY,
   DEFAULT_VENUE_REPORTED_VISIBLE_COLUMN_IDS,
@@ -87,113 +82,36 @@ const EXPORT_COLUMN_MAP: Record<
   },
 }
 
-const fetchVenueReportsForExport = async (params: Record<string, unknown>) => {
-  const response = await fetchVenueReports(params)
-  const payload = response?.data ?? response
-  const items = (payload?.items || []) as VenueReportItem[]
-  const pagination = payload?.pagination || response?.pagination
-
-  return {
-    data: items,
-    meta: {
-      pagination: {
-        pages: pagination?.pages ?? pagination?.totalPages,
-        totalPages: pagination?.totalPages ?? pagination?.pages,
-      },
-    },
-  }
-}
-
 export function VenueReportedVenuesPage() {
   const navigate = useNavigate()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: VENUE_REPORTED_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-
-  const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_REPORTED_MODULE_KEY)
-
-  const [reports, setReports] = useState<VenueReportItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [totalItems, setTotalItems] = useState(0)
-  const [totalPages, setTotalPages] = useState(1)
-
   const [selectedReport, setSelectedReport] = useState<VenueReportItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
-  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
-
-  const [prevKey, setPrevKey] = useState(
-    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`,
-  )
-
-  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`
-
-  if (currentKey !== prevKey) {
-    setPrevKey(currentKey)
-    setLoading(true)
-  }
-
-  const loadReports = useCallback(() => {
-    fetchVenueReports({
-      page: currentPage,
-      limit: 10,
-      ...serverSort.sortParams,
-      ...searchParams,
-      ...apiFilterParams,
-    })
-      .then((res) => {
-        const items = res?.data?.items || res?.items || []
-        const pagination = res?.data?.pagination || res?.pagination
-
-        setReports(items)
-        setTotalItems(pagination?.total || items.length)
-        setTotalPages(pagination?.totalPages || 1)
-      })
-      .catch(() => {
-        setReports([])
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [currentPage, searchParams, apiFilterParams, serverSort.sortParams])
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
-
-  const handleExportData = useMemo(
-    () =>
-      createFilteredExportHandler(
-        fetchVenueReportsForExport,
-        EXPORT_COLUMN_MAP,
-        'reported_venues_export',
-        {
-          search: enhancedSearch.globalSearch.trim() || undefined,
-        },
-      ),
-    [enhancedSearch.globalSearch],
-  )
 
   const {
+    currentPage,
+    setCurrentPage,
+    activeDropdownId,
+    setActiveDropdownId,
+    serverSort,
+    enhancedSearch,
+    items: reports,
+    loading,
+    totalItems,
+    totalPages,
+    tableColumnPreferencesQuery,
     onAdvancedFilter,
     onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
+    exportFilterModals,
+    reload,
+  } = useReportedList<VenueReportItem>({
     moduleKey: 'venue-management',
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
+    preferencesKey: VENUE_REPORTED_MODULE_KEY,
+    sortFieldMap: VENUE_REPORTED_SORT_FIELDS,
+    exportFileName: 'reported_venues_export',
+    exportColumnMap: EXPORT_COLUMN_MAP,
+    fetchReports: fetchVenueReports,
+    parseResponse: defaultParseResponse<VenueReportItem>,
   })
-
-  useEffect(() => {
-    loadReports()
-  }, [loadReports])
 
   const columns = useMemo<ColumnDef<VenueReportItem>[]>(() => {
     const dataColumnsById: Record<string, ColumnDef<VenueReportItem>> = {
@@ -353,7 +271,7 @@ export function VenueReportedVenuesPage() {
     }
 
     return withServerSortMeta([...preferenceColumns, actionsColumn], VENUE_REPORTED_SORT_FIELDS)
-  }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
+  }, [activeDropdownId, navigate, setActiveDropdownId, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -403,7 +321,7 @@ export function VenueReportedVenuesPage() {
           setIsModalOpen(false)
           setSelectedReport(null)
         }}
-        onUpdated={loadReports}
+        onUpdated={reload}
       />
     </div>
   )

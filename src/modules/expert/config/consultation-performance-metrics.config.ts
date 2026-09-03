@@ -8,125 +8,42 @@ export type ConsultationPerformanceMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const metric = (
-  id: string,
-  label: string,
-  type: string,
-  description: string,
-  defaultActive = false,
-): ConsultationPerformanceMetricCatalogItem => ({
-  id,
-  label,
-  type,
-  description,
-  defaultActive,
-})
+type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
+
+const METRIC_ROWS: MetricRow[] = [
+  ['totalConsultationsBooked', 'Total Consultations Booked', 'Count', 'Bookings'],
+  ['completedConsultations', 'Completed Consultations', 'Count', 'Completed', true],
+  ['scheduledConsultations', 'Scheduled Consultations', 'Count', 'Upcoming'],
+  ['cancelledConsultations', 'Cancelled / Terminated Consultations', 'Count', 'Cancelled', true],
+  ['averageConsultationRating', 'Average Consultation Rating', 'Average', 'Avg rating', true],
+  ['consultationPageViews', 'Consultation Page Views', 'Count', 'Listing views'],
+  ['bookingConversionRate', 'Booking Conversion Rate', 'Percentage', 'Views → bookings'],
+  ['totalRevenue', 'Total Revenue', 'Currency', 'Revenue'],
+  ['averageBookingValue', 'Average Booking Value', 'Currency', 'Avg completed'],
+  ['totalTickets', 'Total Tickets', 'Count', 'Support/disputes'],
+  ['ticketsByExpert', 'Tickets Raised by Expert', 'Count', 'Expert-raised'],
+  ['ticketsByClient', 'Tickets Raised by Client', 'Count', 'Client-raised'],
+  ['refundsIssued', 'Total Refunds Issued', 'Count', 'Refunded'],
+  ['refundAmount', 'Total Refund Amount', 'Currency', 'Refund value'],
+  ['cancellationRate', 'Cancellation Rate', 'Percentage', 'Cancelled %'],
+  ['repeatBookingRate', 'Repeat Booking Rate', 'Percentage', 'Returning clients'],
+  ['refundRate', 'Refund Rate', 'Percentage', 'Refunded share'],
+  ['bookingsFromUserApp', 'Bookings from User App', 'Count', 'App origin'],
+  ['bookingsFromMicrosite', 'Bookings from Microsite', 'Count', 'Microsite origin'],
+  ['averageConsultationDuration', 'Average Consultation Duration', 'Average', 'Session length'],
+  ['followUpCompletionRate', 'Follow-up Completion Rate', 'Percentage', 'Follow-ups done'],
+  ['noShowRate', 'No-show Rate', 'Percentage', 'Unattended'],
+  ['activeClients', 'Active Clients', 'Count', 'Upcoming/in-progress', true],
+]
 
 export const CONSULTATION_PERFORMANCE_METRICS_CATALOG: ConsultationPerformanceMetricCatalogItem[] =
-  [
-    metric(
-      'totalConsultationsBooked',
-      'Total Consultations Booked',
-      'Count',
-      'Total consultation bookings',
-    ),
-    metric(
-      'completedConsultations',
-      'Completed Consultations',
-      'Count',
-      'Successfully completed consultations',
-      true,
-    ),
-    metric(
-      'scheduledConsultations',
-      'Scheduled Consultations',
-      'Count',
-      'Upcoming confirmed consultations',
-    ),
-    metric(
-      'cancelledConsultations',
-      'Cancelled / Terminated Consultations',
-      'Count',
-      'Cancelled or terminated bookings',
-      true,
-    ),
-    metric(
-      'averageConsultationRating',
-      'Average Consultation Rating',
-      'Average',
-      'Overall consultation rating',
-      true,
-    ),
-    metric(
-      'consultationPageViews',
-      'Consultation Page Views',
-      'Count',
-      'Total consultation listing views',
-    ),
-    metric(
-      'bookingConversionRate',
-      'Booking Conversion Rate',
-      'Percentage',
-      'Conversion from page views to bookings',
-    ),
-    metric('totalRevenue', 'Total Revenue', 'Currency', 'Revenue generated'),
-    metric(
-      'averageBookingValue',
-      'Average Booking Value',
-      'Currency',
-      'Average revenue per completed consultation',
-    ),
-    metric('totalTickets', 'Total Tickets', 'Count', 'Total support/dispute tickets'),
-    metric('ticketsByExpert', 'Tickets Raised by Expert', 'Count', 'Tickets initiated by expert'),
-    metric('ticketsByClient', 'Tickets Raised by Client', 'Count', 'Tickets initiated by client'),
-    metric('refundsIssued', 'Total Refunds Issued', 'Count', 'Refunded consultation bookings'),
-    metric('refundAmount', 'Total Refund Amount', 'Currency', 'Total refunded amount'),
-    metric(
-      'cancellationRate',
-      'Cancellation Rate',
-      'Percentage',
-      'Cancelled consultation percentage',
-    ),
-    metric('repeatBookingRate', 'Repeat Booking Rate', 'Percentage', 'Returning client percentage'),
-    metric(
-      'refundRate',
-      'Refund Rate',
-      'Percentage',
-      'Percentage of completed consultations refunded',
-    ),
-    metric(
-      'bookingsFromUserApp',
-      'Bookings from User App',
-      'Count',
-      'Bookings originating from User App',
-    ),
-    metric(
-      'bookingsFromMicrosite',
-      'Bookings from Microsite',
-      'Count',
-      'Bookings originating from Microsite',
-    ),
-    metric(
-      'averageConsultationDuration',
-      'Average Consultation Duration',
-      'Average',
-      'Average session duration',
-    ),
-    metric(
-      'followUpCompletionRate',
-      'Follow-up Completion Rate',
-      'Percentage',
-      'Percentage of completed follow-ups',
-    ),
-    metric('noShowRate', 'No-show Rate', 'Percentage', 'Percentage of unattended consultations'),
-    metric(
-      'activeClients',
-      'Active Clients',
-      'Count',
-      'Clients with upcoming or in-progress consultations',
-      true,
-    ),
-  ]
+  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+  }))
 
 export const CONSULTATION_PERFORMANCE_METRIC_IDS = CONSULTATION_PERFORMANCE_METRICS_CATALOG.map(
   (item) => item.id,

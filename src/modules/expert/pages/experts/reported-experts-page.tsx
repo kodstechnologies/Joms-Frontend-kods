@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, Eye } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -8,19 +8,14 @@ import {
   DEFAULT_EXPERT_REPORTED_VISIBLE_COLUMN_IDS,
   EXPERT_REPORTED_MODULE_KEY,
 } from '../../config/expert-management-table-columns.config'
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
 import {
   ExpertReportDetailModal,
   type ExpertReportItem,
 } from '../../components/expert-report-detail-modal'
 import { ExpertListHeader } from './expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { EXPERT_REPORTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -71,117 +66,39 @@ const EXPORT_COLUMN_MAP: Record<
   },
 }
 
-const fetchExpertReportsForExport = async (params: Record<string, unknown>) => {
-  const response = await fetchExpertReports(params)
-  const payload = response?.data ?? response
-  const items = (payload?.items || []) as ExpertReportItem[]
-  const pagination = payload?.pagination || response?.pagination
-
-  return {
-    data: items,
-    meta: {
-      pagination: {
-        pages: pagination?.pages ?? pagination?.totalPages,
-        totalPages: pagination?.totalPages ?? pagination?.pages,
-      },
-    },
-  }
-}
-
 const dash = (value: unknown) =>
   value === null || value === undefined || value === '' ? '—' : String(value)
 
 export function ExpertReportedExpertsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-
-  const [reports, setReports] = useState<ExpertReportItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [totalItems, setTotalItems] = useState(0)
-  const [totalPages, setTotalPages] = useState(1)
-
   const [selectedReport, setSelectedReport] = useState<ExpertReportItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
-  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
-
-  const [prevKey, setPrevKey] = useState(
-    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`,
-  )
-
-  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`
-
-  if (currentKey !== prevKey) {
-    setPrevKey(currentKey)
-    setLoading(true)
-  }
-
-  const loadReports = useCallback(() => {
-    fetchExpertReports({
-      page: currentPage,
-      limit: 10,
-      ...serverSort.sortParams,
-      ...searchParams,
-      ...apiFilterParams,
-    })
-      .then((res) => {
-        const items = res?.data?.items || res?.items || []
-        const pagination = res?.data?.pagination || res?.pagination
-
-        setReports(items)
-        setTotalItems(pagination?.total || items.length)
-        setTotalPages(pagination?.totalPages || 1)
-      })
-      .catch(() => {
-        setReports([])
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [currentPage, searchParams, apiFilterParams, serverSort.sortParams])
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
-
-  const handleExportData = useMemo(
-    () =>
-      createFilteredExportHandler(
-        fetchExpertReportsForExport,
-        EXPORT_COLUMN_MAP,
-        'reported_experts_export',
-        {
-          search: enhancedSearch.globalSearch.trim() || undefined,
-        },
-      ),
-    [enhancedSearch.globalSearch],
-  )
 
   const {
+    currentPage,
+    setCurrentPage,
+    activeDropdownId,
+    setActiveDropdownId,
+    serverSort,
+    enhancedSearch,
+    items: reports,
+    loading,
+    totalItems,
+    totalPages,
+    tableColumnPreferencesQuery,
     onAdvancedFilter,
     onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
+    exportFilterModals,
+    reload,
+  } = useReportedList<ExpertReportItem>({
     moduleKey: EXPERT_REPORTED_MODULE_KEY,
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
+    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
+    exportFileName: 'reported_experts_export',
+    exportColumnMap: EXPORT_COLUMN_MAP,
+    fetchReports: fetchExpertReports,
+    parseResponse: defaultParseResponse<ExpertReportItem>,
   })
-
-  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_REPORTED_MODULE_KEY)
-
-  useEffect(() => {
-    loadReports()
-  }, [loadReports])
 
   useEffect(() => {
     const openReportId = (location.state as { openReportId?: string } | null)?.openReportId
@@ -439,7 +356,7 @@ export function ExpertReportedExpertsPage() {
       ],
       EXPERT_COLUMN_SORT_FIELDS,
     )
-  }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
+  }, [activeDropdownId, navigate, setActiveDropdownId, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -484,7 +401,7 @@ export function ExpertReportedExpertsPage() {
           setIsModalOpen(false)
           setSelectedReport(null)
         }}
-        onUpdated={loadReports}
+        onUpdated={reload}
       />
     </div>
   )
