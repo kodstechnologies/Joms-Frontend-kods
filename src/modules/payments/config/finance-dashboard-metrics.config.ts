@@ -12,183 +12,128 @@ export type FinanceDashboardMetricCatalogItem = {
   section: FinanceDashboardMetricSection
 }
 
-const metric = (
+type MetricRow = [
   id: string,
   label: string,
   type: string,
-  description: string,
   section: FinanceDashboardMetricSection,
-  defaultActive = false,
-): FinanceDashboardMetricCatalogItem => ({
-  id,
-  label,
-  type,
-  description,
-  defaultActive,
-  section,
-})
+  description: string,
+  defaultActive?: boolean,
+]
 
-export const FINANCE_DASHBOARD_METRICS_CATALOG: FinanceDashboardMetricCatalogItem[] = [
-  metric(
+const METRIC_ROWS: MetricRow[] = [
+  [
     'total-amount-in-escrow',
     'Total Amount in Escrow',
     'Currency',
-    'Funds currently held in escrow awaiting payout or dispute resolution',
     'escrow',
+    'Held in escrow',
     true,
-  ),
-  metric(
-    'pending-payouts',
-    'Pending Payouts',
-    'Currency',
-    'Payout amount pending release to partners',
-    'escrow',
-    true,
-  ),
-  metric(
-    'disputed-amount',
-    'Disputed Amount',
-    'Currency',
-    'Funds currently under dispute',
-    'escrow',
-    true,
-  ),
-  metric(
-    'escrow-release-rate',
-    'Escrow Release Rate',
-    'Percentage',
-    'Percentage of escrow funds released',
-    'escrow',
-  ),
-  metric(
+  ],
+  ['pending-payouts', 'Pending Payouts', 'Currency', 'escrow', 'Awaiting partner release', true],
+  ['disputed-amount', 'Disputed Amount', 'Currency', 'escrow', 'Under dispute', true],
+  ['escrow-release-rate', 'Escrow Release Rate', 'Percentage', 'escrow', 'Released share'],
+  [
     'gmv',
     'Gross Merchandise Value (GMV)',
     'Currency',
-    'Total transaction value before deductions',
     'revenue-profit',
+    'Pre-deduction volume',
     true,
-  ),
-  metric(
+  ],
+  [
     'total-platform-revenue',
     'Total Platform Revenue',
     'Currency',
-    'Revenue retained by the platform',
     'revenue-profit',
+    'Retained revenue',
     true,
-  ),
-  metric(
+  ],
+  [
     'monthly-recurring-revenue',
     'Monthly Recurring Revenue (MRR)',
     'Currency',
-    'Revenue from active recurring memberships',
     'revenue-profit',
+    'Active memberships',
     true,
-  ),
-  metric(
+  ],
+  [
     'platform-gross-margin',
     'Platform Gross Margin',
     'Percentage',
-    'Margin after partner payouts',
     'revenue-profit',
+    'After partner payouts',
     true,
-  ),
-  metric(
-    'net-profit',
-    'Net Profit',
-    'Currency',
-    'Net platform earnings after operating expenses',
-    'revenue-profit',
-    true,
-  ),
-  metric(
-    'net-revenue',
-    'Net Revenue',
-    'Currency',
-    'Revenue after refunds and chargebacks',
-    'revenue-profit',
-  ),
-  metric(
+  ],
+  ['net-profit', 'Net Profit', 'Currency', 'revenue-profit', 'After operating costs', true],
+  ['net-revenue', 'Net Revenue', 'Currency', 'revenue-profit', 'After refunds/chargebacks'],
+  [
     'revenue-growth',
     'Revenue Growth (7D / 30D / 90D / 1Y)',
     'Percentage',
-    'Revenue growth across selected period',
     'revenue-profit',
-  ),
-  metric(
+    'Period growth',
+  ],
+  [
     'collections-this-month',
     'Collections This Month',
     'Currency',
-    'Total payments successfully collected during the current month',
     'payouts-cash-flow',
+    'Successful collections',
     true,
-  ),
-  metric(
+  ],
+  [
     'payouts-released-this-month',
     'Payouts Released This Month',
     'Currency',
-    'Total payouts processed during the current month',
     'payouts-cash-flow',
-  ),
-  metric(
+    'Processed payouts',
+  ],
+  [
     'average-payout-cycle-time',
     'Average Payout Cycle Time',
     'Duration',
-    'Average duration from service completion to payout',
     'payouts-cash-flow',
+    'Completion to payout',
     true,
-  ),
-  metric(
-    'refund-rate',
-    'Refund Rate',
-    'Percentage',
-    'Percentage of refunded transactions',
-    'payouts-cash-flow',
-    true,
-  ),
-  metric(
+  ],
+  ['refund-rate', 'Refund Rate', 'Percentage', 'payouts-cash-flow', 'Refunded share', true],
+  [
     'chargeback-rate',
     'Chargeback Rate',
     'Percentage',
-    'Percentage of chargeback transactions',
     'payouts-cash-flow',
+    'Chargeback share',
     true,
-  ),
-  metric(
-    'failed-transactions',
-    'Failed Transactions',
-    'Count',
-    'Transactions that failed',
-    'payouts-cash-flow',
-  ),
-  metric(
+  ],
+  ['failed-transactions', 'Failed Transactions', 'Count', 'payouts-cash-flow', 'Failed count'],
+  [
     'platform-commission-earned',
     'Platform Commission Earned',
     'Currency',
-    'Total commission earned across all modules',
     'commissions',
-  ),
-  metric(
+    'All-module commission',
+  ],
+  [
     'service-marketplace-commission',
     'Service Marketplace Commission',
     'Currency',
-    'Commission earned from services and consultations',
     'commissions',
-  ),
-  metric(
-    'event-commission',
-    'Event Commission',
-    'Currency',
-    'Commission earned from events',
-    'commissions',
-  ),
-  metric(
-    'venue-commission',
-    'Venue Commission',
-    'Currency',
-    'Commission earned from venue bookings',
-    'commissions',
-  ),
+    'Services + consultations',
+  ],
+  ['event-commission', 'Event Commission', 'Currency', 'commissions', 'Events'],
+  ['venue-commission', 'Venue Commission', 'Currency', 'commissions', 'Venue bookings'],
 ]
+
+export const FINANCE_DASHBOARD_METRICS_CATALOG: FinanceDashboardMetricCatalogItem[] =
+  METRIC_ROWS.map(([id, label, type, section, description, defaultActive = false]) => ({
+    id,
+    label,
+    type,
+    description,
+    defaultActive,
+    section,
+  }))
 
 export const FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'total-in-escrow': 'total-amount-in-escrow',
