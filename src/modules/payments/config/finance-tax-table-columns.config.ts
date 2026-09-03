@@ -8,31 +8,77 @@ export type FinanceTaxTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-const col = (
-  id: string,
-  label: string,
-  type: string,
-  description: string,
-  defaultVisible = false,
-): FinanceTaxTableColumnCatalogItem => ({
-  id,
-  label,
-  type,
-  description,
-  defaultVisible,
-})
-
 export const FINANCE_TAX_TABLE_COLUMNS_CATALOG: FinanceTaxTableColumnCatalogItem[] = [
-  col('tax-record-id', 'Tax Record ID', 'Text', 'Unique tax record identifier', true),
-  col('transaction-id', 'Transaction ID', 'Text', 'Linked transaction identifier', true),
-  col('module', 'Module', 'Text', 'Business vertical', true),
-  col('region', 'Region', 'Text', 'Tax jurisdiction / region', true),
-  col('tax-type', 'Tax Type', 'Text', 'Tax type (GST/VAT etc.)', true),
-  col('tax-rate', 'Tax Rate', 'Percentage', 'Applicable tax rate'),
-  col('tax-amount', 'Tax Amount', 'Currency', 'Calculated tax amount', true),
-  col('invoice-number', 'Invoice Number', 'Text', 'Related invoice number'),
-  col('filing-period', 'Filing Period', 'Text', 'Tax filing period'),
-  col('filing-status', 'Filing Status', 'Status', 'Filing or compliance status', true),
+  {
+    id: 'tax-record-id',
+    label: 'Tax Record ID',
+    type: 'Text',
+    description: 'Unique tax record identifier',
+    defaultVisible: true,
+  },
+  {
+    id: 'transaction-id',
+    label: 'Transaction ID',
+    type: 'Text',
+    description: 'Linked transaction identifier',
+    defaultVisible: true,
+  },
+  {
+    id: 'module',
+    label: 'Module',
+    type: 'Text',
+    description: 'Business vertical',
+    defaultVisible: true,
+  },
+  {
+    id: 'region',
+    label: 'Region',
+    type: 'Text',
+    description: 'Tax jurisdiction / region',
+    defaultVisible: true,
+  },
+  {
+    id: 'tax-type',
+    label: 'Tax Type',
+    type: 'Text',
+    description: 'Tax type (GST/VAT etc.)',
+    defaultVisible: true,
+  },
+  {
+    id: 'tax-rate',
+    label: 'Tax Rate',
+    type: 'Percentage',
+    description: 'Applicable tax rate',
+    defaultVisible: false,
+  },
+  {
+    id: 'tax-amount',
+    label: 'Tax Amount',
+    type: 'Currency',
+    description: 'Calculated tax amount',
+    defaultVisible: true,
+  },
+  {
+    id: 'invoice-number',
+    label: 'Invoice Number',
+    type: 'Text',
+    description: 'Related invoice number',
+    defaultVisible: false,
+  },
+  {
+    id: 'filing-period',
+    label: 'Filing Period',
+    type: 'Text',
+    description: 'Tax filing period',
+    defaultVisible: false,
+  },
+  {
+    id: 'filing-status',
+    label: 'Filing Status',
+    type: 'Status',
+    description: 'Filing or compliance status',
+    defaultVisible: true,
+  },
 ]
 
 export const FINANCE_TAX_LEGACY_COLUMN_ID_MAP: Record<string, string> = {

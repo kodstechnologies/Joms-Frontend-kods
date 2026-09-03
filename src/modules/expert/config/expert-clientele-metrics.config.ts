@@ -14,7 +14,7 @@ export type ExpertClienteleMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+const CLIENTELE_METRIC_DEFS: MetricRowTuple[] = [
   [
     'services-listed',
     'Number of Services Listed',
@@ -91,7 +91,7 @@ const METRIC_ROWS: MetricRowTuple[] = [
 ]
 
 export const EXPERT_CLIENTELE_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
+  CLIENTELE_METRIC_DEFS,
 ) as ExpertClienteleMetricCatalogItem[]
 
 const derived = deriveMetricExports(EXPERT_CLIENTELE_METRICS_CATALOG)

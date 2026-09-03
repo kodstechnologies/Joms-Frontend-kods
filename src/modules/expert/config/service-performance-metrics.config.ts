@@ -14,7 +14,7 @@ export type ServicePerformanceMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+const SERVICE_PERF_METRIC_DEFS: MetricRowTuple[] = [
   ['totalOrders', 'Total Orders', 'Count', 'Orders received'],
   ['completedOrders', 'Completed Orders', 'Count', 'Completed', true],
   ['inProgressOrders', 'Orders In Progress', 'Count', 'Active'],
@@ -50,7 +50,7 @@ const METRIC_ROWS: MetricRowTuple[] = [
 ]
 
 export const SERVICE_PERFORMANCE_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
+  SERVICE_PERF_METRIC_DEFS,
 ) as ServicePerformanceMetricCatalogItem[]
 
 const derived = deriveMetricExports(SERVICE_PERFORMANCE_METRICS_CATALOG)

@@ -1,8 +1,4 @@
-import {
-  catalogFromMetricRows,
-  deriveMetricExports,
-  type MetricRowTuple,
-} from '@/shared/lib/define-metrics-catalog'
+import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
 
 export const TICKET_MANAGEMENT_MODULE_KEY = 'ticket-management'
 
@@ -14,29 +10,43 @@ export type TicketManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
-  ['assigned-to-me', 'Assigned to Me', 'Count', 'Tickets assigned to the logged-in admin', true],
-  ['tickets-in-progress', 'Tickets In Progress', 'Count', 'Tickets currently in progress', true],
-  [
-    'average-first-response-time',
-    'Average First Response Time',
-    'Duration',
-    'Average first response time',
-    true,
-  ],
-  [
-    'average-resolution-time',
-    'Average Resolution Time',
-    'Duration',
-    'Average ticket resolution time',
-    true,
-  ],
-  ['escalated-by-me', 'Escalated by Me', 'Count', 'Tickets escalated by the logged-in admin'],
+export const TICKET_MANAGEMENT_METRICS_CATALOG: TicketManagementMetricCatalogItem[] = [
+  {
+    id: 'assigned-to-me',
+    label: 'Assigned to Me',
+    type: 'Count',
+    description: 'Tickets assigned to the logged-in admin',
+    defaultActive: true,
+  },
+  {
+    id: 'tickets-in-progress',
+    label: 'Tickets In Progress',
+    type: 'Count',
+    description: 'Tickets currently in progress',
+    defaultActive: true,
+  },
+  {
+    id: 'average-first-response-time',
+    label: 'Average First Response Time',
+    type: 'Duration',
+    description: 'Average first response time',
+    defaultActive: true,
+  },
+  {
+    id: 'average-resolution-time',
+    label: 'Average Resolution Time',
+    type: 'Duration',
+    description: 'Average ticket resolution time',
+    defaultActive: true,
+  },
+  {
+    id: 'escalated-by-me',
+    label: 'Escalated by Me',
+    type: 'Count',
+    description: 'Tickets escalated by the logged-in admin',
+    defaultActive: false,
+  },
 ]
-
-export const TICKET_MANAGEMENT_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
-) as TicketManagementMetricCatalogItem[]
 
 export const TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'my-open-tickets': 'assigned-to-me',

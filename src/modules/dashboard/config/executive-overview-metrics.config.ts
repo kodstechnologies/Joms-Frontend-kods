@@ -14,7 +14,7 @@ export type ExecutiveOverviewMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
   // —— Core (defaults) ——
   [
     'total-platform-revenue',
@@ -205,7 +205,7 @@ const METRIC_ROWS: MetricRowTuple[] = [
 ]
 
 export const EXECUTIVE_OVERVIEW_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
+  EXECUTIVE_KPI_DEFS,
 ) as ExecutiveOverviewMetricCatalogItem[]
 
 const derived = deriveMetricExports(EXECUTIVE_OVERVIEW_METRICS_CATALOG)

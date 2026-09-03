@@ -14,7 +14,7 @@ export type PlatformHealthMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+const HEALTH_METRIC_DEFS: MetricRowTuple[] = [
   ['system-uptime', 'System Uptime', 'Percentage', 'Operational time ÷ total time', true],
   ['compliance-flags', 'Compliance Flags', 'Count', 'Open compliance and security flags', true],
   ['admin-actions-mtd', 'Admin Actions (MTD)', 'Count', 'Admin actions logged this month', true],
@@ -106,7 +106,7 @@ const METRIC_ROWS: MetricRowTuple[] = [
 ]
 
 export const PLATFORM_HEALTH_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
+  HEALTH_METRIC_DEFS,
 ) as PlatformHealthMetricCatalogItem[]
 
 export const PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP: Record<string, string> = {

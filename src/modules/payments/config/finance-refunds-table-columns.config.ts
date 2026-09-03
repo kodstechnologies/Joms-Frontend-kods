@@ -6,35 +6,105 @@ export type FinanceRefundsTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-const col = (
-  id: string,
-  label: string,
-  type: string,
-  description: string,
-  defaultVisible = false,
-): FinanceRefundsTableColumnCatalogItem => ({
-  id,
-  label,
-  type,
-  description,
-  defaultVisible,
-})
-
 export const FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG: FinanceRefundsTableColumnCatalogItem[] = [
-  col('refund-id', 'Refund ID', 'Text', 'Unique refund identifier', true),
-  col('transaction-id', 'Transaction ID', 'Text', 'Linked transaction identifier'),
-  col('module', 'Module', 'Text', 'Business vertical'),
-  col('customer-name', 'Customer Name', 'Text', 'Customer display name'),
-  col('refund-type', 'Refund Type', 'Text', 'Refund or chargeback type', true),
-  col('refund-reason', 'Refund Reason', 'Text', 'Reason for refund', true),
-  col('refund-amount', 'Refund Amount', 'Currency', 'Refund amount', true),
-  col('refund-mode', 'Refund Mode', 'Text', 'Refund settlement mode'),
-  col('initiated-by', 'Initiated By', 'Text', 'Actor who initiated the refund'),
-  col('approved-by', 'Approved By', 'Text', 'Actor who approved the refund'),
-  col('refund-date', 'Refund Date', 'Date', 'Date the refund was initiated', true),
-  col('chargeback-flag', 'Chargeback Flag', 'Status', 'Whether record is a chargeback'),
-  col('gateway', 'Gateway', 'Text', 'Payment gateway'),
-  col('status', 'Status', 'Status', 'Current refund status', true),
+  {
+    id: 'refund-id',
+    label: 'Refund ID',
+    type: 'Text',
+    description: 'Unique refund identifier',
+    defaultVisible: true,
+  },
+  {
+    id: 'transaction-id',
+    label: 'Transaction ID',
+    type: 'Text',
+    description: 'Linked transaction identifier',
+    defaultVisible: false,
+  },
+  {
+    id: 'module',
+    label: 'Module',
+    type: 'Text',
+    description: 'Business vertical',
+    defaultVisible: false,
+  },
+  {
+    id: 'customer-name',
+    label: 'Customer Name',
+    type: 'Text',
+    description: 'Customer display name',
+    defaultVisible: false,
+  },
+  {
+    id: 'refund-type',
+    label: 'Refund Type',
+    type: 'Text',
+    description: 'Refund or chargeback type',
+    defaultVisible: true,
+  },
+  {
+    id: 'refund-reason',
+    label: 'Refund Reason',
+    type: 'Text',
+    description: 'Reason for refund',
+    defaultVisible: true,
+  },
+  {
+    id: 'refund-amount',
+    label: 'Refund Amount',
+    type: 'Currency',
+    description: 'Refund amount',
+    defaultVisible: true,
+  },
+  {
+    id: 'refund-mode',
+    label: 'Refund Mode',
+    type: 'Text',
+    description: 'Refund settlement mode',
+    defaultVisible: false,
+  },
+  {
+    id: 'initiated-by',
+    label: 'Initiated By',
+    type: 'Text',
+    description: 'Actor who initiated the refund',
+    defaultVisible: false,
+  },
+  {
+    id: 'approved-by',
+    label: 'Approved By',
+    type: 'Text',
+    description: 'Actor who approved the refund',
+    defaultVisible: false,
+  },
+  {
+    id: 'refund-date',
+    label: 'Refund Date',
+    type: 'Date',
+    description: 'Date the refund was initiated',
+    defaultVisible: true,
+  },
+  {
+    id: 'chargeback-flag',
+    label: 'Chargeback Flag',
+    type: 'Status',
+    description: 'Whether record is a chargeback',
+    defaultVisible: false,
+  },
+  {
+    id: 'gateway',
+    label: 'Gateway',
+    type: 'Text',
+    description: 'Payment gateway',
+    defaultVisible: false,
+  },
+  {
+    id: 'status',
+    label: 'Status',
+    type: 'Status',
+    description: 'Current refund status',
+    defaultVisible: true,
+  },
 ]
 
 export const FINANCE_REFUNDS_LEGACY_COLUMN_ID_MAP: Record<string, string> = {

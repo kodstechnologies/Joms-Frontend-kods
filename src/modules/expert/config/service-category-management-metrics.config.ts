@@ -1,8 +1,4 @@
-import {
-  catalogFromMetricRows,
-  deriveMetricExports,
-  type MetricRowTuple,
-} from '@/shared/lib/define-metrics-catalog'
+import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
 
 export const SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY = 'service-category-management'
 
@@ -14,50 +10,93 @@ export type ServiceCategoryManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+export const SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG: ServiceCategoryManagementMetricCatalogItem[] =
   [
-    'total-categories',
-    'Total Categories',
-    'Count',
-    'Count(Service Categories where IsDeleted = False)',
-    true,
-  ],
-  ['active-categories', 'Active Categories', 'Count', 'Count(Category Status = Active)', true],
-  ['paused-categories', 'Paused Categories', 'Count', 'Count(Category Status = Paused)'],
-  ['deleted-categories', 'Deleted Categories', 'Count', 'Count(IsDeleted = True)'],
-  ['top-revenue-category', 'Top Revenue Category', 'Text', 'Category with Highest Revenue', true],
-  [
-    'lowest-revenue-category',
-    'Lowest Revenue Category',
-    'Text',
-    'Category with Lowest Revenue (>0 Revenue)',
-  ],
-  [
-    'highest-order-category',
-    'Highest Order Category',
-    'Text',
-    'Category with Highest Completed Orders',
-  ],
-  [
-    'lowest-order-category',
-    'Lowest Order Category',
-    'Text',
-    'Category with Lowest Completed Orders',
-  ],
-  ['total-orders', 'Total Orders', 'Count', 'Count(All Orders)'],
-  ['completed-orders', 'Completed Orders', 'Count', 'Count(Status=Completed)'],
-  [
-    'order-completion-rate',
-    'Order Completion Rate',
-    'Percentage',
-    'Completed Orders / Total Orders ×100',
-  ],
-  ['total-revenue', 'Total Revenue', 'Currency', 'Sum(Category Revenue)', true],
-]
-
-export const SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
-) as ServiceCategoryManagementMetricCatalogItem[]
+    {
+      id: 'total-categories',
+      label: 'Total Categories',
+      type: 'Count',
+      description: 'Count(Service Categories where IsDeleted = False)',
+      defaultActive: true,
+    },
+    {
+      id: 'active-categories',
+      label: 'Active Categories',
+      type: 'Count',
+      description: 'Count(Category Status = Active)',
+      defaultActive: true,
+    },
+    {
+      id: 'paused-categories',
+      label: 'Paused Categories',
+      type: 'Count',
+      description: 'Count(Category Status = Paused)',
+      defaultActive: false,
+    },
+    {
+      id: 'deleted-categories',
+      label: 'Deleted Categories',
+      type: 'Count',
+      description: 'Count(IsDeleted = True)',
+      defaultActive: false,
+    },
+    {
+      id: 'top-revenue-category',
+      label: 'Top Revenue Category',
+      type: 'Text',
+      description: 'Category with Highest Revenue',
+      defaultActive: true,
+    },
+    {
+      id: 'lowest-revenue-category',
+      label: 'Lowest Revenue Category',
+      type: 'Text',
+      description: 'Category with Lowest Revenue (>0 Revenue)',
+      defaultActive: false,
+    },
+    {
+      id: 'highest-order-category',
+      label: 'Highest Order Category',
+      type: 'Text',
+      description: 'Category with Highest Completed Orders',
+      defaultActive: false,
+    },
+    {
+      id: 'lowest-order-category',
+      label: 'Lowest Order Category',
+      type: 'Text',
+      description: 'Category with Lowest Completed Orders',
+      defaultActive: false,
+    },
+    {
+      id: 'total-orders',
+      label: 'Total Orders',
+      type: 'Count',
+      description: 'Count(All Orders)',
+      defaultActive: false,
+    },
+    {
+      id: 'completed-orders',
+      label: 'Completed Orders',
+      type: 'Count',
+      description: 'Count(Status=Completed)',
+      defaultActive: false,
+    },
+    {
+      id: 'order-completion-rate',
+      label: 'Order Completion Rate',
+      type: 'Percentage',
+      description: 'Completed Orders / Total Orders ×100',
+      defaultActive: false,
+    },
+    {
+      id: 'total-revenue',
+      label: 'Total Revenue',
+      type: 'Currency',
+      description: 'Sum(Category Revenue)',
+      defaultActive: true,
+    },
+  ]
 
 const derived = deriveMetricExports(SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG)
 export const SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS = derived.ids

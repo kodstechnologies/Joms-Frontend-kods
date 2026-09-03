@@ -23,7 +23,7 @@ type MetricRow = [
   defaultActive?: boolean,
 ]
 
-const METRIC_ROWS: MetricRow[] = [
+const FINANCE_DASHBOARD_KPI_DEFS: MetricRow[] = [
   [
     'total-amount-in-escrow',
     'Total Amount in Escrow',
@@ -128,14 +128,16 @@ const METRIC_ROWS: MetricRow[] = [
 ]
 
 export const FINANCE_DASHBOARD_METRICS_CATALOG: FinanceDashboardMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, section, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-    section,
-  }))
+  FINANCE_DASHBOARD_KPI_DEFS.map(
+    ([id, label, type, section, description, defaultActive = false]) => ({
+      id,
+      label,
+      type,
+      description,
+      defaultActive,
+      section,
+    }),
+  )
 
 export const FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'total-in-escrow': 'total-amount-in-escrow',

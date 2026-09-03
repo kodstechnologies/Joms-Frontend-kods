@@ -14,7 +14,7 @@ export type ExpertProfileAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+const EXPERT_PROFILE_METRIC_DEFS: MetricRowTuple[] = [
   ['account-status', 'Account Status', 'Status', 'Lifecycle', true],
   ['last-active', 'Last Active', 'Date', 'Last activity', true],
   ['membership-type', 'Membership Type', 'Text', 'Subscription', true],
@@ -56,7 +56,7 @@ const METRIC_ROWS: MetricRowTuple[] = [
 ]
 
 export const EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
+  EXPERT_PROFILE_METRIC_DEFS,
 ) as ExpertProfileAnalyticsMetricCatalogItem[]
 
 const derived = deriveMetricExports(EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG)

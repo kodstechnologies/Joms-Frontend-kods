@@ -6,39 +6,91 @@ export type PlatformHealthTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-const col = (
-  id: string,
-  label: string,
-  type: string,
-  description: string,
-  defaultVisible = false,
-): PlatformHealthTableColumnCatalogItem => ({
-  id,
-  label,
-  type,
-  description,
-  defaultVisible,
-})
-
 export const PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG: PlatformHealthTableColumnCatalogItem[] = [
-  col('infrastructure-id', 'Infrastructure ID', 'Text', 'Unique infrastructure identifier', true),
-  col('infrastructure-name', 'Infrastructure Name', 'Text', 'Service or component name', true),
-  col('service-type', 'Service Type', 'Text', 'Infrastructure service type', true),
-  col('status', 'Status', 'Status', 'Current health status', true),
-  col('uptime', 'Uptime', 'Percentage', 'Service uptime percentage', true),
-  col('cpu-usage', 'CPU Usage', 'Percentage', 'Current CPU utilization', true),
-  col('memory-usage', 'Memory Usage', 'Percentage', 'Current memory utilization', true),
-  col('storage-usage', 'Storage Usage', 'Percentage', 'Current storage utilization', true),
-  col('network-latency', 'Network Latency', 'Average', 'Network latency in milliseconds', true),
-  col(
-    'average-response-time',
-    'Average Response Time',
-    'Average',
-    'Average response time in milliseconds',
-    true,
-  ),
-  col('error-count', 'Error Count', 'Count', 'Recent probe or health-check errors', true),
-  col('last-health-check', 'Last Health Check', 'Date', 'Timestamp of last health check', true),
+  {
+    id: 'infrastructure-id',
+    label: 'Infrastructure ID',
+    type: 'Text',
+    description: 'Unique infrastructure identifier',
+    defaultVisible: true,
+  },
+  {
+    id: 'infrastructure-name',
+    label: 'Infrastructure Name',
+    type: 'Text',
+    description: 'Service or component name',
+    defaultVisible: true,
+  },
+  {
+    id: 'service-type',
+    label: 'Service Type',
+    type: 'Text',
+    description: 'Infrastructure service type',
+    defaultVisible: true,
+  },
+  {
+    id: 'status',
+    label: 'Status',
+    type: 'Status',
+    description: 'Current health status',
+    defaultVisible: true,
+  },
+  {
+    id: 'uptime',
+    label: 'Uptime',
+    type: 'Percentage',
+    description: 'Service uptime percentage',
+    defaultVisible: true,
+  },
+  {
+    id: 'cpu-usage',
+    label: 'CPU Usage',
+    type: 'Percentage',
+    description: 'Current CPU utilization',
+    defaultVisible: true,
+  },
+  {
+    id: 'memory-usage',
+    label: 'Memory Usage',
+    type: 'Percentage',
+    description: 'Current memory utilization',
+    defaultVisible: true,
+  },
+  {
+    id: 'storage-usage',
+    label: 'Storage Usage',
+    type: 'Percentage',
+    description: 'Current storage utilization',
+    defaultVisible: true,
+  },
+  {
+    id: 'network-latency',
+    label: 'Network Latency',
+    type: 'Average',
+    description: 'Network latency in milliseconds',
+    defaultVisible: true,
+  },
+  {
+    id: 'average-response-time',
+    label: 'Average Response Time',
+    type: 'Average',
+    description: 'Average response time in milliseconds',
+    defaultVisible: true,
+  },
+  {
+    id: 'error-count',
+    label: 'Error Count',
+    type: 'Count',
+    description: 'Recent probe or health-check errors',
+    defaultVisible: true,
+  },
+  {
+    id: 'last-health-check',
+    label: 'Last Health Check',
+    type: 'Date',
+    description: 'Timestamp of last health check',
+    defaultVisible: true,
+  },
 ]
 
 export const DEFAULT_PLATFORM_HEALTH_VISIBLE_COLUMN_IDS =

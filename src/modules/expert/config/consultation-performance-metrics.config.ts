@@ -14,7 +14,7 @@ export type ConsultationPerformanceMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+const CONSULTATION_METRIC_DEFS: MetricRowTuple[] = [
   ['totalConsultationsBooked', 'Total Consultations Booked', 'Count', 'Bookings'],
   ['completedConsultations', 'Completed Consultations', 'Count', 'Completed', true],
   ['scheduledConsultations', 'Scheduled Consultations', 'Count', 'Upcoming'],
@@ -41,7 +41,7 @@ const METRIC_ROWS: MetricRowTuple[] = [
 ]
 
 export const CONSULTATION_PERFORMANCE_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
+  CONSULTATION_METRIC_DEFS,
 ) as ConsultationPerformanceMetricCatalogItem[]
 
 const derived = deriveMetricExports(CONSULTATION_PERFORMANCE_METRICS_CATALOG)

@@ -14,7 +14,7 @@ export type VenueProfileAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-const METRIC_ROWS: MetricRowTuple[] = [
+const PROFILE_METRIC_DEFS: MetricRowTuple[] = [
   ['account-status', 'Account Status', 'Status', 'Account status', true],
   ['last-active', 'Last Active', 'Date', 'Last activity', true],
   ['venue-partner-rating', 'Venue Partner Rating', 'Average', 'Overall rating', true],
@@ -87,7 +87,7 @@ const METRIC_ROWS: MetricRowTuple[] = [
 ]
 
 export const VENUE_PROFILE_ANALYTICS_METRICS_CATALOG = catalogFromMetricRows(
-  METRIC_ROWS,
+  PROFILE_METRIC_DEFS,
 ) as VenueProfileAnalyticsMetricCatalogItem[]
 
 const derived = deriveMetricExports(VENUE_PROFILE_ANALYTICS_METRICS_CATALOG)

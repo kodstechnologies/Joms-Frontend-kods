@@ -58,105 +58,84 @@ import {
 } from '@/modules/settings/config/admin-logs-metrics.config'
 import { mapColumnsCatalog, mapMetricsCatalog, type ModuleMetricsDefinition } from './types'
 
-type MetricCatalog = Parameters<typeof mapMetricsCatalog>[0]
-type ColumnCatalog = Parameters<typeof mapColumnsCatalog>[0]
-
-/** Support / settings / ops surfaces that expose KPI metrics (+ optional columns). */
-function supportSurface(
-  moduleKey: string,
-  moduleName: string,
-  returnTo: string,
-  maxActiveMetrics: number,
-  metrics: MetricCatalog,
-  columns?: ColumnCatalog,
-): ModuleMetricsDefinition {
-  return {
-    moduleKey,
-    moduleName,
-    returnTo,
-    maxActiveMetrics,
-    metrics: mapMetricsCatalog(metrics),
-    ...(columns ? { columns: mapColumnsCatalog(columns) } : {}),
-  }
-}
-
+/** Support / settings / ops entries — written as explicit objects (avoid stamp helpers). */
 export const SUPPORT_SETTINGS_MODULE_METRICS: Record<string, ModuleMetricsDefinition> = {
-  'support-dashboard': supportSurface(
-    SUPPORT_DASHBOARD_MODULE_KEY,
-    'Support Management',
-    '/support/dashboard',
-    SUPPORT_DASHBOARD_MAX_ACTIVE_METRICS,
-    SUPPORT_DASHBOARD_METRICS_CATALOG,
-  ),
-  'ticket-management': supportSurface(
-    TICKET_MANAGEMENT_MODULE_KEY,
-    'Ticket Management',
-    '/support/tickets',
-    TICKET_MANAGEMENT_MAX_ACTIVE_METRICS,
-    TICKET_MANAGEMENT_METRICS_CATALOG,
-    TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG,
-  ),
-  'past-tickets': supportSurface(
-    PAST_TICKETS_MODULE_KEY,
-    'Past Tickets',
-    '/support/past-tickets',
-    PAST_TICKETS_MAX_ACTIVE_METRICS,
-    PAST_TICKETS_METRICS_CATALOG,
-    PAST_TICKETS_TABLE_COLUMNS_CATALOG,
-  ),
-  'platform-health': supportSurface(
-    PLATFORM_HEALTH_MODULE_KEY,
-    'Platform Health',
-    '/settings/health',
-    PLATFORM_HEALTH_MAX_ACTIVE_METRICS,
-    PLATFORM_HEALTH_METRICS_CATALOG,
-    PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG,
-  ),
-  'settings-logs': supportSurface(
-    SETTINGS_LOGS_MODULE_KEY,
-    'Setting Logs',
-    '/settings/logs',
-    SETTINGS_LOGS_MAX_ACTIVE_METRICS,
-    SETTINGS_LOGS_METRICS_CATALOG,
-    SETTINGS_LOGS_TABLE_COLUMNS_CATALOG,
-  ),
-  'incident-tracking': supportSurface(
-    INCIDENT_MODULE_KEY,
-    'Incident Tracking',
-    '/settings/main',
-    INCIDENT_MAX_ACTIVE_METRICS,
-    INCIDENT_METRICS_CATALOG,
-    INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG,
-  ),
-  communication: supportSurface(
-    COMMUNICATION_MODULE_KEY,
-    'Communication',
-    '/communication/management',
-    COMMUNICATION_MAX_ACTIVE_METRICS,
-    COMMUNICATION_METRICS_CATALOG,
-    COMMUNICATION_TABLE_COLUMNS_CATALOG,
-  ),
-  'rbac-hub': supportSurface(
-    RBAC_HUB_MODULE_KEY,
-    'Role Based Access',
-    '/settings/access',
-    RBAC_HUB_MAX_ACTIVE_METRICS,
-    RBAC_HUB_METRICS_CATALOG,
-    RBAC_HUB_TABLE_COLUMNS_CATALOG,
-  ),
-  'admin-logs': supportSurface(
-    ADMIN_LOGS_MODULE_KEY,
-    'Admin Logs',
-    '/settings/access',
-    ADMIN_LOGS_MAX_ACTIVE_METRICS,
-    ADMIN_LOGS_METRICS_CATALOG,
-  ),
-  escalations: supportSurface(
-    ESCALATIONS_MODULE_KEY,
-    'All Escalation',
-    '/settings/escalations',
-    ESCALATIONS_MAX_ACTIVE_METRICS,
-    ESCALATIONS_METRICS_CATALOG,
-    ESCALATIONS_TABLE_COLUMNS_CATALOG,
-  ),
+  'support-dashboard': {
+    moduleKey: SUPPORT_DASHBOARD_MODULE_KEY,
+    moduleName: 'Support Management',
+    returnTo: '/support/dashboard',
+    maxActiveMetrics: SUPPORT_DASHBOARD_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(SUPPORT_DASHBOARD_METRICS_CATALOG),
+  },
+  'ticket-management': {
+    moduleKey: TICKET_MANAGEMENT_MODULE_KEY,
+    moduleName: 'Ticket Management',
+    returnTo: '/support/tickets',
+    maxActiveMetrics: TICKET_MANAGEMENT_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(TICKET_MANAGEMENT_METRICS_CATALOG),
+    columns: mapColumnsCatalog(TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG),
+  },
+  'past-tickets': {
+    moduleKey: PAST_TICKETS_MODULE_KEY,
+    moduleName: 'Past Tickets',
+    returnTo: '/support/past-tickets',
+    maxActiveMetrics: PAST_TICKETS_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(PAST_TICKETS_METRICS_CATALOG),
+    columns: mapColumnsCatalog(PAST_TICKETS_TABLE_COLUMNS_CATALOG),
+  },
+  'platform-health': {
+    moduleKey: PLATFORM_HEALTH_MODULE_KEY,
+    moduleName: 'Platform Health',
+    returnTo: '/settings/health',
+    maxActiveMetrics: PLATFORM_HEALTH_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(PLATFORM_HEALTH_METRICS_CATALOG),
+    columns: mapColumnsCatalog(PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG),
+  },
+  'settings-logs': {
+    moduleKey: SETTINGS_LOGS_MODULE_KEY,
+    moduleName: 'Setting Logs',
+    returnTo: '/settings/logs',
+    maxActiveMetrics: SETTINGS_LOGS_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(SETTINGS_LOGS_METRICS_CATALOG),
+    columns: mapColumnsCatalog(SETTINGS_LOGS_TABLE_COLUMNS_CATALOG),
+  },
+  'incident-tracking': {
+    moduleKey: INCIDENT_MODULE_KEY,
+    moduleName: 'Incident Tracking',
+    returnTo: '/settings/main',
+    maxActiveMetrics: INCIDENT_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(INCIDENT_METRICS_CATALOG),
+    columns: mapColumnsCatalog(INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG),
+  },
+  communication: {
+    moduleKey: COMMUNICATION_MODULE_KEY,
+    moduleName: 'Communication',
+    returnTo: '/communication/management',
+    maxActiveMetrics: COMMUNICATION_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(COMMUNICATION_METRICS_CATALOG),
+    columns: mapColumnsCatalog(COMMUNICATION_TABLE_COLUMNS_CATALOG),
+  },
+  'rbac-hub': {
+    moduleKey: RBAC_HUB_MODULE_KEY,
+    moduleName: 'Role Based Access',
+    returnTo: '/settings/access',
+    maxActiveMetrics: RBAC_HUB_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(RBAC_HUB_METRICS_CATALOG),
+    columns: mapColumnsCatalog(RBAC_HUB_TABLE_COLUMNS_CATALOG),
+  },
+  'admin-logs': {
+    moduleKey: ADMIN_LOGS_MODULE_KEY,
+    moduleName: 'Admin Logs',
+    returnTo: '/settings/access',
+    maxActiveMetrics: ADMIN_LOGS_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(ADMIN_LOGS_METRICS_CATALOG),
+  },
+  escalations: {
+    moduleKey: ESCALATIONS_MODULE_KEY,
+    moduleName: 'All Escalation',
+    returnTo: '/settings/escalations',
+    maxActiveMetrics: ESCALATIONS_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(ESCALATIONS_METRICS_CATALOG),
+    columns: mapColumnsCatalog(ESCALATIONS_TABLE_COLUMNS_CATALOG),
+  },
 }

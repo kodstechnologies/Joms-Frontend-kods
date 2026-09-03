@@ -8,38 +8,84 @@ export type FinanceEscrowTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-const col = (
-  id: string,
-  label: string,
-  type: string,
-  description: string,
-  defaultVisible = false,
-): FinanceEscrowTableColumnCatalogItem => ({
-  id,
-  label,
-  type,
-  description,
-  defaultVisible,
-})
-
 export const FINANCE_ESCROW_TABLE_COLUMNS_CATALOG: FinanceEscrowTableColumnCatalogItem[] = [
-  col('escrow-id', 'Escrow ID', 'Text', 'Unique escrow hold identifier', true),
-  col(
-    'transaction-id',
-    'Transaction ID',
-    'Text',
-    'Related payment or transaction identifier',
-    true,
-  ),
-  col('module', 'Module', 'Text', 'Business vertical / escrow module', true),
-  col('amount', 'Amount', 'Currency', 'Held amount', true),
-  col('hold-reason', 'Hold Reason', 'Text', 'Reason funds are held', true),
-  col('hold-created-at', 'Hold Created At', 'Date', 'Date the hold started', true),
-  col('expected-release', 'Expected Release', 'Date', 'Expected release date', true),
-  col('released-at', 'Released At', 'Date', 'Actual release timestamp'),
-  col('release-status', 'Release Status', 'Status', 'Current escrow release status', true),
-  col('created-by', 'Created By', 'Text', 'Actor who created the hold'),
-  col('last-updated', 'Last Updated', 'Date', 'Latest update timestamp'),
+  {
+    id: 'escrow-id',
+    label: 'Escrow ID',
+    type: 'Text',
+    description: 'Unique escrow hold identifier',
+    defaultVisible: true,
+  },
+  {
+    id: 'transaction-id',
+    label: 'Transaction ID',
+    type: 'Text',
+    description: 'Related payment or transaction identifier',
+    defaultVisible: true,
+  },
+  {
+    id: 'module',
+    label: 'Module',
+    type: 'Text',
+    description: 'Business vertical / escrow module',
+    defaultVisible: true,
+  },
+  {
+    id: 'amount',
+    label: 'Amount',
+    type: 'Currency',
+    description: 'Held amount',
+    defaultVisible: true,
+  },
+  {
+    id: 'hold-reason',
+    label: 'Hold Reason',
+    type: 'Text',
+    description: 'Reason funds are held',
+    defaultVisible: true,
+  },
+  {
+    id: 'hold-created-at',
+    label: 'Hold Created At',
+    type: 'Date',
+    description: 'Date the hold started',
+    defaultVisible: true,
+  },
+  {
+    id: 'expected-release',
+    label: 'Expected Release',
+    type: 'Date',
+    description: 'Expected release date',
+    defaultVisible: true,
+  },
+  {
+    id: 'released-at',
+    label: 'Released At',
+    type: 'Date',
+    description: 'Actual release timestamp',
+    defaultVisible: false,
+  },
+  {
+    id: 'release-status',
+    label: 'Release Status',
+    type: 'Status',
+    description: 'Current escrow release status',
+    defaultVisible: true,
+  },
+  {
+    id: 'created-by',
+    label: 'Created By',
+    type: 'Text',
+    description: 'Actor who created the hold',
+    defaultVisible: false,
+  },
+  {
+    id: 'last-updated',
+    label: 'Last Updated',
+    type: 'Date',
+    description: 'Latest update timestamp',
+    defaultVisible: false,
+  },
 ]
 
 export const FINANCE_ESCROW_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
