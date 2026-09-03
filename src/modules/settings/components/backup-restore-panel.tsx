@@ -1,12 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { MoreVertical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  TableActionsDropdown,
-  TableActionsItem,
-} from '@/shared/components/table/table-actions-dropdown'
 import { RestoreBackupModal } from './restore-backup-modal'
 import {
   useBackupMetrics,
@@ -67,7 +64,6 @@ function StatusBadge({ status }: { status: BackupHistoryRow['status'] }) {
     Pending: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
     Failed: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
   }
-
   return (
     <span
       className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[status])}
@@ -91,7 +87,6 @@ export function BackupRestorePanel() {
 
   const { data: metrics = [], isLoading: metricsLoading } = useBackupMetrics()
   const metricCards: SettingsMetric[] = metricsLoading ? [] : metrics
-
   const listQueryParams = useMemo(
     () =>
       buildPrefixedListQueryParams(appliedFilters, {
@@ -102,7 +97,6 @@ export function BackupRestorePanel() {
       }),
     [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
-
   const { data: backupsResult, isLoading } = useBackups(listQueryParams)
   const runBackupMutation = useRunBackup()
   const restoreMutation = useRestoreBackup()
@@ -149,14 +143,7 @@ export function BackupRestorePanel() {
           {
             accessorKey: 'name',
             header: 'Backup ID / Name',
-            cell: ({ row }) => (
-              <span
-                className="block max-w-[220px] truncate font-medium text-white"
-                title={row.original.name}
-              >
-                {row.original.name}
-              </span>
-            ),
+            cell: ({ row }) => <span className="font-medium text-white">{row.original.name}</span>,
           },
           {
             accessorKey: 'type',
@@ -190,35 +177,49 @@ export function BackupRestorePanel() {
           },
           {
             id: 'actions',
-            header: () => <span className="block text-right">Actions</span>,
+            header: 'Actions',
             cell: ({ row }) => (
-              <div className="flex justify-end">
-                <TableActionsDropdown
-                  tone="dark"
-                  label="Backup actions"
-                  isOpen={menuOpenId === row.original.id}
-                  onOpenChange={(open) => setMenuOpenId(open ? row.original.id : null)}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMenuOpenId((current) =>
+                      current === row.original.id ? null : row.original.id,
+                    )
+                  }
+                  className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
                 >
-                  <TableActionsItem
-                    onClick={() => {
-                      setMenuOpenId(null)
-                      setRestoreTarget(row.original)
-                    }}
-                  >
-                    Restore
-                  </TableActionsItem>
-                  <TableActionsItem
-                    onClick={() => {
-                      setMenuOpenId(null)
-                      deleteMutation.mutate(row.original.id, {
-                        onSuccess: () => toast.success('Backup deleted'),
-                        onError: () => toast.error('Delete failed'),
-                      })
-                    }}
-                  >
-                    Delete
-                  </TableActionsItem>
-                </TableActionsDropdown>
+                  <MoreVertical className="size-4" />
+                </button>
+                {menuOpenId === row.original.id ? (
+                  <div className="ui-table-actions-menu absolute right-0 z-10 mt-1">
+                    <button
+                      type="button"
+                      className="ui-table-actions-item"
+                      onClick={() => {
+                        setRestoreTarget(row.original)
+                        setMenuOpenId(null)
+                      }}
+                    >
+                      Restore
+                    </button>
+                    <button
+                      type="button"
+                      className="ui-table-actions-item text-rose-600 hover:bg-rose-50"
+                      onClick={() => {
+                        deleteMutation.mutate(row.original.id, {
+                          onSuccess: () => {
+                            setMenuOpenId(null)
+                            toast.success('Backup deleted')
+                          },
+                          onError: () => toast.error('Failed to delete backup'),
+                        })
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ),
           },
@@ -233,7 +234,7 @@ export function BackupRestorePanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">Backups & Restore</h2>
-          <p className="text-sm text-slate-400">Run backups and restore from the list below</p>
+          <p className="text-sm text-slate-400">Manage system backups and restoration</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -241,10 +242,10 @@ export function BackupRestorePanel() {
             disabled={runBackupMutation.isPending}
             onClick={() =>
               runBackupMutation.mutate(
-                { name: 'Manual Backup' },
+                { name: 'Manual Backup', scope: 'Partial' },
                 {
-                  onSuccess: () => toast.success('Backup done'),
-                  onError: () => toast.error('Backup failed'),
+                  onSuccess: () => toast.success('Backup started'),
+                  onError: () => toast.error('Failed to start backup'),
                 },
               )
             }
@@ -286,7 +287,7 @@ export function BackupRestorePanel() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search backups"
+          searchPlaceholder="Search by backup name or date"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}
@@ -314,9 +315,9 @@ export function BackupRestorePanel() {
             {
               onSuccess: () => {
                 setRestoreTarget(null)
-                toast.success('Restore started')
+                toast.success('Restore initiated')
               },
-              onError: () => toast.error('Restore failed'),
+              onError: () => toast.error('Failed to initiate restore'),
             },
           )
         }}
