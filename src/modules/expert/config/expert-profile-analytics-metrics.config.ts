@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const EXPERT_PROFILE_ANALYTICS_MODULE_KEY = 'expert-profile-analytics'
 
 export type ExpertProfileAnalyticsMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type ExpertProfileAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['account-status', 'Account Status', 'Status', 'Lifecycle', true],
   ['last-active', 'Last Active', 'Date', 'Last activity', true],
   ['membership-type', 'Membership Type', 'Text', 'Subscription', true],
@@ -51,28 +55,15 @@ const METRIC_ROWS: MetricRow[] = [
   ['average-first-response-time', 'Average First Response Time', 'Duration', 'First response'],
 ]
 
-export const EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG: ExpertProfileAnalyticsMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as ExpertProfileAnalyticsMetricCatalogItem[]
 
-export const EXPERT_PROFILE_ANALYTICS_METRIC_IDS = EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.map(
-  (item) => item.id,
-)
-
-export const EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET = new Set(EXPERT_PROFILE_ANALYTICS_METRIC_IDS)
-
-export const DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS =
-  EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.filter((item) => item.defaultActive).map(
-    (item) => item.id,
-  )
-
-export const EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS =
-  EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.length
+const derived = deriveMetricExports(EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG)
+export const EXPERT_PROFILE_ANALYTICS_METRIC_IDS = derived.ids
+export const EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET = derived.idSet
+export const DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS = derived.defaultIds
+export const EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS = derived.maxActive
 
 export const EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'events-hosted': 'orders-completed',

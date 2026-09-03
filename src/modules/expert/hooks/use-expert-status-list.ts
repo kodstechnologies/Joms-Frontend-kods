@@ -41,108 +41,103 @@ export function useExpertStatusList({
   filterExperts,
   restrictExportToVisibleColumns = true,
 }: UseExpertStatusListArgs) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const [pageIndex, setPageIndex] = useState(1)
+  const [menuTargetId, setMenuTargetId] = useState<string | null>(null)
+  const [filterValues, setFilterValues] = useState<FilterValues>({})
 
-  const serverSort = useServerTableSort({
+  const sortControls = useServerTableSort({
     sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
+    onPageReset: () => setPageIndex(1),
   })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const tableColumnPreferencesQuery = useTableColumnPreferences(moduleKey)
+  const searchControls = useEnhancedSearch({ onSearchChange: () => setPageIndex(1) })
+  const columnPreferences = useTableColumnPreferences(moduleKey)
 
   const exportColumnIds = useTableExportColumnIds({
-    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    visibleColumnIds: columnPreferences.data?.visibleColumnIds,
     defaultColumnIds: defaultVisibleColumnIds,
     catalogColumnIds,
   })
 
-  const expertQueryParams = useMemo(
+  const listParams = useMemo(
     () =>
-      buildExpertListQueryParams(appliedFilters, {
-        page: currentPage,
+      buildExpertListQueryParams(filterValues, {
+        page: pageIndex,
         limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
+        ...sortControls.sortParams,
+        ...searchControls.buildSearchParams(),
         status,
       }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams, status],
+    [filterValues, pageIndex, searchControls, sortControls.sortParams, status],
   )
 
-  const { data, isLoading } = useExperts(expertQueryParams)
+  const expertsQuery = useExperts(listParams)
   const experts = useMemo(() => {
-    const rows = data?.data || []
+    const rows = expertsQuery.data?.data || []
     return filterExperts ? filterExperts(rows) : rows
-  }, [data?.data, filterExperts])
-  const meta = data?.meta
+  }, [expertsQuery.data?.data, filterExperts])
   const selection = useExpertListSelection(experts)
 
-  const visibleColumnIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-    ? tableColumnPreferencesQuery.data.visibleColumnIds
+  const visibleColumnIds = columnPreferences.data?.visibleColumnIds?.length
+    ? columnPreferences.data.visibleColumnIds
     : defaultVisibleColumnIds
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
+  const applyFilters = useCallback((values: FilterValues) => {
+    setFilterValues(values)
+    setPageIndex(1)
   }, [])
 
-  const handleExportData = useMemo(
-    () =>
-      createFilteredExportHandler(
-        async (params: Record<string, unknown>) => {
-          const response = await fetchExperts({ ...params, status })
-          const rows = response.data || []
-          return {
-            data: filterExperts ? filterExperts(rows) : rows,
-            meta: response.meta,
-          }
-        },
-        exportColumnMap,
-        exportFileName,
-        {
-          ...enhancedSearch.buildSearchParams(),
-        },
-        restrictExportToVisibleColumns
-          ? { columnIds: exportColumnIds, catalogOrder: catalogColumnIds }
-          : undefined,
-      ),
-    [
-      catalogColumnIds,
-      enhancedSearch,
-      exportColumnIds,
+  const exportHandler = useMemo(() => {
+    const restrictOptions = restrictExportToVisibleColumns
+      ? { columnIds: exportColumnIds, catalogOrder: catalogColumnIds }
+      : undefined
+
+    return createFilteredExportHandler(
+      async (params: Record<string, unknown>) => {
+        const response = await fetchExperts({ ...params, status })
+        const rows = response.data || []
+        return {
+          data: filterExperts ? filterExperts(rows) : rows,
+          meta: response.meta,
+        }
+      },
       exportColumnMap,
       exportFileName,
-      filterExperts,
-      restrictExportToVisibleColumns,
-      status,
-    ],
-  )
+      {
+        ...searchControls.buildSearchParams(),
+      },
+      restrictOptions,
+    )
+  }, [
+    catalogColumnIds,
+    exportColumnIds,
+    exportColumnMap,
+    exportFileName,
+    filterExperts,
+    restrictExportToVisibleColumns,
+    searchControls,
+    status,
+  ])
 
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
+  const moduleFilters = useModuleExportFilters({
     moduleKey,
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
+    onApplyFilters: applyFilters,
+    onExportData: exportHandler,
   })
 
   return {
-    currentPage,
-    setCurrentPage,
-    activeDropdownId,
-    setActiveDropdownId,
-    serverSort,
-    enhancedSearch,
+    currentPage: pageIndex,
+    setCurrentPage: setPageIndex,
+    activeDropdownId: menuTargetId,
+    setActiveDropdownId: setMenuTargetId,
+    serverSort: sortControls,
+    enhancedSearch: searchControls,
     experts,
-    meta,
-    isLoading,
+    meta: expertsQuery.data?.meta,
+    isLoading: expertsQuery.isLoading,
     selection,
     visibleColumnIds,
-    onAdvancedFilter,
-    onExport,
-    exportFilterModals,
+    onAdvancedFilter: moduleFilters.onAdvancedFilter,
+    onExport: moduleFilters.onExport,
+    exportFilterModals: moduleFilters.modals,
   }
 }

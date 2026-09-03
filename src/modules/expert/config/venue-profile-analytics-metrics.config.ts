@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const VENUE_PROFILE_ANALYTICS_MODULE_KEY = 'venue-profile-analytics'
 
 export type VenueProfileAnalyticsMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type VenueProfileAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['account-status', 'Account Status', 'Status', 'Account status', true],
   ['last-active', 'Last Active', 'Date', 'Last activity', true],
   ['venue-partner-rating', 'Venue Partner Rating', 'Average', 'Overall rating', true],
@@ -82,28 +86,15 @@ const METRIC_ROWS: MetricRow[] = [
   ['repeat-customer-rate', 'Repeat Customer Rate', 'Percentage', 'Returning customers'],
 ]
 
-export const VENUE_PROFILE_ANALYTICS_METRICS_CATALOG: VenueProfileAnalyticsMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const VENUE_PROFILE_ANALYTICS_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as VenueProfileAnalyticsMetricCatalogItem[]
 
-export const VENUE_PROFILE_ANALYTICS_METRIC_IDS = VENUE_PROFILE_ANALYTICS_METRICS_CATALOG.map(
-  (item) => item.id,
-)
-
-export const VENUE_PROFILE_ANALYTICS_METRIC_ID_SET = new Set(VENUE_PROFILE_ANALYTICS_METRIC_IDS)
-
-export const DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS =
-  VENUE_PROFILE_ANALYTICS_METRICS_CATALOG.filter((item) => item.defaultActive).map(
-    (item) => item.id,
-  )
-
-export const VENUE_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS =
-  VENUE_PROFILE_ANALYTICS_METRICS_CATALOG.length
+const derived = deriveMetricExports(VENUE_PROFILE_ANALYTICS_METRICS_CATALOG)
+export const VENUE_PROFILE_ANALYTICS_METRIC_IDS = derived.ids
+export const VENUE_PROFILE_ANALYTICS_METRIC_ID_SET = derived.idSet
+export const DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS = derived.defaultIds
+export const VENUE_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS = derived.maxActive
 
 export const VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'events-hosted': 'total-event-bookings-confirmed',

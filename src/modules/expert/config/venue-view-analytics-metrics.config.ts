@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const VENUE_VIEW_ANALYTICS_MODULE_KEY = 'venue-view-analytics'
 
 export type VenueViewAnalyticsMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type VenueViewAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['total-bookings', 'Total Bookings', 'Count', 'Total bookings for this space', true],
   ['completed', 'Completed', 'Count', 'Completed bookings for this space', true],
   ['avg-event-value', 'Avg Event Value', 'Currency', 'Average value per completed event', true],
@@ -25,23 +29,12 @@ const METRIC_ROWS: MetricRow[] = [
   ],
 ]
 
-export const VENUE_VIEW_ANALYTICS_METRICS_CATALOG: VenueViewAnalyticsMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const VENUE_VIEW_ANALYTICS_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as VenueViewAnalyticsMetricCatalogItem[]
 
-export const VENUE_VIEW_ANALYTICS_METRIC_IDS = VENUE_VIEW_ANALYTICS_METRICS_CATALOG.map(
-  (metric) => metric.id,
-)
-
-export const VENUE_VIEW_ANALYTICS_METRIC_ID_SET = new Set(VENUE_VIEW_ANALYTICS_METRIC_IDS)
-
-export const DEFAULT_VENUE_VIEW_ANALYTICS_METRIC_IDS = VENUE_VIEW_ANALYTICS_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const VENUE_VIEW_ANALYTICS_MAX_ACTIVE_METRICS = VENUE_VIEW_ANALYTICS_METRICS_CATALOG.length
+const derived = deriveMetricExports(VENUE_VIEW_ANALYTICS_METRICS_CATALOG)
+export const VENUE_VIEW_ANALYTICS_METRIC_IDS = derived.ids
+export const VENUE_VIEW_ANALYTICS_METRIC_ID_SET = derived.idSet
+export const DEFAULT_VENUE_VIEW_ANALYTICS_METRIC_IDS = derived.defaultIds
+export const VENUE_VIEW_ANALYTICS_MAX_ACTIVE_METRICS = derived.maxActive

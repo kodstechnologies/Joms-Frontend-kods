@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const COMMUNICATION_MODULE_KEY = 'communication'
 
 export type CommunicationMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type CommunicationMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   [
     'total-messages-sent',
     'Total messages sent',
@@ -61,22 +65,12 @@ const METRIC_ROWS: MetricRow[] = [
   ],
 ]
 
-export const COMMUNICATION_METRICS_CATALOG: CommunicationMetricCatalogItem[] = METRIC_ROWS.map(
-  ([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }),
-)
+export const COMMUNICATION_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as CommunicationMetricCatalogItem[]
 
-export const COMMUNICATION_METRIC_IDS = COMMUNICATION_METRICS_CATALOG.map((metric) => metric.id)
-
-export const COMMUNICATION_METRIC_ID_SET = new Set(COMMUNICATION_METRIC_IDS)
-
-export const DEFAULT_COMMUNICATION_METRIC_IDS = COMMUNICATION_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const COMMUNICATION_MAX_ACTIVE_METRICS = COMMUNICATION_METRICS_CATALOG.length
+const derived = deriveMetricExports(COMMUNICATION_METRICS_CATALOG)
+export const COMMUNICATION_METRIC_IDS = derived.ids
+export const COMMUNICATION_METRIC_ID_SET = derived.idSet
+export const DEFAULT_COMMUNICATION_METRIC_IDS = derived.defaultIds
+export const COMMUNICATION_MAX_ACTIVE_METRICS = derived.maxActive

@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY = 'service-category-management'
 
 export type ServiceCategoryManagementMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type ServiceCategoryManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   [
     'total-categories',
     'Total Categories',
@@ -51,25 +55,14 @@ const METRIC_ROWS: MetricRow[] = [
   ['total-revenue', 'Total Revenue', 'Currency', 'Sum(Category Revenue)', true],
 ]
 
-export const SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG: ServiceCategoryManagementMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as ServiceCategoryManagementMetricCatalogItem[]
 
-export const SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS =
-  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.map((item) => item.id)
-
-export const DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS =
-  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.filter((item) => item.defaultActive).map(
-    (item) => item.id,
-  )
-
-export const SERVICE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS =
-  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.length
+const derived = deriveMetricExports(SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG)
+export const SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS = derived.ids
+export const DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS = derived.defaultIds
+export const SERVICE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS = derived.maxActive
 
 export const SERVICE_CATEGORY_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'top-category': 'top-revenue-category',

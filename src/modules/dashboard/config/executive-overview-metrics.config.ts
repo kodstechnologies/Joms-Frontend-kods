@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const EXECUTIVE_OVERVIEW_MODULE_KEY = 'executive-overview'
 
 export type ExecutiveOverviewMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type ExecutiveOverviewMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   // —— Core (defaults) ——
   [
     'total-platform-revenue',
@@ -200,21 +204,11 @@ const METRIC_ROWS: MetricRow[] = [
   ],
 ]
 
-export const EXECUTIVE_OVERVIEW_METRICS_CATALOG: ExecutiveOverviewMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const EXECUTIVE_OVERVIEW_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as ExecutiveOverviewMetricCatalogItem[]
 
-export const EXECUTIVE_OVERVIEW_METRIC_IDS = EXECUTIVE_OVERVIEW_METRICS_CATALOG.map(
-  (metric) => metric.id,
-)
-
-export const EXECUTIVE_OVERVIEW_METRIC_ID_SET = new Set(EXECUTIVE_OVERVIEW_METRIC_IDS)
-
-export const DEFAULT_EXECUTIVE_METRIC_IDS = EXECUTIVE_OVERVIEW_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
+const derived = deriveMetricExports(EXECUTIVE_OVERVIEW_METRICS_CATALOG)
+export const EXECUTIVE_OVERVIEW_METRIC_IDS = derived.ids
+export const EXECUTIVE_OVERVIEW_METRIC_ID_SET = derived.idSet
+export const DEFAULT_EXECUTIVE_METRIC_IDS = derived.defaultIds

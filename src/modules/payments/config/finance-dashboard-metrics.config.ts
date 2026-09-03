@@ -1,3 +1,5 @@
+import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+
 export const FINANCE_DASHBOARD_MODULE_KEY = 'finance-dashboard'
 
 export type FinanceDashboardMetricSection =
@@ -142,17 +144,11 @@ export const FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'avg-payout-cycle-time': 'average-payout-cycle-time',
 }
 
-export const FINANCE_DASHBOARD_METRIC_IDS = FINANCE_DASHBOARD_METRICS_CATALOG.map(
-  (metricItem) => metricItem.id,
-)
-
-export const FINANCE_DASHBOARD_METRIC_ID_SET = new Set(FINANCE_DASHBOARD_METRIC_IDS)
-
-export const DEFAULT_FINANCE_DASHBOARD_METRIC_IDS = FINANCE_DASHBOARD_METRICS_CATALOG.filter(
-  (metricItem) => metricItem.defaultActive,
-).map((metricItem) => metricItem.id)
-
-export const FINANCE_DASHBOARD_MAX_ACTIVE_METRICS = FINANCE_DASHBOARD_METRICS_CATALOG.length
+const financeDashboardDerived = deriveMetricExports(FINANCE_DASHBOARD_METRICS_CATALOG)
+export const FINANCE_DASHBOARD_METRIC_IDS = financeDashboardDerived.ids
+export const FINANCE_DASHBOARD_METRIC_ID_SET = financeDashboardDerived.idSet
+export const DEFAULT_FINANCE_DASHBOARD_METRIC_IDS = financeDashboardDerived.defaultIds
+export const FINANCE_DASHBOARD_MAX_ACTIVE_METRICS = financeDashboardDerived.maxActive
 
 export const FINANCE_DASHBOARD_SECTIONS: {
   key: FinanceDashboardMetricSection

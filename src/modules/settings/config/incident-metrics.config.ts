@@ -1,3 +1,5 @@
+import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+
 export const INCIDENT_MODULE_KEY = 'incident-tracking'
 
 export type IncidentMetricCatalogItem = {
@@ -8,31 +10,39 @@ export type IncidentMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
-  ['open-incidents', 'Open Incidents', 'Count', 'Currently open and investigating incidents', true],
-  ['critical', 'Critical', 'Count', 'Unresolved critical incidents', true],
-  ['resolved-mtd', 'Resolved (MTD)', 'Count', 'Resolved this month', true],
-  ['mttr', 'MTTR', 'Average', 'Mean time to resolve this month', true],
+export const INCIDENT_METRICS_CATALOG: IncidentMetricCatalogItem[] = [
+  {
+    id: 'open-incidents',
+    label: 'Open Incidents',
+    type: 'Count',
+    description: 'Currently open and investigating incidents',
+    defaultActive: true,
+  },
+  {
+    id: 'critical',
+    label: 'Critical',
+    type: 'Count',
+    description: 'Unresolved critical incidents',
+    defaultActive: true,
+  },
+  {
+    id: 'resolved-mtd',
+    label: 'Resolved (MTD)',
+    type: 'Count',
+    description: 'Resolved this month',
+    defaultActive: true,
+  },
+  {
+    id: 'mttr',
+    label: 'MTTR',
+    type: 'Average',
+    description: 'Mean time to resolve this month',
+    defaultActive: true,
+  },
 ]
 
-export const INCIDENT_METRICS_CATALOG: IncidentMetricCatalogItem[] = METRIC_ROWS.map(
-  ([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }),
-)
-
-export const INCIDENT_METRIC_IDS = INCIDENT_METRICS_CATALOG.map((metric) => metric.id)
-
-export const INCIDENT_METRIC_ID_SET = new Set(INCIDENT_METRIC_IDS)
-
-export const DEFAULT_INCIDENT_METRIC_IDS = INCIDENT_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const INCIDENT_MAX_ACTIVE_METRICS = INCIDENT_METRICS_CATALOG.length
+const derived = deriveMetricExports(INCIDENT_METRICS_CATALOG)
+export const INCIDENT_METRIC_IDS = derived.ids
+export const INCIDENT_METRIC_ID_SET = derived.idSet
+export const DEFAULT_INCIDENT_METRIC_IDS = derived.defaultIds
+export const INCIDENT_MAX_ACTIVE_METRICS = derived.maxActive

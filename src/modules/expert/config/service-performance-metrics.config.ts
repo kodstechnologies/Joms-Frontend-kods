@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const SERVICE_PERFORMANCE_MODULE_KEY = 'service-performance'
 
 export type ServicePerformanceMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type ServicePerformanceMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['totalOrders', 'Total Orders', 'Count', 'Orders received'],
   ['completedOrders', 'Completed Orders', 'Count', 'Completed', true],
   ['inProgressOrders', 'Orders In Progress', 'Count', 'Active'],
@@ -45,21 +49,11 @@ const METRIC_ROWS: MetricRow[] = [
   ['distinctClients', 'Unique Clients', 'Count', 'Distinct clients'],
 ]
 
-export const SERVICE_PERFORMANCE_METRICS_CATALOG: ServicePerformanceMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const SERVICE_PERFORMANCE_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as ServicePerformanceMetricCatalogItem[]
 
-export const SERVICE_PERFORMANCE_METRIC_IDS = SERVICE_PERFORMANCE_METRICS_CATALOG.map(
-  (item) => item.id,
-)
-
-export const DEFAULT_SERVICE_PERFORMANCE_METRIC_IDS = SERVICE_PERFORMANCE_METRICS_CATALOG.filter(
-  (item) => item.defaultActive,
-).map((item) => item.id)
-
-export const SERVICE_PERFORMANCE_MAX_ACTIVE_METRICS = SERVICE_PERFORMANCE_METRICS_CATALOG.length
+const derived = deriveMetricExports(SERVICE_PERFORMANCE_METRICS_CATALOG)
+export const SERVICE_PERFORMANCE_METRIC_IDS = derived.ids
+export const DEFAULT_SERVICE_PERFORMANCE_METRIC_IDS = derived.defaultIds
+export const SERVICE_PERFORMANCE_MAX_ACTIVE_METRICS = derived.maxActive

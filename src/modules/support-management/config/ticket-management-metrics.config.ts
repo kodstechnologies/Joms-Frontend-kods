@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const TICKET_MANAGEMENT_MODULE_KEY = 'ticket-management'
 
 export type TicketManagementMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type TicketManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['assigned-to-me', 'Assigned to Me', 'Count', 'Tickets assigned to the logged-in admin', true],
   ['tickets-in-progress', 'Tickets In Progress', 'Count', 'Tickets currently in progress', true],
   [
@@ -30,14 +34,9 @@ const METRIC_ROWS: MetricRow[] = [
   ['escalated-by-me', 'Escalated by Me', 'Count', 'Tickets escalated by the logged-in admin'],
 ]
 
-export const TICKET_MANAGEMENT_METRICS_CATALOG: TicketManagementMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const TICKET_MANAGEMENT_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as TicketManagementMetricCatalogItem[]
 
 export const TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'my-open-tickets': 'assigned-to-me',
@@ -45,14 +44,8 @@ export const TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'avg-resolution-time': 'average-resolution-time',
 }
 
-export const TICKET_MANAGEMENT_METRIC_IDS = TICKET_MANAGEMENT_METRICS_CATALOG.map(
-  (metric) => metric.id,
-)
-
-export const TICKET_MANAGEMENT_METRIC_ID_SET = new Set(TICKET_MANAGEMENT_METRIC_IDS)
-
-export const DEFAULT_TICKET_MANAGEMENT_METRIC_IDS = TICKET_MANAGEMENT_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const TICKET_MANAGEMENT_MAX_ACTIVE_METRICS = TICKET_MANAGEMENT_METRICS_CATALOG.length
+const derived = deriveMetricExports(TICKET_MANAGEMENT_METRICS_CATALOG)
+export const TICKET_MANAGEMENT_METRIC_IDS = derived.ids
+export const TICKET_MANAGEMENT_METRIC_ID_SET = derived.idSet
+export const DEFAULT_TICKET_MANAGEMENT_METRIC_IDS = derived.defaultIds
+export const TICKET_MANAGEMENT_MAX_ACTIVE_METRICS = derived.maxActive

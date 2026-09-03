@@ -1,3 +1,5 @@
+import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+
 export const RBAC_HUB_MODULE_KEY = 'rbac-hub'
 
 export type RbacHubMetricCatalogItem = {
@@ -8,41 +10,49 @@ export type RbacHubMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
-  ['total-user', 'Total User', 'Count', 'Total users in the RBAC system', true],
-  ['total-active-users', 'Total active users', 'Count', 'Total active user accounts', true],
-  ['currently-online-users', 'Currently online users', 'Count', 'Users currently online', true],
-  ['suspended-users', 'Suspended Users', 'Count', 'Suspended user accounts', true],
-  [
-    'total-roles-available',
-    'Total Roles Available',
-    'Count',
-    'Total roles configured in the system',
-    true,
-  ],
+export const RBAC_HUB_METRICS_CATALOG: RbacHubMetricCatalogItem[] = [
+  {
+    id: 'total-user',
+    label: 'Total User',
+    type: 'Count',
+    description: 'Total users in the RBAC system',
+    defaultActive: true,
+  },
+  {
+    id: 'total-active-users',
+    label: 'Total active users',
+    type: 'Count',
+    description: 'Total active user accounts',
+    defaultActive: true,
+  },
+  {
+    id: 'currently-online-users',
+    label: 'Currently online users',
+    type: 'Count',
+    description: 'Users currently online',
+    defaultActive: true,
+  },
+  {
+    id: 'suspended-users',
+    label: 'Suspended Users',
+    type: 'Count',
+    description: 'Suspended user accounts',
+    defaultActive: true,
+  },
+  {
+    id: 'total-roles-available',
+    label: 'Total Roles Available',
+    type: 'Count',
+    description: 'Total roles configured in the system',
+    defaultActive: true,
+  },
 ]
 
-export const RBAC_HUB_METRICS_CATALOG: RbacHubMetricCatalogItem[] = METRIC_ROWS.map(
-  ([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }),
-)
-
-export const RBAC_HUB_METRIC_IDS = RBAC_HUB_METRICS_CATALOG.map((metric) => metric.id)
-
-export const RBAC_HUB_METRIC_ID_SET = new Set(RBAC_HUB_METRIC_IDS)
-
-export const DEFAULT_RBAC_HUB_METRIC_IDS = RBAC_HUB_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const RBAC_HUB_MAX_ACTIVE_METRICS = RBAC_HUB_METRICS_CATALOG.length
+const derived = deriveMetricExports(RBAC_HUB_METRICS_CATALOG)
+export const RBAC_HUB_METRIC_IDS = derived.ids
+export const RBAC_HUB_METRIC_ID_SET = derived.idSet
+export const DEFAULT_RBAC_HUB_METRIC_IDS = derived.defaultIds
+export const RBAC_HUB_MAX_ACTIVE_METRICS = derived.maxActive
 
 export const RBAC_HUB_STAT_KEYS = {
   'total-user': 'totalUsers',

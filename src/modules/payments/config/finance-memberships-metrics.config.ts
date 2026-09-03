@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const FINANCE_MEMBERSHIPS_MODULE_KEY = 'finance-memberships'
 
 export type FinanceMembershipsMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type FinanceMembershipsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   [
     'active-subscriptions',
     'Active Subscriptions',
@@ -23,23 +27,12 @@ const METRIC_ROWS: MetricRow[] = [
   ['expired', 'Expired', 'Count', 'Subscriptions that reached end of term without renewal', true],
 ]
 
-export const FINANCE_MEMBERSHIPS_METRICS_CATALOG: FinanceMembershipsMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const FINANCE_MEMBERSHIPS_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as FinanceMembershipsMetricCatalogItem[]
 
-export const FINANCE_MEMBERSHIPS_METRIC_IDS = FINANCE_MEMBERSHIPS_METRICS_CATALOG.map(
-  (metric) => metric.id,
-)
-
-export const FINANCE_MEMBERSHIPS_METRIC_ID_SET = new Set(FINANCE_MEMBERSHIPS_METRIC_IDS)
-
-export const DEFAULT_FINANCE_MEMBERSHIPS_METRIC_IDS = FINANCE_MEMBERSHIPS_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const FINANCE_MEMBERSHIPS_MAX_ACTIVE_METRICS = FINANCE_MEMBERSHIPS_METRICS_CATALOG.length
+const derived = deriveMetricExports(FINANCE_MEMBERSHIPS_METRICS_CATALOG)
+export const FINANCE_MEMBERSHIPS_METRIC_IDS = derived.ids
+export const FINANCE_MEMBERSHIPS_METRIC_ID_SET = derived.idSet
+export const DEFAULT_FINANCE_MEMBERSHIPS_METRIC_IDS = derived.defaultIds
+export const FINANCE_MEMBERSHIPS_MAX_ACTIVE_METRICS = derived.maxActive

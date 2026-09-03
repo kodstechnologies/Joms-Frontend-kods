@@ -15,6 +15,7 @@ import {
 } from '@/modules/memberships/config/membership-metrics.config'
 import { mapColumnsCatalog, mapMetricsCatalog, type ModuleMetricsDefinition } from './types'
 
+/** Growth-domain entries — written as explicit objects (small set; avoid stamp helpers). */
 export const GROWTH_MODULE_METRICS: Record<string, ModuleMetricsDefinition> = {
   referrals: {
     moduleKey: 'referrals',

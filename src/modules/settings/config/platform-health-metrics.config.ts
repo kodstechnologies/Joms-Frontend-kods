@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const PLATFORM_HEALTH_MODULE_KEY = 'platform-health'
 
 export type PlatformHealthMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type PlatformHealthMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['system-uptime', 'System Uptime', 'Percentage', 'Operational time ÷ total time', true],
   ['compliance-flags', 'Compliance Flags', 'Count', 'Open compliance and security flags', true],
   ['admin-actions-mtd', 'Admin Actions (MTD)', 'Count', 'Admin actions logged this month', true],
@@ -101,15 +105,9 @@ const METRIC_ROWS: MetricRow[] = [
   ],
 ]
 
-export const PLATFORM_HEALTH_METRICS_CATALOG: PlatformHealthMetricCatalogItem[] = METRIC_ROWS.map(
-  ([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }),
-)
+export const PLATFORM_HEALTH_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as PlatformHealthMetricCatalogItem[]
 
 export const PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'avg-api-response-time': 'api-response-time',
@@ -118,12 +116,8 @@ export const PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'data-backup-success-rate': 'data-backup-success',
 }
 
-export const PLATFORM_HEALTH_METRIC_IDS = PLATFORM_HEALTH_METRICS_CATALOG.map((metric) => metric.id)
-
-export const PLATFORM_HEALTH_METRIC_ID_SET = new Set(PLATFORM_HEALTH_METRIC_IDS)
-
-export const DEFAULT_PLATFORM_HEALTH_METRIC_IDS = PLATFORM_HEALTH_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const PLATFORM_HEALTH_MAX_ACTIVE_METRICS = PLATFORM_HEALTH_METRICS_CATALOG.length
+const derived = deriveMetricExports(PLATFORM_HEALTH_METRICS_CATALOG)
+export const PLATFORM_HEALTH_METRIC_IDS = derived.ids
+export const PLATFORM_HEALTH_METRIC_ID_SET = derived.idSet
+export const DEFAULT_PLATFORM_HEALTH_METRIC_IDS = derived.defaultIds
+export const PLATFORM_HEALTH_MAX_ACTIVE_METRICS = derived.maxActive

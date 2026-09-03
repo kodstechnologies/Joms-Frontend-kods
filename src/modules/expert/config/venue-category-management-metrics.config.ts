@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const VENUE_CATEGORY_MANAGEMENT_MODULE_KEY = 'venue-category-management'
 
 export type VenueCategoryManagementMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type VenueCategoryManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['total-categories', 'Total Venue Categories', 'Count', 'Count(Venue Categories)', true],
   ['active-categories', 'Active Categories', 'Count', 'Count(Status=Active)', true],
   ['paused-categories', 'Paused Categories', 'Count', 'Count(Status=Paused)'],
@@ -27,26 +31,14 @@ const METRIC_ROWS: MetricRow[] = [
   ],
 ]
 
-export const VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG: VenueCategoryManagementMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as VenueCategoryManagementMetricCatalogItem[]
 
-export const VENUE_CATEGORY_MANAGEMENT_METRIC_IDS = VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG.map(
-  (item) => item.id,
-)
-
-export const DEFAULT_VENUE_CATEGORY_MANAGEMENT_METRIC_IDS =
-  VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG.filter((item) => item.defaultActive).map(
-    (item) => item.id,
-  )
-
-export const VENUE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS =
-  VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG.length
+const derived = deriveMetricExports(VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG)
+export const VENUE_CATEGORY_MANAGEMENT_METRIC_IDS = derived.ids
+export const DEFAULT_VENUE_CATEGORY_MANAGEMENT_METRIC_IDS = derived.defaultIds
+export const VENUE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS = derived.maxActive
 
 export const VENUE_CATEGORY_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'top-category': 'top-revenue-category',

@@ -30,6 +30,10 @@ type UseServiceStatusListArgs = {
   includeSearchInExport?: boolean
 }
 
+function resolveVisibleColumnIds(preferred: string[] | undefined, fallback: string[]): string[] {
+  return preferred?.length ? preferred : fallback
+}
+
 export function useServiceStatusList({
   moduleKey,
   status,
@@ -44,11 +48,13 @@ export function useServiceStatusList({
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
+  const resetToFirstPage = useCallback(() => setCurrentPage(1), [])
+
   const serverSort = useServerTableSort({
     sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
+    onPageReset: resetToFirstPage,
   })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: resetToFirstPage })
   const tableColumnPreferencesQuery = useTableColumnPreferences(moduleKey)
 
   const exportColumnIds = useTableExportColumnIds({
@@ -57,62 +63,62 @@ export function useServiceStatusList({
     catalogColumnIds,
   })
 
-  const serviceQueryParams = useMemo(
-    () =>
-      buildServiceListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
-        status,
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams, status],
+  const { data, isLoading } = useServices(
+    useMemo(
+      () =>
+        buildServiceListQueryParams(appliedFilters, {
+          page: currentPage,
+          limit: 10,
+          ...serverSort.sortParams,
+          ...enhancedSearch.buildSearchParams(),
+          status,
+        }),
+      [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams, status],
+    ),
   )
 
-  const { data, isLoading } = useServices(serviceQueryParams)
-  const services = useMemo(() => data?.data ?? [], [data?.data])
+  const services = data?.data ?? []
   const meta = data?.meta
+  const visibleColumnIds = resolveVisibleColumnIds(
+    tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultVisibleColumnIds,
+  )
 
-  const visibleColumnIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-    ? tableColumnPreferencesQuery.data.visibleColumnIds
-    : defaultVisibleColumnIds
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      setAppliedFilters(values)
+      resetToFirstPage()
+    },
+    [resetToFirstPage],
+  )
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
+  const handleExportData = useMemo(() => {
+    const columnExportOptions = restrictExportToVisibleColumns
+      ? { columnIds: exportColumnIds, catalogOrder: catalogColumnIds }
+      : undefined
 
-  const handleExportData = useMemo(
-    () =>
-      createServiceFilteredExportHandler(
-        fetchServices,
-        exportColumnMap,
-        exportFileName,
-        {
-          status,
-          ...(includeSearchInExport ? enhancedSearch.buildSearchParams() : {}),
-        },
-        restrictExportToVisibleColumns
-          ? { columnIds: exportColumnIds, catalogOrder: catalogColumnIds }
-          : undefined,
-      ),
-    [
-      catalogColumnIds,
-      enhancedSearch,
-      exportColumnIds,
+    return createServiceFilteredExportHandler(
+      fetchServices,
       exportColumnMap,
       exportFileName,
-      includeSearchInExport,
-      restrictExportToVisibleColumns,
-      status,
-    ],
-  )
+      {
+        status,
+        ...(includeSearchInExport ? enhancedSearch.buildSearchParams() : {}),
+      },
+      columnExportOptions,
+    )
+  }, [
+    catalogColumnIds,
+    enhancedSearch,
+    exportColumnIds,
+    exportColumnMap,
+    exportFileName,
+    includeSearchInExport,
+    restrictExportToVisibleColumns,
+    status,
+  ])
 
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
+  const filterExport = useModuleExportFilters({
     moduleKey,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
@@ -129,8 +135,8 @@ export function useServiceStatusList({
     meta,
     isLoading,
     visibleColumnIds,
-    onAdvancedFilter,
-    onExport,
-    exportFilterModals,
+    onAdvancedFilter: filterExport.onAdvancedFilter,
+    onExport: filterExport.onExport,
+    exportFilterModals: filterExport.modals,
   }
 }

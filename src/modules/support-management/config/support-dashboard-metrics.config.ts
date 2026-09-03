@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const SUPPORT_DASHBOARD_MODULE_KEY = 'support-dashboard'
 
 export type SupportDashboardMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type SupportDashboardMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['total-tickets', 'Total Tickets', 'Count', 'Total tickets in the system', true],
   [
     'open-tickets',
@@ -39,14 +43,9 @@ const METRIC_ROWS: MetricRow[] = [
   ['tickets-resolved-today', 'Tickets Resolved Today', 'Count', 'Tickets resolved today', true],
 ]
 
-export const SUPPORT_DASHBOARD_METRICS_CATALOG: SupportDashboardMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const SUPPORT_DASHBOARD_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as SupportDashboardMetricCatalogItem[]
 
 export const SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'total-open-tickets': 'open-tickets',
@@ -56,14 +55,8 @@ export const SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'avg-resolution-time': 'average-resolution-time',
 }
 
-export const SUPPORT_DASHBOARD_METRIC_IDS = SUPPORT_DASHBOARD_METRICS_CATALOG.map(
-  (metric) => metric.id,
-)
-
-export const SUPPORT_DASHBOARD_METRIC_ID_SET = new Set(SUPPORT_DASHBOARD_METRIC_IDS)
-
-export const DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS = SUPPORT_DASHBOARD_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const SUPPORT_DASHBOARD_MAX_ACTIVE_METRICS = SUPPORT_DASHBOARD_METRICS_CATALOG.length
+const derived = deriveMetricExports(SUPPORT_DASHBOARD_METRICS_CATALOG)
+export const SUPPORT_DASHBOARD_METRIC_IDS = derived.ids
+export const SUPPORT_DASHBOARD_METRIC_ID_SET = derived.idSet
+export const DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS = derived.defaultIds
+export const SUPPORT_DASHBOARD_MAX_ACTIVE_METRICS = derived.maxActive

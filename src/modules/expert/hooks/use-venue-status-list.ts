@@ -10,6 +10,7 @@ import {
 import { fetchVenues } from '../api/venue-api'
 import { useVenues } from './use-venues'
 import { useTableColumnPreferences } from './use-ui-preferences'
+import { useVenueRowSelection, useVenueVisibleIds } from './use-venue-row-selection'
 import type { Venue } from '../type/venue'
 
 type ExportColumnMap = Record<string, { header: string; accessor: (venue: Venue) => string }>
@@ -33,45 +34,40 @@ export function useVenueStatusList({
   exportFileName,
   exportColumnMap,
 }: UseVenueStatusListArgs) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const [page, setPage] = useState(1)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [filters, setFilters] = useState<FilterValues>({})
 
-  const serverSort = useServerTableSort({
+  const sort = useServerTableSort({
     sortFieldMap,
-    onPageReset: () => setCurrentPage(1),
+    onPageReset: () => setPage(1),
   })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const tableColumnPreferencesQuery = useTableColumnPreferences(preferencesKey)
+  const search = useEnhancedSearch({ onSearchChange: () => setPage(1) })
+  const columnPrefs = useTableColumnPreferences(preferencesKey)
 
-  const venueQueryParams = useMemo(
+  const query = useMemo(
     () =>
-      buildVenueListQueryParams(appliedFilters, {
-        page: currentPage,
+      buildVenueListQueryParams(filters, {
+        page,
         limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
+        ...sort.sortParams,
+        ...search.buildSearchParams(),
         status,
       }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams, status],
+    [filters, page, search, sort.sortParams, status],
   )
 
-  const { data, isLoading } = useVenues(venueQueryParams)
+  const { data, isLoading } = useVenues(query)
   const venues = useMemo(() => data?.data ?? [], [data?.data])
-  const meta = data?.meta
+  const visibleVenueIds = useVenueVisibleIds(venues)
+  const selection = useVenueRowSelection(visibleVenueIds)
 
-  const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
-  const allVisibleVenuesSelected =
-    visibleVenueIds.length > 0 && visibleVenueIds.every((id) => selectedVenueIds.includes(id))
-  const someVisibleVenuesSelected = visibleVenueIds.some((id) => selectedVenueIds.includes(id))
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
+  const onFiltersApplied = useCallback((values: FilterValues) => {
+    setFilters(values)
+    setPage(1)
   }, [])
 
-  const handleExportData = useMemo(
+  const exportData = useMemo(
     () =>
       createVenueFilteredExportHandler(fetchVenues, exportColumnMap, exportFileName, {
         status,
@@ -79,51 +75,30 @@ export function useVenueStatusList({
     [exportColumnMap, exportFileName, status],
   )
 
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
+  const exportFilters = useModuleExportFilters({
     moduleKey: filterModuleKey,
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
+    onApplyFilters: onFiltersApplied,
+    onExportData: exportData,
   })
 
-  const toggleVisibleVenues = useCallback(() => {
-    setSelectedVenueIds((currentIds) => {
-      if (allVisibleVenuesSelected) {
-        return currentIds.filter((id) => !visibleVenueIds.includes(id))
-      }
-      return Array.from(new Set([...currentIds, ...visibleVenueIds]))
-    })
-  }, [allVisibleVenuesSelected, visibleVenueIds])
-
-  const toggleVenueSelection = useCallback((venueId: string) => {
-    setSelectedVenueIds((currentIds) =>
-      currentIds.includes(venueId)
-        ? currentIds.filter((id) => id !== venueId)
-        : [...currentIds, venueId],
-    )
-  }, [])
-
   return {
-    currentPage,
-    setCurrentPage,
-    activeDropdownId,
-    setActiveDropdownId,
-    selectedVenueIds,
-    serverSort,
-    enhancedSearch,
+    currentPage: page,
+    setCurrentPage: setPage,
+    activeDropdownId: openMenuId,
+    setActiveDropdownId: setOpenMenuId,
+    selectedVenueIds: selection.selectedVenueIds,
+    serverSort: sort,
+    enhancedSearch: search,
     venues,
-    meta,
+    meta: data?.meta,
     isLoading,
-    tableColumnPreferencesQuery,
-    allVisibleVenuesSelected,
-    someVisibleVenuesSelected,
-    toggleVisibleVenues,
-    toggleVenueSelection,
-    onAdvancedFilter,
-    onExport,
-    exportFilterModals,
+    tableColumnPreferencesQuery: columnPrefs,
+    allVisibleVenuesSelected: selection.allVisibleVenuesSelected,
+    someVisibleVenuesSelected: selection.someVisibleVenuesSelected,
+    toggleVisibleVenues: selection.toggleVisibleVenues,
+    toggleVenueSelection: selection.toggleVenueSelection,
+    onAdvancedFilter: exportFilters.onAdvancedFilter,
+    onExport: exportFilters.onExport,
+    exportFilterModals: exportFilters.modals,
   }
 }

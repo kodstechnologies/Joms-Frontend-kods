@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const CONSULTATION_PERFORMANCE_MODULE_KEY = 'consultation-performance'
 
 export type ConsultationPerformanceMetricCatalogItem = {
@@ -8,9 +14,7 @@ export type ConsultationPerformanceMetricCatalogItem = {
   defaultActive: boolean
 }
 
-type MetricRow = [id: string, label: string, type: string, description: string, active?: boolean]
-
-const METRIC_ROWS: MetricRow[] = [
+const METRIC_ROWS: MetricRowTuple[] = [
   ['totalConsultationsBooked', 'Total Consultations Booked', 'Count', 'Bookings'],
   ['completedConsultations', 'Completed Consultations', 'Count', 'Completed', true],
   ['scheduledConsultations', 'Scheduled Consultations', 'Count', 'Upcoming'],
@@ -36,26 +40,14 @@ const METRIC_ROWS: MetricRow[] = [
   ['activeClients', 'Active Clients', 'Count', 'Upcoming/in-progress', true],
 ]
 
-export const CONSULTATION_PERFORMANCE_METRICS_CATALOG: ConsultationPerformanceMetricCatalogItem[] =
-  METRIC_ROWS.map(([id, label, type, description, defaultActive = false]) => ({
-    id,
-    label,
-    type,
-    description,
-    defaultActive,
-  }))
+export const CONSULTATION_PERFORMANCE_METRICS_CATALOG = catalogFromMetricRows(
+  METRIC_ROWS,
+) as ConsultationPerformanceMetricCatalogItem[]
 
-export const CONSULTATION_PERFORMANCE_METRIC_IDS = CONSULTATION_PERFORMANCE_METRICS_CATALOG.map(
-  (item) => item.id,
-)
-
-export const DEFAULT_CONSULTATION_PERFORMANCE_METRIC_IDS =
-  CONSULTATION_PERFORMANCE_METRICS_CATALOG.filter((item) => item.defaultActive).map(
-    (item) => item.id,
-  )
-
-export const CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS =
-  CONSULTATION_PERFORMANCE_METRICS_CATALOG.length
+const derived = deriveMetricExports(CONSULTATION_PERFORMANCE_METRICS_CATALOG)
+export const CONSULTATION_PERFORMANCE_METRIC_IDS = derived.ids
+export const DEFAULT_CONSULTATION_PERFORMANCE_METRIC_IDS = derived.defaultIds
+export const CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS = derived.maxActive
 
 export const CONSULTATION_PERFORMANCE_METRIC_API_ALIASES: Record<string, string[]> = {
   totalConsultationsBooked: ['totalOrders', 'totalConsultationsBooked'],
