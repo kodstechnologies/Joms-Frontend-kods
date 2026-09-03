@@ -1,17 +1,21 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Clock, Shield, UserCheck } from 'lucide-react'
 import {
-  Clock,
-  Eye,
-  Pencil,
-  Settings,
-  Shield,
-  ShieldOff,
-  Trash2,
-  UserCheck,
-  UserPlus,
-} from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+  AccessAssignUserIcon,
+  AccessChangeRoleIcon,
+  AccessDisableRoleIcon,
+  AccessEditPermissionIcon,
+  AccessEditScopeIcon,
+  AccessPasswordResetIcon,
+  AccessRemoveRoleIcon,
+  AccessRemoveUserIcon,
+  AccessSuspendUserIcon,
+  AccessViewLogsIcon,
+  AccessViewUserIcon,
+  AccessViewUserLogsIcon,
+  ManageMetricsIcon,
+} from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
@@ -379,11 +383,7 @@ export function RbacHubPage() {
         id: 'roles-name',
         accessorKey: 'name',
         header: 'Role Name',
-        cell: ({ row }) => (
-          <span className="inline-flex rounded-md border border-white/10 bg-[#141414] px-2.5 py-1 text-xs font-medium text-white">
-            {row.original.name}
-          </span>
-        ),
+        cell: ({ row }) => <span className="rbac-role-name-pill">{row.original.name}</span>,
       },
       'roles-description': {
         id: 'roles-description',
@@ -425,10 +425,8 @@ export function RbacHubPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'text-body-sm-semibold rounded-full border px-2.5 py-0.5',
-              row.original.status === 'active'
-                ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-                : 'border-brand-muted/25 text-brand-muted bg-white/5',
+              'rbac-status-pill',
+              row.original.status === 'active' ? 'is-active' : 'is-disabled',
             )}
           >
             {row.original.status === 'active' ? 'Active' : 'Disabled'}
@@ -473,22 +471,25 @@ export function RbacHubPage() {
           label="Open role actions"
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+          menuWidth={168}
+          menuClassName="ui-table-actions-menu-access"
         >
           <TableActionsItem
-            icon={<Pencil className="size-3.5" />}
+            icon={<AccessEditPermissionIcon />}
             onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
           >
             Edit permission
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="text-brand-danger size-3.5" />}
+            className="ui-table-actions-item-danger"
+            icon={<AccessRemoveRoleIcon />}
             onClick={() => handleDeleteRole(row.original.id)}
           >
-            <span className="text-brand-danger">Remove Role</span>
+            Remove Role
           </TableActionsItem>
           {row.original.status === 'active' ? (
             <TableActionsItem
-              icon={<ShieldOff className="size-3.5" />}
+              icon={<AccessDisableRoleIcon />}
               onClick={() => handleDisableRole(row.original.id)}
             >
               Disable Role
@@ -502,19 +503,19 @@ export function RbacHubPage() {
             </TableActionsItem>
           )}
           <TableActionsItem
-            icon={<Settings className="size-3.5" />}
+            icon={<AccessEditScopeIcon />}
             onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
           >
             Edit scope
           </TableActionsItem>
           <TableActionsItem
-            icon={<UserPlus className="size-3.5" />}
+            icon={<AccessAssignUserIcon />}
             onClick={() => navigate('/settings/access/users/create')}
           >
             Assign new user
           </TableActionsItem>
           <TableActionsItem
-            icon={<Eye className="size-3.5" />}
+            icon={<AccessViewLogsIcon />}
             onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
           >
             View Logs
@@ -546,8 +547,20 @@ export function RbacHubPage() {
       'users-role-name': {
         id: 'users-role-name',
         accessorFn: (row) => row.roles.map((r) => r.name).join(', '),
-        header: 'RoleName',
-        cell: ({ row }) => row.original.roles.map((r) => r.name).join(', ') || '—',
+        header: 'Role Name',
+        cell: ({ row }) => {
+          const names = row.original.roles.map((r) => r.name).filter(Boolean)
+          if (!names.length) return '—'
+          return (
+            <span className="inline-flex flex-wrap gap-1.5">
+              {names.map((name) => (
+                <span key={name} className="rbac-role-name-pill">
+                  {name}
+                </span>
+              ))}
+            </span>
+          )
+        },
       },
       'users-scope': {
         id: 'users-scope',
@@ -571,18 +584,17 @@ export function RbacHubPage() {
         id: 'users-status',
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold rounded-full border px-2.5 py-0.5',
-              row.original.status === 'active'
-                ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-                : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-            )}
-          >
-            {row.original.status === 'active' ? 'Active' : row.original.status}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const status = row.original.status
+          const isActive = status === 'active'
+          const label =
+            status === 'active' ? 'Active' : status === 'suspended' ? 'Suspended' : status
+          return (
+            <span className={cn('rbac-status-pill', isActive ? 'is-active' : 'is-suspended')}>
+              {label.charAt(0).toUpperCase() + label.slice(1)}
+            </span>
+          )
+        },
       },
       'users-last-action': {
         id: 'users-last-action',
@@ -614,27 +626,29 @@ export function RbacHubPage() {
           label="Open user actions"
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+          menuWidth={155}
+          menuClassName="ui-table-actions-menu-access"
         >
           <TableActionsItem
-            icon={<Eye className="size-3.5" />}
+            icon={<AccessViewUserIcon />}
             onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
           >
             View user
           </TableActionsItem>
           <TableActionsItem
-            icon={<Pencil className="size-3.5" />}
+            icon={<AccessChangeRoleIcon />}
             onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
           >
             Change role
           </TableActionsItem>
           <TableActionsItem
-            icon={<Eye className="size-3.5" />}
+            icon={<AccessViewUserLogsIcon />}
             onClick={() => navigate(`/settings/access/users/${row.original.id}/logs`)}
           >
             View user logs
           </TableActionsItem>
           <TableActionsItem
-            icon={<Settings className="size-3.5" />}
+            icon={<AccessPasswordResetIcon />}
             onClick={() => {
               setPasswordResetUser(row.original)
               setActiveDropdownId(null)
@@ -643,21 +657,22 @@ export function RbacHubPage() {
             Password reset
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="text-brand-danger size-3.5" />}
+            icon={<AccessRemoveUserIcon />}
             onClick={() => handleDeleteUser(row.original.id)}
           >
-            <span className="text-brand-danger">Remove User</span>
+            Remove User
           </TableActionsItem>
           {row.original.status === 'active' ? (
             <TableActionsItem
-              icon={<ShieldOff className="text-brand-danger size-3.5" />}
+              className="ui-table-actions-item-danger"
+              icon={<AccessSuspendUserIcon />}
               onClick={() => handleSuspendUser(row.original.id)}
             >
-              <span className="text-brand-danger">Suspend user</span>
+              Suspend user
             </TableActionsItem>
           ) : (
             <TableActionsItem
-              icon={<UserCheck className="text-brand-success size-3.5" />}
+              icon={<UserCheck className="text-brand-success size-3.5" strokeWidth={1.75} />}
               onClick={() => handleReactivateUser(row.original.id)}
             >
               <span className="text-brand-success">Reactivate user</span>
@@ -690,7 +705,7 @@ export function RbacHubPage() {
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
-            className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
+            className="ui-manage-metrics h-9 w-full rounded-[10px] bg-[#E0A263] px-5 text-sm font-semibold text-[#050505] shadow-none hover:bg-[#d49555] md:w-auto"
             onClick={() => navigate('/metrics/rbac-hub')}
           >
             <ManageMetricsIcon className="size-4 shrink-0" />
@@ -698,7 +713,7 @@ export function RbacHubPage() {
           </Button>
           <Button
             type="button"
-            className="h-9 w-full md:w-auto"
+            className="h-9 w-full rounded-[10px] bg-[#E0A263] px-5 text-sm font-semibold text-[#050505] shadow-none hover:bg-[#d49555] md:w-auto"
             onClick={() =>
               navigate(
                 isRolesTab ? '/settings/access/roles/create' : '/settings/access/users/create',
@@ -713,7 +728,7 @@ export function RbacHubPage() {
 
       <RbacStatsBar stats={statsData?.data} isLoading={statsLoading} />
 
-      <div className="flex w-full gap-1 rounded-xl border border-white/10 bg-[#141414] p-1">
+      <div className="rbac-hub-tabs">
         {(['roles', 'users'] as const).map((tab) => (
           <button
             key={tab}
@@ -724,12 +739,7 @@ export function RbacHubPage() {
               }
               setActiveTab(tab)
             }}
-            className={cn(
-              'flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
-              activeTab === tab
-                ? 'bg-[#1f1f1f] text-white shadow-sm'
-                : 'text-white/55 hover:text-white',
-            )}
+            className={cn('rbac-hub-tab', activeTab === tab && 'is-active')}
           >
             {tab === 'roles' ? 'Admin Roles' : 'Users'}
           </button>
@@ -781,7 +791,7 @@ export function RbacHubPage() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by role or admin name"
+          searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}
@@ -809,7 +819,7 @@ export function RbacHubPage() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by role or admin name"
+          searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}

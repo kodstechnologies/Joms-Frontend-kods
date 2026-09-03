@@ -7,6 +7,8 @@ import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-n
 import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
 } from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeTaxComplianceStatusClass } from '@/modules/payments/utils/finance-status-tones'
@@ -26,7 +28,7 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
@@ -147,199 +149,214 @@ export function TaxComplianceDetailViewPage() {
         </p>
       </header>
 
-      <section className={cn(cardClass, 'p-5')}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>{detail.recordTitle}</h2>
-            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>{detail.recordDescription}</p>
+      <FinanceDetailShell>
+        <section className={cn(cardClass, 'p-5')}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className={sectionTitleClass}>{detail.recordTitle}</h2>
+              <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
+                {detail.recordDescription}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() =>
+                  downloadKeyValueReport(
+                    'tax_compliance_report',
+                    flattenExportPairs({
+                      Overview: detail.taxRecordOverview,
+                      Financial: detail.financialBreakdown,
+                      Venue: detail.venueInformation,
+                      Calculation: detail.taxCalculation,
+                      Compliance: detail.complianceInformation,
+                    }),
+                  )
+                }
+              >
+                <Download className="size-4" />
+                Download Report
+              </Button>
+              <Button onClick={() => setIsNoteModalOpen(true)}>
+                <SquarePen className="size-4" />
+                Add Notes
+              </Button>
+              <Button
+                onClick={() =>
+                  navigate(
+                    escalateUrl(tax._id, {
+                      kind: 'resource',
+                      resourceType: 'TaxRecord',
+                      returnTo: `/finance/tax/${id}`,
+                    }),
+                  )
+                }
+              >
+                <Flag className="size-4" />
+                Escalate
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={() =>
-                downloadKeyValueReport(
-                  'tax_compliance_report',
-                  flattenExportPairs({
-                    Overview: detail.taxRecordOverview,
-                    Financial: detail.financialBreakdown,
-                    Venue: detail.venueInformation,
-                    Calculation: detail.taxCalculation,
-                    Compliance: detail.complianceInformation,
-                  }),
-                )
-              }
-            >
-              <Download className="size-4" />
-              Download Report
-            </Button>
-            <Button onClick={() => setIsNoteModalOpen(true)}>
-              <SquarePen className="size-4" />
-              Add Notes
-            </Button>
-            <Button
-              onClick={() =>
-                navigate(
-                  escalateUrl(tax._id, {
-                    kind: 'resource',
-                    resourceType: 'TaxRecord',
-                    returnTo: `/finance/tax/${id}`,
-                  }),
-                )
-              }
-            >
-              <Flag className="size-4" />
-              Escalate
-            </Button>
+        </section>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <div className="flex flex-col gap-5">
+            <DetailCard title="Tax Record Overview">
+              <DetailRow label="Tax Record ID" value={detail.taxRecordOverview.taxRecordId} />
+              <DetailRow label="Transaction ID" value={detail.taxRecordOverview.transactionId} />
+              <DetailRow label="Entity Type" value={detail.taxRecordOverview.entityType} />
+              <DetailRow label="Region" value={detail.taxRecordOverview.region} />
+              <DetailRow label="Tax Type" value={detail.taxRecordOverview.taxType} />
+              <DetailRow label="Tax Rate" value={detail.taxRecordOverview.taxRate} />
+              <DetailRow label="Currency" value={detail.taxRecordOverview.currency} />
+              <DetailRow label="Invoice Number" value={detail.taxRecordOverview.invoiceNumber} />
+              <DetailRow label="Invoice Date" value={detail.taxRecordOverview.invoiceDate} />
+              <DetailRow label="Filing Period" value={detail.taxRecordOverview.filingPeriod} />
+              <DetailRow label="Filing Date" value={detail.taxRecordOverview.filingDate} />
+              <DetailRow label="Filed By" value={detail.taxRecordOverview.filedBy} />
+              <DetailRow
+                label="Reference Number"
+                value={detail.taxRecordOverview.referenceNumber}
+              />
+              <DetailRow
+                label="Filing Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.taxRecordOverview.filingStatus}
+                    toneClass={financeTaxComplianceStatusClass(
+                      detail.taxRecordOverview.filingStatus,
+                    )}
+                  />
+                }
+              />
+            </DetailCard>
+
+            <DetailCard title="Financial Breakdown">
+              <DetailRow label="Client ID" value={detail.financialBreakdown.clientId} />
+              <DetailRow label="Client Name" value={detail.financialBreakdown.clientName} />
+              <DetailRow label="Tax ID" value={detail.financialBreakdown.taxId} />
+              <DetailRow label="Billing Address" value={detail.financialBreakdown.billingAddress} />
+              <DetailRow
+                label="Transaction Date"
+                value={detail.financialBreakdown.transactionDate}
+              />
+              <DetailRow label="Payment Method" value={detail.financialBreakdown.paymentMethod} />
+              <DetailRow
+                label="Subtotal (Before Tax)"
+                value={detail.financialBreakdown.subtotalBeforeTax}
+              />
+              <DetailRow
+                label="Discount Applied"
+                value={detail.financialBreakdown.discountApplied}
+              />
+              <DetailRow label="Taxable Amount" value={detail.financialBreakdown.taxableAmount} />
+              <DetailRow label="Tax Amount" value={detail.financialBreakdown.taxAmount} />
+              <DetailRow
+                label="Total Amount (After Tax)"
+                value={detail.financialBreakdown.totalAmountAfterTax}
+                valueClassName="text-body-sm-semibold"
+              />
+            </DetailCard>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <DetailCard title="Venue Information">
+              <DetailRow label="Venue Name" value={detail.venueInformation.venueName} />
+              <DetailRow label="Owner Name" value={detail.venueInformation.ownerName} />
+              <DetailRow label="Owner ID" value={detail.venueInformation.ownerId} />
+              <DetailRow label="Venue Type" value={detail.venueInformation.venueType} />
+              <DetailRow label="Capacity" value={detail.venueInformation.capacity} />
+              <DetailRow label="Location" value={detail.venueInformation.location} />
+              <DetailRow label="Billing Address" value={detail.venueInformation.billingAddress} />
+              <DetailRow
+                label="Approval Status"
+                value={
+                  <FinanceStatusBadge
+                    status={detail.venueInformation.approvalStatus}
+                    toneClass={financeTaxComplianceStatusClass(
+                      detail.venueInformation.approvalStatus,
+                    )}
+                  />
+                }
+              />
+            </DetailCard>
+
+            <DetailCard title="Tax Calculation">
+              <DetailRow
+                label="Tax Jurisdiction Rules Applied"
+                value={detail.taxCalculation.taxJurisdictionRulesApplied}
+              />
+              <DetailRow label="Tax Category" value={detail.taxCalculation.taxCategory} />
+              <DetailRow label="Tax Rate Source" value={detail.taxCalculation.taxRateSource} />
+              <DetailRow label="Tax Formula Used" value={detail.taxCalculation.taxFormulaUsed} />
+              <DetailRow
+                label="Reverse Charge Applied"
+                value={detail.taxCalculation.reverseChargeApplied}
+              />
+            </DetailCard>
+
+            <DetailCard title="Compliance Information">
+              <DetailRow
+                label="Regulatory Authority"
+                value={detail.complianceInformation.regulatoryAuthority}
+              />
+              <DetailRow
+                label="Filing Frequency"
+                value={detail.complianceInformation.filingFrequency}
+              />
+              <DetailRow
+                label="Reporting Category Code"
+                value={detail.complianceInformation.reportingCategoryCode}
+              />
+              <DetailRow label="Tax Status" value={detail.complianceInformation.taxStatus} />
+              <DetailRow label="Adjustments" value={detail.complianceInformation.adjustments} />
+              <DetailRow label="Notes" value={detail.complianceInformation.notes} />
+            </DetailCard>
           </div>
         </div>
-      </section>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <div className="flex flex-col gap-5">
-          <DetailCard title="Tax Record Overview">
-            <DetailRow label="Tax Record ID" value={detail.taxRecordOverview.taxRecordId} />
-            <DetailRow label="Transaction ID" value={detail.taxRecordOverview.transactionId} />
-            <DetailRow label="Entity Type" value={detail.taxRecordOverview.entityType} />
-            <DetailRow label="Region" value={detail.taxRecordOverview.region} />
-            <DetailRow label="Tax Type" value={detail.taxRecordOverview.taxType} />
-            <DetailRow label="Tax Rate" value={detail.taxRecordOverview.taxRate} />
-            <DetailRow label="Currency" value={detail.taxRecordOverview.currency} />
-            <DetailRow label="Invoice Number" value={detail.taxRecordOverview.invoiceNumber} />
-            <DetailRow label="Invoice Date" value={detail.taxRecordOverview.invoiceDate} />
-            <DetailRow label="Filing Period" value={detail.taxRecordOverview.filingPeriod} />
-            <DetailRow label="Filing Date" value={detail.taxRecordOverview.filingDate} />
-            <DetailRow label="Filed By" value={detail.taxRecordOverview.filedBy} />
-            <DetailRow label="Reference Number" value={detail.taxRecordOverview.referenceNumber} />
-            <DetailRow
-              label="Filing Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.taxRecordOverview.filingStatus}
-                  toneClass={financeTaxComplianceStatusClass(detail.taxRecordOverview.filingStatus)}
-                />
-              }
-            />
-          </DetailCard>
-
-          <DetailCard title="Financial Breakdown">
-            <DetailRow label="Client ID" value={detail.financialBreakdown.clientId} />
-            <DetailRow label="Client Name" value={detail.financialBreakdown.clientName} />
-            <DetailRow label="Tax ID" value={detail.financialBreakdown.taxId} />
-            <DetailRow label="Billing Address" value={detail.financialBreakdown.billingAddress} />
-            <DetailRow label="Transaction Date" value={detail.financialBreakdown.transactionDate} />
-            <DetailRow label="Payment Method" value={detail.financialBreakdown.paymentMethod} />
-            <DetailRow
-              label="Subtotal (Before Tax)"
-              value={detail.financialBreakdown.subtotalBeforeTax}
-            />
-            <DetailRow label="Discount Applied" value={detail.financialBreakdown.discountApplied} />
-            <DetailRow label="Taxable Amount" value={detail.financialBreakdown.taxableAmount} />
-            <DetailRow label="Tax Amount" value={detail.financialBreakdown.taxAmount} />
-            <DetailRow
-              label="Total Amount (After Tax)"
-              value={detail.financialBreakdown.totalAmountAfterTax}
-              valueClassName="text-body-sm-semibold"
-            />
-          </DetailCard>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          <DetailCard title="Venue Information">
-            <DetailRow label="Venue Name" value={detail.venueInformation.venueName} />
-            <DetailRow label="Owner Name" value={detail.venueInformation.ownerName} />
-            <DetailRow label="Owner ID" value={detail.venueInformation.ownerId} />
-            <DetailRow label="Venue Type" value={detail.venueInformation.venueType} />
-            <DetailRow label="Capacity" value={detail.venueInformation.capacity} />
-            <DetailRow label="Location" value={detail.venueInformation.location} />
-            <DetailRow label="Billing Address" value={detail.venueInformation.billingAddress} />
-            <DetailRow
-              label="Approval Status"
-              value={
-                <FinanceStatusBadge
-                  status={detail.venueInformation.approvalStatus}
-                  toneClass={financeTaxComplianceStatusClass(
-                    detail.venueInformation.approvalStatus,
-                  )}
-                />
-              }
-            />
-          </DetailCard>
-
-          <DetailCard title="Tax Calculation">
-            <DetailRow
-              label="Tax Jurisdiction Rules Applied"
-              value={detail.taxCalculation.taxJurisdictionRulesApplied}
-            />
-            <DetailRow label="Tax Category" value={detail.taxCalculation.taxCategory} />
-            <DetailRow label="Tax Rate Source" value={detail.taxCalculation.taxRateSource} />
-            <DetailRow label="Tax Formula Used" value={detail.taxCalculation.taxFormulaUsed} />
-            <DetailRow
-              label="Reverse Charge Applied"
-              value={detail.taxCalculation.reverseChargeApplied}
-            />
-          </DetailCard>
-
-          <DetailCard title="Compliance Information">
-            <DetailRow
-              label="Regulatory Authority"
-              value={detail.complianceInformation.regulatoryAuthority}
-            />
-            <DetailRow
-              label="Filing Frequency"
-              value={detail.complianceInformation.filingFrequency}
-            />
-            <DetailRow
-              label="Reporting Category Code"
-              value={detail.complianceInformation.reportingCategoryCode}
-            />
-            <DetailRow label="Tax Status" value={detail.complianceInformation.taxStatus} />
-            <DetailRow label="Adjustments" value={detail.complianceInformation.adjustments} />
-            <DetailRow label="Notes" value={detail.complianceInformation.notes} />
-          </DetailCard>
-        </div>
-      </div>
-
-      <footer className={cn(cardClass, 'flex items-center justify-between px-5 py-4')}>
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/tax')}
-          className="ui-cta ui-cta-secondary"
-        >
-          Close
-        </button>
-        {canMarkFiled ? (
+        <footer className={cn(cardClass, 'flex items-center justify-between px-5 py-4')}>
           <button
             type="button"
-            disabled={markFiledMutation.isPending}
-            onClick={() => {
-              markFiledMutation.mutate(
-                { id: tax._id || tax.taxRecordId || id },
-                {
-                  onSuccess: () => {
-                    toast.success('Marked as filed')
-                    void refetch()
-                  },
-                  onError: (err) => {
-                    const msg = getApiErrorMessage(err, 'Failed to mark as filed')
-                    toast.error(msg)
-                    if (/already filed|already completed/i.test(msg)) {
-                      void refetch()
-                    }
-                  },
-                },
-              )
-            }}
-            className="ui-cta ui-cta-positive h-[44px]"
+            onClick={() => navigateBackOrFallback(navigate, '/finance/tax')}
+            className="ui-cta ui-cta-secondary"
           >
-            <Check className="icon-sm shrink-0" />
-            {markFiledMutation.isPending ? 'Marking...' : 'Mark as Filed'}
+            Close
           </button>
-        ) : (
-          <button type="button" disabled className="ui-cta ui-cta-positive h-[44px] opacity-60">
-            <Check className="icon-sm shrink-0" />
-            Filed
-          </button>
-        )}
-      </footer>
+          {canMarkFiled ? (
+            <button
+              type="button"
+              disabled={markFiledMutation.isPending}
+              onClick={() => {
+                markFiledMutation.mutate(
+                  { id: tax._id || tax.taxRecordId || id },
+                  {
+                    onSuccess: () => {
+                      toast.success('Marked as filed')
+                      void refetch()
+                    },
+                    onError: (err) => {
+                      const msg = getApiErrorMessage(err, 'Failed to mark as filed')
+                      toast.error(msg)
+                      if (/already filed|already completed/i.test(msg)) {
+                        void refetch()
+                      }
+                    },
+                  },
+                )
+              }}
+              className="ui-cta ui-cta-positive h-[44px]"
+            >
+              <Check className="icon-sm shrink-0" />
+              {markFiledMutation.isPending ? 'Marking...' : 'Mark as Filed'}
+            </button>
+          ) : (
+            <button type="button" disabled className="ui-cta ui-cta-positive h-[44px] opacity-60">
+              <Check className="icon-sm shrink-0" />
+              Filed
+            </button>
+          )}
+        </footer>
+      </FinanceDetailShell>
 
       <AddFinanceNoteModal
         open={isNoteModalOpen}

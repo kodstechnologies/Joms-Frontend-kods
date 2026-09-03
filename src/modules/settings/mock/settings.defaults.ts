@@ -261,7 +261,7 @@ export const backupDefaults: BackupSettings = {
       financialData: true,
       settings: true,
     },
-    frequency: 'Daily',
+    frequency: '30 Seconds',
     backupTime: '02:30 PM',
     retentionPeriod: '30 Days',
     storageLocation: 'Cloud Storage',

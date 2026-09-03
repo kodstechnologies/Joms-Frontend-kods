@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
@@ -21,100 +21,125 @@ const restoreOptions = [
   {
     key: 'staging',
     label: 'Restore to staging',
-    description: 'Verify data in staging before pushing to production',
+    description: 'Verify Data in staging before pushing to production',
   },
   {
     key: 'schedule',
     label: 'Schedule Restore',
-    description: 'Set specific time for a new restore',
+    description: 'Schedule Restore for a specific date',
   },
 ]
+
+function formatBackupId(backup: BackupHistoryRow) {
+  const raw = String(backup.name || backup.id || '').trim()
+  if (!raw) return '—'
+  if (/^BACK/i.test(raw) || raw.includes('_') || raw.length <= 12) return raw
+  return raw
+}
 
 export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreBackupModalProps) {
   const [selected, setSelected] = useState('immediate')
   const [confirmText, setConfirmText] = useState('')
+
+  useEffect(() => {
+    if (!open) {
+      setSelected('immediate')
+      setConfirmText('')
+    }
+  }, [open])
 
   if (!open || !backup) return null
 
   const canSubmit = confirmText.trim().toUpperCase() === 'CONFIRM'
 
   return createPortal(
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="ui-modal-shell">
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="restore-backup-title"
+        className="ui-modal-shell restore-backup-modal"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="ui-modal-header">
-          <div>
-            <h2 className="text-h2 text-brand-text">Restore System Backup</h2>
-            <p className="text-body-sm text-muted mt-1">
-              Choose how you want to restore this backup
-            </p>
-          </div>
+          <h2 id="restore-backup-title" className="restore-backup-title">
+            Restore System Backup
+          </h2>
           <button
             type="button"
             onClick={onClose}
             className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Close"
           >
             <X className="icon-lg" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="ui-modal-body space-y-5">
-          <div className="radius-lg bg-brand-bg border border-white/10 p-4">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <p className="text-body-md text-muted">
-                Backup ID: <span className="text-brand-text">#{backup.id.padStart(5, '0')}</span>
-              </p>
-              <p className="text-body-md text-muted">
-                Scope: <span className="text-brand-text">{backup.scope}</span>
-              </p>
-              <p className="text-body-md text-muted">
-                Size: <span className="text-brand-text">{backup.size}</span>
-              </p>
-              <p className="text-body-md text-muted">
-                Date: <span className="text-brand-text">{backup.timestamp}</span>
-              </p>
+        <div className="ui-modal-body restore-backup-body">
+          <div className="restore-backup-summary">
+            <p className="restore-backup-summary-intro">You are about to restore</p>
+            <div className="restore-backup-summary-grid">
+              <div className="restore-backup-summary-row">
+                <span>Backup ID</span>
+                <strong>{formatBackupId(backup)}</strong>
+              </div>
+              <div className="restore-backup-summary-row">
+                <span>Scope</span>
+                <strong>{backup.scope}</strong>
+              </div>
+              <div className="restore-backup-summary-row">
+                <span>Size</span>
+                <strong>{backup.size}</strong>
+              </div>
+              <div className="restore-backup-summary-row">
+                <span>Date &amp; Time</span>
+                <strong>{backup.timestamp}</strong>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            {restoreOptions.map((option) => (
-              <label
-                key={option.key}
-                className={cn(
-                  'radius-lg flex cursor-pointer items-start gap-3 border px-4 py-3 transition-colors',
-                  selected === option.key
-                    ? 'border-brand-accent bg-brand-accent/10'
-                    : 'bg-brand-bg border-white/10 hover:border-white/20',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="restore-option"
-                  checked={selected === option.key}
-                  onChange={() => setSelected(option.key)}
-                  className="mt-1 accent-white"
-                />
-                <div>
-                  <p className="text-body-md-medium text-brand-text">{option.label}</p>
-                  <p className="text-body-sm text-muted">{option.description}</p>
-                </div>
-              </label>
-            ))}
+          <div className="restore-backup-options">
+            <p className="restore-backup-options-label">Select Restore Option</p>
+            <div className="restore-backup-options-list">
+              {restoreOptions.map((option) => {
+                const isSelected = selected === option.key
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className={cn('restore-backup-option', isSelected && 'is-selected')}
+                    onClick={() => setSelected(option.key)}
+                    aria-pressed={isSelected}
+                  >
+                    <span className={cn('restore-backup-radio', isSelected && 'is-on')} />
+                    <span className="restore-backup-option-copy">
+                      <span className="restore-backup-option-title">{option.label}</span>
+                      <span className="restore-backup-option-desc">{option.description}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
-          <label className="block space-y-2">
-            <span className="text-body-md-medium text-brand-text">
-              Type &apos;CONFIRM&apos; to Proceed
+          <label className="restore-backup-confirm">
+            <span className="restore-backup-confirm-label">
+              Type <span className="is-danger">CONFIRM</span> to Proceed
             </span>
             <input
               value={confirmText}
               onChange={(event) => setConfirmText(event.target.value)}
-              placeholder="CONFIRM"
-              className="ui-input"
+              placeholder="Text here"
+              className="restore-backup-confirm-input"
             />
           </label>
         </div>
 
-        <div className="ui-modal-footer">
+        <div className="ui-modal-footer restore-backup-footer">
           <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
@@ -122,7 +147,7 @@ export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreB
             type="button"
             disabled={!canSubmit}
             onClick={() => onSubmit(selected)}
-            className="ui-modal-btn ui-modal-btn-gold"
+            className="ui-modal-btn restore-backup-submit"
           >
             Restore Now
           </button>

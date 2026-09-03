@@ -133,15 +133,15 @@ function IssueRefundModalInner({
 
           <Field label="Refund Amount">
             <div className="relative">
-              <span className="text-body-md text-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2">
+              <span className="text-body-md text-muted pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2">
                 ₹
               </span>
               <Input
                 value={refundAmount}
                 inputMode="decimal"
                 onChange={(event) => setRefundAmount(event.target.value.replace(/[^\d.]/g, ''))}
-                placeholder="Enter refund amount"
-                className="pl-8"
+                placeholder="Enter Refund Amount"
+                className="ui-input-icon-currency"
               />
             </div>
           </Field>

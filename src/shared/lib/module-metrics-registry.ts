@@ -149,6 +149,12 @@ import {
 } from '@/modules/support-management/config/past-tickets-metrics.config'
 import { PAST_TICKETS_TABLE_COLUMNS_CATALOG } from '@/modules/support-management/config/past-tickets-table-columns.config'
 import {
+  SETTINGS_LOGS_MAX_ACTIVE_METRICS,
+  SETTINGS_LOGS_METRICS_CATALOG,
+  SETTINGS_LOGS_MODULE_KEY,
+} from '@/modules/settings/config/settings-logs-metrics.config'
+import { SETTINGS_LOGS_TABLE_COLUMNS_CATALOG } from '@/modules/settings/config/settings-logs-table-columns.config'
+import {
   ESCALATIONS_MAX_ACTIVE_METRICS,
   ESCALATIONS_METRICS_CATALOG,
   ESCALATIONS_MODULE_KEY,
@@ -166,6 +172,12 @@ import {
   INCIDENT_MODULE_KEY,
 } from '@/modules/settings/config/incident-metrics.config'
 import { INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG } from '@/modules/settings/config/incident-table-columns.config'
+import {
+  BACKUP_HISTORY_COLUMNS_CATALOG,
+  BACKUP_MAX_ACTIVE_METRICS,
+  BACKUP_METRICS_CATALOG,
+  BACKUP_MODULE_KEY,
+} from '@/modules/settings/config/backup-metrics.config'
 import {
   EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS,
   EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG,
@@ -560,6 +572,26 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       defaultVisible: item.defaultVisible,
     })),
   },
+  'settings-logs': {
+    moduleKey: SETTINGS_LOGS_MODULE_KEY,
+    moduleName: 'Setting Logs',
+    returnTo: '/settings/logs',
+    maxActiveMetrics: SETTINGS_LOGS_MAX_ACTIVE_METRICS,
+    metrics: SETTINGS_LOGS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: SETTINGS_LOGS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
   'incident-tracking': {
     moduleKey: INCIDENT_MODULE_KEY,
     moduleName: 'Incident Tracking',
@@ -573,6 +605,26 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       defaultActive: item.defaultActive,
     })),
     columns: INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'backup-configuration': {
+    moduleKey: BACKUP_MODULE_KEY,
+    moduleName: 'Backup Configuration',
+    returnTo: '/settings/main',
+    maxActiveMetrics: BACKUP_MAX_ACTIVE_METRICS,
+    metrics: BACKUP_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: BACKUP_HISTORY_COLUMNS_CATALOG.map((item) => ({
       id: item.id,
       label: item.label,
       type: item.type,

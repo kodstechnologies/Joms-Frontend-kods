@@ -28,6 +28,7 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const innerRowClass = 'radius-lg border border-white/[0.06] bg-brand-bg p-4 sm:p-5'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 
@@ -56,10 +57,7 @@ type SummaryItem = {
   wide?: boolean
 }
 
-function firstSnapshotString(
-  source: Record<string, unknown> | null | undefined,
-  keys: string[],
-) {
+function firstSnapshotString(source: Record<string, unknown> | null | undefined, keys: string[]) {
   if (!source) return ''
   for (const key of keys) {
     const value = source[key]
@@ -97,27 +95,24 @@ function SummaryRow({ items }: { items: SummaryItem[] }) {
   if (items.length === 0) return null
   const sevenCol = items.length === 7
   return (
-    <div
-      className={cn(
-        'flex h-[88px] w-full items-center gap-6 overflow-x-auto',
-        sevenCol && 'lg:grid lg:grid-cols-7 lg:overflow-visible',
-      )}
-    >
-      {items.map((item) => (
-        <InfoItem key={item.label} {...item} />
-      ))}
+    <div className={innerRowClass}>
+      <div
+        className={cn(
+          'flex min-h-[72px] w-full items-center gap-6 overflow-x-auto',
+          sevenCol && 'lg:grid lg:grid-cols-7 lg:overflow-visible',
+        )}
+      >
+        {items.map((item) => (
+          <InfoItem key={item.label} {...item} />
+        ))}
+      </div>
     </div>
   )
 }
 
 function WhiteTick({ muted }: { muted?: boolean }) {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      fill="none"
-      className="size-3.5 shrink-0"
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 16 16" fill="none" className="size-3.5 shrink-0" aria-hidden="true">
       <path
         d="M3 8.2 6.6 11.8 13 4.5"
         stroke={muted ? '#6E6E73' : '#FFFFFF'}
@@ -143,10 +138,10 @@ function RoleCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'flex h-[275px] w-full flex-col rounded-[10px] border p-5 text-left transition-colors',
+        'radius-lg flex h-[275px] w-full flex-col border p-5 text-left transition-colors',
         selected
-          ? 'border-white bg-[#141414]'
-          : 'border-transparent bg-[#141414] opacity-50 hover:opacity-80',
+          ? 'bg-brand-surface border-white'
+          : 'bg-brand-surface border-white/[0.06] opacity-50 hover:border-white/15 hover:opacity-80',
       )}
     >
       <div className="mb-3 grid size-8 shrink-0 place-items-center rounded-full border border-white/15 text-white">
@@ -250,15 +245,12 @@ export function AssignRefundAuthorityPage() {
 
   const selectedRoleIndex = AUTHORITY_ROLES.findIndex((role) => role.id === selectedRoleId)
   const selectedRole = AUTHORITY_ROLES[selectedRoleIndex] || AUTHORITY_ROLES[0]
-  const selected =
-    resolvedAssignees[selectedRoleIndex] || resolvedAssignees[0]
+  const selected = resolvedAssignees[selectedRoleIndex] || resolvedAssignees[0]
 
   const heading = 'Assign Refund Authority'
-  const subtitle =
-    'Select the role responsible for reviewing and processing this refund request'
+  const subtitle = 'Select the role responsible for reviewing and processing this refund request'
   const listLabel = 'Select and assign the refund:'
-  const currentCrumb =
-    kind === 'dispute' ? 'Dispute' : kind === 'resource' ? 'Record' : 'Refunds'
+  const currentCrumb = kind === 'dispute' ? 'Dispute' : kind === 'resource' ? 'Record' : 'Refunds'
 
   const paymentViewPath = refund?.paymentId
     ? `/finance/revenue/${refund.paymentId}`
@@ -271,10 +263,7 @@ export function AssignRefundAuthorityPage() {
     (kind === 'resource' && resourceType === 'EscrowHold' ? escrow?.userId : '') ||
     '—'
   const customerName =
-    titleCase(refund?.beneficiary) ||
-    escrow?.userName ||
-    titleCase(payment?.userType) ||
-    '—'
+    titleCase(refund?.beneficiary) || escrow?.userName || titleCase(payment?.userType) || '—'
   const membershipStatus =
     titleCase(
       firstSnapshotString(payment?.moduleSnapshot, [

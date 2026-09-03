@@ -903,6 +903,15 @@ type ReferralListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  [key: string]: unknown
+}
+
+const REFERRAL_LEGACY_SEARCH_MAP: Record<string, string> = {
+  searchById: 'referralId',
+  searchByName: 'referrerName',
+  searchByStatus: 'status',
 }
 
 const REFERRAL_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
@@ -916,9 +925,26 @@ export function buildReferralListQueryParams(
   filterValues: FilterValues,
   options: ReferralListQueryOptions = {},
 ): Record<string, unknown> {
+  const { page, limit, search, sortBy, sortOrder, ...rest } = options
+  const columnSearch: Record<string, string> = {}
+
+  Object.entries(rest).forEach(([key, value]) => {
+    if (typeof value !== 'string' || !value.trim()) return
+
+    if (key === 'searchByDate') {
+      const date = value.trim()
+      columnSearch.createdAtFrom = date
+      columnSearch.createdAtTo = date
+      return
+    }
+
+    const mappedKey = REFERRAL_LEGACY_SEARCH_MAP[key] ?? key
+    columnSearch[mappedKey] = value.trim()
+  })
+
   const params: Record<string, unknown> = {
-    page: options.page ?? 1,
-    limit: options.limit ?? 10,
+    page: page ?? 1,
+    limit: limit ?? 10,
   }
 
   const assignParam = (key: string, value: string) => {
@@ -961,11 +987,16 @@ export function buildReferralListQueryParams(
     }
   })
 
-  if (options.search?.trim()) {
-    params.search = options.search.trim()
+  if (search?.trim()) {
+    params.search = search.trim()
   }
 
-  return params
+  return {
+    ...params,
+    ...columnSearch,
+    ...(sortBy ? { sortBy } : {}),
+    ...(sortOrder ? { sortOrder } : {}),
+  }
 }
 
 export function createReferralFilteredExportHandler<T>(
@@ -1250,6 +1281,46 @@ export function rowMatchesClientFilters<T>(
 
   return true
 }
+
+type LoginTrailsListQueryOptions = {
+  page?: number
+  limit?: number
+  search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  [key: string]: unknown
+}
+
+const LOGIN_TRAILS_LEGACY_SEARCH_MAP: Record<string, string> = {
+  searchById: 'id',
+  searchByName: 'adminName',
+  searchByDate: 'date',
+}
+
+export function buildLoginTrailsListQueryParams(
+  filterValues: FilterValues,
+  options: LoginTrailsListQueryOptions = {},
+): Record<string, unknown> {
+  const { page, limit, search, sortBy, sortOrder, ...rest } = options
+  const columnSearch: Record<string, string> = {}
+
+  Object.entries(rest).forEach(([key, value]) => {
+    if (typeof value !== 'string' || !value.trim()) return
+    const mappedKey = LOGIN_TRAILS_LEGACY_SEARCH_MAP[key] ?? key
+    columnSearch[mappedKey] = value.trim()
+  })
+
+  return {
+    ...buildPrefixedListQueryParams(filterValues, { page, limit, search }),
+    ...columnSearch,
+    ...(sortBy ? { sortBy } : {}),
+    ...(sortOrder ? { sortOrder } : {}),
+  }
+}
+
+export const createLoginTrailsFilteredExportHandler = createFinanceExportHandler(
+  buildLoginTrailsListQueryParams,
+)
 
 export function buildPrefixedListQueryParams(
   filterValues: FilterValues,

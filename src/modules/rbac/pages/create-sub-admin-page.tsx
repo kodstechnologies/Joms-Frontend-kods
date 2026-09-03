@@ -1,4 +1,4 @@
-import { ArrowLeft, AlertTriangle, Check, ChevronDown, Search, X } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Check, ChevronDown, Info, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -22,6 +22,11 @@ import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 type Step = 'form' | 'review'
+
+const EMPLOYMENT_TYPE_OPTIONS = ['Onsite', 'Remote', 'Hybrid'] as const
+
+const withCurrentOption = (options: readonly string[], current?: string) =>
+  current && !options.includes(current) ? [current, ...options] : [...options]
 
 const emptyForm: CreateSubAdminPayload = {
   firstName: '',
@@ -253,6 +258,10 @@ export function CreateSubAdminPage() {
   }
 
   const handleSubmit = () => {
+    if (!isEditMode && !adminNote.trim()) {
+      toast.error('Admin notes are required')
+      return
+    }
     if (isEditMode) {
       void handleUpdate()
       return
@@ -285,100 +294,144 @@ export function CreateSubAdminPage() {
 
       {step === 'form' ? (
         <>
-          <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-5 md:p-6">
-            <h2 className="text-brand-text text-lg font-semibold">User Details</h2>
-            <p className="text-brand-muted mt-1 text-sm">
+          <div className="create-user-details-card">
+            <h2 className="create-user-details-title">User Details</h2>
+            <p className="create-user-details-subtitle">
               {isEditMode
-                ? 'Update this admin user’s details and assigned roles.'
-                : 'Enter the admin user&apos;s basic information to get started.'}
+                ? "Update this admin user's details and assigned roles."
+                : "Enter the admin user's basic information to get started."}
             </p>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              {[
-                ['firstName', 'First Name *', 'Full Name'],
-                ['lastName', 'Last Name *', 'Full Name'],
-                ['email', 'Email Address *', 'Enter email address here'],
-                ['department', 'Department *', 'Department'],
-                ['jobTitle', 'Job Title *', 'Job Title'],
-                ['employeeId', 'Employee ID', 'JOMS_001'],
-                ['employmentType', 'Employment type *', 'Onsite / Remote'],
-                ['workplaceFlexibility', 'Workplace flexibility *', 'Onsite'],
-                ['location', 'Location *', 'Enter location'],
-              ].map(([key, label, placeholder]) => (
-                <div key={key} className="space-y-2">
-                  <label className="text-brand-text text-sm font-medium">
-                    {requiredLabel(label)}
-                  </label>
+            <div className="create-user-details-grid">
+              {(
+                [
+                  ['firstName', 'First Name *', 'Full Name'],
+                  ['lastName', 'Last Name *', 'Full Name'],
+                  ['email', 'Email Address *', 'Enter email address here'],
+                  ['department', 'Department *', 'Enter department'],
+                  ['jobTitle', 'Job Title *', 'Enter job title'],
+                ] as const
+              ).map(([key, label, placeholder]) => (
+                <div key={key} className="create-user-field">
+                  <label className="create-user-field-label">{requiredLabel(label)}</label>
                   <Input
-                    value={String(form[key as keyof CreateSubAdminPayload] ?? '')}
-                    onChange={(e) =>
-                      updateField(key as keyof CreateSubAdminPayload, e.target.value)
-                    }
+                    className="create-user-field-control"
+                    value={form[key]}
+                    onChange={(e) => updateField(key, e.target.value)}
                     placeholder={placeholder}
                     disabled={isEditMode && key === 'email'}
                   />
                 </div>
               ))}
-              <div className="rounded-brand-md flex items-center justify-between border border-white/10 px-4 py-3 md:col-span-2">
-                <div>
-                  <p className="text-brand-text text-sm font-medium">2 Factor Authentication</p>
-                  <p className="text-brand-muted text-xs">
+
+              <div className="create-user-field">
+                <label className="create-user-field-label">Employee ID</label>
+                <Input
+                  className="create-user-field-control"
+                  value={form.employeeId}
+                  onChange={(e) => updateField('employeeId', e.target.value)}
+                  placeholder="Enter employee ID"
+                />
+              </div>
+
+              <div className="create-user-field">
+                <label className="create-user-field-label">
+                  {requiredLabel('Employment type *')}
+                </label>
+                <div className="create-user-select-wrap">
+                  <select
+                    value={form.employmentType}
+                    onChange={(e) => updateField('employmentType', e.target.value)}
+                    className={cn(
+                      'create-user-field-control create-user-select',
+                      !form.employmentType && 'is-placeholder',
+                    )}
+                  >
+                    <option value="">Select employment type</option>
+                    {withCurrentOption(EMPLOYMENT_TYPE_OPTIONS, form.employmentType).map(
+                      (option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <ChevronDown className="create-user-select-icon" aria-hidden="true" />
+                </div>
+              </div>
+
+              <div className="create-user-field">
+                <label className="create-user-field-label">
+                  {requiredLabel('Workplace flexibility *')}
+                </label>
+                <Input
+                  className="create-user-field-control"
+                  value={form.workplaceFlexibility}
+                  onChange={(e) => updateField('workplaceFlexibility', e.target.value)}
+                  placeholder="Enter location"
+                />
+              </div>
+
+              <div className="create-user-field">
+                <label className="create-user-field-label">{requiredLabel('Location *')}</label>
+                <Input
+                  className="create-user-field-control"
+                  value={form.location}
+                  onChange={(e) => updateField('location', e.target.value)}
+                  placeholder="Enter location"
+                />
+              </div>
+
+              <div className="create-user-mfa-row">
+                <div className="min-w-0">
+                  <p className="create-user-field-label">2 Factor Authentication</p>
+                  <p className="create-user-mfa-desc">
                     {mfaForcedByPolicy
                       ? 'Required for all sub-admins by organization MFA policy'
-                      : 'Every time the user tries to login they need verify via 2FA'}
+                      : 'Every time the user try to login they need verify via 2FA'}
                   </p>
                 </div>
                 <button
                   type="button"
+                  aria-pressed={effectiveMfaEnabled}
+                  aria-label="Toggle two-factor authentication"
                   disabled={mfaForcedByPolicy}
                   onClick={() => {
                     if (mfaForcedByPolicy) return
                     updateField('mfaEnabled', !form.mfaEnabled)
                   }}
                   className={cn(
-                    'relative h-7 w-12 rounded-full transition-colors',
-                    effectiveMfaEnabled ? 'bg-brand-accent' : 'bg-white/20',
-                    mfaForcedByPolicy && 'cursor-not-allowed opacity-70',
+                    'create-user-mfa-toggle',
+                    effectiveMfaEnabled && 'is-on',
+                    mfaForcedByPolicy && 'is-disabled',
                   )}
                 >
-                  <span
-                    className={cn(
-                      'absolute top-0.5 size-6 rounded-full bg-white transition-transform',
-                      effectiveMfaEnabled ? 'left-5' : 'left-0.5',
-                    )}
-                  />
+                  <span className="create-user-mfa-knob" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-5 md:p-6">
-            <h2 className="text-brand-text text-lg font-semibold">
+          <div className="create-user-assign-card">
+            <h2 className="create-user-assign-title">
               {isEditMode ? 'Role & Permissions' : 'Assign Role'}
             </h2>
-            <p className="text-brand-muted mt-1 text-sm">
+            <p className="create-user-assign-subtitle">
               {isEditMode
                 ? 'Change the role to update this user’s permissions and access level.'
-                : 'Select a role to define the admin user&apos;s permissions and access level.'}
+                : "Select a role to define the admin user's permissions and access level."}
             </p>
 
-            <div className="mt-5 space-y-4">
-              <div className="space-y-2">
-                <label className="text-brand-text text-sm font-medium">
+            <div className="create-user-assign-body">
+              <div className="create-user-field">
+                <label className="create-user-field-label">
                   Choose Role <RequiredMark />
                 </label>
                 <div
-                  className={cn(
-                    'rounded-brand-md bg-brand-bg relative flex min-h-11 flex-wrap items-center gap-2 border border-white/10 px-3 py-2',
-                    roleListOpen && 'ring-brand-accent/30 ring-2',
-                  )}
+                  className={cn('create-user-role-select', roleListOpen && 'is-open')}
                   onClick={() => setRoleListOpen(true)}
                 >
-                  <Search className="text-brand-muted size-4 shrink-0" />
                   {selectedRoles.map((role) => (
-                    <span
-                      key={role.id}
-                      className="border-brand-accent/30 bg-brand-accent/15 text-brand-accent inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium"
-                    >
+                    <span key={role.id} className="create-user-role-chip">
                       {role.name}
                       <button
                         type="button"
@@ -387,9 +440,9 @@ export function CreateSubAdminPage() {
                           e.stopPropagation()
                           removeRole(role.id)
                         }}
-                        className="hover:bg-brand-accent/20 rounded-full p-0.5"
+                        className="create-user-role-chip-remove"
                       >
-                        <X className="size-3" />
+                        <X className="size-3" strokeWidth={2.5} />
                       </button>
                     </span>
                   ))}
@@ -401,7 +454,7 @@ export function CreateSubAdminPage() {
                     }}
                     onFocus={() => setRoleListOpen(true)}
                     placeholder={selectedRoles.length ? '' : 'Search role here'}
-                    className="text-brand-text placeholder:text-brand-muted min-w-[120px] flex-1 bg-transparent text-sm outline-none"
+                    className="create-user-role-search"
                   />
                   <button
                     type="button"
@@ -410,7 +463,7 @@ export function CreateSubAdminPage() {
                       e.stopPropagation()
                       setRoleListOpen((open) => !open)
                     }}
-                    className="text-brand-muted hover:text-brand-text ml-auto shrink-0 rounded p-1"
+                    className="create-user-role-chevron"
                   >
                     <ChevronDown
                       className={cn('size-4 transition-transform', roleListOpen && 'rotate-180')}
@@ -420,17 +473,14 @@ export function CreateSubAdminPage() {
               </div>
 
               {roleListOpen ? (
-                <div className="rounded-brand-md max-h-72 space-y-3 overflow-auto border border-white/10 p-2">
+                <div className="create-user-role-list">
                   {rolesLoading ? (
                     <RbacLoader label="Loading roles..." className="min-h-[120px]" />
                   ) : filteredRoles.length ? (
                     filteredRoles.map((role) => {
                       const checked = form.roleIds.includes(role.id)
                       return (
-                        <div
-                          key={role.id}
-                          className="rounded-brand-md flex items-start justify-between gap-4 border border-white/10 px-4 py-3"
-                        >
+                        <div key={role.id} className="create-user-role-list-item">
                           <label className="flex cursor-pointer items-start gap-3">
                             <input
                               type="checkbox"
@@ -445,7 +495,7 @@ export function CreateSubAdminPage() {
                           </label>
                           <button
                             type="button"
-                            className="text-brand-text decoration-brand-muted/40 hover:text-brand-accent text-sm underline underline-offset-2"
+                            className="create-user-view-permission"
                             onClick={() => setPermissionViewRole(role)}
                           >
                             View Permission
@@ -467,48 +517,36 @@ export function CreateSubAdminPage() {
                 catalogLoading ? (
                   <RbacLoader label="Loading permissions..." className="min-h-[120px]" />
                 ) : (
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="create-user-permission-stack">
                     {selectedRoles.map((role) => (
-                      <div
-                        key={role.id}
-                        className="rounded-brand-md border-brand-accent/40 bg-brand-surface border p-4"
-                      >
-                        <p className="text-brand-text text-base font-semibold">{role.name}</p>
-                        <p className="text-brand-muted mt-3 text-sm font-medium">Key Permissions</p>
-                        <div className="mt-3 space-y-2">
+                      <div key={role.id} className="create-user-permission-card">
+                        <p className="create-user-permission-role">{role.name}</p>
+                        <p className="create-user-permission-heading">Key Permissions</p>
+                        <div className="create-user-permission-rows">
                           {moduleKeys.length ? (
                             moduleKeys.map((moduleKey) => {
                               const access = getModuleAccess(role, moduleKey, catalog)
                               if (access === 'none') return null
                               const mod = catalog[moduleKey]
                               return (
-                                <div
-                                  key={moduleKey}
-                                  className="flex items-center justify-between gap-2 text-sm"
-                                >
-                                  <div className="text-brand-text flex items-center gap-2">
-                                    <Check className="text-brand-success size-3.5" />
-                                    {mod?.label ?? moduleKey}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={cn(
-                                        'text-body-sm-semibold rounded-full px-2 py-0.5',
-                                        access === 'full'
-                                          ? 'bg-brand-accent/20 text-brand-accent'
-                                          : 'text-brand-muted bg-white/10',
-                                      )}
-                                    >
+                                <div key={moduleKey} className="create-user-permission-row">
+                                  <div className="create-user-permission-name">
+                                    <Check
+                                      className="size-3.5 shrink-0 text-white"
+                                      strokeWidth={2.5}
+                                    />
+                                    <span>{mod?.label ?? moduleKey}</span>
+                                    <span className="create-user-access-badge">
                                       {accessLabel(access)}
                                     </span>
-                                    <button
-                                      type="button"
-                                      className="text-brand-muted hover:text-brand-accent text-xs underline underline-offset-2"
-                                      onClick={() => setPermissionViewRole(role)}
-                                    >
-                                      View Permission
-                                    </button>
                                   </div>
+                                  <button
+                                    type="button"
+                                    className="create-user-view-permission"
+                                    onClick={() => setPermissionViewRole(role)}
+                                  >
+                                    View Permission
+                                  </button>
                                 </div>
                               )
                             })
@@ -530,58 +568,88 @@ export function CreateSubAdminPage() {
 
       {step === 'review' ? (
         <>
-          <div className="rounded-brand-lg border-brand-accent-muted bg-brand-accent/10 text-brand-text border px-4 py-3 text-sm">
-            <span className="text-brand-accent font-semibold">Warning:</span> Assigned permissions
-            will apply immediately after role assignment.
+          <div className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-brand-text text-lg font-semibold">Review</h2>
+              <p className="text-brand-muted mt-1 text-sm">
+                Review the details before assigning the role to the admin user.
+              </p>
+            </div>
+            <div className="flex items-start gap-2 rounded-[10px] border border-[#E0A263]/40 bg-[#E0A263]/12 px-4 py-3 text-sm text-[#E0A263]">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <p>
+                <span className="font-semibold">Warning:</span> Assigned permissions will apply
+                immediately after role assignment.
+              </p>
+            </div>
           </div>
 
-          <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-5 md:p-6">
-            <h2 className="text-brand-text text-lg font-semibold">Review</h2>
-            <p className="text-brand-muted mt-1 text-sm">
-              Review the details before assigning the role to the admin user.
-            </p>
-
-            <div className="rounded-brand-md bg-brand-surface mt-5 grid gap-4 border border-white/10 p-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                ['First Name', form.firstName],
-                ['Last Name', form.lastName],
-                ['Email ID', form.email],
-                ['Department', form.department || '—'],
-                ['Job Title', form.jobTitle || '—'],
-                ['Employee ID', form.employeeId || '—'],
-                ['Employment type', form.employmentType || '—'],
-                ['Location', form.location || '—'],
-                ['2FA Status', effectiveMfaEnabled ? 'Enabled' : 'Disabled'],
-                ['Workplace', form.workplaceFlexibility || '—'],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <p className="text-brand-muted text-xs">{label}</p>
-                  <p className="text-brand-text mt-1 text-sm font-medium">{value}</p>
+          <div className="rounded-brand-lg border border-white/10 bg-[#141414] p-5 md:p-6">
+            <h3 className="text-brand-text text-lg font-semibold">Summary</h3>
+            <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-5">
+                {[
+                  ['First Name', form.firstName],
+                  ['Last Name', form.lastName],
+                  ['Email ID', form.email],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-xs text-white/50">{label}</p>
+                    <p className="text-brand-text mt-1 text-sm font-medium">{value || '—'}</p>
+                  </div>
+                ))}
+                <div>
+                  <p className="text-xs text-white/50">Role Assigned</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedRoles.map((role) => (
+                      <span
+                        key={role.id}
+                        className="inline-flex items-center rounded-full bg-[#E0A263] px-2.5 py-1 text-xs font-semibold text-[#050505]"
+                      >
+                        {role.name}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              ))}
-              <div className="sm:col-span-2 lg:col-span-3">
-                <p className="text-brand-muted text-xs">Role Assigned</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {selectedRoles.map((role) => (
-                    <span
-                      key={role.id}
-                      className="bg-brand-accent/20 text-brand-accent rounded-full px-2.5 py-1 text-xs font-semibold"
-                    >
-                      {role.name}
-                    </span>
-                  ))}
-                </div>
+              </div>
+              <div className="space-y-5">
+                {[
+                  ['Department', form.department],
+                  ['Job Title', form.jobTitle],
+                  ['Employee ID', form.employeeId],
+                  ['Employment type', form.employmentType],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-xs text-white/50">{label}</p>
+                    <p className="text-brand-text mt-1 text-sm font-medium">{value || '—'}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-5">
+                {[
+                  ['Location', form.location],
+                  ['2FA Status', effectiveMfaEnabled ? 'Enabled' : 'Disabled'],
+                  ['Workplace', form.workplaceFlexibility],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="text-xs text-white/50">{label}</p>
+                    <p className="text-brand-text mt-1 text-sm font-medium">{value || '—'}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="rounded-brand-lg border-brand-accent-muted bg-brand-accent/10 border p-5">
-            <h3 className="text-brand-text font-semibold">What happens next?</h3>
-            <ul className="text-brand-muted mt-3 list-disc space-y-2 pl-5 text-sm">
+          <div className="rounded-brand-lg border border-[#E0A263]/30 bg-[#E0A263]/10 px-5 py-6 md:px-6 md:py-8">
+            <div className="flex items-center gap-2">
+              <Info className="size-5 shrink-0 text-white" aria-hidden="true" />
+              <h3 className="text-brand-text font-semibold">What happens next?</h3>
+            </div>
+            <ul className="mt-4 list-disc space-y-3 pl-7 text-sm text-white/50">
               {isEditMode ? (
                 <>
                   <li>User profile and role assignment will be updated immediately</li>
-                  <li>Updated permissions will apply on the user&apos;s next session refresh</li>
+                  <li>Updated permissions will apply on the user's next session refresh</li>
                   <li>All actions will be logged in audit logs</li>
                 </>
               ) : (
@@ -597,9 +665,10 @@ export function CreateSubAdminPage() {
         </>
       ) : null}
 
-      <div className="flex items-center justify-between">
+      <div className="create-user-footer">
         <Button
           variant="secondary"
+          className="create-user-footer-prev"
           onClick={() => {
             if (step === 'form') navigateBackOrFallback(navigate, '/settings/access')
             else setStep('form')
@@ -608,9 +677,11 @@ export function CreateSubAdminPage() {
           Previous
         </Button>
         {step === 'form' ? (
-          <Button onClick={goToReview}>{isEditMode ? 'Review Changes' : 'Invite New User'}</Button>
+          <Button className="create-user-footer-primary" onClick={goToReview}>
+            {isEditMode ? 'Review Changes' : 'Invite New User'}
+          </Button>
         ) : (
-          <Button onClick={() => setConfirmOpen(true)}>
+          <Button className="create-user-footer-primary" onClick={() => setConfirmOpen(true)}>
             {isEditMode ? 'Update User' : 'Continue'}
           </Button>
         )}
@@ -679,86 +750,93 @@ export function CreateSubAdminPage() {
       ) : null}
 
       {confirmOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+        <div
+          className="ui-modal-backdrop"
+          role="presentation"
+          onClick={() => setConfirmOpen(false)}
+        >
           <div
-            className={cn(
-              'bg-brand-surface w-full max-w-md border border-white/10 p-6',
-              uiTokens.radiusCard,
-              uiTokens.shadowElevated,
-            )}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-user-modal-title"
+            className="ui-modal-shell new-user-confirm-modal w-full max-w-[551px]"
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
-              <h3 className="text-brand-text text-lg font-semibold">
+            <div className="ui-modal-header">
+              <h2 id="confirm-user-modal-title" className="new-user-confirm-title">
                 {isEditMode ? 'Update User' : 'New User'}
-              </h3>
+              </h2>
+              <button
+                type="button"
+                aria-label="Close modal"
+                onClick={() => setConfirmOpen(false)}
+                className="new-user-confirm-close"
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="ui-modal-body new-user-confirm-body">
+              <div className="new-user-confirm-icon-wrap">
+                <span className="new-user-confirm-icon-circle">
+                  <AlertTriangle
+                    className="size-7 text-[#E0A263]"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </span>
+              </div>
+              <p className="new-user-confirm-message">
+                {isEditMode ? (
+                  <>
+                    Are you sure you want to update '{form.firstName} {form.lastName}' with role '
+                    {selectedRoles.map((r) => r.name).join(', ') || 'roles'}'? Their permissions
+                    will change immediately.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to assign '
+                    {selectedRoles.map((r) => r.name).join(', ') || 'roles'}' role to '
+                    {form.firstName} {form.lastName}'. They will immediately get to access the
+                    system.
+                  </>
+                )}
+              </p>
+              {!isEditMode ? (
+                <div className="new-user-confirm-notes">
+                  <label htmlFor="admin-notes" className="new-user-confirm-notes-label">
+                    Admin notes <span className="new-user-confirm-required">*</span>
+                  </label>
+                  <textarea
+                    id="admin-notes"
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    rows={4}
+                    placeholder="Add admin notes"
+                    className="new-user-confirm-textarea"
+                  />
+                </div>
+              ) : null}
+            </div>
+            <div className="ui-modal-footer new-user-confirm-footer">
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="text-brand-muted hover:text-brand-text rounded-full p-1 hover:bg-white/10"
+                className="ui-modal-btn new-user-confirm-cancel h-10 max-w-[239px] flex-1"
               >
-                <X className="size-5" />
-              </button>
-            </div>
-            <div className="mt-4 flex justify-center">
-              <span className="bg-brand-accent/15 text-brand-accent flex size-14 items-center justify-center rounded-full">
-                <AlertTriangle className="size-6" />
-              </span>
-            </div>
-            <p className="text-brand-muted mt-4 text-center text-sm">
-              {isEditMode ? (
-                <>
-                  Are you sure you want to update{' '}
-                  <span className="text-brand-text font-semibold">
-                    &apos;{form.firstName} {form.lastName}&apos;
-                  </span>{' '}
-                  with role{' '}
-                  <span className="text-brand-text font-semibold">
-                    &apos;{selectedRoles.map((r) => r.name).join(', ') || 'roles'}&apos;
-                  </span>
-                  ? Their permissions will change immediately.
-                </>
-              ) : (
-                <>
-                  Are you sure you want to assign{' '}
-                  <span className="text-brand-text font-semibold">
-                    &apos;{selectedRoles.map((r) => r.name).join(', ') || 'roles'}&apos;
-                  </span>{' '}
-                  role to{' '}
-                  <span className="text-brand-text font-semibold">
-                    &apos;{form.firstName} {form.lastName}&apos;
-                  </span>
-                  . They will immediately get access to the system.
-                </>
-              )}
-            </p>
-            {!isEditMode ? (
-              <>
-                <label className="text-brand-text mt-4 block text-sm font-medium">
-                  Admin notes <RequiredMark />
-                </label>
-                <textarea
-                  value={adminNote}
-                  onChange={(e) => setAdminNote(e.target.value)}
-                  rows={3}
-                  placeholder="Add admin notes"
-                  className="rounded-brand-md bg-brand-bg text-brand-text placeholder:text-brand-muted focus:ring-brand-accent/40 mt-2 w-full resize-none border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2"
-                />
-              </>
-            ) : null}
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={createMutation.isPending || updateMutation.isPending}
+                className="ui-modal-btn new-user-confirm-submit h-10 max-w-[238px] flex-1"
               >
                 {createMutation.isPending || updateMutation.isPending
                   ? isEditMode
                     ? 'Updating...'
                     : 'Creating...'
                   : 'Confirm'}
-              </Button>
+              </button>
             </div>
           </div>
         </div>

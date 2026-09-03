@@ -20,6 +20,8 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as BaseDetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
 } from '@/modules/payments/components/finance-detail-layout'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeReconciliationStatusClass } from '@/modules/payments/utils/finance-status-tones'
@@ -28,7 +30,7 @@ const DetailRow = (props: Parameters<typeof BaseDetailRow>[0]) => (
   <BaseDetailRow constrainValue {...props} />
 )
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
@@ -119,118 +121,128 @@ export function ReconciliationDetailViewPage() {
         </p>
       </header>
 
-      <section className={cn(cardClass, 'p-5')}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>{detail.recordTitle}</h2>
-            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>{detail.recordDescription}</p>
+      <FinanceDetailShell>
+        <section className={cn(cardClass, 'p-5')}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className={sectionTitleClass}>{detail.recordTitle}</h2>
+              <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
+                {detail.recordDescription}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() =>
+                  downloadKeyValueReport(
+                    'reconciliation_report',
+                    flattenExportPairs({
+                      Reconciliation: detail.reconciliationInformation,
+                      Gateway: detail.gatewayDetails,
+                      Platform: detail.platformRecordSummary,
+                    }),
+                  )
+                }
+              >
+                <Download className="size-4" />
+                Download Report
+              </Button>
+              <Button onClick={() => setIsNoteModalOpen(true)}>
+                <SquarePen className="size-4" />
+                Add Notes
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={() =>
-                downloadKeyValueReport(
-                  'reconciliation_report',
-                  flattenExportPairs({
-                    Reconciliation: detail.reconciliationInformation,
-                    Gateway: detail.gatewayDetails,
-                    Platform: detail.platformRecordSummary,
-                  }),
-                )
+        </section>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <DetailCard title="Reconciliation Information">
+            <DetailRow
+              label="Reconciliation ID"
+              value={detail.reconciliationInformation.reconciliationId}
+            />
+            <DetailRow label="Gateway" value={detail.reconciliationInformation.gateway} />
+            <DetailRow
+              label="Transaction ID"
+              value={detail.reconciliationInformation.transactionId}
+            />
+            <DetailRow
+              label="Platform Record ID"
+              value={detail.reconciliationInformation.platformRecordId}
+            />
+            <DetailRow
+              label="Settlement Batch ID"
+              value={detail.reconciliationInformation.settlementBatchId}
+            />
+            <DetailRow
+              label="Settlement Date"
+              value={detail.reconciliationInformation.settlementDate}
+            />
+            <DetailRow
+              label="Bank Credit Date"
+              value={detail.reconciliationInformation.bankCreditDate}
+            />
+            <DetailRow
+              label="Reconciled By"
+              value={detail.reconciliationInformation.reconciledBy}
+            />
+            <DetailRow
+              label="Reconciliation Date"
+              value={detail.reconciliationInformation.reconciliationDate}
+            />
+            <DetailRow
+              label="Status"
+              value={
+                <FinanceStatusBadge
+                  status={detail.reconciliationInformation.status}
+                  toneClass={financeReconciliationStatusClass(
+                    detail.reconciliationInformation.status,
+                  )}
+                />
               }
-            >
-              <Download className="size-4" />
-              Download Report
-            </Button>
-            <Button onClick={() => setIsNoteModalOpen(true)}>
-              <SquarePen className="size-4" />
-              Add Notes
-            </Button>
+            />
+          </DetailCard>
+
+          <div className="flex flex-col gap-5">
+            <DetailCard title="Gateway Details">
+              <DetailRow
+                label="Gateway Reported Amount"
+                value={detail.gatewayDetails.gatewayReportedAmount}
+              />
+              <DetailRow label="Gateway Fee" value={detail.gatewayDetails.gatewayFee} />
+              <DetailRow
+                label="Net Settled Amount"
+                value={detail.gatewayDetails.netSettledAmount}
+              />
+              <DetailRow label="Currency" value={detail.gatewayDetails.currency} />
+              <DetailRow
+                label="Gateway Reference ID"
+                value={detail.gatewayDetails.gatewayReferenceId}
+              />
+            </DetailCard>
+
+            <DetailCard title="Platform Record Summary">
+              <DetailRow
+                label="Platform Gross Amount"
+                value={detail.platformRecordSummary.platformGrossAmount}
+              />
+              <DetailRow
+                label="Refund Recorded"
+                value={detail.platformRecordSummary.refundRecorded}
+              />
+              <DetailRow
+                label="Platform Commission"
+                value={detail.platformRecordSummary.platformCommission}
+              />
+              <DetailRow label="Tax Collected" value={detail.platformRecordSummary.taxCollected} />
+              <DetailRow
+                label="Expected Settlement Amount"
+                value={detail.platformRecordSummary.expectedSettlementAmount}
+                valueClassName="text-body-sm-semibold"
+              />
+            </DetailCard>
           </div>
         </div>
-      </section>
-
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <DetailCard title="Reconciliation Information">
-          <DetailRow
-            label="Reconciliation ID"
-            value={detail.reconciliationInformation.reconciliationId}
-          />
-          <DetailRow label="Gateway" value={detail.reconciliationInformation.gateway} />
-          <DetailRow
-            label="Transaction ID"
-            value={detail.reconciliationInformation.transactionId}
-          />
-          <DetailRow
-            label="Platform Record ID"
-            value={detail.reconciliationInformation.platformRecordId}
-          />
-          <DetailRow
-            label="Settlement Batch ID"
-            value={detail.reconciliationInformation.settlementBatchId}
-          />
-          <DetailRow
-            label="Settlement Date"
-            value={detail.reconciliationInformation.settlementDate}
-          />
-          <DetailRow
-            label="Bank Credit Date"
-            value={detail.reconciliationInformation.bankCreditDate}
-          />
-          <DetailRow label="Reconciled By" value={detail.reconciliationInformation.reconciledBy} />
-          <DetailRow
-            label="Reconciliation Date"
-            value={detail.reconciliationInformation.reconciliationDate}
-          />
-          <DetailRow
-            label="Status"
-            value={
-              <FinanceStatusBadge
-                status={detail.reconciliationInformation.status}
-                toneClass={financeReconciliationStatusClass(
-                  detail.reconciliationInformation.status,
-                )}
-              />
-            }
-          />
-        </DetailCard>
-
-        <div className="flex flex-col gap-5">
-          <DetailCard title="Gateway Details">
-            <DetailRow
-              label="Gateway Reported Amount"
-              value={detail.gatewayDetails.gatewayReportedAmount}
-            />
-            <DetailRow label="Gateway Fee" value={detail.gatewayDetails.gatewayFee} />
-            <DetailRow label="Net Settled Amount" value={detail.gatewayDetails.netSettledAmount} />
-            <DetailRow label="Currency" value={detail.gatewayDetails.currency} />
-            <DetailRow
-              label="Gateway Reference ID"
-              value={detail.gatewayDetails.gatewayReferenceId}
-            />
-          </DetailCard>
-
-          <DetailCard title="Platform Record Summary">
-            <DetailRow
-              label="Platform Gross Amount"
-              value={detail.platformRecordSummary.platformGrossAmount}
-            />
-            <DetailRow
-              label="Refund Recorded"
-              value={detail.platformRecordSummary.refundRecorded}
-            />
-            <DetailRow
-              label="Platform Commission"
-              value={detail.platformRecordSummary.platformCommission}
-            />
-            <DetailRow label="Tax Collected" value={detail.platformRecordSummary.taxCollected} />
-            <DetailRow
-              label="Expected Settlement Amount"
-              value={detail.platformRecordSummary.expectedSettlementAmount}
-              valueClassName="text-body-sm-semibold"
-            />
-          </DetailCard>
-        </div>
-      </div>
+      </FinanceDetailShell>
 
       <AddFinanceNoteModal
         open={isNoteModalOpen}

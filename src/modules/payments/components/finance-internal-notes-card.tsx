@@ -12,9 +12,7 @@ export function FinanceInternalNotesCard({ resourceId, className }: FinanceInter
   const notes = data?.data ?? []
 
   return (
-    <section
-      className={cn('bg-brand-surface rounded-lg border border-white/[0.06] p-4 sm:p-5', className)}
-    >
+    <section className={cn('rounded-lg bg-[#050505] p-4 sm:p-5', className)}>
       <h2 className="text-body-md-semibold text-brand-text mb-4 leading-[20px]">Internal Notes</h2>
       {isLoading ? (
         <p className="text-body-sm text-muted">Loading notes...</p>

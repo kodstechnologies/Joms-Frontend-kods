@@ -1,8 +1,6 @@
-import { SettingsCheckboxGroup } from './settings-checkbox-group'
-import { SettingsFieldRow } from './settings-field-row'
-import { settingsControlClass } from './settings-control-classes'
-import { SettingsSectionCard } from './settings-section-card'
-import { SettingsToggleRow } from './settings-toggle-row'
+import { ChevronDown } from 'lucide-react'
+
+import { SettingsToggle } from './settings-toggle-row'
 import {
   backupFrequencyOptions,
   backupRetentionOptions,
@@ -16,6 +14,15 @@ type BackupConfigurationPanelProps = {
   onChange: (value: BackupSettings) => void
 }
 
+const MODULE_OPTIONS = [
+  { key: 'users', label: 'Users' },
+  { key: 'promo', label: 'Expert' },
+  { key: 'events', label: 'Event' },
+  { key: 'venue', label: 'Venue' },
+  { key: 'financialData', label: 'Financial Data' },
+  { key: 'settings', label: 'Settings' },
+] as const
+
 export function BackupConfigurationPanel({ value, onChange }: BackupConfigurationPanelProps) {
   const patch = (patchValue: Partial<BackupSettings>) => onChange({ ...value, ...patchValue })
 
@@ -25,87 +32,92 @@ export function BackupConfigurationPanel({ value, onChange }: BackupConfiguratio
   const patchModules = (patchValue: Partial<BackupSettings['automaticBackup']['modules']>) =>
     patchAutomatic({ modules: { ...value.automaticBackup.modules, ...patchValue } })
 
+  const backup = value.automaticBackup
+  const isPartial = backup.backupType === 'partial'
+
   return (
-    <div className="space-y-6">
-      <SettingsSectionCard title="Automatic Backup" description="Enable/Disable Automatic Backup">
-        <SettingsToggleRow
-          label="Automatic Backup"
-          description="Schedule recurring backups for your platform data"
-          checked={value.automaticBackup.enabled}
-          onChange={(checked) => patchAutomatic({ enabled: checked })}
-        />
-      </SettingsSectionCard>
-
-      <SettingsSectionCard title="Backup Type" description="Choose full or partial backup scope">
-        <div className="space-y-3">
-          {[
-            {
-              key: 'full' as const,
-              label: 'Full Backup',
-              description:
-                'Complete system backup including Users, Events, Reviews, Payments, Logs, Settings',
-            },
-            {
-              key: 'partial' as const,
-              label: 'Partial Backup',
-              description: 'Select Specific Modules to backup',
-            },
-          ].map((option) => (
-            <label
-              key={option.key}
-              className={cn(
-                'flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors',
-                value.automaticBackup.backupType === option.key
-                  ? 'border-[#F0C27B] bg-[#F0C27B]/10'
-                  : 'border-white/10 bg-black/20 hover:border-white/20',
-              )}
-            >
-              <input
-                type="radio"
-                name="backup-type"
-                checked={value.automaticBackup.backupType === option.key}
-                onChange={() => patchAutomatic({ backupType: option.key })}
-                className="mt-1"
-              />
-              <div>
-                <p className="text-sm font-medium text-white">{option.label}</p>
-                <p className="text-xs text-slate-500">{option.description}</p>
-              </div>
-            </label>
-          ))}
+    <div className="backup-config-panel">
+      <section className="backup-config-auto-card">
+        <div className="backup-config-auto-copy">
+          <h2 className="backup-config-auto-title">Automatic Backup</h2>
+          <p className="backup-config-auto-desc">Enable Scheduled Automatic Backup</p>
         </div>
+        <SettingsToggle
+          checked={backup.enabled}
+          onChange={(checked) => patchAutomatic({ enabled: checked })}
+          ariaLabel="Automatic Backup"
+          showCaption={false}
+        />
+      </section>
 
-        {value.automaticBackup.backupType === 'partial' ? (
-          <SettingsCheckboxGroup
-            label="Modules"
-            options={[
-              { key: 'users', label: 'Users' },
-              { key: 'events', label: 'Events' },
-              { key: 'promo', label: 'Promo' },
-              { key: 'venue', label: 'Venue' },
-              { key: 'financialData', label: 'Financial Data' },
-              { key: 'settings', label: 'Settings' },
-            ]}
-            values={value.automaticBackup.modules}
-            onChange={(key, checked) =>
-              patchModules({ [key]: checked } as Partial<
-                BackupSettings['automaticBackup']['modules']
-              >)
-            }
-            className="mt-4 border-t border-white/10 pt-4"
-          />
-        ) : null}
-      </SettingsSectionCard>
+      <section className="backup-config-type-section">
+        <h3 className="backup-config-section-label">Backup Type</h3>
+        <div className="backup-config-type-list">
+          <button
+            type="button"
+            className={cn('backup-config-type-card', backup.backupType === 'full' && 'is-selected')}
+            onClick={() => patchAutomatic({ backupType: 'full' })}
+            aria-pressed={backup.backupType === 'full'}
+          >
+            <span className={cn('backup-config-radio', backup.backupType === 'full' && 'is-on')} />
+            <span className="backup-config-type-copy">
+              <span className="backup-config-type-title">Full Backup</span>
+              <span className="backup-config-type-desc">
+                Complete system backup including: Users, Events, Reviews, Payments, Logs, Settings
+              </span>
+            </span>
+          </button>
 
-      <SettingsSectionCard
-        title="Scheduling & Retention"
-        description="Configure backup schedule and storage"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SettingsFieldRow label="Backup Frequency">
+          <div className={cn('backup-config-partial-wrap', isPartial && 'is-selected')}>
+            <button
+              type="button"
+              className={cn('backup-config-type-card', isPartial && 'is-selected')}
+              onClick={() => patchAutomatic({ backupType: 'partial' })}
+              aria-pressed={isPartial}
+            >
+              <span className={cn('backup-config-radio', isPartial && 'is-on')} />
+              <span className="backup-config-type-copy">
+                <span className="backup-config-type-title">Partial Backup</span>
+                <span className="backup-config-type-desc">Select Specific Module to backup</span>
+              </span>
+            </button>
+
+            {isPartial ? (
+              <div className="backup-config-modules">
+                {MODULE_OPTIONS.map((option) => {
+                  const checked = Boolean(backup.modules[option.key])
+                  return (
+                    <label key={option.key} className="backup-config-module-item">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) =>
+                          patchModules({
+                            [option.key]: event.target.checked,
+                          } as Partial<BackupSettings['automaticBackup']['modules']>)
+                        }
+                        className="backup-config-checkbox"
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section className="backup-config-fields">
+        <div className="backup-config-field">
+          <label className="backup-config-field-label" htmlFor="backup-frequency">
+            Backup Frequency
+          </label>
+          <div className="backup-config-select-wrap">
             <select
-              className={settingsControlClass}
-              value={value.automaticBackup.frequency}
+              id="backup-frequency"
+              className="backup-config-control backup-config-select"
+              value={backup.frequency}
               onChange={(event) => patchAutomatic({ frequency: event.target.value })}
             >
               {backupFrequencyOptions.map((option) => (
@@ -114,19 +126,32 @@ export function BackupConfigurationPanel({ value, onChange }: BackupConfiguratio
                 </option>
               ))}
             </select>
-          </SettingsFieldRow>
-          <SettingsFieldRow label="Backup Time">
-            <input
-              className={settingsControlClass}
-              value={value.automaticBackup.backupTime}
-              onChange={(event) => patchAutomatic({ backupTime: event.target.value })}
-              placeholder="02:30 PM"
-            />
-          </SettingsFieldRow>
-          <SettingsFieldRow label="Retention Period">
+            <ChevronDown className="backup-config-select-icon" aria-hidden="true" />
+          </div>
+        </div>
+
+        <div className="backup-config-field">
+          <label className="backup-config-field-label" htmlFor="backup-time">
+            Backup Time
+          </label>
+          <input
+            id="backup-time"
+            className="backup-config-control"
+            value={backup.backupTime}
+            placeholder="02:30 PM"
+            onChange={(event) => patchAutomatic({ backupTime: event.target.value })}
+          />
+        </div>
+
+        <div className="backup-config-field">
+          <label className="backup-config-field-label" htmlFor="backup-retention">
+            Retention Period
+          </label>
+          <div className="backup-config-select-wrap">
             <select
-              className={settingsControlClass}
-              value={value.automaticBackup.retentionPeriod}
+              id="backup-retention"
+              className="backup-config-control backup-config-select"
+              value={backup.retentionPeriod}
               onChange={(event) => patchAutomatic({ retentionPeriod: event.target.value })}
             >
               {backupRetentionOptions.map((option) => (
@@ -135,11 +160,19 @@ export function BackupConfigurationPanel({ value, onChange }: BackupConfiguratio
                 </option>
               ))}
             </select>
-          </SettingsFieldRow>
-          <SettingsFieldRow label="Storage Location">
+            <ChevronDown className="backup-config-select-icon" aria-hidden="true" />
+          </div>
+        </div>
+
+        <div className="backup-config-field">
+          <label className="backup-config-field-label" htmlFor="backup-storage">
+            Storage Location
+          </label>
+          <div className="backup-config-select-wrap">
             <select
-              className={settingsControlClass}
-              value={value.automaticBackup.storageLocation}
+              id="backup-storage"
+              className="backup-config-control backup-config-select"
+              value={backup.storageLocation}
               onChange={(event) => patchAutomatic({ storageLocation: event.target.value })}
             >
               {backupStorageOptions.map((option) => (
@@ -148,9 +181,10 @@ export function BackupConfigurationPanel({ value, onChange }: BackupConfiguratio
                 </option>
               ))}
             </select>
-          </SettingsFieldRow>
+            <ChevronDown className="backup-config-select-icon" aria-hidden="true" />
+          </div>
         </div>
-      </SettingsSectionCard>
+      </section>
     </div>
   )
 }

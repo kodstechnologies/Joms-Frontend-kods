@@ -29,6 +29,8 @@ const priorityOptions: Array<{
   { id: 'normal', label: 'Normal', description: 'Review within 2-3 business days' },
 ]
 
+const infoCardClass = 'radius-lg border border-white/[0.06] bg-brand-bg p-4 sm:p-5'
+
 export function EscalateToSuperAdminModal({
   open,
   refundId,
@@ -98,36 +100,40 @@ export function EscalateToSuperAdminModal({
         aria-labelledby="escalate-super-admin-title"
       >
         <div className="ui-modal-header">
-          <h2 id="escalate-super-admin-title" className="text-h4 text-brand-text">
+          <h2 id="escalate-super-admin-title" className="text-h4 text-brand-text pr-2">
             Escalate to Super Admin
           </h2>
           <button
             type="button"
             onClick={handleClose}
             aria-label="Close escalation modal"
-            className="text-muted hover:text-brand-text grid size-9 place-items-center rounded-lg transition-colors hover:bg-white/5"
+            className="text-muted hover:text-brand-text grid size-9 shrink-0 place-items-center rounded-lg transition-colors hover:bg-white/5"
           >
             <X className="icon-md" />
           </button>
         </div>
 
-        <div className="ui-modal-body space-y-5">
-          <div className="radius-lg bg-brand-bg flex items-center gap-3 border border-white/10 p-4">
-            <div className="bg-brand-bg text-muted grid size-10 shrink-0 place-items-center rounded-full border border-white/10">
-              <Shield className="icon-sm" />
+        <div className="ui-modal-body space-y-4 sm:space-y-5">
+          <div className="space-y-4">
+            <div className={infoCardClass}>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="bg-brand-bg text-muted grid size-10 shrink-0 place-items-center rounded-full border border-white/10 sm:size-11">
+                  <Shield className="icon-sm" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-body-sm text-muted">Escalate to Super Admin</p>
+                  <p className="text-body-md-semibold text-brand-text mt-0.5">
+                    This case requires Super Admin review and decision
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-body-md-semibold text-brand-text">Escalate to Super Admin</p>
-              <p className="text-body-sm text-muted mt-0.5">
-                This case requires Super Admin review and decision
-              </p>
-            </div>
-          </div>
 
-          <div className="space-y-3">
-            <InfoRow label={recordIdLabel} value={refundId} />
-            <InfoRow label={requestedByLabel} value={requestedBy} />
-            <InfoRow label="Amount" value={amount} />
+            <div className={cn(infoCardClass, 'space-y-3')}>
+              <InfoRow label={recordIdLabel} value={refundId} />
+              <InfoRow label={requestedByLabel} value={requestedBy} />
+              <InfoRow label="Amount" value={amount} />
+            </div>
           </div>
 
           <div>
@@ -145,7 +151,7 @@ export function EscalateToSuperAdminModal({
                       'radius-lg flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors',
                       selected
                         ? 'bg-brand-accent text-brand-text-dark'
-                        : 'bg-brand-bg text-brand-text border border-white/10 hover:border-white/15',
+                        : 'bg-brand-bg text-brand-text border border-white/[0.06] hover:border-white/15',
                     )}
                   >
                     <span className="min-w-0 flex-1">
@@ -177,19 +183,19 @@ export function EscalateToSuperAdminModal({
             </div>
           </div>
 
-          <label className="block space-y-2.5">
+          <label className="block space-y-2 sm:space-y-2.5">
             <span className="text-body-md-medium text-brand-text">Admin Notes</span>
             <textarea
               value={adminNotes}
               onChange={(event) => setAdminNotes(event.target.value)}
-              placeholder="Add internal notes (optional)"
+              placeholder="Enter Text Here"
               rows={4}
-              className="ui-textarea"
+              className="ui-textarea min-h-28"
             />
           </label>
         </div>
 
-        <div className="ui-modal-footer">
+        <div className="ui-modal-footer flex-col-reverse sm:flex-row">
           <button
             type="button"
             onClick={handleClose}

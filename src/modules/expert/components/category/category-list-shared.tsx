@@ -16,9 +16,9 @@ export function CategoryStatusBadge({ status }: { status: string }) {
   const normalized = status.trim().toLowerCase()
 
   const className = cn(
-    'text-body-sm rounded px-2 py-0.5 font-bold uppercase',
+    'text-body-sm inline-flex items-center rounded-[10px] px-2.5 py-1 text-[11px] font-semibold',
     normalized === 'accepted' || normalized === 'active'
-      ? 'bg-brand-positive/15 text-brand-positive'
+      ? 'bg-[#00A63E] text-white'
       : normalized === 'pending'
         ? 'bg-brand-accent/15 text-brand-accent'
         : normalized === 'paused'
@@ -90,16 +90,18 @@ export function CategoryQuickLinkCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex min-h-[72px] min-w-[220px] flex-1 items-center justify-between rounded-[10px] border px-6 py-5 transition-all hover:brightness-110',
+        'box-border flex h-11 max-h-[44px] min-h-[44px] min-w-0 flex-1 items-center justify-between rounded-[10px] border border-solid px-4 transition-all hover:brightness-110',
         gradient,
         border,
       )}
     >
-      <div className="flex items-center gap-4">
-        <Icon className="size-6 text-white" aria-hidden="true" />
-        <span className="text-base font-semibold text-white">{title}</span>
+      <div className="flex min-w-0 items-center gap-3">
+        <Icon className="size-5 shrink-0 text-white" strokeWidth={1.75} aria-hidden="true" />
+        <span className="truncate text-sm font-medium text-white">{title}</span>
       </div>
-      <span className="text-lg font-bold text-white">{value.padStart(2, '0')}</span>
+      <span className="shrink-0 text-sm font-semibold text-white tabular-nums">
+        {value.padStart(2, '0')}
+      </span>
     </button>
   )
 }
@@ -118,7 +120,7 @@ export function CategoryQuickLinks({
   const navigate = useNavigate()
 
   return (
-    <div className="ui-status-card-row md:gap-4">
+    <div className="ui-status-card-row w-full gap-3 md:gap-4">
       <CategoryQuickLinkCard
         title="Paused Category"
         value={String(pausedCount)}

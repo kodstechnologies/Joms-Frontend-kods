@@ -51,6 +51,12 @@ import type { FilterValues } from '@/shared/types/data-filter'
 import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 import { FINANCE_PAYMENT_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -58,16 +64,6 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
   FINANCE_VENUES_TABLE_COLUMNS_CATALOG,
   FINANCE_PAYMENT_SORT_OVERRIDES,
 )
-
-function getStatusClassName(status: FinanceVenueRow['status']) {
-  if (status === 'Completed') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending') {
-    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
 
 export function FinanceVenuesPage() {
   const navigate = useNavigate()
@@ -250,7 +246,7 @@ export function FinanceVenuesPage() {
         accessorKey: 'venueId',
         header: 'Venue ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.venueId}
           </span>
         ),
@@ -258,92 +254,157 @@ export function FinanceVenuesPage() {
       name: {
         accessorKey: 'name',
         header: 'Name',
-        cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
+        cell: ({ row }) => <span className={FINANCE_TABLE_CELL_CLASS}>{row.original.name}</span>,
       },
-      owner: { accessorKey: 'owner', header: 'Owner' },
+      owner: {
+        accessorKey: 'owner',
+        header: 'Owner',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.owner}</FinanceTableCellText>,
+      },
       'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.bookingId}
           </span>
         ),
       },
-      'booking-title': { accessorKey: 'bookingTitle', header: 'Booking Title' },
+      'booking-title': {
+        accessorKey: 'bookingTitle',
+        header: 'Booking Title',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.bookingTitle}</FinanceTableCellText>,
+      },
       status: {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
       revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.revenue}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.revenue}
+          </span>
         ),
       },
-      'transaction-id': { id: 'transaction-id', header: 'Transaction ID', cell: () => '—' },
-      module: { id: 'module', header: 'Module', cell: () => '—' },
+      'transaction-id': {
+        id: 'transaction-id',
+        header: 'Transaction ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      module: {
+        id: 'module',
+        header: 'Module',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'related-entity-id': {
         id: 'related-entity-id',
         header: 'Related Entity ID',
-        cell: ({ row }) => row.original.venueId || '—',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.venueId}</FinanceTableCellText>,
       },
-      'client-id': { id: 'client-id', header: 'Client ID', cell: () => '—' },
-      'client-name': { id: 'client-name', header: 'Client Name', cell: () => '—' },
-      'partner-id': { id: 'partner-id', header: 'Partner ID', cell: () => '—' },
+      'client-id': {
+        id: 'client-id',
+        header: 'Client ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'client-name': {
+        id: 'client-name',
+        header: 'Client Name',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'partner-id': {
+        id: 'partner-id',
+        header: 'Partner ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'partner-name': {
         id: 'partner-name',
         header: 'Partner Name',
-        cell: ({ row }) => row.original.owner || '—',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.owner}</FinanceTableCellText>,
       },
-      'transaction-date': { id: 'transaction-date', header: 'Transaction Date', cell: () => '—' },
+      'transaction-date': {
+        id: 'transaction-date',
+        header: 'Transaction Date',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'gross-amount': {
         id: 'gross-amount',
         header: 'Gross Amount',
-        cell: ({ row }) => row.original.revenue || '—',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.revenue}</FinanceTableCellText>,
       },
-      discount: { id: 'discount', header: 'Discount', cell: () => '—' },
-      tax: { id: 'tax', header: 'Tax', cell: () => '—' },
-      'gateway-charges': { id: 'gateway-charges', header: 'Gateway Charges', cell: () => '—' },
+      discount: {
+        id: 'discount',
+        header: 'Discount',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      tax: { id: 'tax', header: 'Tax', cell: () => <FinanceTableCellText>—</FinanceTableCellText> },
+      'gateway-charges': {
+        id: 'gateway-charges',
+        header: 'Gateway Charges',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'platform-commission-pct': {
         id: 'platform-commission-pct',
         header: 'Platform Commission %',
-        cell: () => '—',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
       },
       'platform-commission': {
         id: 'platform-commission',
         header: 'Platform Commission',
-        cell: () => '—',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
       },
-      'partner-payout': { id: 'partner-payout', header: 'Partner Payout', cell: () => '—' },
-      'refund-amount': { id: 'refund-amount', header: 'Refund Amount', cell: () => '—' },
-      'net-revenue': { id: 'net-revenue', header: 'Net Revenue', cell: () => '—' },
-      'net-profit': { id: 'net-profit', header: 'Net Profit', cell: () => '—' },
-      'payment-method': { id: 'payment-method', header: 'Payment Method', cell: () => '—' },
-      gateway: { id: 'gateway', header: 'Gateway', cell: () => '—' },
+      'partner-payout': {
+        id: 'partner-payout',
+        header: 'Partner Payout',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'refund-amount': {
+        id: 'refund-amount',
+        header: 'Refund Amount',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'net-revenue': {
+        id: 'net-revenue',
+        header: 'Net Revenue',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'net-profit': {
+        id: 'net-profit',
+        header: 'Net Profit',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'payment-method': {
+        id: 'payment-method',
+        header: 'Payment Method',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      gateway: {
+        id: 'gateway',
+        header: 'Gateway',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'transaction-status': {
         id: 'transaction-status',
         header: 'Transaction Status',
-        cell: ({ row }) => row.original.status || '—',
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
       'settlement-status': {
         id: 'settlement-status',
         header: 'Settlement Status',
-        cell: () => '—',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
       },
-      'settlement-date': { id: 'settlement-date', header: 'Settlement Date', cell: () => '—' },
-      'invoice-id': { id: 'invoice-id', header: 'Invoice ID', cell: () => '—' },
+      'settlement-date': {
+        id: 'settlement-date',
+        header: 'Settlement Date',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
+      'invoice-id': {
+        id: 'invoice-id',
+        header: 'Invoice ID',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
     }
 
     const catalogIds = FINANCE_VENUES_TABLE_COLUMNS_CATALOG.map((column) => column.id)
@@ -405,6 +466,7 @@ export function FinanceVenuesPage() {
       ) : null}
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}

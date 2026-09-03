@@ -30,46 +30,16 @@ import {
 } from '../mock/settings.defaults'
 import { normalizeSecuritySettings, countEnabledMfaMethods } from '../utils/security-settings'
 import type { SettingsModule } from '../types/settings'
+import { SettingsTopTabs } from '../components/settings-top-tabs'
+import {
+  isSettingsTab,
+  SETTINGS_API_TABS,
+  SETTINGS_STATIC_TABS,
+  SETTINGS_TABS,
+  type SettingsTab,
+} from '../config/settings-tabs-config'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
-
-type SettingsTab =
-  | 'platform'
-  | 'security'
-  | 'notifications'
-  | 'finance'
-  | 'incident'
-  | 'backup'
-  | 'templates'
-  | 'expert'
-  | 'venue'
-  | 'service'
-
-const API_TABS: SettingsModule[] = [
-  'platform',
-  'security',
-  'notifications',
-  'finance',
-  'expert',
-  'venue',
-  'service',
-]
-
-const STATIC_TABS: SettingsTab[] = ['incident', 'backup', 'templates']
-
-const TABS: { key: SettingsTab; label: string }[] = [
-  { key: 'platform', label: 'Platform Controls' },
-  { key: 'security', label: 'Security & Access' },
-  { key: 'notifications', label: 'Notifications' },
-  { key: 'finance', label: 'Finance & Transactional' },
-  { key: 'incident', label: 'Incident Tracking' },
-  { key: 'backup', label: 'Backup Configuration' },
-  { key: 'templates', label: 'Templates' },
-  { key: 'expert', label: 'Expert Application' },
-  { key: 'venue', label: 'Venue Management' },
-  { key: 'service', label: 'Service Marketplace' },
-]
 
 export function MainSettingsPage() {
   const location = useLocation()
@@ -79,10 +49,10 @@ export function MainSettingsPage() {
   const [hydratedLocationState, setHydratedLocationState] = useState(location.state)
   const [hydratedTabQuery, setHydratedTabQuery] = useState(searchParams.get('tab'))
 
-  const tabFromQuery = searchParams.get('tab') as SettingsTab | null
+  const tabFromQuery = searchParams.get('tab')
   if (tabFromQuery && tabFromQuery !== hydratedTabQuery) {
     setHydratedTabQuery(tabFromQuery)
-    if (TABS.some((tab) => tab.key === tabFromQuery)) {
+    if (isSettingsTab(tabFromQuery)) {
       setActiveTab(tabFromQuery)
     }
   }
@@ -90,7 +60,7 @@ export function MainSettingsPage() {
   if (location.state !== hydratedLocationState) {
     setHydratedLocationState(location.state)
     const routedTab = (location.state as { settingsTab?: SettingsTab } | null)?.settingsTab
-    if (routedTab && TABS.some((tab) => tab.key === routedTab)) {
+    if (routedTab && isSettingsTab(routedTab)) {
       setActiveTab(routedTab)
     }
   }
@@ -133,8 +103,8 @@ export function MainSettingsPage() {
   const resetVenue = useResetSettings('venue')
   const resetService = useResetSettings('service')
 
-  const isApiTab = API_TABS.includes(activeTab as SettingsModule)
-  const showFooter = isApiTab && !STATIC_TABS.includes(activeTab)
+  const isApiTab = SETTINGS_API_TABS.includes(activeTab as SettingsModule)
+  const showFooter = isApiTab && !SETTINGS_STATIC_TABS.includes(activeTab)
 
   const isLoading =
     (activeTab === 'platform' && platformQuery.isLoading) ||
@@ -195,7 +165,7 @@ export function MainSettingsPage() {
       } else {
         await updateService.mutateAsync(serviceConfig)
       }
-      toast.success(`${TABS.find((t) => t.key === activeTab)?.label} settings saved`)
+      toast.success(`${SETTINGS_TABS.find((t) => t.key === activeTab)?.label} settings saved`)
     } catch {
       toast.error('Failed to save settings')
     }
@@ -249,7 +219,7 @@ export function MainSettingsPage() {
     <div className="space-y-6">
       <SectionHeader
         title="Settings"
-        subtitle="Track metrics, payouts, and financial performance"
+        subtitle="Track revenue, payouts, and financial performance"
         actions={[
           {
             label: 'Settings Logs',
@@ -259,20 +229,7 @@ export function MainSettingsPage() {
         ]}
       />
 
-      <nav className="settings-tabs" aria-label="Settings sections">
-        <div className="settings-tabs-inner">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn('settings-tab', activeTab === tab.key && 'is-active')}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </nav>
+      <SettingsTopTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {isLoading && isApiTab ? (
         <div className="space-y-4 rounded-2xl border border-white/10 bg-[#141414] p-6 sm:p-8">

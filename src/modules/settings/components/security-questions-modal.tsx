@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 
@@ -304,7 +304,8 @@ function SecurityQuestionsModalContent({
           </div>
 
           <button type="button" className="sq-add-btn" onClick={handleAddQuestion}>
-            Add Questions +
+            <span>Add Questions</span>
+            <Plus className="size-4" aria-hidden="true" />
           </button>
 
           <section className="sq-settings-block">
@@ -367,15 +368,19 @@ function SecuritySettingToggle({
         <p className="sq-toggle-label">{label}</p>
         <p className="sq-toggle-desc">{description}</p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={cn('sq-toggle', checked && 'is-on')}
-      >
-        <span className="sq-toggle-thumb" />
-      </button>
+      <div className="sq-toggle-wrap">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={checked}
+          aria-label={label}
+          onClick={() => onChange(!checked)}
+          className={cn('sq-toggle', checked && 'is-on')}
+        >
+          <span className="sq-toggle-thumb" />
+        </button>
+        <span className="sq-toggle-caption">{checked ? 'ON' : 'OFF'}</span>
+      </div>
     </div>
   )
 }

@@ -115,6 +115,32 @@ describe('export-filter-utils builders', () => {
     expect(buildPrefixedListQueryParams(filters, opts).page).toBe(3)
   })
 
+  it('maps referral table search params to API query fields', () => {
+    const params = buildReferralListQueryParams(
+      { 'referral.status': ['pending'] },
+      {
+        page: 1,
+        limit: 10,
+        search: 'global',
+        searchById: 'REF-001',
+        searchByName: 'Jane',
+        searchByStatus: 'pending',
+        searchByDate: '2024-06-01',
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      },
+    )
+
+    expect(params.search).toBe('global')
+    expect(params.referralId).toBe('REF-001')
+    expect(params.referrerName).toBe('Jane')
+    expect(params.status).toBe('pending')
+    expect(params.createdAtFrom).toBe('2024-06-01')
+    expect(params.createdAtTo).toBe('2024-06-01')
+    expect(params.sortBy).toBe('createdAt')
+    expect(params.sortOrder).toBe('desc')
+  })
+
   it('rowMatchesClientFilters and createFilteredExportHandler exercise export path', async () => {
     const accessors = { name: (r: { name: string }) => r.name }
     expect(rowMatchesClientFilters({ name: 'Ada' }, { name: 'Ada' }, '', accessors)).toBe(true)

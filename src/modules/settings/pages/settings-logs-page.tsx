@@ -1,100 +1,215 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye, X } from 'lucide-react'
+import { ArrowLeft, RotateCcw, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
-import { useSettingsLogs } from '../hooks/use-settings'
+import {
+  useRestoreSettingsLog,
+  useSettingsLog,
+  useSettingsLogMetrics,
+  useSettingsLogs,
+} from '../hooks/use-settings'
 import { fetchSettingsLogs } from '../api/settings-api'
-import type { SettingsLog } from '../types/settings'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
-import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import type { SettingsLog, SettingsModule } from '../types/settings'
+import { SettingsLogActionDetailsModal } from '../components/settings-log-action-details-modal'
+import { VersionHistoryPanel } from '../components/version-history-panel'
+import {
+  DEFAULT_SETTINGS_LOGS_METRIC_IDS,
+  SETTINGS_LOGS_METRIC_IDS,
+  SETTINGS_LOGS_METRIC_ID_SET,
+  SETTINGS_LOGS_MODULE_KEY,
+} from '../config/settings-logs-metrics.config'
+import {
+  DEFAULT_SETTINGS_LOGS_VISIBLE_COLUMN_IDS,
+  SETTINGS_LOGS_LEGACY_COLUMN_ID_MAP,
+} from '../config/settings-logs-table-columns.config'
+import { buildSettingsLogsMetricCards } from '../utils/settings-logs-metrics'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
-import { SETTINGS_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
-import { Button } from '@/shared/components/ui/button'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { LogStatusBadge } from '@/shared/components/ui/log-status-badge'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import {
-  buildPrefixedListQueryParams,
-  createPrefixedListExportHandler,
-} from '@/shared/utils/export-filter-utils'
-import { toast } from 'sonner'
+import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
 import { formatDateTimeEnInLogs as formatDateTime } from '@/shared/lib/format-datetime'
 
 const PAGE_SIZE = 10
 
+/** Figma Setting Logs module tabs (filter keys accepted by logs API). */
+const MODULE_TABS: Array<{ key: string; label: string }> = [
+  { key: 'platform', label: 'Platform Controls' },
+  { key: 'security', label: 'Security & Access' },
+  { key: 'user', label: 'User Application' },
+  { key: 'expert', label: 'Expert Application' },
+  { key: 'event', label: 'Event Management' },
+  { key: 'venue', label: 'Venue Management' },
+  { key: 'service', label: 'Service Marketplace' },
+]
+
 const SETTINGS_LOG_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
   'createdAt',
   'module',
-  'action',
   'status',
   'performedBy',
-  'ipAddress',
+  'role',
 ])
 
 const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: SettingsLog) => string }
 > = {
-  createdAt: { header: 'Timestamp', accessor: (row) => exportDisplayValue(row.createdAt) },
-  module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
-  action: { header: 'Action', accessor: (row) => exportDisplayValue(row.action) },
+  performedBy: { header: 'User ID', accessor: (row) => exportDisplayValue(row.performedBy) },
+  role: { header: 'Roles', accessor: (row) => exportDisplayValue(row.role) },
+  module: {
+    header: 'Module',
+    accessor: (row) => exportDisplayValue(row.moduleLabel || row.module),
+  },
+  changedSettings: {
+    header: 'Changed Settings',
+    accessor: (row) => exportDisplayValue((row.changedSettings || []).join(', ')),
+  },
+  oldValues: {
+    header: 'Old Values',
+    accessor: (row) =>
+      exportDisplayValue((row.changes || []).map((item) => item.oldValue).join(', ')),
+  },
+  newValues: {
+    header: 'New Values',
+    accessor: (row) =>
+      exportDisplayValue((row.changes || []).map((item) => item.newValue).join(', ')),
+  },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  performedBy: { header: 'Performed By', accessor: (row) => exportDisplayValue(row.performedBy) },
-  ipAddress: { header: 'IP', accessor: (row) => exportDisplayValue(row.ipAddress) },
+  createdAt: { header: 'Timestamp', accessor: (row) => exportDisplayValue(row.createdAt) },
 }
 
-function ActionBadge({ action }: { action: string }) {
-  const label = action === 'reset' ? 'Reset' : 'Update'
+function summarizeChanges(log: SettingsLog) {
+  const changes = log.changes || []
+  if (!changes.length) {
+    return {
+      settings: log.changedSettings?.join(', ') || '—',
+      oldValue: '—',
+      newValue: '—',
+    }
+  }
+
+  if (changes.length === 1) {
+    return {
+      settings: changes[0].setting,
+      oldValue:
+        changes[0].oldValue == null || changes[0].oldValue === ''
+          ? '—'
+          : String(changes[0].oldValue),
+      newValue:
+        changes[0].newValue == null || changes[0].newValue === ''
+          ? '—'
+          : String(changes[0].newValue),
+    }
+  }
+
+  return {
+    settings: changes.map((item) => item.setting).join(', '),
+    oldValue: `${changes.length} changes`,
+    newValue: `${changes.length} changes`,
+  }
+}
+
+function ModulePill({ label }: { label: string }) {
   return (
-    <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/6 px-2.5 py-0.5 text-[11px] font-semibold">
+    <span className="inline-flex max-w-[180px] truncate rounded-[10px] border border-white/10 bg-[#0A0A0A] px-2.5 py-1 text-xs font-medium text-white">
       {label}
     </span>
+  )
+}
+
+function UserIdCell({ name }: { name: string }) {
+  const label = name?.trim() || '—'
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span
+        className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+        aria-hidden="true"
+      >
+        <UserRound className="size-4" />
+      </span>
+      <span className="text-brand-text truncate text-sm font-medium">{label}</span>
+    </div>
   )
 }
 
 export function SettingsLogsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const [activeModuleTab, setActiveModuleTab] = useState<string>('service')
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
+  const [versionHistoryModule, setVersionHistoryModule] = useState<SettingsModule | null>(null)
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
+  const [noteLog, setNoteLog] = useState<SettingsLog | null>(null)
+
   const serverSort = useServerTableSort({
     sortFieldMap: SETTINGS_LOG_SORT_FIELD_MAP,
     defaultSortBy: 'createdAt',
     onPageReset: () => setPage(1),
   })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-  const [selectedLog, setSelectedLog] = useState<SettingsLog | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+
+  const metricsModule = activeModuleTab
+  const { data: metricsData, isLoading: metricsLoading } = useSettingsLogMetrics({
+    module: metricsModule,
+  })
+  const tableColumnPreferencesQuery = useTableColumnPreferences(SETTINGS_LOGS_MODULE_KEY)
+
+  const activeMetricIds = useActiveMetricIds(SETTINGS_LOGS_MODULE_KEY, [
+    ...DEFAULT_SETTINGS_LOGS_METRIC_IDS,
+  ])
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => SETTINGS_LOGS_METRIC_ID_SET.has(id)),
+        SETTINGS_LOGS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+  const visibleMetrics = useMemo(() => {
+    const allMetrics = buildSettingsLogsMetricCards(metricsData)
+    return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
+  }, [filteredActiveMetricIds, metricsData])
 
   const listQueryParams = useMemo(
-    () =>
-      buildPrefixedListQueryParams(appliedFilters, {
-        page,
-        limit: PAGE_SIZE,
-        ...enhancedSearch.buildSearchParams(),
-        ...serverSort.sortParams,
-      }),
-    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
+    () => ({
+      page,
+      limit: PAGE_SIZE,
+      module: activeModuleTab,
+      ...serverSort.sortParams,
+    }),
+    [activeModuleTab, page, serverSort.sortParams],
   )
 
-  const { data, isLoading } = useSettingsLogs(listQueryParams)
+  const { data, isLoading, refetch } = useSettingsLogs(listQueryParams)
+  const { data: selectedLogDetail } = useSettingsLog(selectedLogId || undefined)
+  const restoreMutation = useRestoreSettingsLog()
 
   const rows = data?.data ?? []
   const meta = data?.meta ?? { page, limit: PAGE_SIZE, total: rows.length, totalPages: 1 }
+  const selectedLog = selectedLogDetail || rows.find((row) => row.id === selectedLogId) || null
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    toast.success('Filters applied')
-    setAppliedFilters(values)
-    setPage(1)
-  }, [])
-
-  const handleExportData = useMemo(() => {
+  const exportHandler = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchSettingsLogs(params)
       return { data: result.data ?? [] }
@@ -103,100 +218,244 @@ export function SettingsLogsPage() {
       fetchForExport,
       SETTINGS_LOG_EXPORT_COLUMN_MAP,
       'settings_logs_export',
-      { search: enhancedSearch.globalSearch || undefined },
+      {
+        module: activeModuleTab,
+      },
     )
-  }, [enhancedSearch.globalSearch])
+  }, [activeModuleTab])
 
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'settings-logs',
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
-  })
+  const handleHeaderExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      await exportHandler({}, 'csv')
+      toast.success('Settings logs exported')
+    } catch {
+      toast.error('Failed to export settings logs')
+    } finally {
+      setIsExporting(false)
+    }
+  }, [exportHandler])
 
-  const columns = useMemo<ColumnDef<SettingsLog>[]>(
-    () =>
-      withServerSortMeta(
-        [
-          {
-            accessorKey: 'createdAt',
-            header: 'Timestamp',
-            cell: ({ row }) => (
-              <span className="text-brand-text text-sm">
-                {formatDateTime(row.original.createdAt)}
-              </span>
-            ),
-          },
-          {
-            accessorKey: 'module',
-            header: 'Module',
-            cell: ({ row }) => (
-              <span className="text-brand-text text-sm font-medium capitalize">
-                {row.original.module}
-              </span>
-            ),
-          },
-          {
-            accessorKey: 'action',
-            header: 'Action',
-            cell: ({ row }) => <ActionBadge action={row.original.action} />,
-          },
-          {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => <LogStatusBadge status={row.original.status} />,
-          },
-          {
-            accessorKey: 'performedBy',
-            header: 'Performed By',
-            cell: ({ row }) => (
-              <span className="text-brand-muted text-sm">{row.original.performedBy || '—'}</span>
-            ),
-          },
-          {
-            accessorKey: 'ipAddress',
-            header: 'IP',
-            cell: ({ row }) => (
-              <span className="text-brand-muted text-sm">{row.original.ipAddress || '—'}</span>
-            ),
-          },
-        ],
-        SETTINGS_LOG_SORT_FIELD_MAP,
-      ),
-    [],
+  const handleRestore = useCallback(
+    async (log: SettingsLog) => {
+      try {
+        await restoreMutation.mutateAsync(log.id)
+        toast.success('Previous settings version restored')
+        setSelectedLogId(null)
+        void refetch()
+      } catch {
+        toast.error('Failed to restore previous version')
+      }
+    },
+    [refetch, restoreMutation],
   )
+
+  const columns = useMemo<ColumnDef<SettingsLog>[]>(() => {
+    const allColumns: ColumnDef<SettingsLog>[] = [
+      {
+        id: 'performed-by',
+        accessorKey: 'performedBy',
+        header: 'User ID',
+        cell: ({ row }) => <UserIdCell name={row.original.performedBy || '—'} />,
+      },
+      {
+        id: 'role',
+        accessorKey: 'role',
+        header: 'Roles',
+        cell: ({ row }) => (
+          <span className="text-brand-text text-sm">{row.original.role || 'Admin'}</span>
+        ),
+      },
+      {
+        id: 'module',
+        accessorKey: 'module',
+        header: 'Module',
+        cell: ({ row }) => <ModulePill label={row.original.moduleLabel || row.original.module} />,
+      },
+      {
+        id: 'changed-settings',
+        header: 'Changed Settings',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const summary = summarizeChanges(row.original)
+          return <span className="text-brand-text text-sm">{summary.settings}</span>
+        },
+      },
+      {
+        id: 'old-values',
+        header: 'Old Values',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const summary = summarizeChanges(row.original)
+          return <span className="text-brand-text text-sm">{summary.oldValue}</span>
+        },
+      },
+      {
+        id: 'new-values',
+        header: 'New Values',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const summary = summarizeChanges(row.original)
+          return <span className="text-brand-text text-sm">{summary.newValue}</span>
+        },
+      },
+      {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <LogStatusBadge status={row.original.status} variant="solid" />,
+      },
+      {
+        id: 'created-at',
+        accessorKey: 'createdAt',
+        header: 'Timestamp',
+        cell: ({ row }) => (
+          <span className="text-brand-text text-sm">{formatDateTime(row.original.createdAt)}</span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const log = row.original
+          const isOpen = activeMenuId === log.id
+
+          return (
+            <TableActionsDropdown
+              label="Open log actions"
+              isOpen={isOpen}
+              onOpenChange={(open) => setActiveMenuId(open ? log.id : null)}
+              menuWidth={220}
+            >
+              <TableActionsItem
+                icon={<UserRound className="size-4" />}
+                onClick={() => {
+                  setActiveMenuId(null)
+                  setNoteLog(log)
+                }}
+              >
+                View Notes
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<RotateCcw className="size-4" />}
+                onClick={() => {
+                  setActiveMenuId(null)
+                  void handleRestore(log)
+                }}
+              >
+                Restore Previous Version
+              </TableActionsItem>
+            </TableActionsDropdown>
+          )
+        },
+      },
+    ]
+
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SETTINGS_LOGS_VISIBLE_COLUMN_IDS
+
+    return withServerSortMeta(
+      selectPreferredColumns(
+        allColumns,
+        rawVisibleIds,
+        DEFAULT_SETTINGS_LOGS_VISIBLE_COLUMN_IDS,
+        SETTINGS_LOGS_LEGACY_COLUMN_ID_MAP,
+      ),
+      SETTINGS_LOG_SORT_FIELD_MAP,
+    )
+  }, [activeMenuId, handleRestore, tableColumnPreferencesQuery.data?.visibleColumnIds])
+
+  const goBack = () => navigateBackOrFallback(navigate, '/settings/main')
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        title="Settings Logs"
-        subtitle="Audit trail for settings updates and resets"
-        actions={[
-          {
-            label: 'Back to Settings',
-            onClick: () => navigateBackOrFallback(navigate, '/settings/main'),
-            variant: 'secondary',
-          },
-        ]}
-      >
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button
-            variant="ghost"
-            className="gap-2"
-            onClick={() => navigateBackOrFallback(navigate, '/settings/main')}
-          >
-            <ArrowLeft className="size-4" />
-            Settings
-          </Button>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="login-trails-title-row">
+          <button type="button" onClick={goBack} className="login-trails-back" aria-label="Back">
+            <ArrowLeft className="size-5" />
+          </button>
+          <div>
+            <h1 className="text-h1 text-brand-text font-semibold tracking-tight">Setting Logs</h1>
+          </div>
         </div>
-      </SectionHeader>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void handleHeaderExport()}
+            disabled={isExporting}
+            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4 disabled:opacity-60"
+          >
+            <ExportDataIcon className="size-5 shrink-0" />
+            {isExporting ? 'Exporting...' : 'Export Data'}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/metrics/settings-logs?returnTo=/settings/logs&section=all')}
+            className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+          >
+            <ManageMetricsIcon className="size-4 shrink-0" />
+            Manage Metrics
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {metricsLoading
+          ? Array.from({ length: filteredActiveMetricIds.length || 4 }).map((_, index) => (
+              <div
+                key={`settings-log-metric-skel-${index}`}
+                className={cn(
+                  uiTokens.radiusCard,
+                  uiTokens.borderSubtle,
+                  'bg-brand-surface h-[130px] animate-pulse',
+                )}
+              />
+            ))
+          : visibleMetrics.map((metric) => (
+              <StatCard
+                key={metric.id}
+                title={metric.title}
+                value={metric.value}
+                trend={metric.trend}
+                hint={metric.hint}
+              />
+            ))}
+      </div>
+
+      <nav className="settings-tabs" aria-label="Settings log modules">
+        <div className="settings-tabs-inner">
+          {MODULE_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => {
+                setActiveModuleTab(tab.key)
+                setPage(1)
+              }}
+              className={cn('settings-tab', activeModuleTab === tab.key && 'is-active')}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       <div
-        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
+        className={cn(
+          uiTokens.radiusCard,
+          uiTokens.borderSubtle,
+          'bg-brand-surface overflow-hidden',
+        )}
       >
+        <div className="border-b border-white/10 px-4 py-5 sm:px-5">
+          <h2 className="text-brand-text text-lg font-semibold">Action Logs</h2>
+          <p className="text-brand-muted mt-1 text-sm">
+            Complete history of actions performed by this admin.
+          </p>
+        </div>
+
         <DataTable
           columns={columns}
           data={rows}
@@ -206,17 +465,13 @@ export function SettingsLogsPage() {
           loadingRowCount={PAGE_SIZE}
           emptyMessage="No settings actions found."
           stickyHeader
-          searchValue={enhancedSearch.globalSearch}
-          onSearchChange={enhancedSearch.setGlobalSearch}
-          searchableColumns={SETTINGS_LOGS_SEARCH_COLUMNS}
-          columnSearches={enhancedSearch.columnSearches}
-          onColumnSearchChange={enhancedSearch.setColumnSearch}
-          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
-          onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by action, IP, or admin…"
-          onAdvancedFilter={onAdvancedFilter}
-          advancedFilterVariant="primary"
-          onExport={onExport}
+          searchValue=""
+          onSearchChange={() => {}}
+          showSearch={false}
+          showRecordCount={false}
+          showAdvancedFilter={false}
+          showExport={false}
+          className="!rounded-none !border-0 !bg-transparent"
           pagination={{
             page: meta.page,
             pageSize: meta.limit,
@@ -224,83 +479,63 @@ export function SettingsLogsPage() {
             totalPages: meta.totalPages,
             onPageChange: setPage,
           }}
-          toolbarContent={
-            <Button
-              variant="secondary"
-              className="gap-2"
-              onClick={() => navigate('/settings/health')}
-            >
-              <Eye className="size-4" />
-              Platform Health
-            </Button>
-          }
-          onRowClick={(row) => setSelectedLog(row)}
+          onRowClick={(row) => setSelectedLogId(row.id)}
         />
       </div>
 
-      {exportFilterModals}
+      <SettingsLogActionDetailsModal
+        open={Boolean(selectedLogId)}
+        log={selectedLog}
+        isRestoring={restoreMutation.isPending}
+        onClose={() => setSelectedLogId(null)}
+        onViewVersionHistory={() => {
+          if (!selectedLog) return
+          setVersionHistoryModule(selectedLog.module)
+        }}
+        onRestore={() => {
+          if (!selectedLog) return
+          void handleRestore(selectedLog)
+        }}
+      />
 
-      {selectedLog ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+      <VersionHistoryPanel
+        open={Boolean(versionHistoryModule)}
+        module={versionHistoryModule}
+        onClose={() => setVersionHistoryModule(null)}
+      />
+
+      {noteLog ? (
+        <div
+          className="fixed inset-0 z-[120] grid place-items-center bg-black/70 p-4"
+          role="presentation"
+          onClick={() => setNoteLog(null)}
+        >
           <div
+            role="dialog"
+            aria-modal="true"
             className={cn(
               uiTokens.radiusCard,
               uiTokens.borderSubtle,
-              'bg-brand-surface w-full max-w-2xl p-5 sm:p-6',
+              'bg-brand-surface w-full max-w-lg p-5 sm:p-6',
             )}
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-brand-text text-lg font-semibold">Action Details</h3>
-                <p className="text-brand-muted mt-1 text-sm">
-                  {selectedLog.module} - {selectedLog.action}
-                </p>
-              </div>
+            <h3 className="text-brand-text mb-3 text-lg font-semibold">Admin Note</h3>
+            <p className="text-brand-text text-sm leading-relaxed">
+              {noteLog.adminNote?.trim() || 'No admin note provided.'}
+            </p>
+            <div className="mt-5 flex justify-end">
               <button
                 type="button"
-                onClick={() => setSelectedLog(null)}
-                className="text-brand-muted hover:text-brand-text rounded-md p-1 hover:bg-white/10"
-                aria-label="Close details"
+                className="ui-cta ui-cta-secondary px-4"
+                onClick={() => setNoteLog(null)}
               >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <InfoRow label="Timestamp" value={formatDateTime(selectedLog.createdAt)} />
-              <InfoRow label="Status" value={selectedLog.status} />
-              <InfoRow label="Performed By" value={selectedLog.performedBy || '—'} />
-              <InfoRow label="IP Address" value={selectedLog.ipAddress || '—'} />
-              <InfoRow label="Module" value={selectedLog.module} />
-              <InfoRow label="Action" value={selectedLog.action} />
-            </div>
-
-            <div className="mt-4 rounded-xl border border-white/10 bg-[#0F0F0F] p-3">
-              <p className="text-brand-muted mb-2 text-xs font-semibold tracking-wide uppercase">
-                Metadata
-              </p>
-              <pre className="text-brand-text max-h-64 overflow-auto text-xs">
-                {JSON.stringify(selectedLog.metadata ?? {}, null, 2)}
-              </pre>
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <Button variant="secondary" onClick={() => setSelectedLog(null)}>
                 Close
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       ) : null}
-    </div>
-  )
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-[#111111] p-3">
-      <p className="text-brand-muted text-[11px] tracking-wide uppercase">{label}</p>
-      <p className="text-brand-text mt-1 text-sm">{value}</p>
     </div>
   )
 }

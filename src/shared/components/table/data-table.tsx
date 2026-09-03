@@ -51,6 +51,8 @@ export type DataTableProps<TData> = {
   isExporting?: boolean
   showAdvancedFilter?: boolean
   showExport?: boolean
+  showSearch?: boolean
+  showRecordCount?: boolean
   pagination: DataTablePagination
   resourceLabel?: string
   toolbarContent?: ReactNode
@@ -113,6 +115,8 @@ export function DataTable<TData>({
   isExporting = false,
   showAdvancedFilter = true,
   showExport = true,
+  showSearch = true,
+  showRecordCount = true,
   pagination,
   resourceLabel = 'records',
   toolbarContent,
@@ -160,6 +164,7 @@ export function DataTable<TData>({
   }
 
   const isCategoryTone = tone === 'category'
+  const showToolbarRow = showSearch || showAdvancedFilter || showExport || Boolean(toolbarContent)
 
   return (
     <section
@@ -170,78 +175,88 @@ export function DataTable<TData>({
       )}
       aria-label={`${resourceLabel} table`}
     >
-      <div className={cn('px-4 pt-4 sm:px-5 sm:pt-5', contentClassName)}>
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-          {searchableColumns &&
-          columnSearches &&
-          onColumnSearchChange &&
-          onColumnSearchRemove &&
-          onClearAllSearches ? (
-            <EnhancedSearchBar
-              globalSearch={searchValue}
-              onGlobalSearchChange={onSearchChange}
-              searchPlaceholder={searchPlaceholder}
-              resourceLabel={resourceLabel}
-              searchableColumns={searchableColumns}
-              columnSearches={columnSearches}
-              onColumnSearchChange={onColumnSearchChange}
-              onColumnSearchRemove={onColumnSearchRemove}
-              onClearAll={onClearAllSearches}
-            />
-          ) : (
-            <div className="ui-table-search-wrap">
-              <Search className="ui-table-search-icon" aria-hidden="true" />
-              <input
-                type="search"
-                value={searchValue}
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder={searchPlaceholder}
-                aria-label={`Search ${resourceLabel}`}
-                className="ui-table-search h-[50px]"
-              />
+      {(showToolbarRow || showRecordCount) && (
+        <div className={cn('px-4 pt-4 sm:px-5 sm:pt-5', contentClassName)}>
+          {showToolbarRow ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
+              {showSearch ? (
+                searchableColumns &&
+                columnSearches &&
+                onColumnSearchChange &&
+                onColumnSearchRemove &&
+                onClearAllSearches ? (
+                  <EnhancedSearchBar
+                    globalSearch={searchValue}
+                    onGlobalSearchChange={onSearchChange}
+                    searchPlaceholder={searchPlaceholder}
+                    resourceLabel={resourceLabel}
+                    searchableColumns={searchableColumns}
+                    columnSearches={columnSearches}
+                    onColumnSearchChange={onColumnSearchChange}
+                    onColumnSearchRemove={onColumnSearchRemove}
+                    onClearAll={onClearAllSearches}
+                  />
+                ) : (
+                  <div className="ui-table-search-wrap">
+                    <Search className="ui-table-search-icon" aria-hidden="true" />
+                    <input
+                      type="search"
+                      value={searchValue}
+                      onChange={(event) => onSearchChange(event.target.value)}
+                      placeholder={searchPlaceholder}
+                      aria-label={`Search ${resourceLabel}`}
+                      className="ui-table-search h-[50px]"
+                    />
+                  </div>
+                )
+              ) : (
+                <div />
+              )}
+
+              <div className="flex shrink-0 items-center justify-end gap-3">
+                {toolbarContent}
+                {showAdvancedFilter ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onAdvancedFilter}
+                    disabled={!onAdvancedFilter}
+                    className="table-advance-filter-btn gap-2"
+                  >
+                    <AdvanceFilterIcon className="size-5 shrink-0" aria-hidden="true" />
+                    {advancedFilterLabel}
+                  </Button>
+                ) : null}
+                {showExport ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={onExport}
+                    disabled={!onExport || isExporting}
+                    className="table-export-btn gap-2"
+                  >
+                    <ExportDataIcon className="size-5 shrink-0" aria-hidden="true" />
+                    {isExporting ? 'Exporting...' : 'Export Data'}
+                  </Button>
+                ) : null}
+              </div>
             </div>
-          )}
+          ) : null}
 
-          <div className="flex shrink-0 items-center justify-end gap-3">
-            {toolbarContent}
-            {showAdvancedFilter ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={onAdvancedFilter}
-                disabled={!onAdvancedFilter}
-                className="table-advance-filter-btn gap-2"
-              >
-                <AdvanceFilterIcon className="size-5 shrink-0" aria-hidden="true" />
-                {advancedFilterLabel}
-              </Button>
-            ) : null}
-            {showExport ? (
-              <Button
-                type="button"
-                variant="primary"
-                onClick={onExport}
-                disabled={!onExport || isExporting}
-                className="table-export-btn gap-2"
-              >
-                <ExportDataIcon className="size-5 shrink-0" aria-hidden="true" />
-                {isExporting ? 'Exporting...' : 'Export Data'}
-              </Button>
-            ) : null}
-          </div>
+          {showRecordCount ? (
+            <div className="pb-4" aria-live="polite">
+              <p className="ui-table-showing">
+                Showing{' '}
+                <span className="ui-table-showing-value">
+                  {firstItem}-{lastItem}
+                </span>{' '}
+                of <span className="ui-table-showing-value">{pagination.totalItems}</span>{' '}
+                {resourceLabel}
+              </p>
+            </div>
+          ) : null}
         </div>
-
-        <div className="pb-4" aria-live="polite">
-          <p className="ui-table-showing">
-            Showing{' '}
-            <span className="ui-table-showing-value">
-              {firstItem}-{lastItem}
-            </span>{' '}
-            of <span className="ui-table-showing-value">{pagination.totalItems}</span>{' '}
-            {resourceLabel}
-          </p>
-        </div>
-      </div>
+      )}
 
       <div className="overflow-x-auto px-4 sm:px-5">
         <table className="ui-data-table-table">

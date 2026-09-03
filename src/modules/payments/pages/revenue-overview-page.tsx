@@ -53,6 +53,12 @@ import type { FilterValues } from '@/shared/types/data-filter'
 import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 import { FINANCE_PAYMENT_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -100,16 +106,6 @@ const EXPORT_COLUMN_MAP = buildExportColumnMapFromCatalog<RevenueExportRow>(
     'last-updated': (row) => row.lastUpdated,
   },
 )
-
-function getStatusClassName(status: RevenueOverviewRow['status']) {
-  if (status === 'Paid') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending') {
-    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
 
 export function RevenueOverviewPage() {
   const navigate = useNavigate()
@@ -304,20 +300,28 @@ export function RevenueOverviewPage() {
         id: 'transaction-id',
         header: 'Transaction ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {(row.original as { transactionId?: string }).transactionId ||
               row.original.entityId ||
               '—'}
           </span>
         ),
       },
-      module: { accessorKey: 'module', header: 'Module' },
-      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
+      module: {
+        accessorKey: 'module',
+        header: 'Module',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.module}</FinanceTableCellText>,
+      },
+      'entity-type': {
+        accessorKey: 'entityType',
+        header: 'Entity Type',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.entityType}</FinanceTableCellText>,
+      },
       'entity-id': {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.entityId}
           </span>
         ),
@@ -326,23 +330,37 @@ export function RevenueOverviewPage() {
         accessorKey: 'entityName',
         header: 'Entity Name',
         cell: ({ row }) => (
-          <span className="text-brand-text font-medium">{row.original.entityName}</span>
+          <span className={FINANCE_TABLE_CELL_CLASS}>{row.original.entityName}</span>
         ),
       },
-      category: { accessorKey: 'category', header: 'Category' },
+      category: {
+        accessorKey: 'category',
+        header: 'Category',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.category}</FinanceTableCellText>,
+      },
       'sub-category': {
         id: 'sub-category',
         header: 'Sub Category',
         cell: ({ row }) => (row.original as { subCategory?: string }).subCategory || '—',
       },
-      'owner-type': { accessorKey: 'ownerType', header: 'Owner Type' },
-      'owner-name': { accessorKey: 'ownerName', header: 'Owner Name' },
+      'owner-type': {
+        accessorKey: 'ownerType',
+        header: 'Owner Type',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.ownerType}</FinanceTableCellText>,
+      },
+      'owner-name': {
+        accessorKey: 'ownerName',
+        header: 'Owner Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.ownerName}</FinanceTableCellText>,
+      },
       'gross-revenue': {
         id: 'gross-revenue',
         accessorKey: 'grossAmount',
         header: 'Gross Revenue',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.grossAmount}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.grossAmount}
+          </span>
         ),
       },
       discounts: {
@@ -380,26 +398,23 @@ export function RevenueOverviewPage() {
         id: 'payment-status',
         accessorKey: 'status',
         header: 'Payment Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
       'settlement-status': {
         id: 'settlement-status',
         header: 'Settlement Status',
-        cell: ({ row }) => (row.original as { settlementStatus?: string }).settlementStatus || '—',
+        cell: ({ row }) => {
+          const status = (row.original as { settlementStatus?: string }).settlementStatus
+          return status ? <FinanceTableStatusBadge status={status} /> : '—'
+        },
       },
       'compliance-status': {
         id: 'compliance-status',
         header: 'Compliance Status',
-        cell: ({ row }) => (row.original as { complianceStatus?: string }).complianceStatus || '—',
+        cell: ({ row }) => {
+          const status = (row.original as { complianceStatus?: string }).complianceStatus
+          return status ? <FinanceTableStatusBadge status={status} /> : '—'
+        },
       },
       'last-updated': {
         id: 'last-updated',
@@ -469,6 +484,7 @@ export function RevenueOverviewPage() {
       ) : null}
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}

@@ -28,6 +28,9 @@ pnpm-lock.yaml
 coverage
 *.lcov
 
+# Local capture artifacts
+.tmp*.png
+
 # Tooling caches
 .eslintcache
 *.tsbuildinfo

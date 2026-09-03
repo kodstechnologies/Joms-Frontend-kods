@@ -11,8 +11,8 @@ import {
   useUpdateSettings,
 } from '../hooks/use-settings'
 import { backupDefaults } from '../mock/settings.defaults'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 export function BackupConfigurationPage() {
   const navigate = useNavigate()
@@ -21,12 +21,15 @@ export function BackupConfigurationPage() {
   const resetBackup = useResetSettings('backup')
   const [backupConfig, setBackupConfig] = useSettingsDraft(backupQuery.data, backupDefaults)
 
+  const goBack = () =>
+    navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'backup' } })
+
   const handleSave = async () => {
     try {
       await updateBackup.mutateAsync(backupConfig)
-      toast.success('Backup configuration saved')
-    } catch {
-      toast.error('Failed to save backup configuration')
+      toast.success('Saved')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Save failed'))
     }
   }
 
@@ -34,41 +37,34 @@ export function BackupConfigurationPage() {
     try {
       const result = await resetBackup.mutateAsync()
       setBackupConfig(result.config)
-      toast.success('Backup configuration reset to defaults')
-    } catch {
-      toast.error('Failed to reset backup configuration')
+      toast.success('Reset to defaults')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Reset failed'))
     }
   }
 
   return (
-    <div className="space-y-6">
-      <button
-        type="button"
-        onClick={() =>
-          navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'backup' } })
-        }
-        className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
-      >
-        <ArrowLeft className="size-4" />
-        Settings / Backups & Restore / Backup Configuration
-      </button>
+    <div className="backup-config-page">
+      <p className="backup-config-breadcrumb">
+        <button type="button" onClick={goBack} className="backup-config-breadcrumb-link">
+          Settings
+        </button>
+        <span> / </span>
+        <button type="button" onClick={goBack} className="backup-config-breadcrumb-link">
+          Backups &amp; Restore
+        </button>
+        <span> / </span>
+        <span className="backup-config-breadcrumb-current">Backup Configuration</span>
+      </p>
 
-      <SectionHeader
-        title="Backup Configuration"
-        subtitle="Configure automatic backup schedule, scope, and retention"
-        actions={[
-          {
-            label: 'Settings Logs',
-            onClick: () => navigate('/settings/logs'),
-            variant: 'secondary',
-          },
-        ]}
-      />
+      <button type="button" onClick={goBack} className="backup-config-back">
+        <ArrowLeft className="size-5" aria-hidden="true" />
+        <span>Backup Configuration</span>
+      </button>
+      <p className="backup-config-subtitle">Configure automated backup settings and preferences</p>
 
       {backupQuery.isLoading ? (
-        <div className="rounded-2xl border border-white/10 bg-[#111111] p-8 text-sm text-slate-400">
-          Loading backup configuration...
-        </div>
+        <div className="backup-config-loading">Loading...</div>
       ) : (
         <>
           <BackupConfigurationPanel value={backupConfig} onChange={setBackupConfig} />

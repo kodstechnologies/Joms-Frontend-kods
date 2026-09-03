@@ -10,7 +10,7 @@ import { fetchFinancePayoutById, fetchFinancePayouts } from '@/modules/payments/
 import { useFinanceDashboard, useFinancePayouts } from '@/modules/payments/hooks/use-finance'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mappers'
-import type { PayoutRow, PayoutStatus } from '@/modules/payments/types/finance-table-rows'
+import type { PayoutRow } from '@/modules/payments/types/finance-table-rows'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -34,6 +34,12 @@ import {
   createFinancePayoutsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/utils/invoice-document'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -81,13 +87,6 @@ function SummaryCard({
       </div>
     </div>
   )
-}
-
-function getStatusClassName(status: PayoutStatus) {
-  if (status === 'Completed')
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  if (status === 'Pending') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function PayoutManagementPage() {
@@ -257,26 +256,51 @@ export function PayoutManagementPage() {
             ),
             meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
           },
-          { accessorKey: 'payoutId', header: 'Payout ID' },
-          { accessorKey: 'recipient', header: 'Recipient' },
-          { accessorKey: 'type', header: 'Type' },
-          { accessorKey: 'amount', header: 'Amount' },
-          { accessorKey: 'method', header: 'Method' },
-          { accessorKey: 'initiatedDate', header: 'Initiated Date' },
-          { accessorKey: 'description', header: 'Description' },
+          {
+            accessorKey: 'payoutId',
+            header: 'Payout ID',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.payoutId}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'recipient',
+            header: 'Recipient',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.recipient}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'type',
+            header: 'Type',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.type}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.amount}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'method',
+            header: 'Method',
+            cell: ({ row }) => <FinanceTableCellText>{row.original.method}</FinanceTableCellText>,
+          },
+          {
+            accessorKey: 'initiatedDate',
+            header: 'Initiated Date',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.initiatedDate}</FinanceTableCellText>
+            ),
+          },
+          {
+            accessorKey: 'description',
+            header: 'Description',
+            cell: ({ row }) => (
+              <FinanceTableCellText>{row.original.description}</FinanceTableCellText>
+            ),
+          },
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => (
-              <span
-                className={cn(
-                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                  getStatusClassName(row.original.status),
-                )}
-              >
-                {row.original.status}
-              </span>
-            ),
+            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
           },
           {
             id: 'actions',
@@ -330,6 +354,7 @@ export function PayoutManagementPage() {
       </div>
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}

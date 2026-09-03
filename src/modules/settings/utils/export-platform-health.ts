@@ -60,22 +60,14 @@ export async function exportPlatformHealthToExcel(data: PlatformHealthExportData
       },
       {
         name: 'System Performance 24h',
-        headers: ['Time', 'Memory %', 'CPU %', 'Requests/min'],
+        headers: ['Time', 'Memory %', 'CPU %', 'Request/min', 'API Response (ms)', 'Error Rate %'],
         rows: (charts?.systemPerformance24h || []).map((row) => [
           row.time,
-          row.memoryUsage,
-          row.cpuUsage,
+          row.memory,
+          row.cpu,
           row.requestsPerMin,
-        ]),
-      },
-      {
-        name: 'Performance',
-        headers: ['Time', 'API Response (ms)', 'Error Rate %', 'Queue Time (s)'],
-        rows: (charts?.performance || []).map((row) => [
-          row.time,
           row.apiResponseMs,
           row.errorRate,
-          row.queueSeconds,
         ]),
       },
       {

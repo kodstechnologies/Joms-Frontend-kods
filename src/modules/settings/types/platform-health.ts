@@ -65,8 +65,11 @@ export type PlatformHealthDashboard = {
     }>
     systemPerformance24h: Array<{
       time: string
-      memoryUsage: number
-      cpuUsage: number
+      apiResponseMs: number
+      errorRate: number
+      queueSeconds: number
+      cpu: number
+      memory: number
       requestsPerMin: number
     }>
     healthTrend: Array<{ date: string; healthScore: number; uptime: number; errorRate: number }>
@@ -75,6 +78,9 @@ export type PlatformHealthDashboard = {
       apiResponseMs: number
       errorRate: number
       queueSeconds: number
+      cpu?: number
+      memory?: number
+      requestsPerMin?: number
     }>
     apiTraffic: Array<{ date: string; requests: number }>
     errorDistribution: Array<{ name: string; value: number }>

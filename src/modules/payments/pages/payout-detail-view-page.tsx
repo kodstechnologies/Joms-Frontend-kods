@@ -9,6 +9,8 @@ import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-n
 import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as DetailRow,
+  FinanceDetailShell,
+  financeDetailCardClass,
 } from '@/modules/payments/components/finance-detail-layout'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
@@ -36,7 +38,7 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
 import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/utils/invoice-document'
 
-const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 
@@ -132,120 +134,125 @@ export function PayoutDetailViewPage() {
         </p>
       </header>
 
-      <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>Payout Details</h2>
-            <p className={sectionSubtitleClass}>
-              {titleCase(payout.module)} · {titleCase(payout.pricingType)}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              className="ui-cta"
-              onClick={() => {
-                void downloadInvoiceDocument(
-                  invoiceFromFinancePayout(payout, {
-                    logoUrl,
-                    recipientName: typeof payeeName === 'string' ? payeeName : undefined,
-                  }),
-                  payout.payoutId,
-                )
-                  .then(() => toast.success('Invoice downloaded'))
-                  .catch(() => toast.error('Failed to download invoice'))
-              }}
-            >
-              <Download className="size-4" />
-              Download Invoice
-            </Button>
-            <Button type="button" className="ui-cta" onClick={() => setNoteModal('note')}>
-              <SquarePen className="size-4" />
-              Add Internal Note
-            </Button>
-            {canRetry ? (
-              <Button className="ui-cta" onClick={() => setNoteModal('retry')}>
-                Retry Payout
-              </Button>
-            ) : null}
-            {canRelease ? (
-              <PermissionGate
-                permission="finance.approve_payout"
-                minLevel={PERMISSION_LEVELS.SECONDARY_APPROVAL}
+      <FinanceDetailShell>
+        <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className={sectionTitleClass}>Payout Details</h2>
+              <p className={sectionSubtitleClass}>
+                {titleCase(payout.module)} · {titleCase(payout.pricingType)}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                className="ui-cta"
+                onClick={() => {
+                  void downloadInvoiceDocument(
+                    invoiceFromFinancePayout(payout, {
+                      logoUrl,
+                      recipientName: typeof payeeName === 'string' ? payeeName : undefined,
+                    }),
+                    payout.payoutId,
+                  )
+                    .then(() => toast.success('Invoice downloaded'))
+                    .catch(() => toast.error('Failed to download invoice'))
+                }}
               >
-                <Button className="ui-cta" onClick={() => setNoteModal('release')}>
-                  Release Payout
+                <Download className="size-4" />
+                Download Invoice
+              </Button>
+              <Button type="button" className="ui-cta" onClick={() => setNoteModal('note')}>
+                <SquarePen className="size-4" />
+                Add Internal Note
+              </Button>
+              {canRetry ? (
+                <Button className="ui-cta" onClick={() => setNoteModal('retry')}>
+                  Retry Payout
                 </Button>
-              </PermissionGate>
-            ) : null}
+              ) : null}
+              {canRelease ? (
+                <PermissionGate
+                  permission="finance.approve_payout"
+                  minLevel={PERMISSION_LEVELS.SECONDARY_APPROVAL}
+                >
+                  <Button className="ui-cta" onClick={() => setNoteModal('release')}>
+                    Release Payout
+                  </Button>
+                </PermissionGate>
+              ) : null}
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <DetailCard title="Payout Information">
-            <DetailRow label="Payout ID" value={payout.payoutId} />
-            <DetailRow label="Payee ID" value={payout.partnerId || '—'} />
-            <DetailRow label="Payee Name" value={payeeName} />
-            <DetailRow label="Payee Type" value={mapPayeeType(payout.payeeType)} />
-            <DetailRow label="Related Transaction" value={relatedTransaction} />
-            <DetailRow
-              label="Payout Status"
-              value={
-                <FinanceStatusBadge status={status} toneClass={financePayoutStatusClass(status)} />
-              }
-            />
-            <DetailRow label="Scheduled Date" value={formatDate(payout.scheduledAt)} />
-            <DetailRow label="Processed Date" value={formatDate(payout.paidAt)} />
-            <DetailRow label="Finance Approver" value={financeApprover} />
-            <DetailRow
-              label="Bank Reference"
-              value={payout.bankingSnapshot?.bankReference || '—'}
-            />
-            <DetailRow label="Currency" value={fees.currency || 'INR'} />
-          </DetailCard>
-
-          <div className="flex flex-col gap-5">
-            <DetailCard title="Financial Details">
-              <DetailRow label="Gross Amount" value={formatInr(fees.grossAmount)} />
-              <DetailRow label="Platform Commission" value={formatInr(fees.platformCommission)} />
-              <DetailRow label="Tax Deduction" value={formatInr(taxDeduction)} />
-              <DetailRow label="Gateway Charges" value={formatInr(fees.gatewayCharges)} />
-              <DetailRow label="Net Payout" value={formatInr(fees.netPayable)} />
-            </DetailCard>
-
-            <DetailCard title="Bank Details">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <DetailCard title="Payout Information">
+              <DetailRow label="Payout ID" value={payout.payoutId} />
+              <DetailRow label="Payee ID" value={payout.partnerId || '—'} />
+              <DetailRow label="Payee Name" value={payeeName} />
+              <DetailRow label="Payee Type" value={mapPayeeType(payout.payeeType)} />
+              <DetailRow label="Related Transaction" value={relatedTransaction} />
               <DetailRow
-                label="Beneficiary"
-                value={payout.bankingSnapshot?.beneficiaryName || '—'}
+                label="Payout Status"
+                value={
+                  <FinanceStatusBadge
+                    status={status}
+                    toneClass={financePayoutStatusClass(status)}
+                  />
+                }
               />
-              <DetailRow label="Bank Name" value={payout.bankingSnapshot?.bankName || '—'} />
+              <DetailRow label="Scheduled Date" value={formatDate(payout.scheduledAt)} />
+              <DetailRow label="Processed Date" value={formatDate(payout.paidAt)} />
+              <DetailRow label="Finance Approver" value={financeApprover} />
               <DetailRow
-                label="Account Number"
-                value={maskAccount(
-                  payout.bankingSnapshot?.accountNumber ||
-                    payout.bankingSnapshot?.accountNumberMasked,
-                )}
-              />
-              <DetailRow label="IFSC Code" value={payout.bankingSnapshot?.ifscCode || '—'} />
-              <DetailRow
-                label="Transfer Reference (UTR)"
+                label="Bank Reference"
                 value={payout.bankingSnapshot?.bankReference || '—'}
               />
+              <DetailRow label="Currency" value={fees.currency || 'INR'} />
             </DetailCard>
+
+            <div className="flex flex-col gap-5">
+              <DetailCard title="Financial Details">
+                <DetailRow label="Gross Amount" value={formatInr(fees.grossAmount)} />
+                <DetailRow label="Platform Commission" value={formatInr(fees.platformCommission)} />
+                <DetailRow label="Tax Deduction" value={formatInr(taxDeduction)} />
+                <DetailRow label="Gateway Charges" value={formatInr(fees.gatewayCharges)} />
+                <DetailRow label="Net Payout" value={formatInr(fees.netPayable)} />
+              </DetailCard>
+
+              <DetailCard title="Bank Details">
+                <DetailRow
+                  label="Beneficiary"
+                  value={payout.bankingSnapshot?.beneficiaryName || '—'}
+                />
+                <DetailRow label="Bank Name" value={payout.bankingSnapshot?.bankName || '—'} />
+                <DetailRow
+                  label="Account Number"
+                  value={maskAccount(
+                    payout.bankingSnapshot?.accountNumber ||
+                      payout.bankingSnapshot?.accountNumberMasked,
+                  )}
+                />
+                <DetailRow label="IFSC Code" value={payout.bankingSnapshot?.ifscCode || '—'} />
+                <DetailRow
+                  label="Transfer Reference (UTR)"
+                  value={payout.bankingSnapshot?.bankReference || '—'}
+                />
+              </DetailCard>
+            </div>
           </div>
-        </div>
 
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/finance/payouts')}
-            className="ui-cta ui-cta-secondary"
-          >
-            Close
-          </button>
-        </div>
-      </section>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => navigateBackOrFallback(navigate, '/finance/payouts')}
+              className="ui-cta ui-cta-secondary"
+            >
+              Close
+            </button>
+          </div>
+        </section>
 
-      <FinanceInternalNotesCard resourceId={payout._id} />
+        <FinanceInternalNotesCard resourceId={payout._id} />
+      </FinanceDetailShell>
 
       <AddFinanceNoteModal
         open={noteModal === 'note'}

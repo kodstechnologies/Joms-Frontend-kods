@@ -55,10 +55,14 @@ function PauseSubscriptionModalForm({
       toast.error('Please confirm before pausing')
       return
     }
+    if (!adminNotes.trim()) {
+      toast.error('Admin notes are required')
+      return
+    }
 
     await onConfirm({
       reasons: selectedReasons,
-      adminNotes: adminNotes.trim() || undefined,
+      adminNotes: adminNotes.trim(),
     })
   }
 
@@ -83,20 +87,18 @@ function PauseSubscriptionModalForm({
         </button>
       </div>
 
-      <div className="ui-modal-body">
+      <div className="ui-modal-body space-y-5">
         <div className="flex flex-col items-center text-center">
-          <div className="bg-brand-accent/15 text-brand-accent grid size-16 place-items-center rounded-full">
-            <Pause className="size-7" />
+          <div className="text-brand-accent grid size-16 place-items-center rounded-full bg-[#3D3420]">
+            <Pause className="size-7" fill="currentColor" />
           </div>
-          <p className="text-body-md text-brand-text mt-4">
-            Pause subscription for <span className="font-semibold">{userName}</span>?
-          </p>
-          <p className="text-body-sm text-muted mt-1">
-            Billing will be paused and can be resumed later.
+          <p className="text-body-md text-brand-text mt-4 max-w-[360px]">
+            Pause subscription for <span className="font-semibold">{userName}</span>? Billing will
+            be paused and can be resumed later.
           </p>
         </div>
 
-        <div className="mt-6">
+        <div>
           <p className="text-body-sm-medium text-muted mb-2">Reasons</p>
           <div className="flex flex-wrap gap-2">
             {REASON_OPTIONS.map((reason) => (
@@ -117,18 +119,18 @@ function PauseSubscriptionModalForm({
           </div>
         </div>
 
-        <label className="text-body-sm text-brand-text/80 mt-5 flex items-start gap-3 text-left">
+        <label className="text-body-sm text-brand-text flex items-start gap-3 text-left">
           <input
             type="checkbox"
             checked={confirmed}
             onChange={(event) => setConfirmed(event.target.checked)}
-            className="mt-0.5 rounded border-white/20 accent-white"
+            className="mt-0.5 size-4 shrink-0 rounded border-white/30 bg-transparent accent-white"
           />
-          I confirm the documents are not valid from above reasons.
+          I confirm the documents are not approved due to above reasons.
         </label>
 
-        <label className="text-body-sm text-muted mt-4 block text-left">
-          Admin notes
+        <label className="text-body-sm text-brand-text block text-left">
+          Admin notes <span className="text-brand-danger">*</span>
           <textarea
             value={adminNotes}
             onChange={(event) => setAdminNotes(event.target.value)}
@@ -139,7 +141,15 @@ function PauseSubscriptionModalForm({
         </label>
       </div>
 
-      <div className="ui-modal-footer flex-col sm:flex-row">
+      <div className="ui-modal-footer flex-col-reverse sm:flex-row">
+        <button
+          type="button"
+          onClick={onDismiss}
+          disabled={isSubmitting}
+          className="ui-modal-btn ui-modal-btn-cancel"
+        >
+          Cancel
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -148,16 +158,8 @@ function PauseSubscriptionModalForm({
           disabled={isSubmitting}
           className="ui-modal-btn ui-modal-btn-gold"
         >
-          <Pause className="icon-sm" />
           {isSubmitting ? 'Pausing...' : 'Pause Subscription'}
-        </button>
-        <button
-          type="button"
-          onClick={onDismiss}
-          disabled={isSubmitting}
-          className="ui-modal-btn ui-modal-btn-cancel"
-        >
-          Cancel
+          <Pause className="icon-sm" fill="currentColor" />
         </button>
       </div>
     </div>

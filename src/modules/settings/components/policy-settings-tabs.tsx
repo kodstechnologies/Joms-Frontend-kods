@@ -11,29 +11,24 @@ export function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: 
   const navigate = useNavigate()
 
   return (
-    <div className="settings-top-tabs">
-      <div className="settings-top-tabs-scroll">
-        <div className="settings-top-tabs-row">
-          {POLICY_SETTINGS_TABS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => {
-                if (item.routeTab) {
-                  navigate(platformControlsPath(), { state: { settingsTab: item.routeTab } })
-                }
-              }}
-              className={cn(
-                'settings-top-tab',
-                item.key === activeKey && 'settings-top-tab--active',
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
+    <nav className="settings-tabs" aria-label="Settings sections">
+      <div className="settings-tabs-inner">
+        {POLICY_SETTINGS_TABS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => {
+              if (item.routeTab) {
+                navigate(platformControlsPath(), { state: { settingsTab: item.routeTab } })
+              }
+            }}
+            className={cn('settings-tab', item.key === activeKey && 'is-active')}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
-    </div>
+    </nav>
   )
 }
 

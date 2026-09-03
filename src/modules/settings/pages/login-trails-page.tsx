@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { fetchLoginTrails } from '../api/security-api'
+import { SettingsSubpageShell } from '../components/settings-subpage-shell'
 import { useLoginTrails } from '../hooks/use-security'
 import { useSettingsModule, useUpdateSettings } from '../hooks/use-settings'
 import { securityDefaults } from '../mock/settings.defaults'
@@ -15,14 +16,13 @@ import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
-import { SETTINGS_LOGIN_TRAILS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { cn } from '@/shared/lib/cn'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import {
-  buildPrefixedListQueryParams,
-  createPrefixedListExportHandler,
+  buildLoginTrailsListQueryParams,
+  createLoginTrailsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
@@ -60,6 +60,9 @@ function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
   if (status === 'failed') {
     return <span className="login-trails-status is-failed">Failed</span>
   }
+  if (status === 'warning') {
+    return <span className="login-trails-status is-blocked">Warning</span>
+  }
   return <span className="login-trails-status is-blocked">Blocked</span>
 }
 
@@ -68,9 +71,11 @@ export function LoginTrailsPage() {
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: SORT_FIELD_MAP,
+    defaultSortBy: 'createdAt',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
+  const { buildSearchParams, globalSearch } = enhancedSearch
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -81,13 +86,13 @@ export function LoginTrailsPage() {
 
   const listQueryParams = useMemo(
     () =>
-      buildPrefixedListQueryParams(appliedFilters, {
+      buildLoginTrailsListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        ...enhancedSearch.buildSearchParams(),
+        ...buildSearchParams(),
         ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
+    [appliedFilters, buildSearchParams, page, serverSort.sortParams],
   )
 
   const { data: trailsResult, isLoading, refetch, isFetching } = useLoginTrails(listQueryParams)
@@ -97,24 +102,36 @@ export function LoginTrailsPage() {
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
 
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [appliedFilters, globalSearch, page])
+
   const handleApplyFilters = useCallback((values: FilterValues) => {
     toast.success('Filters applied')
     setAppliedFilters(values)
     setPage(1)
   }, [])
 
+  const exportBaseParams = useMemo(
+    () =>
+      buildLoginTrailsListQueryParams(appliedFilters, {
+        search: globalSearch || undefined,
+      }),
+    [appliedFilters, globalSearch],
+  )
+
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchLoginTrails(params)
       return { data: result.data ?? [] }
     }
-    return createPrefixedListExportHandler(
+    return createLoginTrailsFilteredExportHandler(
       fetchForExport,
       TRAIL_EXPORT_COLUMN_MAP,
       'login_trails_export',
-      { search: enhancedSearch.globalSearch || undefined },
+      exportBaseParams,
     )
-  }, [enhancedSearch.globalSearch])
+  }, [exportBaseParams])
 
   const {
     onAdvancedFilter,
@@ -157,7 +174,7 @@ export function LoginTrailsPage() {
                 aria-label="Select all rows"
                 checked={allSelected}
                 onChange={toggleAll}
-                className="security-checkbox-input"
+                className="login-trails-checkbox"
               />
             ),
             cell: ({ row }) => (
@@ -166,7 +183,7 @@ export function LoginTrailsPage() {
                 aria-label={`Select row ${row.original.id}`}
                 checked={selectedIds.has(row.original.id)}
                 onChange={() => toggleOne(row.original.id)}
-                className="security-checkbox-input"
+                className="login-trails-checkbox"
               />
             ),
             meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
@@ -174,12 +191,12 @@ export function LoginTrailsPage() {
           {
             accessorKey: 'date',
             header: 'Date',
-            cell: ({ row }) => <span className="text-white/80">{row.original.date}</span>,
+            cell: ({ row }) => <span className="text-white/80">{row.original.date || '—'}</span>,
           },
           {
             accessorKey: 'time',
             header: 'Time',
-            cell: ({ row }) => <span className="text-white/60">{row.original.time}</span>,
+            cell: ({ row }) => <span className="text-white/60">{row.original.time || '—'}</span>,
           },
           {
             accessorKey: 'ipAddress',
@@ -191,7 +208,7 @@ export function LoginTrailsPage() {
           {
             accessorKey: 'action',
             header: 'Action',
-            cell: ({ row }) => <span className="text-white/80">{row.original.action}</span>,
+            cell: ({ row }) => <span className="text-white/80">{row.original.action || '—'}</span>,
           },
           {
             accessorKey: 'status',
@@ -232,84 +249,91 @@ export function LoginTrailsPage() {
   const goBack = () =>
     navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
 
-  return (
-    <div className="login-trails-page">
-      <p className="login-trails-breadcrumb">
-        <button type="button" onClick={goBack} className="login-trails-breadcrumb-link">
-          Settings
-        </button>
-        <span> / Platform Controls / Admin Login Trails</span>
-      </p>
+  const goToSettings = () => navigate('/settings/main', { state: { settingsTab: 'security' } })
 
-      <div className="login-trails-heading">
-        <div className="login-trails-title-row">
-          <button type="button" onClick={goBack} className="login-trails-back" aria-label="Back">
-            <ArrowLeft className="size-5" />
-          </button>
-          <div>
-            <h1 className="login-trails-title">Admin Login Trails</h1>
-            <p className="login-trails-subtitle">
-              Manage accounts that have been locked due to security reasons.
-            </p>
+  return (
+    <SettingsSubpageShell activeTab="security">
+      <div className="login-trails-page">
+        <div className="login-trails-heading">
+          <div className="login-trails-title-row">
+            <button type="button" onClick={goBack} className="login-trails-back" aria-label="Back">
+              <ArrowLeft className="size-5" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="login-trails-title">Admin Login Trails</h1>
+              <p className="login-trails-breadcrumb">
+                <button
+                  type="button"
+                  onClick={goToSettings}
+                  className="login-trails-breadcrumb-link"
+                >
+                  Settings
+                </button>
+                <span> / Security & Access / Admin Login Trails</span>
+              </p>
+            </div>
           </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={loginAlerts}
+            aria-label="Login Alerts"
+            disabled={updateSecurity.isPending || securityQuery.isLoading}
+            onClick={toggleLoginAlerts}
+            className="login-trails-alerts"
+          >
+            <span className={cn('login-trails-switch', loginAlerts && 'is-on')} aria-hidden>
+              <span className="login-trails-switch-knob" />
+            </span>
+            <span className="login-trails-alerts-label">Login Alerts</span>
+          </button>
         </div>
 
-        <button
-          type="button"
-          role="switch"
-          aria-checked={loginAlerts}
-          aria-label="Login Alerts"
-          disabled={updateSecurity.isPending || securityQuery.isLoading}
-          onClick={toggleLoginAlerts}
-          className="login-trails-alerts"
-        >
-          <span className={cn('login-trails-switch', loginAlerts && 'is-on')} aria-hidden>
-            <span className="login-trails-switch-knob" />
-          </span>
-          <span className="login-trails-alerts-label">Login Alerts</span>
-        </button>
-      </div>
+        <p className="login-trails-subtitle login-trails-subtitle-block">
+          Monitor all admin login activities and security events
+        </p>
 
-      <section className="login-trails-card">
-        <DataTable
-          columns={columns}
-          data={rows}
-          getRowId={(row) => row.id}
-          isLoading={isLoading}
-          searchValue={enhancedSearch.globalSearch}
-          onSearchChange={enhancedSearch.setGlobalSearch}
-          searchableColumns={SETTINGS_LOGIN_TRAILS_SEARCH_COLUMNS}
-          columnSearches={enhancedSearch.columnSearches}
-          onColumnSearchChange={enhancedSearch.setColumnSearch}
-          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
-          onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by admin email or IP"
-          onAdvancedFilter={onAdvancedFilter}
-          advancedFilterVariant="primary"
-          onExport={onExport}
-          {...serverSort.dataTableSortProps}
-          pagination={{
-            page,
-            pageSize: PAGE_SIZE,
-            totalItems,
-            totalPages,
-            onPageChange: setPage,
-          }}
-          resourceLabel="users"
-          toolbarContent={
-            <button
-              type="button"
-              className="login-trails-tool-btn"
-              disabled={isFetching}
-              onClick={() => void refetch()}
-            >
-              <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
-              Refresh
-            </button>
-          }
-        />
-        {exportFilterModals}
-      </section>
-    </div>
+        <section className="login-trails-card">
+          <DataTable
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            isLoading={isLoading}
+            loadingRowCount={PAGE_SIZE}
+            stickyHeader
+            emptyMessage="No login trails found."
+            searchValue={globalSearch}
+            onSearchChange={enhancedSearch.setGlobalSearch}
+            searchPlaceholder="Search by admin name, email or IP"
+            onAdvancedFilter={onAdvancedFilter}
+            advancedFilterLabel="Advance Filters"
+            advancedFilterVariant="secondary"
+            onExport={onExport}
+            {...serverSort.dataTableSortProps}
+            pagination={{
+              page,
+              pageSize: PAGE_SIZE,
+              totalItems,
+              totalPages,
+              onPageChange: setPage,
+            }}
+            resourceLabel="users"
+            toolbarContent={
+              <button
+                type="button"
+                className="login-trails-tool-btn"
+                disabled={isFetching}
+                onClick={() => void refetch()}
+              >
+                <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+                Refresh
+              </button>
+            }
+          />
+          {exportFilterModals}
+        </section>
+      </div>
+    </SettingsSubpageShell>
   )
 }

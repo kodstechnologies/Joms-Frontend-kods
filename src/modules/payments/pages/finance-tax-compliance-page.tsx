@@ -51,6 +51,12 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 import { FINANCE_TAX_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -58,13 +64,6 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
   FINANCE_TAX_TABLE_COLUMNS_CATALOG,
   FINANCE_TAX_SORT_OVERRIDES,
 )
-
-function getStatusClassName(status: TaxComplianceRow['status']) {
-  if (status === 'Completed' || status === 'Filed') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-}
 
 export function FinanceTaxCompliancePage() {
   const navigate = useNavigate()
@@ -248,7 +247,7 @@ export function FinanceTaxCompliancePage() {
         accessorKey: 'recordId',
         header: 'Tax Record ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.recordId}
           </span>
         ),
@@ -284,7 +283,7 @@ export function FinanceTaxCompliancePage() {
         id: 'tax-amount',
         header: 'Tax Amount',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
             {(row.original as { taxAmount?: string }).taxAmount || row.original.revenue}
           </span>
         ),
@@ -304,14 +303,9 @@ export function FinanceTaxCompliancePage() {
         accessorKey: 'status',
         header: 'Filing Status',
         cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {(row.original as { filingStatus?: string }).filingStatus || row.original.status}
-          </span>
+          <FinanceTableStatusBadge
+            status={(row.original as { filingStatus?: string }).filingStatus || row.original.status}
+          />
         ),
       },
     }
@@ -373,6 +367,7 @@ export function FinanceTaxCompliancePage() {
       </div>
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}

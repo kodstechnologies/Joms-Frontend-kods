@@ -7,10 +7,8 @@ import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons
 
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { financeEventRowsMock } from '@/modules/payments/mock/finance-events.mock'
-import type {
-  FinanceEventRow,
-  FinanceEventStatus,
-} from '@/modules/payments/types/finance-table-rows'
+import type { FinanceEventRow } from '@/modules/payments/types/finance-table-rows'
+import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -39,6 +37,11 @@ import {
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import {
+  FINANCE_DATA_TABLE_CLASS,
+  FINANCE_TABLE_CELL_CLASS,
+} from '@/modules/payments/constants/finance-table-styles'
+import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
 
 const PAGE_SIZE = 10
 
@@ -59,12 +62,6 @@ const financeEventTabs: Array<{ id: FinanceEventTab; label: string }> = [
   { id: 'promotions', label: 'Promotions' },
   { id: 'publishing', label: 'Publishing' },
 ]
-
-function getStatusClassName(status: FinanceEventStatus) {
-  if (status === 'Paid') return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  if (status === 'Pending') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
 
 export function FinanceEventsPage() {
   const navigate = useNavigate()
@@ -233,52 +230,63 @@ export function FinanceEventsPage() {
         accessorKey: 'eventId',
         header: 'Promotion ID',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
             {row.original.eventId}
           </span>
         ),
       },
-      module: { id: 'module', header: 'Module', cell: () => 'Events' },
-      'promotion-type': { id: 'promotion-type', header: 'Promotion Type', cell: () => '—' },
+      module: {
+        id: 'module',
+        header: 'Module',
+        cell: () => <FinanceTableCellText>Events</FinanceTableCellText>,
+      },
+      'promotion-type': {
+        id: 'promotion-type',
+        header: 'Promotion Type',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'entity-name': {
         id: 'entity-name',
         accessorKey: 'eventName',
         header: 'Entity Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.eventName}</FinanceTableCellText>,
       },
       'start-date': {
         id: 'start-date',
         accessorKey: 'eventDate',
         header: 'Start Date',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.eventDate}</FinanceTableCellText>,
       },
-      'end-date': { id: 'end-date', header: 'End Date', cell: () => '—' },
+      'end-date': {
+        id: 'end-date',
+        header: 'End Date',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       'amount-paid': {
         id: 'amount-paid',
         accessorKey: 'ticketSales',
         header: 'Amount Paid',
         cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.ticketSales}</span>
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.ticketSales}
+          </span>
         ),
       },
-      'payment-method': { id: 'payment-method', header: 'Payment Method', cell: () => '—' },
+      'payment-method': {
+        id: 'payment-method',
+        header: 'Payment Method',
+        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+      },
       revenue: {
         id: 'revenue',
         accessorKey: 'netRevenue',
         header: 'Revenue',
-        cell: ({ row }) => row.original.netRevenue,
+        cell: ({ row }) => <FinanceTableCellText>{row.original.netRevenue}</FinanceTableCellText>,
       },
       status: {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
       },
     }
 
@@ -362,6 +370,7 @@ export function FinanceEventsPage() {
       </div>
 
       <DataTable
+        className={FINANCE_DATA_TABLE_CLASS}
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
