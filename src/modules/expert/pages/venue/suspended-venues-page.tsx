@@ -1,27 +1,16 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, PlayCircle, Plus } from 'lucide-react'
+import { PlayCircle, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
-
-import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
-import {
-  buildVenueListQueryParams,
-  createVenueFilteredExportHandler,
-} from '@/shared/utils/export-filter-utils'
-import { fetchVenues } from '../../api/venue-api'
 
-import { useActivateVenue, useVenues } from '../../hooks/use-venues'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { useActivateVenue } from '../../hooks/use-venues'
+import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { VENUE_SUSPENDED_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_SUSPENDED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -30,13 +19,12 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
-
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import {
   VENUE_SUSPENDED_MODULE_KEY,
   DEFAULT_VENUE_SUSPENDED_VISIBLE_COLUMN_IDS,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+import { ExpertListHeader } from '../experts/expert-list-shared'
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   'suspension-id': {
@@ -116,81 +104,35 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) =
 export function VenueSuspendedPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: VENUE_SUSPENDED_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-
-  const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_SUSPENDED_MODULE_KEY)
-
-  const venueQueryParams = useMemo(
-    () =>
-      buildVenueListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
-        status: 'suspended',
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
-
-  const { data, isLoading } = useVenues(venueQueryParams)
-
   const activateVenueMutation = useActivateVenue()
 
-  const venues = useMemo(() => data?.data ?? [], [data?.data])
-  const meta = data?.meta
-  const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
-  const allVisibleVenuesSelected =
-    visibleVenueIds.length > 0 && visibleVenueIds.every((id) => selectedVenueIds.includes(id))
-  const someVisibleVenuesSelected = visibleVenueIds.some((id) => selectedVenueIds.includes(id))
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
-
-  const handleExportData = useMemo(
-    () =>
-      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'suspended_venues_export', {
-        status: 'suspended',
-      }),
-    [],
-  )
-
   const {
+    currentPage,
+    setCurrentPage,
+    activeDropdownId,
+    setActiveDropdownId,
+    selectedVenueIds,
+    serverSort,
+    enhancedSearch,
+    venues,
+    meta,
+    isLoading,
+    tableColumnPreferencesQuery,
+    allVisibleVenuesSelected,
+    someVisibleVenuesSelected,
+    toggleVisibleVenues,
+    toggleVenueSelection,
     onAdvancedFilter,
     onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'venue-management',
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
+    exportFilterModals,
+  } = useVenueStatusList({
+    preferencesKey: VENUE_SUSPENDED_MODULE_KEY,
+    filterModuleKey: 'venue-management',
+    status: 'suspended',
+    sortFieldMap: VENUE_SUSPENDED_SORT_FIELDS,
+    exportFileName: 'suspended_venues_export',
+    exportColumnMap: EXPORT_COLUMN_MAP,
   })
-
-  const toggleVisibleVenues = useCallback(() => {
-    setSelectedVenueIds((currentIds) => {
-      if (allVisibleVenuesSelected) {
-        return currentIds.filter((id) => !visibleVenueIds.includes(id))
-      }
-
-      return Array.from(new Set([...currentIds, ...visibleVenueIds]))
-    })
-  }, [allVisibleVenuesSelected, visibleVenueIds])
-
-  const toggleVenueSelection = useCallback((venueId: string) => {
-    setSelectedVenueIds((currentIds) =>
-      currentIds.includes(venueId)
-        ? currentIds.filter((id) => id !== venueId)
-        : [...currentIds, venueId],
-    )
-  }, [])
 
   const handleActivate = useCallback(
     (venue: Venue) => {
@@ -404,6 +346,7 @@ export function VenueSuspendedPage() {
     allVisibleVenuesSelected,
     handleActivate,
     selectedVenueIds,
+    setActiveDropdownId,
     someVisibleVenuesSelected,
     tableColumnPreferencesQuery.data,
     toggleVenueSelection,
@@ -413,55 +356,29 @@ export function VenueSuspendedPage() {
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <header className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
-          >
-            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-            <span>Suspended Venues</span>
-          </button>
-
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-              className="transition-colors hover:text-white"
-            >
-              Venue Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Suspended Venues</span>
-          </div>
-        </header>
-
-        <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-          <Button
-            className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() =>
-              navigate('/metrics/venue-suspended?returnTo=/venues/management/suspended')
-            }
-          >
-            <ManageMetricsIcon className="size-4 shrink-0" />
-            Manage Metrics
-          </Button>
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            disabled={!allowAddVenues}
-            onClick={() => {
-              if (!allowAddVenues) {
-                toast.error('Creating venues is turned off in Venue Management settings')
-                return
-              }
-              navigate('/venues/management/onboarding')
-            }}
-          >
-            <Plus className="size-4" />
-            Create Account
-          </Button>
+        <div className="min-w-0 flex-1">
+          <ExpertListHeader
+            title="Suspended Venues"
+            breadcrumb="Venue Management / Suspended Venues"
+            backTo="/venues/management"
+            metricsPath="/metrics/venue-suspended?returnTo=/venues/management/suspended"
+          />
         </div>
+        <Button
+          type="button"
+          className="h-9 w-full md:w-auto"
+          disabled={!allowAddVenues}
+          onClick={() => {
+            if (!allowAddVenues) {
+              toast.error('Creating venues is turned off in Venue Management settings')
+              return
+            }
+            navigate('/venues/management/onboarding')
+          }}
+        >
+          <Plus className="size-4" />
+          Create Account
+        </Button>
       </div>
 
       <DataTable

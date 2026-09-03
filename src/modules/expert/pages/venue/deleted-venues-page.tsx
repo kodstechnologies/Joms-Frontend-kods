@@ -1,29 +1,19 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
-import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
-
-import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import {
-  buildVenueListQueryParams,
-  createVenueFilteredExportHandler,
-  exportMappedItemsToFile,
-} from '@/shared/utils/export-filter-utils'
-import { fetchVenues } from '../../api/venue-api'
+import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
 
-import { useRestoreVenue, useVenues } from '../../hooks/use-venues'
+import { useRestoreVenue } from '../../hooks/use-venues'
+import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { VENUE_DELETED_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_DELETED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -32,13 +22,12 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
-
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import {
   VENUE_DELETED_MODULE_KEY,
   DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+import { ExpertListHeader } from '../experts/expert-list-shared'
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   'deletion-id': {
@@ -101,44 +90,35 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) =
 export function VenueDeletedPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: VENUE_DELETED_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-
-  const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_DELETED_MODULE_KEY)
-
-  const venueQueryParams = useMemo(
-    () =>
-      buildVenueListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
-        status: 'deleted',
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
-
-  const { data, isLoading } = useVenues(venueQueryParams)
   const restoreVenueMutation = useRestoreVenue()
 
-  const venues = useMemo(() => data?.data ?? [], [data?.data])
-  const meta = data?.meta
-  const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
-  const allVisibleVenuesSelected =
-    visibleVenueIds.length > 0 && visibleVenueIds.every((id) => selectedVenueIds.includes(id))
-  const someVisibleVenuesSelected = visibleVenueIds.some((id) => selectedVenueIds.includes(id))
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
+  const {
+    currentPage,
+    setCurrentPage,
+    activeDropdownId,
+    setActiveDropdownId,
+    selectedVenueIds,
+    serverSort,
+    enhancedSearch,
+    venues,
+    meta,
+    isLoading,
+    tableColumnPreferencesQuery,
+    allVisibleVenuesSelected,
+    someVisibleVenuesSelected,
+    toggleVisibleVenues,
+    toggleVenueSelection,
+    onAdvancedFilter,
+    onExport,
+    exportFilterModals,
+  } = useVenueStatusList({
+    preferencesKey: VENUE_DELETED_MODULE_KEY,
+    filterModuleKey: 'venue-management',
+    status: 'deleted',
+    sortFieldMap: VENUE_DELETED_SORT_FIELDS,
+    exportFileName: 'deleted_venues_export',
+    exportColumnMap: EXPORT_COLUMN_MAP,
+  })
 
   const handleExportVenueRow = useCallback(
     async (venue: Venue) => {
@@ -164,41 +144,6 @@ export function VenueDeletedPage() {
     },
     [tableColumnPreferencesQuery.data],
   )
-
-  const handleExportData = useMemo(
-    () =>
-      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'deleted_venues_export', {
-        status: 'deleted',
-      }),
-    [],
-  )
-
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'venue-management',
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
-  })
-
-  const toggleVisibleVenues = useCallback(() => {
-    setSelectedVenueIds((currentIds) => {
-      if (allVisibleVenuesSelected) {
-        return currentIds.filter((id) => !visibleVenueIds.includes(id))
-      }
-      return Array.from(new Set([...currentIds, ...visibleVenueIds]))
-    })
-  }, [allVisibleVenuesSelected, visibleVenueIds])
-
-  const toggleVenueSelection = useCallback((venueId: string) => {
-    setSelectedVenueIds((currentIds) =>
-      currentIds.includes(venueId)
-        ? currentIds.filter((id) => id !== venueId)
-        : [...currentIds, venueId],
-    )
-  }, [])
 
   const handleRestore = useCallback(
     (venue: Venue) => {
@@ -399,6 +344,7 @@ export function VenueDeletedPage() {
     handleExportVenueRow,
     handleRestore,
     selectedVenueIds,
+    setActiveDropdownId,
     someVisibleVenuesSelected,
     tableColumnPreferencesQuery.data,
     toggleVenueSelection,
@@ -408,52 +354,29 @@ export function VenueDeletedPage() {
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <header className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
-          >
-            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-            <span>Deleted Venues</span>
-          </button>
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-              className="transition-colors hover:text-white"
-            >
-              Venue Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Deleted Venues</span>
-          </div>
-        </header>
-
-        <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-          <Button
-            className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/metrics/venue-deleted?returnTo=/venues/management/deleted')}
-          >
-            <ManageMetricsIcon className="size-4 shrink-0" />
-            Manage Metrics
-          </Button>
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            onClick={() => {
-              if (!allowAddVenues) {
-                toast.error('Creating venues is turned off in Venue Management settings')
-                return
-              }
-              navigate('/venues/management/onboarding')
-            }}
-            disabled={!allowAddVenues}
-          >
-            <img src={createIcon} alt="create" className="size-4" />
-            Create Account
-          </Button>
+        <div className="min-w-0 flex-1">
+          <ExpertListHeader
+            title="Deleted Venues"
+            breadcrumb="Venue Management / Deleted Venues"
+            backTo="/venues/management"
+            metricsPath="/metrics/venue-deleted?returnTo=/venues/management/deleted"
+          />
         </div>
+        <Button
+          type="button"
+          className="h-9 w-full md:w-auto"
+          onClick={() => {
+            if (!allowAddVenues) {
+              toast.error('Creating venues is turned off in Venue Management settings')
+              return
+            }
+            navigate('/venues/management/onboarding')
+          }}
+          disabled={!allowAddVenues}
+        >
+          <img src={createIcon} alt="create" className="size-4" />
+          Create Account
+        </Button>
       </div>
 
       <DataTable
