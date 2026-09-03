@@ -1,6 +1,15 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, ArrowLeftRight, Clock, UserCheck, UserRound, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  Clock,
+  Trash2,
+  Upload,
+  UserCheck,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -28,8 +37,6 @@ import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-ut
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
 
@@ -64,21 +71,10 @@ const HISTORY_SORT_FIELD_MAP = {
   changedOn: 'createdAt',
 }
 
-const goldActionButtonClass =
-  'ui-cta ui-cta-primary rounded-brand-md inline-flex items-center gap-2 px-4 py-2.5'
-
-const goldOutlineActionButtonClass =
-  'ui-cta ui-cta-outline rounded-brand-md inline-flex items-center gap-2 border-brand-accent px-4 py-2.5 text-brand-accent hover:bg-brand-accent/10'
-
-const darkOutlineActionButtonClass =
-  'inline-flex items-center gap-2 rounded-brand-md border border-white/80 bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/5'
-
-const dangerActionButtonClass =
-  'ui-cta ui-cta-negative rounded-brand-md inline-flex items-center gap-2 px-4 py-2.5'
-
 const formatOverviewDate = (value?: string) => {
   if (!value) return '—'
   const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
   const day = date.toLocaleString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -114,8 +110,7 @@ type RoleHistoryRow = {
 
 const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   const previousVersion = log.metadata?.previousVersion as
-    | { roleIds?: string[]; firstName?: string; lastName?: string }
-    | undefined
+    { roleIds?: string[]; firstName?: string; lastName?: string } | undefined
 
   return {
     id: log.id || log._id || log.action,
@@ -126,6 +121,20 @@ const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
     changedBy: log.performedBy || '—',
     adminNote: log.adminNote || '—',
   }
+}
+
+function DetailField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="ad-field">
+      <p className="ad-field-label">{label}</p>
+      <div className="ad-field-value">{children}</div>
+    </div>
+  )
+}
+
+function RolePill({ label }: { label: string }) {
+  if (!label || label === '—') return <span>—</span>
+  return <span className="rbac-role-name-pill">{label}</span>
 }
 
 export function AdminDetailPage() {
@@ -162,6 +171,16 @@ export function AdminDetailPage() {
 
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
 
+  const passwordUpdatedAt = useMemo(() => {
+    const passwordLog = logs.find((log) => /password/i.test(log.action))
+    return passwordLog?.createdAt
+  }, [logs])
+
+  const previousRoleLabel = useMemo(() => {
+    const withPrevious = historyRows.find((row) => row.previousRole && row.previousRole !== '—')
+    return withPrevious?.previousRole || '—'
+  }, [historyRows])
+
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchSubAdminLogs(id, params)
@@ -184,10 +203,28 @@ export function AdminDetailPage() {
     () =>
       withServerSortMeta(
         [
-          { accessorKey: 'previousRole', header: 'Previous Role' },
-          { accessorKey: 'changedTo', header: 'Changed To' },
-          { accessorKey: 'changedOn', header: 'Changed On' },
-          { accessorKey: 'changedBy', header: 'Changed BY' },
+          {
+            accessorKey: 'previousRole',
+            header: 'Previous Role',
+            cell: ({ row }) => (
+              <span className="ad-history-plain">{row.original.previousRole || '—'}</span>
+            ),
+          },
+          {
+            accessorKey: 'changedTo',
+            header: 'Changed To',
+            cell: ({ row }) => <RolePill label={row.original.changedTo} />,
+          },
+          {
+            accessorKey: 'changedOn',
+            header: 'Changed On',
+            cell: ({ row }) => <span className="ad-history-plain">{row.original.changedOn}</span>,
+          },
+          {
+            accessorKey: 'changedBy',
+            header: 'Changed BY',
+            cell: ({ row }) => <span className="ad-history-plain">{row.original.changedBy}</span>,
+          },
           {
             accessorKey: 'adminNote',
             header: 'Admin Note',
@@ -196,12 +233,13 @@ export function AdminDetailPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedAdminNote(row.original.adminNote)}
-                  className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from max-w-[260px] truncate text-left text-xs font-medium underline underline-offset-2"
+                  className="ad-note-cell"
+                  title={row.original.adminNote}
                 >
                   {row.original.adminNote}
                 </button>
               ) : (
-                '—'
+                <span className="ad-note-cell">—</span>
               ),
           },
         ],
@@ -258,194 +296,198 @@ export function AdminDetailPage() {
     return <RbacLoader label="Loading admin details..." />
   }
 
+  const isActive = subAdmin.status === 'active'
+
   return (
-    <div className="flex flex-col gap-4 md:gap-6">
-      <div className="flex flex-col gap-2">
+    <div className="ad-page">
+      <div className="ad-header">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-          className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
+          className="ad-back"
         >
-          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <ArrowLeft className="size-5" aria-hidden="true" />
           <span>Admin Details</span>
         </button>
-        <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-          <span>Role Based Access</span>
-          <span className="text-brand-text/30">/</span>
-          <span className="text-brand-text font-bold">{subAdmin.fullname}</span>
-        </div>
+        <p className="ad-breadcrumb">
+          Role Based Access / <span>{subAdmin.fullname}</span>
+        </p>
       </div>
 
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h2 className="text-brand-text text-sm font-semibold">Admin Overview</h2>
-        <div className="flex flex-wrap gap-2">
+      <div className="ad-toolbar">
+        <h2 className="ad-overview-tab">Admin Overview</h2>
+        <div className="ad-actions">
           <button
             type="button"
-            className={goldActionButtonClass}
+            className="ad-btn ad-btn-peach"
             onClick={() => navigate(`/settings/access/users/${id}/logs`)}
           >
-            <Clock className="size-4" />
+            <Clock className="size-4" aria-hidden="true" />
             View Activity Logs
           </button>
           <button
             type="button"
-            className={goldOutlineActionButtonClass}
+            className="ad-btn ad-btn-peach"
             onClick={() => navigate('/my-tasks')}
           >
-            <Clock className="size-4" />
+            <Clock className="size-4" aria-hidden="true" />
             View Assigned Tasks
           </button>
           <button
             type="button"
-            className={darkOutlineActionButtonClass}
+            className="ad-btn ad-btn-outline"
             onClick={() => navigate(`/settings/access/users/create?edit=${id}`)}
           >
-            <ArrowLeftRight className="size-4" />
+            <ArrowLeftRight className="size-4" aria-hidden="true" />
             Change Role
           </button>
-          {subAdmin?.status === 'active' ? (
-            <button type="button" className={dangerActionButtonClass} onClick={handleSuspend}>
-              <span className="grid size-5 place-items-center rounded-full bg-white/20">
-                <X className="size-3" />
+          {isActive ? (
+            <button type="button" className="ad-btn ad-btn-danger" onClick={handleSuspend}>
+              <span className="ad-btn-icon-circle">
+                <X className="size-3" aria-hidden="true" />
               </span>
-              Suspend Admin
+              Suspend
             </button>
           ) : (
-            <button type="button" className={goldActionButtonClass} onClick={handleReactivate}>
-              <UserCheck className="size-4" />
-              Reactivate Admin
+            <button type="button" className="ad-btn ad-btn-peach" onClick={handleReactivate}>
+              <UserCheck className="size-4" aria-hidden="true" />
+              Reactivate
             </button>
           )}
-          <button type="button" className={dangerActionButtonClass} onClick={handleDelete}>
-            <span className="grid size-5 place-items-center rounded-full bg-white/20">
-              <img src={deleteIcon} alt="Delete" className="size-4 invert" />
-            </span>
-            Delete
+          <button type="button" className="ad-btn ad-btn-danger" onClick={handleDelete}>
+            <Trash2 className="size-4" aria-hidden="true" />
+            Delete User
           </button>
         </div>
       </div>
 
-      <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
+      <section className="ad-card">
+        <div className="ad-card-heading">
+          <div className="ad-card-title-wrap">
+            <span className="ad-card-icon" aria-hidden="true">
               <UserRound className="size-4" />
-            </div>
-            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
+            </span>
+            <h3 className="ad-card-title">Admin Info</h3>
           </div>
-          <span
-            className={cn(
-              'text-body-sm-semibold rounded-full border px-2.5 py-0.5 capitalize',
-              subAdmin.status === 'active'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                : 'border-rose-500/30 bg-rose-500/10 text-rose-400',
-            )}
-          >
-            {subAdmin.status}
+          <span className={cn('ad-status-pill', isActive ? 'is-active' : 'is-inactive')}>
+            {isActive ? 'Active' : subAdmin.status}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          <div>
-            <p className="text-brand-muted text-xs">Full Name</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.fullname}</p>
+        <div className="ad-info-layout">
+          <div className="ad-avatar">
+            {subAdmin.profileImageUrl ? (
+              <img src={subAdmin.profileImageUrl} alt="" className="ad-avatar-img" />
+            ) : (
+              <UserRound className="size-8" strokeWidth={1.5} aria-hidden="true" />
+            )}
           </div>
-          <div>
-            <p className="text-brand-muted text-xs">Email ID</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.email}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Phone Number</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.phone || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Role</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{roleLabel}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Added On</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatOverviewDate(subAdmin.createdAt)}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Last Active</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatOverviewDate(subAdmin.lastActionAt)}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Emergency contact name</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.emergencyContactName || '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Emergency contact details</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.emergencyContact || '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Blood Group</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.bloodGroup || '—'}</p>
+
+          <div className="ad-info-main">
+            <div className="ad-info-row ad-info-row-top">
+              <DetailField label="First Name">{subAdmin.firstName || '—'}</DetailField>
+              <DetailField label="Last Name">{subAdmin.lastName || '—'}</DetailField>
+              <DetailField label="Role">
+                <RolePill label={roleLabel} />
+              </DetailField>
+              <DetailField label="Last Active">
+                {formatOverviewDate(subAdmin.lastActionAt || subAdmin.updatedAt)}
+              </DetailField>
+            </div>
+            <div className="ad-info-row">
+              <DetailField label="Employee ID">{subAdmin.employeeId || '—'}</DetailField>
+              <DetailField label="Department">{subAdmin.department || '—'}</DetailField>
+              <DetailField label="2FA Status">
+                {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
+              </DetailField>
+              <DetailField label="Workplace">{subAdmin.workplaceFlexibility || '—'}</DetailField>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <h3 className="text-brand-text mb-4 text-base font-semibold">Security Settings</h3>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-brand-text text-sm font-medium">Password</p>
-            <p className="text-brand-muted text-xs">
-              Last reset: {formatDateOnly(subAdmin.lastActionAt)}
+      <section className="ad-card">
+        <div className="ad-card-heading">
+          <div className="ad-card-title-wrap">
+            <span className="ad-card-icon" aria-hidden="true">
+              <UserRound className="size-4" />
+            </span>
+            <h3 className="ad-card-title">More Details</h3>
+          </div>
+        </div>
+
+        <div className="ad-more-grid">
+          <DetailField label="Date Of Birth">{formatDateOnly(subAdmin.dateOfBirth)}</DetailField>
+          <DetailField label="Email ID">{subAdmin.email || '—'}</DetailField>
+          <DetailField label="Phone number">{subAdmin.phone || '—'}</DetailField>
+          <DetailField label="Blood Group">{subAdmin.bloodGroup || '—'}</DetailField>
+          <DetailField label="Created By">{subAdmin.createdBy || 'Super Admin'}</DetailField>
+          <DetailField label="Location">{subAdmin.location || '—'}</DetailField>
+          <DetailField label="Previous Role">{previousRoleLabel}</DetailField>
+          <DetailField label="Created At">{formatOverviewDate(subAdmin.createdAt)}</DetailField>
+          <DetailField label="Password Updated">
+            <div className="ad-password-wrap">
+              <span>{formatDateOnly(passwordUpdatedAt)}</span>
+              <button
+                type="button"
+                onClick={() => setPasswordModalOpen(true)}
+                className="ad-change-password"
+              >
+                Change Password
+              </button>
+            </div>
+          </DetailField>
+          <DetailField label="Emergency contact name">
+            {subAdmin.emergencyContactName || '—'}
+          </DetailField>
+          <DetailField label="Contact details">{subAdmin.emergencyContact || '—'}</DetailField>
+        </div>
+      </section>
+
+      <section className="ad-history">
+        <div className="ad-history-header">
+          <div className="ad-history-heading">
+            <h3 className="ad-history-title">Role History &amp; Change Log</h3>
+            <p className="ad-history-subtitle">
+              Complete history of actions performed on this admin
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setPasswordModalOpen(true)}
-            className="text-brand-accent decoration-brand-accent/40 text-body-sm-semibold underline underline-offset-2"
-          >
-            Reset Password
+          <button type="button" className="ad-export-btn" onClick={onExport}>
+            <Upload className="size-4" aria-hidden="true" />
+            Export Data
           </button>
         </div>
-      </section>
 
-      <section>
-        <div className="mb-3">
-          <h3 className="text-brand-text text-lg font-semibold">Role History &amp; Change Log</h3>
-          <p className="text-brand-muted mt-1 text-sm">
-            Complete history of actions performed on this admin
-          </p>
+        <div className="ad-history-table">
+          <DataTable
+            columns={historyColumns}
+            data={historyRows}
+            getRowId={(row) => row.id}
+            {...serverSort.dataTableSortProps}
+            isLoading={logsLoading}
+            searchValue={enhancedSearch.globalSearch}
+            onSearchChange={enhancedSearch.setGlobalSearch}
+            searchableColumns={RBAC_ADMIN_LOGS_SEARCH_COLUMNS}
+            columnSearches={enhancedSearch.columnSearches}
+            onColumnSearchChange={enhancedSearch.setColumnSearch}
+            onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+            onClearAllSearches={enhancedSearch.clearAll}
+            searchPlaceholder="Search by role, note or action"
+            showSearch={false}
+            showAdvancedFilter={false}
+            showExport={false}
+            showRecordCount={false}
+            pagination={{
+              page: historyPage,
+              pageSize: PAGE_SIZE,
+              totalItems: logsMeta?.total ?? 0,
+              totalPages: logsMeta?.totalPages ?? 1,
+              onPageChange: setHistoryPage,
+            }}
+            resourceLabel="records"
+            emptyMessage="No role history found."
+          />
         </div>
-
-        <DataTable
-          columns={historyColumns}
-          data={historyRows}
-          getRowId={(row) => row.id}
-          {...serverSort.dataTableSortProps}
-          isLoading={logsLoading}
-          searchValue={enhancedSearch.globalSearch}
-          onSearchChange={enhancedSearch.setGlobalSearch}
-          searchableColumns={RBAC_ADMIN_LOGS_SEARCH_COLUMNS}
-          columnSearches={enhancedSearch.columnSearches}
-          onColumnSearchChange={enhancedSearch.setColumnSearch}
-          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
-          onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by role, note or action"
-          showAdvancedFilter={false}
-          onExport={onExport}
-          pagination={{
-            page: historyPage,
-            pageSize: PAGE_SIZE,
-            totalItems: logsMeta?.total ?? 0,
-            totalPages: logsMeta?.totalPages ?? 1,
-            onPageChange: setHistoryPage,
-          }}
-          resourceLabel="records"
-          emptyMessage="No role history found."
-        />
       </section>
 
       <UpdatePasswordModal

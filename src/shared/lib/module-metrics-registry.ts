@@ -173,6 +173,12 @@ import {
 } from '@/modules/settings/config/incident-metrics.config'
 import { INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG } from '@/modules/settings/config/incident-table-columns.config'
 import {
+  BACKUP_HISTORY_COLUMNS_CATALOG,
+  BACKUP_MAX_ACTIVE_METRICS,
+  BACKUP_METRICS_CATALOG,
+  BACKUP_MODULE_KEY,
+} from '@/modules/settings/config/backup-metrics.config'
+import {
   EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS,
   EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG,
   EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
@@ -599,6 +605,26 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       defaultActive: item.defaultActive,
     })),
     columns: INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'backup-configuration': {
+    moduleKey: BACKUP_MODULE_KEY,
+    moduleName: 'Backup Configuration',
+    returnTo: '/settings/main',
+    maxActiveMetrics: BACKUP_MAX_ACTIVE_METRICS,
+    metrics: BACKUP_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: BACKUP_HISTORY_COLUMNS_CATALOG.map((item) => ({
       id: item.id,
       label: item.label,
       type: item.type,

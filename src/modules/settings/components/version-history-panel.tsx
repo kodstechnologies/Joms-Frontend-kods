@@ -1,10 +1,9 @@
 import { createPortal } from 'react-dom'
-import { ArrowLeft, Clock3, UserRound } from 'lucide-react'
-import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
+import type { ReactNode } from 'react'
+import { ArrowLeft, Briefcase, CalendarDays, Clock3, UserRound } from 'lucide-react'
 
 import type { SettingsLog, SettingsModule } from '../types/settings'
 import { useSettingsModuleVersions } from '../hooks/use-settings'
-import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { formatDateTimeEnInSettingsVersion as formatDateTime } from '@/shared/lib/format-datetime'
 
@@ -14,68 +13,114 @@ type VersionHistoryPanelProps = {
   onClose: () => void
 }
 
-function VersionCard({ version, isFirst }: { version: SettingsLog; isFirst: boolean }) {
+const metaTextClass =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-5 font-medium tracking-normal text-white/55"
+const valueTextClass =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-5 font-medium tracking-normal text-white"
+const headerTextClass =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-5 font-semibold tracking-normal text-white"
+
+function MetaRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <p className={cn(metaTextClass, 'flex items-start gap-2')}>
+      <span
+        className="mt-0.5 grid size-4 shrink-0 place-items-center text-white"
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+      <span>
+        {label}: {value}
+      </span>
+    </p>
+  )
+}
+
+function VersionCard({
+  version,
+  isFirst,
+  isLast,
+}: {
+  version: SettingsLog
+  isFirst: boolean
+  isLast: boolean
+}) {
   const changes = version.changes || []
+  const isActive = Boolean(version.isCurrentVersion || isFirst)
 
   return (
-    <div className="relative flex gap-4 pb-6">
-      <div className="flex flex-col items-center">
-        <div className="bg-brand-bg grid size-8 place-items-center rounded-full border border-white/20">
-          <Clock3 className="text-muted size-3.5" />
+    <div className="relative flex gap-4">
+      <div className="relative flex w-8 shrink-0 flex-col items-center">
+        {!isFirst ? <div className="absolute top-0 h-3 w-px bg-white/25" /> : null}
+        <div className="bg-brand-bg z-[1] mt-3 grid size-8 place-items-center rounded-full border border-white/20">
+          <Clock3 className="size-3.5 text-white" strokeWidth={1.75} />
         </div>
-        <div className="mt-2 w-px flex-1 bg-white/15" />
+        {!isLast ? <div className="mt-0 w-px flex-1 bg-white/25" /> : <div className="h-3" />}
       </div>
 
-      <article className="bg-brand-surface min-w-0 flex-1 rounded-xl border border-white/10 p-4">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+      <article className="min-w-0 flex-1 pb-8">
+        <div className="mb-3 flex flex-wrap items-center gap-2 pt-3">
           <span
             className={cn(
-              'size-2 rounded-full',
-              version.isCurrentVersion || isFirst ? 'bg-brand-positive' : 'bg-brand-accent',
+              'size-2.5 shrink-0 rounded-full',
+              isActive ? 'bg-[#00A63E]' : 'bg-[#E0A263]',
             )}
+            aria-hidden="true"
           />
-          <p className="text-body-md-semibold text-white">
+          <p className={cn(headerTextClass, 'min-w-0 flex-1')}>
             Version {version.version || '—'}
-            {version.isCurrentVersion || isFirst ? ' (Current Active)' : ''}
+            {isActive ? ' (Current Active)' : ''}
           </p>
-          <span className="border-brand-positive/30 bg-brand-positive/10 text-brand-positive rounded-full border px-2 py-0.5 text-xs font-semibold">
-            Active
-          </span>
+          {isActive ? (
+            <span className="inline-flex h-[22px] items-center rounded-[10px] border border-[#00A63E]/30 bg-[#00A63E]/15 px-2.5 text-[11px] font-semibold text-[#00A63E]">
+              Active
+            </span>
+          ) : null}
         </div>
 
-        <div className="text-muted mb-4 space-y-1.5 text-sm">
-          <p className="inline-flex items-center gap-1.5">
-            <UserRound className="size-3.5" />
-            Changed By: {version.performedBy || '—'}
-          </p>
-          <p>Role: {version.role || 'Admin'}</p>
-          <p className="inline-flex items-center gap-1.5">
-            <img src={calendarIcon} alt="calendar" className="size-3.5" />
-            Date: {formatDateTime(version.createdAt)}
-          </p>
-          <p>Reason: {version.adminNote || '—'}</p>
+        <div className="mb-4 space-y-2">
+          <MetaRow
+            icon={<CalendarDays className="size-3.5" strokeWidth={1.75} />}
+            label="Changed By"
+            value={version.performedBy || '—'}
+          />
+          <MetaRow
+            icon={<Briefcase className="size-3.5" strokeWidth={1.75} />}
+            label="Role"
+            value={version.role || 'Admin'}
+          />
+          <MetaRow
+            icon={<CalendarDays className="size-3.5" strokeWidth={1.75} />}
+            label="Date"
+            value={formatDateTime(version.createdAt)}
+          />
+          <MetaRow
+            icon={<UserRound className="size-3.5" strokeWidth={1.75} />}
+            label="Reason"
+            value={version.adminNote?.trim() || '—'}
+          />
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-white/10">
-          <table className="w-full text-left text-sm">
-            <thead className="text-muted bg-black/30">
-              <tr>
-                <th className="px-3 py-2 font-medium">Setting</th>
-                <th className="px-3 py-2 font-medium">Old Value</th>
-                <th className="px-3 py-2 font-medium">New Value</th>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[360px] text-left">
+            <thead>
+              <tr className="border-b border-white/15">
+                <th className={cn(headerTextClass, 'pr-3 pb-2.5')}>Setting</th>
+                <th className={cn(headerTextClass, 'pr-3 pb-2.5')}>Old Value</th>
+                <th className={cn(headerTextClass, 'pb-2.5')}>New Value</th>
               </tr>
             </thead>
             <tbody>
               {changes.length ? (
                 changes.map((change, index) => (
-                  <tr key={`${change.setting}-${index}`} className="border-t border-white/10">
-                    <td className="px-3 py-2 text-white">{change.setting}</td>
-                    <td className="text-muted px-3 py-2">
+                  <tr key={`${change.setting}-${index}`} className="border-b border-white/10">
+                    <td className={cn(valueTextClass, 'py-2.5 pr-3')}>{change.setting}</td>
+                    <td className={cn(valueTextClass, 'py-2.5 pr-3 text-white/70')}>
                       {change.oldValue == null || change.oldValue === ''
                         ? '—'
                         : String(change.oldValue)}
                     </td>
-                    <td className="px-3 py-2 text-white">
+                    <td className={cn(valueTextClass, 'py-2.5')}>
                       {change.newValue == null || change.newValue === ''
                         ? '—'
                         : String(change.newValue)}
@@ -84,7 +129,7 @@ function VersionCard({ version, isFirst }: { version: SettingsLog; isFirst: bool
                 ))
               ) : (
                 <tr>
-                  <td colSpan={3} className="text-muted px-3 py-3 text-center">
+                  <td colSpan={3} className={cn(metaTextClass, 'py-3 text-center')}>
                     No changes recorded
                   </td>
                 </tr>
@@ -109,20 +154,22 @@ export function VersionHistoryPanel({ open, module, onClose }: VersionHistoryPan
 
   return createPortal(
     <div className="fixed inset-0 z-[130] flex justify-end bg-black/60">
-      <div className="bg-brand-bg flex h-full w-full max-w-xl flex-col border-l border-white/10">
+      <div className="flex h-full w-full max-w-xl flex-col border-l border-white/10 bg-[#050505]">
         <div className="flex items-start gap-3 border-b border-white/10 px-5 py-4">
           <button
             type="button"
             onClick={onClose}
-            className="text-muted mt-1 hover:text-white"
+            className="mt-1 text-white/70 transition-colors hover:text-white"
             aria-label="Back"
           >
             <ArrowLeft className="size-5" />
           </button>
           <div>
-            <h2 className="text-h4 text-white">Version History</h2>
-            <p className="text-muted mt-1 text-sm">
-              Track all changes and revisions made to this settings module
+            <h2 className="font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[24px] leading-8 font-semibold tracking-normal text-white">
+              Version History
+            </h2>
+            <p className="mt-1 font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-5 font-medium tracking-normal text-white/55">
+              Track all changes and revisions made to this service before approval.
             </p>
           </div>
         </div>
@@ -131,24 +178,23 @@ export function VersionHistoryPanel({ open, module, onClose }: VersionHistoryPan
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-40 animate-pulse rounded-xl bg-white/5" />
+                <div key={index} className="h-40 animate-pulse rounded-[10px] bg-white/5" />
               ))}
             </div>
           ) : versions.length === 0 ? (
-            <div className="rounded-xl border border-white/10 p-6 text-center text-sm text-slate-400">
+            <div className="rounded-[10px] border border-white/10 p-6 text-center text-sm text-white/50">
               No version history for this module yet.
             </div>
           ) : (
             versions.map((version, index) => (
-              <VersionCard key={version.id} version={version} isFirst={index === 0} />
+              <VersionCard
+                key={version.id}
+                version={version}
+                isFirst={index === 0}
+                isLast={index === versions.length - 1}
+              />
             ))
           )}
-        </div>
-
-        <div className="border-t border-white/10 px-5 py-3">
-          <Button variant="secondary" onClick={onClose}>
-            Close
-          </Button>
         </div>
       </div>
     </div>,

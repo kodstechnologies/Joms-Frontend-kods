@@ -28,7 +28,7 @@ export const SETTINGS_TABS: { key: SettingsTab; label: string }[] = [
   { key: 'platform', label: 'Platform Controls' },
   { key: 'security', label: 'Security & Access' },
   { key: 'notifications', label: 'Notifications' },
-  { key: 'finance', label: 'Finance & Transactional' },
+  { key: 'finance', label: 'Finance & Transactional Settings' },
   { key: 'incident', label: 'Incident Tracking' },
   { key: 'backup', label: 'Backup Configuration' },
   { key: 'templates', label: 'Templates' },

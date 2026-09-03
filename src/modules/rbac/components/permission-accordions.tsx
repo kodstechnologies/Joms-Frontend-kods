@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { AlertTriangle, ChevronDown, Layers, Shield } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 import type { PermissionCatalog } from '../types/rbac'
 import {
@@ -28,6 +29,7 @@ const LEVEL_SHORT_LABEL: Partial<Record<PermissionLevel, string>> = {
 export function PermissionAccordions({ catalog, selected, onChange }: PermissionAccordionsProps) {
   const modules = useMemo(() => Object.entries(catalog), [catalog])
   const selectedMap = useMemo(() => grantsToMap(selected), [selected])
+  const [openModules, setOpenModules] = useState<Record<string, boolean>>({})
 
   const setPermissionLevel = (key: string, level?: PermissionLevel) => {
     const next = { ...selectedMap }
@@ -73,121 +75,129 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
     )
   }, 0)
 
+  const firstModuleKey = modules[0]?.[0]
+  const isModuleOpen = (moduleKey: string) => {
+    if (moduleKey in openModules) return Boolean(openModules[moduleKey])
+    return moduleKey === firstModuleKey
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-brand-lg text-brand-muted flex flex-wrap items-center gap-4 border border-white/10 bg-white/5 px-4 py-3 text-sm">
-        <span>{enabledScopes} Scopes Enabled</span>
-        <span>{selected.length} Permissions Enabled</span>
-        <span className="text-brand-accent">{highRiskCount} High-Risk Permissions</span>
+    <div className="create-role-perm">
+      <div className="create-role-perm-summary">
+        <span className="create-role-perm-summary-item">
+          <Layers className="size-4 shrink-0" aria-hidden="true" />
+          {enabledScopes} Scopes Enabled
+        </span>
+        <span className="create-role-perm-summary-item">
+          <Shield className="size-4 shrink-0" aria-hidden="true" />
+          {selected.length} Permissions Enabled
+        </span>
+        <span className="create-role-perm-summary-item is-risk">
+          <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
+          {highRiskCount} High-Risk Permissions
+        </span>
       </div>
 
-      <div className="rounded-brand-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-white/70">
-        <p className="font-semibold text-white">Permission legend</p>
-        <div className="mt-2 flex flex-wrap gap-3">
-          {Object.entries(PERMISSION_LEVEL_LABELS).map(([value, label]) => (
-            <span key={value}>{label}</span>
-          ))}
-        </div>
-      </div>
+      <div className="create-role-perm-modules">
+        {modules.map(([moduleKey, module]) => {
+          const moduleKeys = module.permissions.map((p) => p.key)
+          const enabledCount = moduleKeys.filter((k) => Boolean(selectedMap[k])).length
+          const allEnabled = enabledCount === moduleKeys.length && moduleKeys.length > 0
+          const open = isModuleOpen(moduleKey)
 
-      {modules.map(([moduleKey, module]) => {
-        const moduleKeys = module.permissions.map((p) => p.key)
-        const enabledCount = moduleKeys.filter((k) => Boolean(selectedMap[k])).length
-        const allEnabled = enabledCount === moduleKeys.length && moduleKeys.length > 0
+          return (
+            <div key={moduleKey} className="create-role-perm-module">
+              <div className="create-role-perm-module-header">
+                <button
+                  type="button"
+                  className="create-role-perm-module-toggle"
+                  aria-expanded={open}
+                  onClick={() =>
+                    setOpenModules((prev) => ({
+                      ...prev,
+                      [moduleKey]: !isModuleOpen(moduleKey),
+                    }))
+                  }
+                >
+                  <ChevronDown
+                    className={cn('create-role-perm-chevron size-4 shrink-0', open && 'is-open')}
+                    aria-hidden="true"
+                  />
+                  <span className="create-role-perm-module-name">{module.label}</span>
+                  <span className="create-role-perm-count-badge">
+                    {enabledCount}/{moduleKeys.length} Enabled
+                  </span>
+                </button>
 
-        return (
-          <div
-            key={moduleKey}
-            className="rounded-brand-lg bg-brand-surface overflow-hidden border border-white/10"
-          >
-            <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
-              <div>
-                <h3 className="text-brand-text text-base font-semibold">{module.label}</h3>
-                <p className="text-brand-muted text-sm">
-                  {enabledCount}/{moduleKeys.length} Enabled
-                </p>
+                <button
+                  type="button"
+                  aria-label={`${allEnabled ? 'Disable' : 'Enable'} all ${module.label} permissions`}
+                  onClick={() => toggleModule(moduleKey, !allEnabled)}
+                  className={cn('create-role-switch', allEnabled && 'is-on')}
+                >
+                  <span className="create-role-switch-knob" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => toggleModule(moduleKey, !allEnabled)}
-                className={cn(
-                  'relative h-7 w-12 rounded-full transition-colors',
-                  allEnabled ? 'bg-brand-accent' : 'bg-white/20',
-                )}
-              >
-                <span
-                  className={cn(
-                    'absolute top-0.5 size-6 rounded-full bg-white transition-transform',
-                    allEnabled ? 'left-5' : 'left-0.5',
-                  )}
-                />
-              </button>
-            </div>
 
-            <div className="divide-y divide-white/5">
-              {module.permissions.map((permission) => {
-                const currentLevel = selectedMap[permission.key]
-                const isOn = Boolean(currentLevel)
-                return (
-                  <div
-                    key={permission.key}
-                    className="flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-brand-text text-sm">{permission.label}</span>
-                        {permission.risk === 'high' ? (
-                          <span className="bg-brand-danger/20 text-brand-danger rounded px-2 py-0.5 text-xs">
-                            High Risk
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="text-brand-muted mt-1 text-xs">{permission.key}</p>
-                    </div>
+              {open ? (
+                <div className="create-role-perm-module-body">
+                  <p className="create-role-perm-section-label">Permissions</p>
+                  <div className="create-role-perm-rows">
+                    {module.permissions.map((permission) => {
+                      const currentLevel = selectedMap[permission.key]
+                      const isOn = Boolean(currentLevel)
+                      const isHighRisk =
+                        permission.risk === 'high' || permission.risk === 'very_high'
 
-                    <div className="flex items-center gap-3">
-                      {isOn ? (
-                        <select
-                          value={currentLevel}
-                          onChange={(event) =>
-                            setPermissionLevel(
-                              permission.key,
-                              event.target.value as PermissionLevel,
-                            )
-                          }
-                          className="ui-input h-9 min-w-[180px] py-0 text-sm"
-                        >
-                          {Object.entries(PERMISSION_LEVEL_LABELS).map(([value, label]) => (
-                            <option key={value} value={value}>
-                              {LEVEL_SHORT_LABEL[value as PermissionLevel] || label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : null}
+                      return (
+                        <div key={permission.key} className="create-role-perm-row">
+                          <div className="create-role-perm-row-meta">
+                            <span className="create-role-perm-row-name">{permission.label}</span>
+                            {isHighRisk ? (
+                              <span className="create-role-high-risk-badge">High Risk</span>
+                            ) : null}
+                          </div>
 
-                      <button
-                        type="button"
-                        onClick={() => togglePermission(permission.key)}
-                        className={cn(
-                          'relative h-6 w-10 shrink-0 rounded-full transition-colors',
-                          isOn ? 'bg-brand-accent' : 'bg-white/20',
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'absolute top-0.5 size-5 rounded-full bg-white transition-transform',
-                            isOn ? 'left-4' : 'left-0.5',
-                          )}
-                        />
-                      </button>
-                    </div>
+                          <div className="create-role-perm-row-controls">
+                            {isOn ? (
+                              <select
+                                value={currentLevel}
+                                aria-label={`${permission.label} access level`}
+                                onChange={(event) =>
+                                  setPermissionLevel(
+                                    permission.key,
+                                    event.target.value as PermissionLevel,
+                                  )
+                                }
+                                className="create-role-level-select"
+                              >
+                                {Object.entries(PERMISSION_LEVEL_LABELS).map(([value, label]) => (
+                                  <option key={value} value={value}>
+                                    {LEVEL_SHORT_LABEL[value as PermissionLevel] || label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : null}
+
+                            <button
+                              type="button"
+                              aria-label={`${isOn ? 'Disable' : 'Enable'} ${permission.label}`}
+                              onClick={() => togglePermission(permission.key)}
+                              className={cn('create-role-switch', isOn && 'is-on')}
+                            >
+                              <span className="create-role-switch-knob" />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
+                </div>
+              ) : null}
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

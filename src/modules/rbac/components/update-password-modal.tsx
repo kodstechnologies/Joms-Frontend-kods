@@ -7,6 +7,7 @@ import {
   describePasswordPolicy,
   validatePasswordAgainstPolicy,
 } from '@/modules/settings/utils/password-policy'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 type UpdatePasswordModalProps = {
   open: boolean
@@ -89,32 +90,6 @@ export function UpdatePasswordModal({
   const title =
     mode === 'set' ? 'Set Password' : mode === 'reset' ? 'Reset Password' : 'Update Password'
 
-  const description = (() => {
-    if (!userName) return null
-    if (mode === 'set') {
-      return (
-        <>
-          Set a password for <span className="text-body-md-medium text-brand-text">{userName}</span>
-          .
-        </>
-      )
-    }
-    if (mode === 'reset') {
-      return (
-        <>
-          Reset password for <span className="text-body-md-medium text-brand-text">{userName}</span>
-          .
-        </>
-      )
-    }
-    return (
-      <>
-        Reset password for <span className="text-body-md-medium text-brand-text">{userName}</span>.
-        Enter the user&apos;s current password, then set a new one.
-      </>
-    )
-  })()
-
   const submitLabel = (() => {
     if (isSubmitting) {
       if (mode === 'set') return 'Setting...'
@@ -126,6 +101,10 @@ export function UpdatePasswordModal({
     return 'Change Password'
   })()
 
+  const oldPasswordLabel = mode === 'update' ? 'Enter Old Password' : "User's Current Password"
+  const newPasswordLabel = 'Enter New Password'
+  const confirmPasswordLabel = 'Confirm New Password'
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
@@ -136,11 +115,11 @@ export function UpdatePasswordModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="update-password-modal-title"
-        className="ui-modal-shell"
+        className="ui-modal-shell update-password-modal"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="ui-modal-header">
-          <h2 id="update-password-modal-title" className="text-h2 text-brand-text">
+          <h2 id="update-password-modal-title" className="update-password-title">
             {title}
           </h2>
           <button
@@ -153,61 +132,66 @@ export function UpdatePasswordModal({
           </button>
         </div>
 
-        <div className="ui-modal-body space-y-4">
-          {description ? <p className="text-body-md text-muted">{description}</p> : null}
+        <div className="ui-modal-body update-password-body">
+          {userName && mode !== 'update' ? (
+            <p className="update-password-desc">
+              {mode === 'set' ? 'Set a password for' : 'Reset password for'} <span>{userName}</span>
+              .
+            </p>
+          ) : null}
 
-          <div className="space-y-4">
+          <div className="update-password-fields">
             {requireOldPassword ? (
-              <div className="space-y-2">
-                <label className="text-body-sm-medium text-brand-text" htmlFor="old-password">
-                  User&apos;s Current Password<span className="text-brand-danger">*</span>
+              <div className="update-password-field">
+                <label className="update-password-label" htmlFor="old-password">
+                  {oldPasswordLabel} <RequiredMark />
                 </label>
                 <input
                   id="old-password"
                   type="password"
                   value={oldPassword}
                   onChange={(event) => setOldPassword(event.target.value)}
-                  placeholder="Enter current password"
+                  placeholder="Enter here.."
                   autoComplete="current-password"
-                  className="ui-input"
+                  className="update-password-input"
                 />
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <label className="text-body-sm-medium text-brand-text" htmlFor="new-password">
-                Enter New Password<span className="text-brand-danger">*</span>
+            <div className="update-password-field">
+              <label className="update-password-label" htmlFor="new-password">
+                {newPasswordLabel} <RequiredMark />
               </label>
               <input
                 id="new-password"
                 type="password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
-                placeholder="Enter new password"
+                placeholder="Enter here.."
                 autoComplete="new-password"
-                className="ui-input"
+                className="update-password-input"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-body-sm-medium text-brand-text" htmlFor="confirm-new-password">
-                Confirm New Password<span className="text-brand-danger">*</span>
+            <div className="update-password-field">
+              <label className="update-password-label" htmlFor="confirm-new-password">
+                {confirmPasswordLabel} <RequiredMark />
               </label>
               <input
                 id="confirm-new-password"
                 type="password"
                 value={confirmNewPassword}
                 onChange={(event) => setConfirmNewPassword(event.target.value)}
-                placeholder="Confirm new password"
+                placeholder="Enter here.."
                 autoComplete="new-password"
-                className="ui-input"
+                className="update-password-input"
               />
             </div>
           </div>
 
-          <div className="radius-md bg-brand-bg border border-white/10 px-4 py-3">
-            <p className="text-body-md-semibold text-brand-text">Password Format &amp; Rules</p>
-            <ul className="text-body-sm text-muted mt-2 list-disc space-y-1 pl-4">
+          <div className="update-password-rules">
+            <p className="update-password-rules-title">Password Format &amp; Rules</p>
+            <ul className="update-password-rules-list">
               {passwordRules.map((rule) => (
                 <li key={rule}>{rule}</li>
               ))}
@@ -215,7 +199,7 @@ export function UpdatePasswordModal({
           </div>
         </div>
 
-        <div className="ui-modal-footer">
+        <div className="ui-modal-footer update-password-footer">
           <button
             type="button"
             onClick={handleClose}
@@ -228,7 +212,7 @@ export function UpdatePasswordModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="ui-modal-btn ui-modal-btn-gold"
+            className="ui-modal-btn update-password-submit"
           >
             {submitLabel}
           </button>

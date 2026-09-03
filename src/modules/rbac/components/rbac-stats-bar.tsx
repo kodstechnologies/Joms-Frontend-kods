@@ -54,17 +54,14 @@ export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
   }, [filteredActiveMetricIds])
 
   return (
-    <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
+    <div className="rbac-stats-grid">
       {visibleCards.map((card) => (
-        <div
-          key={card.id}
-          className="rounded-brand-lg bg-brand-surface border border-white/10 px-4 py-4"
-        >
-          <p className="text-brand-muted text-xs font-medium md:text-sm">{card.label}</p>
+        <div key={card.id} className="rbac-stats-card">
+          <p className="rbac-stats-card-label">{card.label}</p>
           {isLoading ? (
-            <div className="mt-2 h-8 w-12 animate-pulse rounded bg-white/10" />
+            <div className="rbac-stats-card-skeleton" />
           ) : (
-            <p className="text-brand-text mt-2 text-2xl font-semibold tracking-tight">
+            <p className="rbac-stats-card-value">
               {String(stats?.[card.statsKey] ?? 0).padStart(2, '0')}
             </p>
           )}

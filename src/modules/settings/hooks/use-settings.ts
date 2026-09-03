@@ -133,7 +133,7 @@ export function useSettingsLog(id?: string) {
   })
 }
 
-export function useSettingsLogMetrics(params?: { module?: SettingsModule }) {
+export function useSettingsLogMetrics(params?: { module?: string }) {
   return useQuery({
     queryKey: settingsKeys.logMetrics(params),
     queryFn: () => fetchSettingsLogMetrics(params),

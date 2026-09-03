@@ -63,7 +63,7 @@ export const fetchSettingsLog = async (id: string) => {
   return response.data.data
 }
 
-export const fetchSettingsLogMetrics = async (params?: { module?: SettingsModule }) => {
+export const fetchSettingsLogMetrics = async (params?: { module?: string }) => {
   const response = await settingsApiClient.get<{
     success: boolean
     message: string

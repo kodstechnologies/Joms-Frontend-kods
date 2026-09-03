@@ -1,9 +1,7 @@
-import { useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { ArrowLeft, RotateCcw, UserRound, X } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { ArrowLeft, Briefcase, CalendarDays, UserRound, X } from 'lucide-react'
 import { toast } from 'sonner'
 
-import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { Button } from '@/shared/components/ui/button'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/cn'
@@ -11,7 +9,6 @@ import { uiTokens } from '@/shared/lib/design-tokens'
 
 import { useRollbackAuditLog } from '../hooks/use-rbac'
 import type { AuditLog } from '../types/rbac'
-import { formatDateTimeEnInRbacVersion as formatDateTime } from '@/shared/lib/format-datetime'
 
 type VersionHistoryPanelProps = {
   open: boolean
@@ -39,11 +36,102 @@ const snapshotOf = (log: AuditLog, version: 'new' | 'previous') => {
   )
 }
 
-const affectedLabel = (log: AuditLog) => {
-  if (log.username && log.username !== '—') return `Account for: ${log.username}`
-  if (log.changedTo) return `Updated Role: ${log.changedTo}`
-  if (log.previousRole) return `Previous Role: ${log.previousRole}`
-  return log.module || 'RBAC'
+const formatHistoryDate = (value?: string) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
+
+const formatHistoryDateTime = (value?: string) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  const time = date.toLocaleString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+  return `${time}, ${formatHistoryDate(value)}`
+}
+
+const metadataString = (metadata: Record<string, unknown> | undefined, key: string) => {
+  const value = metadata?.[key]
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+const getDateMeta = (log: AuditLog) => {
+  const action = log.action.toLowerCase()
+  if (action.includes('creat')) {
+    return { label: 'Created Date', value: formatHistoryDate(log.createdAt) }
+  }
+  if (action.includes('suspend')) {
+    return { label: 'Suspended Date & Time', value: formatHistoryDateTime(log.createdAt) }
+  }
+  if (action.includes('updat')) {
+    return { label: 'Updated Date & Time', value: formatHistoryDateTime(log.createdAt) }
+  }
+  return { label: 'Date & Time', value: formatHistoryDateTime(log.createdAt) }
+}
+
+const getSubjectMeta = (log: AuditLog) => {
+  const action = log.action.toLowerCase()
+  const username = log.username && log.username !== '—' ? log.username : ''
+
+  if (action.includes('suspend') && username) {
+    return { label: 'Suspended User', value: username }
+  }
+  if (action.includes('plan') || action.includes('pric')) {
+    return { label: 'Updated Plan', value: log.changedTo || username || log.module || '—' }
+  }
+  if (username) {
+    return { label: 'Account for', value: username }
+  }
+  if (log.changedTo) {
+    return { label: 'Updated Role', value: log.changedTo }
+  }
+  if (log.previousRole) {
+    return { label: 'Previous Role', value: log.previousRole }
+  }
+  return { label: 'Module', value: log.module || 'RBAC' }
+}
+
+const getActorValue = (log: AuditLog) => {
+  const name = log.performedBy?.trim() || '—'
+  const role =
+    metadataString(log.metadata, 'performedByRole') ||
+    metadataString(log.metadata, 'actorRole') ||
+    metadataString(log.metadata, 'role')
+  if (!role || name.toLowerCase().includes(role.toLowerCase())) return name
+  return `${name}(${role})`
+}
+
+function MetaRow({
+  icon,
+  label,
+  value,
+  valueLinked,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  valueLinked?: boolean
+}) {
+  return (
+    <p className="vh-meta-row">
+      <span className="vh-meta-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="vh-meta-text">
+        <span className="vh-meta-label">{label}: </span>
+        <span className={cn('vh-meta-value', valueLinked && 'is-link')}>{value}</span>
+      </span>
+    </p>
+  )
 }
 
 function SnapshotModal({
@@ -99,44 +187,45 @@ function HistoryEntry({
   onRollback: (log: AuditLog) => void
   isRollingBack: boolean
 }) {
+  const dateMeta = getDateMeta(log)
+  const subjectMeta = getSubjectMeta(log)
+
   return (
-    <article className="border-b border-white/10 py-5 last:border-b-0">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-brand-text text-base font-semibold">{log.action}</h3>
-          <div className="text-muted mt-3 space-y-2 text-sm">
-            <p className="inline-flex items-center gap-2">
-              <img src={calendarIcon} alt="" className="size-3.5" />
-              {formatDateTime(log.createdAt)}
-            </p>
-            <p className="flex items-center gap-2">
-              <img src={calendarIcon} alt="" className="size-3.5" />
-              <span className="underline underline-offset-2">{affectedLabel(log)}</span>
-            </p>
-            <p className="inline-flex items-center gap-2">
-              <UserRound className="size-3.5" />
-              By: {log.performedBy || '—'}
-            </p>
-            {log.rolledBack ? (
-              <p className="text-brand-muted text-xs font-medium">Already rolled back</p>
-            ) : null}
-          </div>
+    <article className="vh-entry">
+      <h3 className="vh-entry-title">{log.action}</h3>
+
+      <div className="vh-entry-body">
+        <div className="vh-meta-block">
+          <MetaRow
+            icon={<CalendarDays className="size-3.5" strokeWidth={1.75} />}
+            label={dateMeta.label}
+            value={dateMeta.value}
+          />
+          <MetaRow
+            icon={<Briefcase className="size-3.5" strokeWidth={1.75} />}
+            label={subjectMeta.label}
+            value={subjectMeta.value}
+            valueLinked
+          />
+          <MetaRow
+            icon={<UserRound className="size-3.5" strokeWidth={1.75} />}
+            label="By"
+            value={getActorValue(log)}
+          />
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-          <Button type="button" className="px-4 py-2 text-xs" onClick={() => onViewNew(log)}>
+        <div className="vh-entry-actions">
+          <button type="button" className="vh-btn-view" onClick={() => onViewNew(log)}>
             View New Version
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant="secondary"
-            className="px-4 py-2 text-xs"
+            className="vh-btn-rollback"
             disabled={!log.canRollback || isRollingBack}
             onClick={() => onRollback(log)}
           >
-            <RotateCcw className="size-3.5" />
             Rollback
-          </Button>
+          </button>
         </div>
       </div>
     </article>
@@ -176,49 +265,38 @@ export function VersionHistoryPanel({
     }
   }
 
-  return createPortal(
-    <div className="fixed inset-0 z-[130] flex justify-end bg-black/60">
-      <div className="bg-brand-bg flex h-full w-full max-w-xl flex-col border-l border-white/10">
-        <div className="flex items-start gap-3 border-b border-white/10 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted mt-1 hover:text-white"
-            aria-label="Back"
-          >
-            <ArrowLeft className="size-5" />
-          </button>
-          <div>
-            <h2 className="text-h4 text-white">Version History</h2>
-            <p className="text-muted mt-1 text-sm">
-              Track all changes and revisions made to this service before approval.
-            </p>
-          </div>
-        </div>
+  return (
+    <div className="vh-page">
+      <div className="vh-header">
+        <button type="button" onClick={onClose} className="vh-back">
+          <ArrowLeft className="size-5" aria-hidden="true" />
+          <span>Version History</span>
+        </button>
+        <p className="vh-subtitle">
+          Track all changes and revisions made to this service before approval
+        </p>
+      </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-2">
-          {isLoading ? (
-            <div className="space-y-3 py-5">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-28 animate-pulse rounded-xl bg-white/5" />
-              ))}
-            </div>
-          ) : entries.length === 0 ? (
-            <div className="rounded-xl border border-white/10 p-6 text-center text-sm text-slate-400">
-              No version history for this admin yet.
-            </div>
-          ) : (
-            entries.map((log) => (
-              <HistoryEntry
-                key={log.id || log._id || `${log.action}-${log.createdAt}`}
-                log={log}
-                onViewNew={setSnapshotLog}
-                onRollback={setConfirmLog}
-                isRollingBack={rollbackMutation.isPending}
-              />
-            ))
-          )}
-        </div>
+      <div className="vh-list">
+        {isLoading ? (
+          <div className="space-y-3 py-2">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-28 animate-pulse rounded-xl bg-white/5" />
+            ))}
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="vh-empty">No version history for this admin yet.</div>
+        ) : (
+          entries.map((log) => (
+            <HistoryEntry
+              key={log.id || log._id || `${log.action}-${log.createdAt}`}
+              log={log}
+              onViewNew={setSnapshotLog}
+              onRollback={setConfirmLog}
+              isRollingBack={rollbackMutation.isPending}
+            />
+          ))
+        )}
       </div>
 
       {snapshotLog ? (
@@ -265,7 +343,6 @@ export function VersionHistoryPanel({
           </div>
         </div>
       ) : null}
-    </div>,
-    document.body,
+    </div>
   )
 }

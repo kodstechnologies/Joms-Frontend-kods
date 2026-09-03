@@ -38,6 +38,14 @@ const formatActionPerformed = (log: SettingsLog) => {
   return labels[log.action] || 'Settings action'
 }
 
+const cardClass = 'rounded-[10px] border border-white/[0.06] bg-[#111111] p-4 sm:p-5'
+const sectionTitleClass =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-5 font-medium tracking-normal text-white/50"
+const labelClass =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-5 font-medium tracking-normal text-white/50"
+const valueClass =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-5 font-medium tracking-normal text-white"
+
 export function SettingsLogActionDetailsModal({
   open,
   log,
@@ -62,29 +70,32 @@ export function SettingsLogActionDetailsModal({
         aria-modal="true"
         aria-labelledby="settings-log-details-title"
         className={cn(
-          'flex max-h-[min(90vh,920px)] w-full max-w-[500px] flex-col overflow-hidden rounded-2xl border border-white/10',
-          'bg-gradient-to-b from-[#141414] to-[#050505] shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
+          'flex max-h-[min(90vh,920px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[10px] border border-white/10',
+          'bg-[#050505] shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
         )}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-white/10 px-6 py-5">
-          <h2 id="settings-log-details-title" className="text-lg font-semibold text-white">
+        <div className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4 sm:px-6 sm:py-5">
+          <h2
+            id="settings-log-details-title"
+            className="font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-lg leading-7 font-semibold tracking-normal text-white"
+          >
             Action Details
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            className="grid size-8 place-items-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Close details"
           >
             <X className="size-4" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <section className="mb-6">
-            <h3 className="mb-4 text-sm font-semibold text-white">Action Information</h3>
-            <div className="space-y-3 rounded-xl border border-white/10 bg-[#050505]/60 p-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+          <section className={cardClass}>
+            <h3 className={cn(sectionTitleClass, 'mb-4')}>Action Information</h3>
+            <div className="space-y-3">
               <InfoRow label="Admin Name" value={log.performedBy || '—'} />
               <InfoRow label="Admin Role" value={log.role || 'Admin'} />
               <InfoRow label="Module" value={log.moduleLabel || log.module} />
@@ -93,38 +104,44 @@ export function SettingsLogActionDetailsModal({
             </div>
           </section>
 
-          <section className="mb-6">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-white">Changes Made</h3>
+          <section className={cardClass}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className={sectionTitleClass}>Changes Made</h3>
               <button
                 type="button"
                 onClick={onViewVersionHistory}
-                className="text-sm font-medium text-[#F6CB86] underline underline-offset-4"
+                className={cn(
+                  sectionTitleClass,
+                  'underline underline-offset-4 hover:text-white/70',
+                )}
               >
                 View Version History
               </button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-white/10">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#050505] text-white/55">
-                  <tr>
-                    <th className="px-3 py-2.5 font-medium">Setting Changed</th>
-                    <th className="px-3 py-2.5 font-medium">Old Value</th>
-                    <th className="px-3 py-2.5 font-medium">New Value</th>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[420px] text-left">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className={cn(labelClass, 'pr-3 pb-2.5 font-medium')}>Setting Changed</th>
+                    <th className={cn(labelClass, 'pr-3 pb-2.5 font-medium')}>Old Value</th>
+                    <th className={cn(labelClass, 'pb-2.5 font-medium')}>New Value</th>
                   </tr>
                 </thead>
                 <tbody>
                   {changes.length ? (
                     changes.map((change, index) => (
-                      <tr key={`${change.setting}-${index}`} className="border-t border-white/10">
-                        <td className="px-3 py-2.5 text-white">{change.setting}</td>
-                        <td className="px-3 py-2.5 text-white/55">
+                      <tr
+                        key={`${change.setting}-${index}`}
+                        className="border-b border-white/10 last:border-b-0"
+                      >
+                        <td className={cn(valueClass, 'py-2.5 pr-3')}>{change.setting}</td>
+                        <td className={cn(valueClass, 'py-2.5 pr-3 text-white/70')}>
                           {change.oldValue == null || change.oldValue === ''
                             ? '—'
                             : String(change.oldValue)}
                         </td>
-                        <td className="px-3 py-2.5 text-white">
+                        <td className={cn(valueClass, 'py-2.5')}>
                           {change.newValue == null || change.newValue === ''
                             ? '—'
                             : String(change.newValue)}
@@ -133,7 +150,7 @@ export function SettingsLogActionDetailsModal({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={3} className="px-3 py-4 text-center text-white/55">
+                      <td colSpan={3} className={cn(labelClass, 'py-4 text-center')}>
                         No field-level changes recorded
                       </td>
                     </tr>
@@ -143,29 +160,29 @@ export function SettingsLogActionDetailsModal({
             </div>
           </section>
 
-          <section className="mb-6">
-            <h3 className="mb-3 text-sm font-semibold text-white">Admin Note</h3>
-            <div className="min-h-[96px] rounded-xl border border-white/10 bg-[#050505] p-4">
-              <p className="text-sm leading-relaxed text-white/85">
+          <section className={cardClass}>
+            <h3 className={cn(sectionTitleClass, 'mb-3')}>Admin Note</h3>
+            <div className="border-t border-white/10 pt-3">
+              <p className="font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[14px] leading-[20px] font-medium tracking-normal text-white/70">
                 {log.adminNote?.trim() || 'No admin note provided for this action.'}
               </p>
             </div>
           </section>
 
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-white">System Information</h3>
-            <div className="space-y-3 rounded-xl border border-white/10 bg-[#050505]/60 p-4">
+          <section className={cardClass}>
+            <h3 className={cn(sectionTitleClass, 'mb-4')}>System Information</h3>
+            <div className="space-y-3">
               <InfoRow label="Impact Scope" value={log.impactScope || '—'} />
               <InfoRow label="Affected User" value={log.affectedUser || '—'} />
             </div>
           </section>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-white/10 px-6 py-4">
+        <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-lg border border-white/20 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/5"
+            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-[10px] border border-white/20 bg-[#050505] px-4 text-sm font-semibold text-white transition-colors hover:bg-white/5"
           >
             Cancel
           </button>
@@ -173,7 +190,7 @@ export function SettingsLogActionDetailsModal({
             type="button"
             disabled={!canRestore || isRestoring}
             onClick={onRestore}
-            className="inline-flex h-10 min-w-[238px] items-center justify-center rounded-lg bg-gradient-to-r from-[#E0A263] to-[#F6CB86] px-4 text-sm font-semibold text-[#050505] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 min-w-[220px] items-center justify-center rounded-[10px] bg-gradient-to-b from-[#F6CB86] to-[#E0A263] px-4 text-sm font-semibold text-[#050505] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isRestoring ? 'Restoring...' : 'Restore Previous Version'}
           </button>
@@ -185,9 +202,9 @@ export function SettingsLogActionDetailsModal({
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 text-sm">
-      <span className="shrink-0 text-white/55">{label}</span>
-      <span className="text-right font-medium text-white">{value}</span>
+    <div className="flex items-start justify-between gap-4">
+      <span className={labelClass}>{label}</span>
+      <span className={cn(valueClass, 'max-w-[60%] text-right')}>{value}</span>
     </div>
   )
 }

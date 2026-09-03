@@ -219,7 +219,7 @@ export function MainSettingsPage() {
     <div className="space-y-6">
       <SectionHeader
         title="Settings"
-        subtitle="Track metrics, payouts, and financial performance"
+        subtitle="Track revenue, payouts, and financial performance"
         actions={[
           {
             label: 'Settings Logs',

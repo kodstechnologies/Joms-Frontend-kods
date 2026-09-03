@@ -10,6 +10,7 @@ import {
   ComposedChart,
   Legend,
   Line,
+  Rectangle,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -72,15 +73,15 @@ const STATUS_STYLES: Record<PlatformHealthInfraRow['status'], string> = {
 }
 
 const CHART_COLORS = {
-  transactions: '#155dfc',
-  supportTickets: '#f6cb86',
-  uptime: '#00a63e',
-  memory: '#f6cb86',
-  cpu: '#155dfc',
-  requests: '#00a63e',
-  compliance: '#f6cb86',
-  resolved: '#00a63e',
-  security: '#d3191c',
+  transactions: '#155DFC',
+  supportTickets: '#E0A263',
+  uptime: '#00A63E',
+  memory: '#E0A263',
+  cpu: '#155DFC',
+  requests: '#00A63E',
+  compliance: '#E0A263',
+  resolved: '#00A63E',
+  security: '#D3191C',
 }
 
 const PLATFORM_TREND_LEFT_MAX = 1600
@@ -91,12 +92,118 @@ const SYSTEM_PERF_RIGHT_MAX = 3200
 const SYSTEM_PERF_RIGHT_TICKS = [0, 800, 1600, 2400, 3200]
 const SECURITY_TICKS = [0, 2, 4, 6, 8]
 
-const PLATFORM_TREND_BAR_SIZE = 28
+const PLATFORM_TREND_BAR_SIZE = 70
 const PLATFORM_TREND_BAR_GAP = 4
-const PLATFORM_TREND_CATEGORY_GAP = '20%'
-const SECURITY_BAR_SIZE = 24
-const SECURITY_BAR_GAP = 4
-const SECURITY_CATEGORY_GAP = '20%'
+const PLATFORM_TREND_CATEGORY_PAD = 48
+const PLATFORM_TREND_CATEGORY_WIDTH =
+  PLATFORM_TREND_BAR_SIZE * 2 + PLATFORM_TREND_BAR_GAP + PLATFORM_TREND_CATEGORY_PAD
+/** Figma axis tick: Figtree SemiBold 16 / 20, fill #FFFFFF */
+const PLATFORM_TREND_AXIS_TICK = {
+  fill: '#FFFFFF',
+  fontSize: 16,
+  fontWeight: 600 as const,
+  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+  fontStyle: 'normal' as const,
+  letterSpacing: '0',
+}
+const PLATFORM_TREND_TEXT_CLASS =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[16px] leading-5 font-semibold tracking-normal"
+
+type PlatformTrendAxisTickProps = {
+  x?: number | string
+  y?: number | string
+  payload?: { value?: string | number }
+  textAnchor?: 'start' | 'middle' | 'end' | 'inherit'
+  /** Ignored — Recharts passes fill="#666"; Figma requires #FFFFFF. */
+  fill?: string
+  formatValue?: (value: string | number) => string
+}
+
+/** Custom tick: always Figtree 600 / 16px / #FFFFFF (ignore Recharts default #666 fill). */
+function PlatformTrendAxisTick({
+  x = 0,
+  y = 0,
+  payload,
+  textAnchor = 'middle',
+  formatValue,
+}: PlatformTrendAxisTickProps) {
+  const raw = payload?.value ?? ''
+  const label = formatValue ? formatValue(raw) : String(raw)
+
+  return (
+    <text
+      x={x}
+      y={y}
+      dy="0.355em"
+      textAnchor={textAnchor}
+      fill={PLATFORM_TREND_AXIS_TICK.fill}
+      fontFamily={PLATFORM_TREND_AXIS_TICK.fontFamily}
+      fontSize={PLATFORM_TREND_AXIS_TICK.fontSize}
+      fontWeight={PLATFORM_TREND_AXIS_TICK.fontWeight}
+      fontStyle={PLATFORM_TREND_AXIS_TICK.fontStyle}
+      letterSpacing={PLATFORM_TREND_AXIS_TICK.letterSpacing}
+      className="platform-health-trends-axis-tick"
+      style={{
+        fill: PLATFORM_TREND_AXIS_TICK.fill,
+        fontFamily: PLATFORM_TREND_AXIS_TICK.fontFamily,
+        fontSize: '16px',
+        fontWeight: 600,
+        fontStyle: 'normal',
+        lineHeight: '20px',
+        letterSpacing: '0px',
+      }}
+    >
+      {label}
+    </text>
+  )
+}
+
+function renderPlatformTrendAxisTick(props: PlatformTrendAxisTickProps) {
+  return <PlatformTrendAxisTick {...props} />
+}
+
+function renderSystemPerfRightAxisTick(props: PlatformTrendAxisTickProps) {
+  return (
+    <PlatformTrendAxisTick
+      {...props}
+      formatValue={(value) => (Number(value) === 0 ? '00' : String(value))}
+    />
+  )
+}
+const SECURITY_BAR_SIZE = 40
+const SECURITY_BAR_GAP = 6
+const SECURITY_CATEGORY_GAP = '22%'
+
+type PlatformTrendBarShapeProps = {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  fill?: string
+}
+
+/** Force Figma bar width (Rectangle 8830 = 70px). Recharts otherwise shrinks bars when points are dense. */
+function PlatformTrendBarShape({
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
+  fill,
+}: PlatformTrendBarShapeProps) {
+  if (height <= 0) return null
+  const barWidth = PLATFORM_TREND_BAR_SIZE
+  const centeredX = x + (width - barWidth) / 2
+  return (
+    <Rectangle
+      x={centeredX}
+      y={y}
+      width={barWidth}
+      height={height}
+      fill={fill}
+      radius={[2, 2, 0, 0]}
+    />
+  )
+}
 
 function roundAxisTick(value: number) {
   return Math.round(value * 100) / 100
@@ -153,23 +260,19 @@ function resolvePlatformTrendUptimeAxis(data: Array<{ uptime?: number }>) {
   return { domain: [floor, ceil] as [number, number], ticks }
 }
 
-function resolveSystemPerfRightAxis(data: Array<{ apiResponseMs?: number }>) {
-  const peak = data.reduce((max, row) => Math.max(max, row.apiResponseMs || 0), 0)
+function resolveSystemPerfRightAxis(data: Array<{ requestsPerMin?: number }>) {
+  const peak = data.reduce((max, row) => Math.max(max, row.requestsPerMin || 0), 0)
   if (peak <= 0) {
     return {
-      domain: [0, 100] as [number, number],
-      ticks: [0, 25, 50, 75, 100],
+      domain: [0, SYSTEM_PERF_RIGHT_MAX] as [number, number],
+      ticks: SYSTEM_PERF_RIGHT_TICKS,
     }
   }
-  if (peak <= 100) {
-    const max = Math.max(20, Math.ceil(peak / 10) * 10)
-    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
-    return { domain: [0, max] as [number, number], ticks }
-  }
   if (peak <= SYSTEM_PERF_RIGHT_MAX) {
-    const max = Math.max(80, Math.ceil(peak / 40) * 40)
-    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
-    return { domain: [0, max] as [number, number], ticks }
+    return {
+      domain: [0, SYSTEM_PERF_RIGHT_MAX] as [number, number],
+      ticks: SYSTEM_PERF_RIGHT_TICKS,
+    }
   }
   const roundedMax = Math.ceil(peak / 800) * 800
   const ticks = Array.from({ length: 5 }, (_, index) => Math.round((roundedMax / 4) * index))
@@ -197,6 +300,46 @@ function formatPlatformTrendTooltip(value: number | string, name: string) {
   return [value, name]
 }
 
+const PLATFORM_TREND_LEGEND_ORDER = ['Support tickets', 'Transactions (K)', 'Uptime %'] as const
+const PLATFORM_TREND_LEGEND_COLORS: Record<string, string> = {
+  'Support tickets': '#E0A263',
+  'Transactions (K)': '#155DFC',
+  'Uptime %': '#00A63E',
+}
+const SYSTEM_PERF_LEGEND_ORDER = ['Memory usage', 'CPU Usage', 'Request/min'] as const
+const SYSTEM_PERF_LEGEND_COLORS: Record<string, string> = {
+  'Memory usage': '#E0A263',
+  'CPU Usage': '#155DFC',
+  'Request/min': '#00A63E',
+}
+const SECURITY_LEGEND_ORDER = ['Compliance Flags', 'Issues Resolved', 'Security Incidents'] as const
+const SECURITY_LEGEND_COLORS: Record<string, string> = {
+  'Compliance Flags': '#E0A263',
+  'Issues Resolved': '#00A63E',
+  'Security Incidents': '#D3191C',
+}
+/** Figma legend label: Figtree SemiBold 12 / 14 */
+const PLATFORM_TREND_LEGEND_TEXT_CLASS =
+  "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[12px] leading-[14px] font-semibold tracking-normal"
+
+function PlatformTrendLegendSparkle({ color }: { color: string }) {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0"
+    >
+      <path
+        d="M5 0C5 2.76 7.24 5 10 5C7.24 5 5 7.24 5 10C5 7.24 2.76 5 0 5C2.76 5 5 2.76 5 0Z"
+        fill={color}
+      />
+    </svg>
+  )
+}
+
 function ChartLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
   if (!payload?.length) return null
   return (
@@ -211,6 +354,116 @@ function ChartLegend({ payload }: { payload?: Array<{ value?: string; color?: st
         </div>
       ))}
     </div>
+  )
+}
+
+function ColoredSparkleLegend({
+  payload,
+  order,
+  colors,
+}: {
+  payload?: Array<{ value?: string; color?: string }>
+  order: readonly string[]
+  colors: Record<string, string>
+}) {
+  if (!payload?.length) return null
+
+  const ordered = [...payload].sort((a, b) => {
+    const aIndex = order.indexOf(String(a.value))
+    const bIndex = order.indexOf(String(b.value))
+    if (aIndex === -1 && bIndex === -1) return 0
+    if (aIndex === -1) return 1
+    if (bIndex === -1) return -1
+    return aIndex - bIndex
+  })
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-8 pt-4">
+      {ordered.map((entry) => {
+        const label = String(entry.value)
+        const color = colors[label] ?? entry.color ?? '#FFFFFF'
+        return (
+          <div key={label} className="flex items-center gap-1.5">
+            <PlatformTrendLegendSparkle color={color} />
+            <span className={PLATFORM_TREND_LEGEND_TEXT_CLASS} style={{ color }}>
+              {label}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function PlatformTrendChartLegend(props: { payload?: Array<{ value?: string; color?: string }> }) {
+  return (
+    <ColoredSparkleLegend
+      {...props}
+      order={PLATFORM_TREND_LEGEND_ORDER}
+      colors={PLATFORM_TREND_LEGEND_COLORS}
+    />
+  )
+}
+
+function SystemPerfChartLegend(props: { payload?: Array<{ value?: string; color?: string }> }) {
+  return (
+    <ColoredSparkleLegend
+      {...props}
+      order={SYSTEM_PERF_LEGEND_ORDER}
+      colors={SYSTEM_PERF_LEGEND_COLORS}
+    />
+  )
+}
+
+function SecurityComplianceChartLegend(props: {
+  payload?: Array<{ value?: string; color?: string }>
+}) {
+  return (
+    <ColoredSparkleLegend
+      {...props}
+      order={SECURITY_LEGEND_ORDER}
+      colors={SECURITY_LEGEND_COLORS}
+    />
+  )
+}
+
+function formatSecurityMonthLabel(value: string | number) {
+  const raw = String(value)
+  // Accept YYYY-MM, YYYY-MM-DD, or already-short labels like "Jan"
+  const match = raw.match(/^(\d{4})-(\d{2})/)
+  if (match) {
+    const monthIndex = Number(match[2]) - 1
+    const labels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ]
+    return labels[monthIndex] ?? raw
+  }
+  return raw
+}
+
+function renderSecurityAxisTick(props: PlatformTrendAxisTickProps) {
+  return (
+    <PlatformTrendAxisTick
+      {...props}
+      formatValue={(value) => {
+        const num = Number(value)
+        if (!Number.isNaN(num) && String(value).trim() !== '' && !String(value).includes('-')) {
+          return num === 0 ? '00' : String(num)
+        }
+        return formatSecurityMonthLabel(value)
+      }}
+    />
   )
 }
 
@@ -248,6 +501,7 @@ function ChartPanel({
   onRangeChange,
   onRefresh,
   isLoading,
+  figmaTrendTypography = false,
 }: {
   title: string
   children: ReactNode
@@ -255,18 +509,30 @@ function ChartPanel({
   onRangeChange: (value: string) => void
   onRefresh?: () => void
   isLoading?: boolean
+  figmaTrendTypography?: boolean
 }) {
   return (
     <section
       className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
+        <h2
+          className={cn(
+            figmaTrendTypography
+              ? cn(PLATFORM_TREND_TEXT_CLASS, 'text-brand-text')
+              : 'text-body-md-semibold text-brand-text',
+          )}
+        >
+          {title}
+        </h2>
         <div className="flex items-center gap-2">
           <select
             value={range}
             onChange={(event) => onRangeChange(event.target.value)}
-            className="radius-md bg-brand-bg text-body-sm text-brand-text/80 h-9 min-w-[140px] border border-white/10 px-3"
+            className={cn(
+              'radius-md bg-brand-bg text-brand-text/80 h-9 min-w-[140px] border border-white/10 px-3',
+              figmaTrendTypography ? PLATFORM_TREND_TEXT_CLASS : 'text-body-sm',
+            )}
           >
             {RANGE_OPTIONS.map((option) => (
               <option key={option}>{option}</option>
@@ -379,6 +645,10 @@ export function PlatformHealthPage() {
   )
 
   const platformTrendData = charts?.platformTrends || []
+  const platformTrendChartMinWidth = Math.max(
+    720,
+    platformTrendData.length * PLATFORM_TREND_CATEGORY_WIDTH + 80,
+  )
   const securityComplianceData = charts?.securityCompliance || []
 
   const refresh = () => {
@@ -456,82 +726,118 @@ export function PlatformHealthPage() {
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
+        figmaTrendTypography
       >
-        <div className="h-[420px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={platformTrendData}
-              margin={{ left: 4, right: 16, top: 8, bottom: 0 }}
-              barGap={PLATFORM_TREND_BAR_GAP}
-              barCategoryGap={PLATFORM_TREND_CATEGORY_GAP}
-            >
-              <CartesianGrid
-                stroke="rgba(255,255,255,0.06)"
-                strokeDasharray="3 3"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="date"
-                interval="preserveStartEnd"
-                minTickGap={28}
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <YAxis
-                yAxisId="left"
-                domain={platformTrendAxis.domain}
-                ticks={platformTrendAxis.ticks}
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                domain={platformTrendUptimeAxis.domain}
-                ticks={platformTrendUptimeAxis.ticks}
-                tickFormatter={(value) => `${value}%`}
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={(value, name) =>
-                  formatPlatformTrendTooltip(value as number | string, String(name))
-                }
-              />
-              <Legend content={<ChartLegend />} />
-              <Bar
-                yAxisId="left"
-                dataKey="supportTickets"
-                name="Support tickets"
-                fill={CHART_COLORS.supportTickets}
-                radius={[4, 4, 0, 0]}
-                barSize={PLATFORM_TREND_BAR_SIZE}
-              />
-              <Bar
-                yAxisId="left"
-                dataKey="transactions"
-                name="Transactions (K)"
-                fill={CHART_COLORS.transactions}
-                radius={[4, 4, 0, 0]}
-                barSize={PLATFORM_TREND_BAR_SIZE}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="uptime"
-                name="Uptime %"
-                stroke={CHART_COLORS.uptime}
-                strokeWidth={2}
-                dot={{ r: 4, fill: CHART_COLORS.uptime, strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: CHART_COLORS.uptime }}
-                isAnimationActive={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <div className="platform-health-trends-chart w-full overflow-x-auto">
+          <div className="h-[420px]" style={{ minWidth: platformTrendChartMinWidth }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={platformTrendData}
+                margin={{ left: 12, right: 28, top: 8, bottom: 4 }}
+                barGap={PLATFORM_TREND_BAR_GAP}
+                barCategoryGap={PLATFORM_TREND_CATEGORY_PAD}
+              >
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeDasharray="3 3"
+                  horizontal
+                  vertical
+                />
+                <XAxis
+                  dataKey="date"
+                  interval="preserveStartEnd"
+                  minTickGap={28}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderPlatformTrendAxisTick}
+                  height={32}
+                />
+                <YAxis
+                  yAxisId="left"
+                  domain={platformTrendAxis.domain}
+                  ticks={platformTrendAxis.ticks}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderPlatformTrendAxisTick}
+                  width={48}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  domain={platformTrendUptimeAxis.domain}
+                  ticks={platformTrendUptimeAxis.ticks}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderPlatformTrendAxisTick}
+                  width={52}
+                />
+                <Tooltip
+                  contentStyle={{
+                    ...tooltipStyle,
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                  labelStyle={{
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                  itemStyle={{
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                  formatter={(value, name) =>
+                    formatPlatformTrendTooltip(value as number | string, String(name))
+                  }
+                />
+                <Legend content={<PlatformTrendChartLegend />} />
+                <Bar
+                  yAxisId="left"
+                  dataKey="transactions"
+                  name="Transactions (K)"
+                  fill={CHART_COLORS.transactions}
+                  barSize={PLATFORM_TREND_BAR_SIZE}
+                  shape={PlatformTrendBarShape}
+                  isAnimationActive={false}
+                />
+                <Bar
+                  yAxisId="left"
+                  dataKey="supportTickets"
+                  name="Support tickets"
+                  fill={CHART_COLORS.supportTickets}
+                  barSize={PLATFORM_TREND_BAR_SIZE}
+                  shape={PlatformTrendBarShape}
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="uptime"
+                  name="Uptime %"
+                  stroke={CHART_COLORS.uptime}
+                  strokeWidth={2}
+                  dot={{
+                    r: 4,
+                    fill: CHART_COLORS.uptime,
+                    stroke: '#ffffff',
+                    strokeWidth: 2,
+                  }}
+                  activeDot={{
+                    r: 5,
+                    fill: CHART_COLORS.uptime,
+                    stroke: '#ffffff',
+                    strokeWidth: 2,
+                  }}
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </ChartPanel>
 
@@ -541,23 +847,42 @@ export function PlatformHealthPage() {
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
+        figmaTrendTypography
       >
-        <div className="h-[420px] w-full">
+        <div className="platform-health-trends-chart h-[420px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={charts?.systemPerformance24h || []}
-              margin={{ left: 4, right: 12, top: 8, bottom: 0 }}
+              margin={{ left: 12, right: 28, top: 8, bottom: 4 }}
             >
+              <defs>
+                <linearGradient id="sysPerfMemoryFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={CHART_COLORS.memory} stopOpacity={0.4} />
+                  <stop offset="100%" stopColor={CHART_COLORS.memory} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="sysPerfCpuFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={CHART_COLORS.cpu} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={CHART_COLORS.cpu} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="sysPerfRequestsFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={CHART_COLORS.requests} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={CHART_COLORS.requests} stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
-                stroke="rgba(255,255,255,0.06)"
+                stroke="rgba(255,255,255,0.08)"
                 strokeDasharray="3 3"
-                vertical={false}
+                horizontal
+                vertical
               />
               <XAxis
                 dataKey="time"
+                interval="preserveStartEnd"
+                minTickGap={36}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                tick={renderPlatformTrendAxisTick}
+                height={32}
               />
               <YAxis
                 yAxisId="left"
@@ -565,38 +890,85 @@ export function PlatformHealthPage() {
                 ticks={SYSTEM_PERF_LEFT_TICKS}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                tick={renderPlatformTrendAxisTick}
+                width={40}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
                 domain={systemPerfRightAxis.domain}
                 ticks={systemPerfRightAxis.ticks}
-                tickFormatter={(value) => `${value} ms`}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                tick={renderSystemPerfRightAxisTick}
+                width={52}
               />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend content={<ChartLegend />} />
+              <Tooltip
+                contentStyle={{
+                  ...tooltipStyle,
+                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  lineHeight: '20px',
+                }}
+                labelStyle={{
+                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  lineHeight: '20px',
+                }}
+                itemStyle={{
+                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  lineHeight: '20px',
+                }}
+              />
+              <Legend content={<SystemPerfChartLegend />} />
               <Area
                 yAxisId="left"
                 type="monotone"
-                dataKey="errorRate"
-                name="Error rate %"
+                dataKey="memory"
+                name="Memory usage"
                 stroke={CHART_COLORS.memory}
-                fill={CHART_COLORS.memory}
-                fillOpacity={0.2}
+                fill="url(#sysPerfMemoryFill)"
                 strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: CHART_COLORS.memory, stroke: '#ffffff', strokeWidth: 2 }}
+                isAnimationActive={false}
               />
-              <Line
+              <Area
+                yAxisId="left"
+                type="monotone"
+                dataKey="cpu"
+                name="CPU Usage"
+                stroke={CHART_COLORS.cpu}
+                fill="url(#sysPerfCpuFill)"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: CHART_COLORS.cpu, stroke: '#ffffff', strokeWidth: 2 }}
+                isAnimationActive={false}
+              />
+              <Area
                 yAxisId="right"
                 type="monotone"
-                dataKey="apiResponseMs"
-                name="API response (ms)"
+                dataKey="requestsPerMin"
+                name="Request/min"
                 stroke={CHART_COLORS.requests}
+                fill="url(#sysPerfRequestsFill)"
                 strokeWidth={2}
-                dot={{ r: 3, fill: CHART_COLORS.requests, strokeWidth: 0 }}
+                dot={{
+                  r: 4,
+                  fill: CHART_COLORS.requests,
+                  stroke: '#ffffff',
+                  strokeWidth: 2,
+                }}
+                activeDot={{
+                  r: 5,
+                  fill: CHART_COLORS.requests,
+                  stroke: '#ffffff',
+                  strokeWidth: 2,
+                }}
                 isAnimationActive={false}
               />
             </ComposedChart>
@@ -610,42 +982,67 @@ export function PlatformHealthPage() {
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
+        figmaTrendTypography
       >
-        <div className="h-[420px] w-full">
+        <div className="platform-health-trends-chart h-[420px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={securityComplianceData}
-              margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
+              margin={{ left: 12, right: 12, top: 8, bottom: 4 }}
               barGap={SECURITY_BAR_GAP}
               barCategoryGap={SECURITY_CATEGORY_GAP}
+              maxBarSize={SECURITY_BAR_SIZE}
             >
               <CartesianGrid
-                stroke="rgba(255,255,255,0.06)"
+                stroke="rgba(255,255,255,0.08)"
                 strokeDasharray="3 3"
-                vertical={false}
+                horizontal
+                vertical
               />
               <XAxis
                 dataKey="month"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                tick={renderSecurityAxisTick}
+                height={32}
               />
               <YAxis
                 domain={securityAxis.domain}
                 ticks={securityAxis.ticks}
                 allowDecimals={false}
-                tickFormatter={(value) => String(value).padStart(2, '0')}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                tick={renderSecurityAxisTick}
+                width={40}
               />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend content={<ChartLegend />} />
+              <Tooltip
+                contentStyle={{
+                  ...tooltipStyle,
+                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  lineHeight: '20px',
+                }}
+                labelStyle={{
+                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  lineHeight: '20px',
+                }}
+                itemStyle={{
+                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  lineHeight: '20px',
+                }}
+                labelFormatter={(label) => formatSecurityMonthLabel(String(label))}
+              />
+              <Legend content={<SecurityComplianceChartLegend />} />
               <Bar
                 dataKey="compliance"
                 name="Compliance Flags"
                 fill={CHART_COLORS.compliance}
-                radius={[4, 4, 0, 0]}
+                radius={[0, 0, 0, 0]}
                 barSize={SECURITY_BAR_SIZE}
                 isAnimationActive={false}
               />
@@ -653,7 +1050,7 @@ export function PlatformHealthPage() {
                 dataKey="issuesResolved"
                 name="Issues Resolved"
                 fill={CHART_COLORS.resolved}
-                radius={[4, 4, 0, 0]}
+                radius={[0, 0, 0, 0]}
                 barSize={SECURITY_BAR_SIZE}
                 isAnimationActive={false}
               />
@@ -661,7 +1058,7 @@ export function PlatformHealthPage() {
                 dataKey="security"
                 name="Security Incidents"
                 fill={CHART_COLORS.security}
-                radius={[4, 4, 0, 0]}
+                radius={[0, 0, 0, 0]}
                 barSize={SECURITY_BAR_SIZE}
                 isAnimationActive={false}
               />
