@@ -112,7 +112,7 @@ export function TicketMessagesPanel({
                     <span className="text-body-xs text-brand-positive">Online</span>
                   ) : null}
                 </div>
-                <div className="text-body-sm text-brand-text/90 rounded-lg border border-white/[0.06] bg-[#18181A] px-4 py-3">
+                <div className="text-body-sm text-brand-text/90 rounded-lg border border-white/[0.06] bg-[#050505] px-4 py-3">
                   {msg.content &&
                   msg.content !== '[Image]' &&
                   msg.content !== '[Attachment]' &&
@@ -162,7 +162,7 @@ export function TicketMessagesPanel({
               }
             }}
             placeholder="Start Typing..."
-            className="text-brand-text placeholder:text-muted h-[47px] w-full rounded-xl border border-white/[0.08] bg-[#18181A] pr-14 pl-4 text-sm outline-none"
+            className="text-brand-text placeholder:text-muted h-[47px] w-full rounded-xl border border-white/[0.08] bg-[#050505] pr-14 pl-4 text-sm outline-none"
           />
           <button
             type="button"

@@ -32,8 +32,8 @@ import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
-  buildPrefixedListQueryParams,
-  createPrefixedListExportHandler,
+  buildEscalationsListQueryParams,
+  createEscalationsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchAllEscalations, type EscalationListItem } from '@/modules/my-tasks/api/escalation-api'
 
@@ -47,7 +47,13 @@ import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-
 import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { escalationColumns } from './escalation-table-columns'
 
-const ESCALATION_SORT_FIELD_MAP = buildCatalogSortFieldMap(ESCALATIONS_TABLE_COLUMNS_CATALOG)
+const ESCALATION_SORT_FIELD_MAP = buildCatalogSortFieldMap(ESCALATIONS_TABLE_COLUMNS_CATALOG, {
+  'escalation-id': 'escalationId',
+  'roles-id': 'roleId',
+  'role-name': 'roleName',
+  'escalation-type': 'escalationType',
+  'created-on': 'createdOn',
+})
 
 const ESCALATION_EXPORT_COLUMN_MAP: Record<
   string,
@@ -82,22 +88,25 @@ export function EscalationDetails() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const serverSort = useServerTableSort({
     sortFieldMap: ESCALATION_SORT_FIELD_MAP,
+    defaultSortBy: 'created-on',
+    defaultSortOrder: 'desc',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
+  const { buildSearchParams, globalSearch } = enhancedSearch
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const pageSize = 10
 
   const { data: metricsResponse, isLoading: isMetricsLoading } = useEscalationMetrics()
   const listQueryParams = useMemo(
     () =>
-      buildPrefixedListQueryParams(appliedFilters, {
+      buildEscalationsListQueryParams(appliedFilters, {
         page,
         limit: pageSize,
-        ...enhancedSearch.buildSearchParams(),
+        ...buildSearchParams(),
         ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
+    [appliedFilters, buildSearchParams, page, serverSort.sortParams],
   )
   const { data: escalationsResponse, isLoading: isEscalationsLoading } =
     useAllEscalations(listQueryParams)
@@ -172,14 +181,14 @@ export function EscalationDetails() {
       const result = await fetchAllEscalations(params)
       return { data: result.data?.escalations ?? [] }
     }
-    return createPrefixedListExportHandler(
+    return createEscalationsFilteredExportHandler(
       fetchForExport,
       ESCALATION_EXPORT_COLUMN_MAP,
       'escalations_export',
-      { search: enhancedSearch.globalSearch || undefined },
+      { search: globalSearch || undefined },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
+  }, [catalogColumnIds, exportColumnIds, globalSearch])
 
   const {
     onAdvancedFilter,
@@ -286,7 +295,7 @@ export function EscalationDetails() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by name, ID or profession"
+          searchPlaceholder="Search by escalation ID or expert"
           advancedFilterLabel="Advance Filters"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
@@ -299,7 +308,7 @@ export function EscalationDetails() {
             totalPages: meta?.totalPages ?? 1,
             onPageChange: setPage,
           }}
-          resourceLabel="users"
+          resourceLabel="escalations"
         />
       </div>
       {exportFilterModals}

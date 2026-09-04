@@ -54,11 +54,14 @@ export function TicketQueuePanel({
           t.reporter.toLowerCase().includes(searchQuery.toLowerCase()),
       )
 
+  const queueTagClassName =
+    'h-6 w-[75px] justify-center rounded-full px-0 text-[10px] leading-none font-semibold'
+
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#111112]">
-      <div className="flex h-12 items-center justify-between border-b border-white/[0.06] px-4">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#141414]">
+      <div className="flex h-12 items-center justify-between px-4">
         <div className="min-w-0">
-          <span className="text-muted text-[14px] leading-[14px] font-semibold tracking-widest uppercase">
+          <span className="text-brand-text text-[14px] leading-[14px] font-semibold tracking-widest uppercase">
             Queue
           </span>
           {typeof totalCount === 'number' ? (
@@ -72,10 +75,8 @@ export function TicketQueuePanel({
             type="button"
             onClick={onToggleFilters}
             className={cn(
-              'flex h-[35px] w-[43px] items-center justify-center rounded-lg transition-colors',
-              showFilters || hasActiveFilters
-                ? 'bg-white/10 text-white'
-                : 'text-white/50 hover:text-white',
+              'flex size-9 items-center justify-center rounded-lg bg-[#F9D393] text-black transition-opacity hover:opacity-90',
+              (showFilters || hasActiveFilters) && 'ring-1 ring-white/40',
             )}
             aria-label="Toggle filters"
           >
@@ -85,7 +86,7 @@ export function TicketQueuePanel({
             type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="flex h-[35px] w-[43px] items-center justify-center rounded-lg bg-white/[0.04] text-white/50 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex size-9 items-center justify-center rounded-lg bg-[#050505] text-white/70 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="Refresh queue"
           >
             <RotateCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
@@ -95,25 +96,25 @@ export function TicketQueuePanel({
 
       {showFilters ? filterPanel : null}
 
-      <div className="border-b border-white/[0.06] px-4 py-3">
-        <div className="flex h-[37px] items-center gap-2 rounded-lg border border-white/[0.08] bg-[#18181A] px-3">
+      <div className="px-3 pb-3">
+        <div className="flex h-[37px] items-center gap-2 rounded-lg border border-white/[0.08] bg-[#050505] px-3">
           <Search className="size-4 shrink-0 text-white/50" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by Name, ID or profession"
+            placeholder="Search by name , ID or profession"
             className="text-brand-text placeholder:text-muted h-full flex-1 bg-transparent text-[12px] leading-[18px] outline-none"
           />
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, idx) => (
             <div
               key={`queue-skel-${idx}`}
-              className="min-h-[138px] w-full animate-pulse space-y-2.5 rounded-xl border border-white/[0.05] bg-[#18181A] p-4"
+              className="mx-auto h-[138px] w-[310px] max-w-full animate-pulse space-y-2.5 rounded-xl border border-white/[0.05] bg-[#050505] p-4"
             >
               <div className="flex items-center justify-between">
                 <div className="h-3.5 w-16 rounded bg-white/10" />
@@ -122,62 +123,68 @@ export function TicketQueuePanel({
               <div className="h-4 w-3/4 rounded bg-white/10" />
               <div className="h-3 w-1/2 rounded bg-white/5" />
               <div className="flex gap-2 pt-1">
-                <div className="h-4 w-12 rounded-full bg-white/10" />
-                <div className="h-4 w-14 rounded-full bg-white/10" />
+                <div className="h-6 w-[75px] rounded-full bg-white/10" />
+                <div className="h-6 w-[75px] rounded-full bg-white/10" />
               </div>
             </div>
           ))
         ) : filtered.length === 0 ? (
           <p className="text-body-sm text-muted py-8 text-center">No tickets in queue</p>
         ) : (
-          filtered.map((ticket) => (
-            <button
-              key={ticket.id}
-              type="button"
-              onClick={() => onSelect(ticket.id)}
-              className={cn(
-                'mx-auto min-h-[138px] w-full max-w-[310px] rounded-xl border p-4 text-left transition-colors',
-                selectedId === ticket.id
-                  ? 'border-brand-accent/40 ring-brand-accent/30 bg-[#18181A] ring-1'
-                  : 'border-white/[0.05] bg-[#18181A] hover:border-white/[0.10]',
-                isTerminalTicketStatus(ticket.status) && selectedId !== ticket.id && 'opacity-80',
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-body-sm text-muted inline-flex h-5 items-center rounded bg-white/[0.08] px-1.5 font-semibold">
-                  #{ticket.id}
-                </span>
-                <span className="text-body-xs text-muted flex items-center gap-1">
-                  <QueueCalendarIcon />
-                  {ticket.createdAt}
-                </span>
-              </div>
-              <p className="text-body-sm text-brand-text mt-2 flex items-center gap-1.5 font-medium">
-                <QueueSubjectIcon />
-                <span className="min-w-0 truncate">{ticket.subject}</span>
-              </p>
-              <p className="text-body-xs text-muted mt-1 flex items-center gap-1.5">
-                <QueueReporterIcon />
-                <span className="min-w-0 truncate">
-                  {ticket.reporter} • {getReporterTypeLabel(ticket.reporterType)}
-                </span>
-              </p>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-1.5">
-                  <TicketPriorityBadge priority={ticket.priority} />
-                  {!isTerminalTicketStatus(ticket.status) ? (
-                    <TicketStatusBadge status={ticket.status} variant="workspace" />
+          filtered.map((ticket) => {
+            const selected = selectedId === ticket.id
+            return (
+              <button
+                key={ticket.id}
+                type="button"
+                onClick={() => onSelect(ticket.id)}
+                className={cn(
+                  'relative mx-auto flex h-[138px] w-[310px] max-w-full flex-col overflow-hidden rounded-xl border p-4 text-left transition-colors',
+                  selected
+                    ? 'border-[#3B82F6]/70 bg-[#050505]'
+                    : 'border-white/[0.05] bg-[#050505] hover:border-white/[0.10]',
+                  isTerminalTicketStatus(ticket.status) && !selected && 'opacity-80',
+                )}
+              >
+                {selected ? (
+                  <span className="bg-brand-accent absolute inset-y-0 left-0 w-[3px]" />
+                ) : null}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-body-sm text-muted inline-flex h-5 items-center rounded bg-white/[0.08] px-1.5 font-semibold">
+                    #{ticket.id}
+                  </span>
+                  <span className="text-body-xs text-muted flex items-center gap-1">
+                    <QueueCalendarIcon />
+                    {ticket.createdAt}
+                  </span>
+                </div>
+                <p className="text-body-sm text-brand-text mt-2 flex items-center gap-1.5 font-medium">
+                  <QueueSubjectIcon />
+                  <span className="min-w-0 truncate">{ticket.subject}</span>
+                </p>
+                <p className="text-body-xs text-muted mt-1 flex items-center gap-1.5">
+                  <QueueReporterIcon />
+                  <span className="min-w-0 truncate">
+                    {ticket.reporter} • {getReporterTypeLabel(ticket.reporterType)}
+                  </span>
+                </p>
+                <div className="mt-auto flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    <TicketPriorityBadge priority={ticket.priority} className={queueTagClassName} />
+                    {!isTerminalTicketStatus(ticket.status) ? (
+                      <TicketStatusBadge status={ticket.status} className={queueTagClassName} />
+                    ) : null}
+                  </div>
+                  {isTerminalTicketStatus(ticket.status) ? (
+                    <span className="text-body-xs text-muted shrink-0 font-medium">
+                      Status:{' '}
+                      <span className="text-brand-positive">{getStatusLabel(ticket.status)}</span>
+                    </span>
                   ) : null}
                 </div>
-                {isTerminalTicketStatus(ticket.status) ? (
-                  <span className="text-body-xs text-muted shrink-0 font-medium">
-                    Status:{' '}
-                    <span className="text-brand-positive">{getStatusLabel(ticket.status)}</span>
-                  </span>
-                ) : null}
-              </div>
-            </button>
-          ))
+              </button>
+            )
+          })
         )}
       </div>
     </div>

@@ -90,20 +90,20 @@ function FilterSelect({
   return (
     <label className="block space-y-1.5">
       <span className="text-body-xs text-muted font-semibold tracking-wide uppercase">{label}</span>
-      <div className="relative flex h-10 items-center rounded-lg border border-white/[0.08] bg-[#18181A] px-3">
+      <div className="relative flex h-10 items-center rounded-lg border border-white/[0.08] bg-[#050505] px-3">
         <select
           value={value}
           onChange={(event) => onChange(event.target.value)}
           className="text-body-sm text-brand-text absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent px-3 pr-8 outline-none"
         >
-          <option value="" className="text-brand-text bg-[#18181A]">
+          <option value="" className="text-brand-text bg-[#050505]">
             {placeholder}
           </option>
           {options.map((option) => (
             <option
               key={option.value}
               value={option.value}
-              className="text-brand-text bg-[#18181A]"
+              className="text-brand-text bg-[#050505]"
             >
               {option.label}
             </option>

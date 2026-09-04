@@ -5,17 +5,24 @@ import { getStatusClassName, getStatusLabel } from '../utils/support-format'
 export function TicketStatusBadge({
   status,
   variant = 'default',
+  className,
 }: {
   status: TicketStatus
   variant?: 'default' | 'workspace'
+  className?: string
 }) {
   if (variant === 'workspace') {
     return (
-      <span className="inline-flex h-[22px] items-center rounded-full border border-white/20 bg-white/[0.06] px-2 text-[10px] font-semibold text-white">
+      <span
+        className={cn(
+          'inline-flex h-[22px] items-center rounded-full border border-white/20 bg-white/[0.06] px-2 text-[10px] font-semibold text-white',
+          className,
+        )}
+      >
         {getStatusLabel(status)}
       </span>
     )
   }
 
-  return <span className={getStatusClassName(status)}>{getStatusLabel(status)}</span>
+  return <span className={cn(getStatusClassName(status), className)}>{getStatusLabel(status)}</span>
 }

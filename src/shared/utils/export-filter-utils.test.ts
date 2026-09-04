@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   buildCategoryListQueryParams,
   buildCommunicationListQueryParams,
+  buildEscalationsListQueryParams,
   buildExpertListQueryParams,
   buildExpertMembershipsListQueryParams,
   buildExpertProfileServicesQueryParams,
@@ -139,6 +140,62 @@ describe('export-filter-utils builders', () => {
     expect(params.createdAtTo).toBe('2024-06-01')
     expect(params.sortBy).toBe('createdAt')
     expect(params.sortOrder).toBe('desc')
+  })
+
+  it('maps escalation table search params to API query fields', () => {
+    const params = buildEscalationsListQueryParams(
+      { 'escalations.roleId': 'ROL-AD001' },
+      {
+        page: 1,
+        limit: 10,
+        search: 'ESC-123ABC',
+        searchById: 'ESC-999999',
+        searchByName: 'Reviewer',
+        searchByStatus: 'Open',
+        searchByDate: '2024-06-01',
+      },
+    )
+
+    expect(params.search).toBe('ESC-123ABC')
+    expect(params.escalationId).toBe('ESC-999999')
+    expect(params.roleName).toBe('Reviewer')
+    expect(params.status).toBe('Open')
+    expect(params.createdOnMin).toBe('2024-06-01')
+    expect(params.createdOnMax).toBe('2024-06-01')
+    expect(params.roleId).toBe('ROL-AD001')
+  })
+
+  it('maps support ticket table search params and preserves tab options', () => {
+    const params = buildSupportTicketsListQueryParams(
+      { 'tickets.status': ['open'] },
+      {
+        page: 2,
+        limit: 10,
+        search: 'billing',
+        searchById: 'TKT-1001',
+        searchByName: 'Payment failed',
+        searchByStatus: 'in_progress',
+        searchByCategory: 'Payments',
+        searchByDate: '2024-06-01',
+        tab: 'my_tickets',
+        includeClosed: true,
+        sortBy: 'updatedAt',
+        sortOrder: 'asc',
+      },
+    )
+
+    expect(params.search).toBe('billing')
+    expect(params.ticketId).toBe('TKT-1001')
+    expect(params.subject).toBe('Payment failed')
+    expect(params.status).toBe('in_progress')
+    expect(params.category).toBe('Payments')
+    expect(params.from).toBe('2024-06-01')
+    expect(params.to).toBe('2024-06-01')
+    expect(params.tab).toBe('my_tickets')
+    expect(params.includeClosed).toBe(true)
+    expect(params.sortBy).toBe('updatedAt')
+    expect(params.sortOrder).toBe('asc')
+    expect(params.page).toBe(2)
   })
 
   it('rowMatchesClientFilters and createFilteredExportHandler exercise export path', async () => {

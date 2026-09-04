@@ -88,7 +88,25 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import { fetchSupportTickets } from '../api/support-api'
 
-const TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG)
+const TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG, {
+  'ticket-id': 'ticketId',
+  reporter: 'reporterName',
+  'assigned-to': 'assignedToName',
+  'assigned-by': 'assignedByName',
+  'assigned-on': 'assignedAt',
+  'escalated-by': 'escalatedByName',
+  'escalated-to': 'escalatedToName',
+  'escalated-at': 'escalatedAt',
+  'escalation-status': 'escalationStatus',
+  'resolved-at': 'resolvedAt',
+  'resolved-by': 'resolvedByName',
+  'last-updated-at': 'updatedAt',
+  'first-response-due': 'slaDueAt',
+  'resolution-due': 'slaDueAt',
+  'sla-timer': null,
+  'resolution-time': null,
+  'escalated-for': null,
+})
 
 const TABS: { key: TicketTab; label: string }[] = [
   { key: 'my_tickets', label: 'My Tickets' },
@@ -225,8 +243,11 @@ export function TicketManagementPage() {
     useSupportStore()
 
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const { buildSearchParams } = enhancedSearch
   const serverSort = useServerTableSort({
     sortFieldMap: TICKET_SORT_FIELD_MAP,
+    defaultSortBy: 'last-updated-at',
+    defaultSortOrder: 'desc',
     onPageReset: () => setCurrentPage(1),
   })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -243,12 +264,12 @@ export function TicketManagementPage() {
       buildSupportTicketsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        ...enhancedSearch.buildSearchParams(),
+        ...buildSearchParams(),
         ...serverSort.sortParams,
         tab: activeTab,
         includeClosed: true,
       }),
-    [activeTab, appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
+    [activeTab, appliedFilters, buildSearchParams, currentPage, serverSort.sortParams],
   )
 
   const { data, isLoading } = useSupportTickets(listQueryParams)
