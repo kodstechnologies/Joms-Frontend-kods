@@ -113,6 +113,7 @@ export type ExpertApplicationKyc = {
     gstCertificateUrl?: string
     licenceOrCertificateUrl?: string
     sampleWorkFileUrl?: string
+    digilockerDocumentUrl?: string
   }
   documentReviews?: DocumentReviewsMap
   reasonFor?: string[]
@@ -120,6 +121,36 @@ export type ExpertApplicationKyc = {
   adminNote?: string | null
   approvedAt?: string | null
   rejectedAt?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type ExpertApplicationDigilocker = {
+  id?: string
+  userId?: string
+  status?: string
+  digilockerId?: string
+  fullName?: string
+  dateOfBirth?: string
+  gender?: string
+  eaadhaar?: string
+  picture?: string
+  documentUrl?: string
+  fileUrl?: string
+  providerResponse?: {
+    user?: {
+      picture?: string
+      dob?: string
+      name?: string
+      gender?: string
+      mobile?: string
+      eaadhaar?: string
+      [key: string]: unknown
+    }
+    picture?: string
+    [key: string]: unknown
+  }
+  verifiedAt?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -151,7 +182,9 @@ export type ExpertApplicationViewData = {
   expert?: ExpertApplicationExpert
   kyc?: ExpertApplicationKyc
   banking?: ExpertApplicationBanking
+  digilocker?: ExpertApplicationDigilocker
 }
+
 
 export type KycDecisionPayload =
   | { status: 'APPROVED' }

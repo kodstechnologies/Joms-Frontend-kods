@@ -6,12 +6,14 @@ import { toast } from 'sonner'
 import {
   ArrowLeft,
   Banknote,
-  ClipboardList,
+  CircleUserRound,
   FileText,
   History,
   ShieldCheck,
   User,
 } from 'lucide-react'
+import digilockerVerifiedIcon from '@/assets/digilocker-verified.png'
+
 
 import {
   useEscalateExpertApplication,
@@ -138,6 +140,7 @@ function SectionCard({
     </div>
   )
 }
+
 
 function InfoField({ label, value }: { label: string; value?: string | number | null }) {
   return (
@@ -298,11 +301,11 @@ export function ExpertApplicationViewPage() {
       modalVariant === 'approve'
         ? { status: 'APPROVED' as const, adminNote: adminNotes.trim() }
         : {
-            status: 'REJECTED' as const,
-            reasonFor: reasonPayload.selectedReasons,
-            rejectionReason: rejectionReason.trim() || reasonPayload.reasonDetails,
-            adminNote: adminNotes.trim() || undefined,
-          }
+          status: 'REJECTED' as const,
+          reasonFor: reasonPayload.selectedReasons,
+          rejectionReason: rejectionReason.trim() || reasonPayload.reasonDetails,
+          adminNote: adminNotes.trim() || undefined,
+        }
 
     mutation.mutate(payload, {
       onSuccess: () => {
@@ -462,9 +465,24 @@ export function ExpertApplicationViewPage() {
   }
 
   const profile = application.expert?.basicProfile
-  const identity = application.expert?.identityVerification
+  const identity = application.expert?.identityVerification as
+    | {
+      panCardFile?: string
+      gstCertificateFile?: string
+      certificateFile?: string
+      panNumber?: string
+      gstAvailable?: boolean
+      gstNumber?: string
+      digilockerDocument?: string
+      digilockerDocumentUrl?: string
+      digilockerFile?: string
+      digilockerUrl?: string
+      aadhaarFile?: string
+    }
+    | undefined
   const kyc = application.kyc
   const banking = application.banking
+  const digilocker = application.digilocker
 
   const kycPanUrl = kyc?.documents?.panCardUrl || identity?.panCardFile
   const kycGstUrl = kyc?.documents?.gstCertificateUrl || identity?.gstCertificateFile
@@ -475,6 +493,71 @@ export function ExpertApplicationViewPage() {
     kyc?.sampleWorkLink ||
     profile?.sampleWorkLink
   const cancelledChequeUrl = banking?.documents?.cancelledChequeUrl
+
+  const resolveDigilockerPicture = () => {
+    const raw =
+      digilocker?.picture ||
+      digilocker?.providerResponse?.user?.picture ||
+      digilocker?.providerResponse?.picture
+    if (!raw || typeof raw !== 'string') return undefined
+    const trimmed = raw.trim()
+    if (!trimmed) return undefined
+    if (trimmed.startsWith('data:') || trimmed.startsWith('http')) return trimmed
+    return `data:image/jpeg;base64,${trimmed}`
+  }
+
+  const digilockerPicture = resolveDigilockerPicture()
+
+  const digilockerDocUrl =
+    kyc?.documents?.digilockerDocumentUrl ||
+    digilocker?.documentUrl ||
+    digilocker?.fileUrl ||
+    digilockerPicture ||
+    (typeof digilocker?.eaadhaar === 'string' && digilocker.eaadhaar.startsWith('http')
+      ? digilocker.eaadhaar
+      : undefined) ||
+    identity?.digilockerDocument ||
+    identity?.digilockerDocumentUrl ||
+    identity?.digilockerFile ||
+    identity?.digilockerUrl ||
+    identity?.aadhaarFile
+
+  const digilockerVerifiedAt =
+    digilocker?.verifiedAt ||
+    digilocker?.updatedAt ||
+    kyc?.updatedAt ||
+    application.expert?.updatedAt
+
+  const formatDocumentDate = (value?: string | null) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
+  }
+
+  const getDocumentSizeLabel = (url?: string) => {
+    if (!url) return null
+    if (url.startsWith('data:')) {
+      const base64Str = url.split(',')[1] || ''
+      const bytes = Math.round((base64Str.length * 3) / 4)
+      if (!bytes || bytes <= 0) return null
+      if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`
+      }
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    }
+    return null
+  }
+
+  const digilockerDate = formatDocumentDate(digilockerVerifiedAt)
+  const isPdf = digilockerDocUrl?.toLowerCase().includes('.pdf')
+  const docType = isPdf ? 'PDF' : 'JPG'
+  const dynamicSize = getDocumentSizeLabel(digilockerDocUrl)
+  const digilockerMeta = [docType, dynamicSize, digilockerDate].filter(Boolean).join(' • ')
+
 
   const getKycReviewStatus = (key: string): DocumentReviewStatus | null => {
     const reviews = kyc?.documentReviews as
@@ -624,15 +707,15 @@ export function ExpertApplicationViewPage() {
         <div className="space-y-5">
           {((kyc as { isExempt?: boolean })?.isExempt ||
             (kyc as { kycMandatory?: boolean })?.kycMandatory === false) && (
-            <div className="border-brand-positive/30 bg-brand-positive/10 text-brand-positive flex items-center gap-2 rounded-xl border px-4 py-3 text-[13px]">
-              <ShieldCheck className="size-4 shrink-0" />
-              <span>KYC verification is exempted / not mandatory per platform settings.</span>
-            </div>
-          )}
+              <div className="border-brand-positive/30 bg-brand-positive/10 text-brand-positive flex items-center gap-2 rounded-xl border px-4 py-3 text-[13px]">
+                <ShieldCheck className="size-4 shrink-0" />
+                <span>KYC verification is exempted / not mandatory per platform settings.</span>
+              </div>
+            )}
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="KYC Details"
-              icon={<ClipboardList className="text-brand-accent size-4" />}
+              icon={<CircleUserRound className="size-4 text-white" />}
             >
               <div className="grid grid-cols-2 gap-x-6 gap-y-5">
                 <InfoField
@@ -645,41 +728,92 @@ export function ExpertApplicationViewPage() {
                   label="Sample Work Link"
                   value={kyc?.sampleWorkLink || profile?.sampleWorkLink}
                 />
-                <InfoField
-                  label="GST Information"
-                  value={(kyc?.hasGST ?? identity?.gstAvailable) ? 'Yes' : 'No'}
-                />
+                <div>
+                  <p className="text-muted text-[11px] font-medium uppercase tracking-wider">
+                    GST Information
+                  </p>
+                  <div className="mt-1">
+                    {(kyc?.hasGST ?? identity?.gstAvailable) ? (
+                      <span className="inline-flex rounded-md bg-brand-positive/15 px-2.5 py-0.5 text-xs font-semibold text-brand-positive">
+                        Yes
+                      </span>
+                    ) : (
+                      <span className="inline-flex rounded-md border border-red-900/40 bg-red-950/50 px-2.5 py-0.5 text-xs font-semibold text-red-400">
+                        No
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <InfoField label="GST Number" value={kyc?.gstNumber || identity?.gstNumber} />
               </div>
             </SectionCard>
-            <SectionCard
-              title="Compliance & Declaration"
-              icon={<ShieldCheck className="text-brand-accent size-4" />}
-            >
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-body-sm text-muted font-medium">
-                    Filed last 2 years IT Returns
-                  </span>
-                  <span
-                    className={cn(
-                      'text-body-sm inline-flex rounded-md px-2.5 py-1 font-bold',
-                      kyc?.itReturnsFiled
-                        ? 'bg-brand-positive/15 text-brand-positive'
-                        : 'bg-amber-500/15 text-amber-300',
-                    )}
-                  >
-                    {kyc?.itReturnsFiled ? 'Yes' : 'No'}
-                  </span>
+            <div className="flex flex-col gap-5">
+              <SectionCard
+                title="Digilocker Verified Document"
+                icon={<CircleUserRound className="size-4 text-white" />}
+              >
+                <div className="flex items-center justify-between rounded-lg border border-white/5 bg-black/60 p-3.5">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={digilockerVerifiedIcon}
+                      alt="DigiLocker"
+                      className="size-7 shrink-0 object-contain"
+                    />
+                    <div>
+                      <p className="text-[13px] font-semibold text-white">Document</p>
+                      <p className="text-[11px] text-white/45">{digilockerMeta}</p>
+                    </div>
+                  </div>
+                  {digilockerDocUrl ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openDocumentViewer({
+                          key: 'digilockerDocumentUrl',
+                          label: 'Digilocker Verified Document',
+                          url: digilockerDocUrl,
+                          target: 'kyc',
+                          reviewStatus: getKycReviewStatus('digilockerDocumentUrl'),
+                        })
+                      }
+                      className="cursor-pointer text-body-sm font-medium text-white/80 transition-colors hover:text-white"
+                    >
+                      View
+                    </button>
+                  ) : (
+                    <span className="text-body-sm text-white/45">Not uploaded</span>
+                  )}
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-body-sm text-muted font-medium">Undertaking Signed</span>
-                  <span className="bg-brand-positive/15 text-body-sm text-brand-positive inline-flex rounded-md px-2.5 py-1 font-bold">
-                    Yes
-                  </span>
+              </SectionCard>
+              <SectionCard
+                title="Compliance & Declaration"
+                icon={<CircleUserRound className="size-4 text-white" />}
+              >
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-sm text-muted font-medium">
+                      Filed last 2 years IT Returns
+                    </span>
+                    <span
+                      className={cn(
+                        'text-body-sm inline-flex rounded-md px-2.5 py-1 font-bold',
+                        kyc?.itReturnsFiled
+                          ? 'bg-brand-positive/15 text-brand-positive'
+                          : 'bg-red-950/50 text-red-400 border border-red-900/40',
+                      )}
+                    >
+                      {kyc?.itReturnsFiled ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-sm text-muted font-medium">Undertaking Signed</span>
+                    <span className="bg-brand-positive/15 text-body-sm text-brand-positive inline-flex rounded-md px-2.5 py-1 font-bold">
+                      Yes
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </SectionCard>
+              </SectionCard>
+            </div>
           </div>
           <SectionCard
             title="Uploaded Documents"
