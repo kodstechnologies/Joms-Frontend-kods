@@ -108,9 +108,12 @@ export function PastTicketsPage() {
   const { currentPage, setCurrentPage } = useSupportStore()
   const serverSort = useServerTableSort({
     sortFieldMap: PAST_TICKET_SORT_FIELD_MAP,
+    defaultSortBy: 'last-updated-at',
+    defaultSortOrder: 'desc',
     onPageReset: () => setCurrentPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const { buildSearchParams } = enhancedSearch
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const tableColumnPreferencesQuery = useTableColumnPreferences(PAST_TICKETS_MODULE_KEY)
 
@@ -130,10 +133,10 @@ export function PastTicketsPage() {
       buildSupportTicketsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        ...enhancedSearch.buildSearchParams(),
+        ...buildSearchParams(),
         ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
+    [appliedFilters, buildSearchParams, currentPage, serverSort.sortParams],
   )
 
   const { data, isLoading } = usePastTickets(userId, listQueryParams)

@@ -91,7 +91,7 @@ export function TicketCasePanel({
   const actionsDisabled = fieldsDisabled
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#111112]">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] bg-[#141414]">
       <div className="shrink-0 space-y-5 border-b border-white/[0.06] p-4">
         <div>
           <p className="text-body-xs text-muted font-medium tracking-wide uppercase">
@@ -163,7 +163,7 @@ export function TicketCasePanel({
               Reassign
             </button>
           </div>
-          <div className="mt-2 flex h-[42px] items-center gap-2.5 rounded-lg border border-white/[0.06] bg-[#18181A] px-3">
+          <div className="mt-2 flex h-[42px] items-center gap-2.5 rounded-lg border border-white/[0.06] bg-[#050505] px-3">
             <SupportAvatar
               name={assignedTo}
               src={assignedToAvatarUrl}
@@ -228,7 +228,7 @@ export function TicketCasePanel({
               if (!onCommentsChange || commentDraft === comments) return
               onCommentsChange(commentDraft)
             }}
-            className="text-body-sm text-brand-text placeholder:text-muted/60 min-h-[120px] w-full resize-none rounded-lg border border-white/[0.08] bg-[#18181A] px-3 py-2.5 outline-none disabled:opacity-60"
+            className="text-body-sm text-brand-text placeholder:text-muted/60 min-h-[120px] w-full resize-none rounded-lg border border-white/[0.08] bg-[#050505] px-3 py-2.5 outline-none disabled:opacity-60"
           />
           <span className="text-body-xs text-muted block">
             Saved on this ticket only. Not sent to chat or Zoho.
@@ -297,7 +297,7 @@ function SelectField({
     return (
       <label className="block space-y-1.5">
         <span className="text-body-xs text-muted">{label}</span>
-        <div className="relative flex h-[42px] items-center rounded-lg border border-white/[0.08] bg-[#18181A] px-3">
+        <div className="relative flex h-[42px] items-center rounded-lg border border-white/[0.08] bg-[#050505] px-3">
           {icon ? (
             <span className="pointer-events-none relative z-[1] mr-2 shrink-0">{icon}</span>
           ) : null}
@@ -311,7 +311,7 @@ function SelectField({
             )}
           >
             {placeholder ? (
-              <option value="" className="text-brand-text bg-[#18181A]">
+              <option value="" className="text-brand-text bg-[#050505]">
                 {placeholder}
               </option>
             ) : null}
@@ -319,7 +319,7 @@ function SelectField({
               <option
                 key={option.value}
                 value={option.value}
-                className="text-brand-text bg-[#18181A]"
+                className="text-brand-text bg-[#050505]"
               >
                 {option.label}
               </option>
@@ -334,7 +334,7 @@ function SelectField({
   return (
     <label className="block space-y-1.5">
       <span className="text-body-xs text-muted">{label}</span>
-      <div className="flex h-[42px] items-center justify-between rounded-lg border border-white/[0.08] bg-[#18181A] px-3">
+      <div className="flex h-[42px] items-center justify-between rounded-lg border border-white/[0.08] bg-[#050505] px-3">
         <span className="text-body-sm text-brand-text">{value || placeholder || '—'}</span>
         <ChevronDown className="text-muted size-4 shrink-0" />
       </div>

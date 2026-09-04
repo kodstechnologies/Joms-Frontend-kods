@@ -1027,6 +1027,7 @@ type RevenueListQueryOptions = {
 
 const REVENUE_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
   createdAt: ['createdAtFrom', 'createdAtTo'],
+  createdOn: ['createdOnMin', 'createdOnMax'],
 }
 
 export function buildRevenueListQueryParams(
@@ -1322,6 +1323,45 @@ export const createLoginTrailsFilteredExportHandler = createFinanceExportHandler
   buildLoginTrailsListQueryParams,
 )
 
+const ESCALATIONS_LEGACY_SEARCH_MAP: Record<string, string> = {
+  searchById: 'escalationId',
+  searchByName: 'roleName',
+  searchByStatus: 'status',
+}
+
+export function buildEscalationsListQueryParams(
+  filterValues: FilterValues,
+  options: FinanceListQueryOptions & Record<string, unknown> = {},
+): Record<string, unknown> {
+  const { page, limit, search, sortBy, sortOrder, ...rest } = options
+  const columnSearch: Record<string, string> = {}
+
+  Object.entries(rest).forEach(([key, value]) => {
+    if (typeof value !== 'string' || !value.trim()) return
+
+    if (key === 'searchByDate') {
+      const date = value.trim()
+      columnSearch.createdOnMin = date
+      columnSearch.createdOnMax = date
+      return
+    }
+
+    const mappedKey = ESCALATIONS_LEGACY_SEARCH_MAP[key] ?? key
+    columnSearch[mappedKey] = value.trim()
+  })
+
+  return {
+    ...buildRevenueListQueryParams(filterValues, { page, limit, search }),
+    ...columnSearch,
+    ...(sortBy ? { sortBy } : {}),
+    ...(sortOrder ? { sortOrder } : {}),
+  }
+}
+
+export const createEscalationsFilteredExportHandler = createFinanceExportHandler(
+  buildEscalationsListQueryParams,
+)
+
 export function buildPrefixedListQueryParams(
   filterValues: FilterValues,
   options: FinanceListQueryOptions & Record<string, unknown> = {},
@@ -1355,16 +1395,51 @@ export const createExpertMembershipsFilteredExportHandler = createFinanceExportH
   buildExpertMembershipsListQueryParams,
 )
 
+const SUPPORT_TICKETS_LEGACY_SEARCH_MAP: Record<string, string> = {
+  searchById: 'ticketId',
+  searchByName: 'subject',
+  searchByStatus: 'status',
+  searchByCategory: 'category',
+}
+
 export function buildSupportTicketsListQueryParams(
   filterValues: FilterValues,
   options: FinanceListQueryOptions & Record<string, unknown> = {},
 ): Record<string, unknown> {
-  const { page, limit, search, ...rest } = options
+  const { page, limit, search, sortBy, sortOrder, ...rest } = options
+  const columnSearch: Record<string, string> = {}
+  const passthrough: Record<string, unknown> = {}
+
+  Object.entries(rest).forEach(([key, value]) => {
+    if (typeof value === 'string' && value.trim()) {
+      if (key === 'searchByDate') {
+        const date = value.trim()
+        columnSearch.from = date
+        columnSearch.to = date
+        return
+      }
+      const mappedKey = SUPPORT_TICKETS_LEGACY_SEARCH_MAP[key] ?? key
+      columnSearch[mappedKey] = value.trim()
+      return
+    }
+
+    if (value !== undefined && value !== null && value !== '') {
+      passthrough[key] = value
+    }
+  })
+
   const params = buildRevenueListQueryParams(filterValues, { page, limit, search })
   if (params.createdAtFrom != null && params.from == null) params.from = params.createdAtFrom
   if (params.createdAtTo != null && params.to == null) params.to = params.createdAtTo
   if (params.ticketId == null && params.id != null) params.ticketId = params.id
-  return { ...params, ...rest }
+
+  return {
+    ...params,
+    ...passthrough,
+    ...columnSearch,
+    ...(sortBy ? { sortBy } : {}),
+    ...(sortOrder ? { sortOrder } : {}),
+  }
 }
 
 export function createSupportTicketsFilteredExportHandler<T>(

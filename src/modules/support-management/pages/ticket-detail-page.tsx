@@ -2,18 +2,34 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { SupportAvatar } from '../components/support-avatar'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
 import {
+  useLiveSupportUpdates,
   useReopenSupportTicket,
   useResolveSupportTicket,
   useSupportTicket,
-  useLiveSupportUpdates,
 } from '../hooks/use-support'
-import { getApiErrorMessage, getPriorityLabel } from '../utils/support-format'
+import {
+  formatTicketDateTime,
+  getApiErrorMessage,
+  getPriorityLabel,
+  getStatusLabel,
+} from '../utils/support-format'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
+
+const CONTAINER = 'bg-[#141414]'
+const TITLE_CLASS = 'text-brand-text text-[16px] leading-6 font-semibold'
+
+function displayDate(value?: string | null) {
+  const formatted = formatTicketDateTime(value)
+  if (formatted && formatted !== '—') {
+    return formatted.replace(/\s\d{2}:\d{2}$/, '')
+  }
+  return value?.trim() || '—'
+}
 
 export function TicketDetailPage() {
   const navigate = useNavigate()
@@ -38,6 +54,8 @@ export function TicketDetailPage() {
     )
   }
 
+  const isClosed = ticket.status === 'closed' || ticket.status === 'resolved'
+
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
@@ -57,78 +75,114 @@ export function TicketDetailPage() {
         </div>
       </div>
 
-      <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-body-sm text-muted">Ticket ID</span>
-            <span className="text-body-md-semibold text-brand-accent font-mono">#{ticket.id}</span>
-          </div>
-          <TicketStatusBadge status={ticket.status} />
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <InfoPill label="Subject" value={ticket.subject} width={203} />
-          <InfoPill label="Category" value={ticket.category} width={110} />
-          <InfoPill label="Priority" value={getPriorityLabel(ticket.priority)} width={70} />
-          <InfoPill label="Requester" value={ticket.reporter} width={108} />
-          <InfoPill label="Assigned To" value={ticket.assignedTo ?? '—'} width={196} />
-          <InfoPill label="Created On" value={ticket.createdAt} width={126} />
-          <InfoPill
-            label="Assigned On"
-            value={ticket.assignedAt ? ticket.createdAt : ticket.createdAt}
-            width={126}
-          />
-          {(ticket.status === 'closed' || ticket.status === 'resolved') && (
-            <InfoPill label="Resolved On" value={ticket.createdAt} width={126} />
+      <div className={cn('relative rounded-xl p-5 sm:p-6', CONTAINER)}>
+        <div className="absolute top-5 right-5">
+          {ticket.status === 'closed' ? (
+            <span className="text-body-sm-semibold inline-flex h-[25px] items-center rounded-full bg-[#00A63E]/15 px-2.5 text-[#00A63E]">
+              {getStatusLabel(ticket.status)}
+            </span>
+          ) : (
+            <TicketStatusBadge status={ticket.status} />
           )}
         </div>
 
-        {ticket.description ? (
-          <div className="mt-5">
-            <p className="text-body-sm text-muted mb-2">Description</p>
-            <p className="text-body-md text-brand-text/80 leading-relaxed">{ticket.description}</p>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-6 pr-28 sm:grid-cols-3 lg:grid-cols-5">
+          <MetaField label="Ticket ID" value={`#${ticket.id}`} />
+          <MetaField label="Subject" value={ticket.subject} />
+          <MetaField label="Category" value={ticket.category} />
+          <div className="min-w-0">
+            <p className="text-body-sm text-muted mb-1.5">Priority</p>
+            <span
+              className={cn(
+                'text-body-sm-semibold inline-flex h-[25px] items-center rounded-full px-2.5',
+                ticket.priority === 'high' || ticket.priority === 'critical'
+                  ? 'bg-[#D3191C]/20 text-white'
+                  : 'bg-white/10 text-white',
+              )}
+            >
+              {getPriorityLabel(ticket.priority)}
+            </span>
           </div>
-        ) : null}
+          <MetaField label="Requester" value={ticket.reporter} />
+          <MetaField label="Assigned To" value={ticket.assignedTo || '—'} />
+          <MetaField
+            label="Created On"
+            value={displayDate(ticket.createdAtIso || ticket.createdAt)}
+          />
+          <MetaField
+            label="Assigned On"
+            value={displayDate(ticket.assignedAt || ticket.createdAtIso || ticket.createdAt)}
+          />
+          {isClosed ? (
+            <MetaField
+              label="Resolved On"
+              value={displayDate(ticket.resolvedAt || ticket.createdAtIso || ticket.createdAt)}
+            />
+          ) : null}
+        </div>
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-body-md-semibold text-brand-text">Conversation History</h2>
-        <div className="radius-lg bg-brand-surface space-y-4 border border-white/[0.06] p-5">
+      <section>
+        <h2 className={cn(TITLE_CLASS, 'mb-3')}>Description</h2>
+        <div
+          className={cn(
+            'flex w-full max-w-[1089px] items-center overflow-visible rounded-xl px-4 py-3 text-[14px] leading-6 text-white',
+            CONTAINER,
+          )}
+          style={{ minHeight: 50 }}
+        >
+          {ticket.description || '—'}
+        </div>
+      </section>
+
+      <section className="space-y-4 overflow-visible border-t border-white/10 pt-5">
+        <div className="flex items-center gap-3">
+          <SupportAvatar
+            name={ticket.reporter}
+            src={ticket.reporterAvatarUrl}
+            sizeClassName="size-8"
+          />
+          <h2 className={TITLE_CLASS}>Conversation History</h2>
+        </div>
+
+        <div className="w-full space-y-4 overflow-visible">
           {messages.length === 0 ? (
             <p className="text-body-md text-muted">No messages yet.</p>
           ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={cn('flex gap-3', msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row')}
-              >
-                <div className="size-[50px] shrink-0 rounded-full bg-white/10" />
+            messages.map((msg) => {
+              const isAgent = msg.role === 'agent'
+              return (
                 <div
+                  key={msg.id}
                   className={cn(
-                    'flex min-w-0 flex-1 flex-col gap-1',
-                    msg.role === 'agent' ? 'items-end' : 'items-start',
+                    'flex w-full items-end gap-3 overflow-visible',
+                    isAgent ? 'flex-row-reverse' : 'flex-row',
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-body-sm-semibold text-brand-text">{msg.sender}</span>
-                    <span
-                      className={cn(
-                        'text-body-sm-semibold inline-flex h-5 items-center rounded px-2 uppercase',
-                        msg.role === 'user'
-                          ? 'bg-brand-positive/15 text-brand-positive'
-                          : 'bg-brand-action/15 text-brand-action',
-                      )}
-                    >
-                      {msg.role}
-                    </span>
-                  </div>
-                  <div className="radius-lg bg-brand-bg text-body-md text-brand-text/80 w-full border border-white/[0.06] px-4 py-3">
-                    {msg.content &&
-                    msg.content !== '[Image]' &&
-                    msg.content !== '[Attachment]' &&
-                    !msg.attachments?.some((file) => file.name && file.name === msg.content)
-                      ? msg.content
-                      : null}
+                  {isAgent ? (
+                    <SupportAvatar
+                      name={msg.sender}
+                      src={msg.senderAvatarUrl}
+                      sizeClassName="size-10 shrink-0"
+                      fallback="icon"
+                    />
+                  ) : null}
+                  <div
+                    className={cn(
+                      'min-w-0 flex-1 overflow-visible rounded-xl px-4 py-3',
+                      CONTAINER,
+                      isAgent ? 'max-w-[1132px]' : 'max-w-[1089px]',
+                    )}
+                    style={{ minHeight: isAgent ? 76 : 50 }}
+                  >
+                    <p className="text-body-md leading-relaxed break-words whitespace-pre-wrap text-white">
+                      {msg.content &&
+                      msg.content !== '[Image]' &&
+                      msg.content !== '[Attachment]' &&
+                      !msg.attachments?.some((file) => file.name && file.name === msg.content)
+                        ? msg.content
+                        : null}
+                    </p>
                     {msg.attachments?.map((file) => {
                       const isImage =
                         String(file.mimeType || '').startsWith('image/') ||
@@ -151,25 +205,36 @@ export function TicketDetailPage() {
                         </a>
                       )
                     })}
+                    <p
+                      className={cn(
+                        'text-muted mt-2 text-[11px] leading-4',
+                        isAgent ? 'text-left' : 'text-right',
+                      )}
+                    >
+                      {msg.time}
+                    </p>
                   </div>
-                  <span className="text-body-sm text-muted">{msg.time}</span>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </section>
 
-      {ticket.resolution ? (
-        <section className="space-y-3">
-          <h2 className="text-body-md-semibold text-brand-text">Resolution</h2>
-          <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/[0.06] p-4 leading-relaxed">
-            {ticket.resolution}
-          </div>
-        </section>
-      ) : null}
+      <section>
+        <h2 className={cn(TITLE_CLASS, 'mb-3')}>Resolution</h2>
+        <div
+          className={cn(
+            'flex w-full max-w-[1089px] items-center overflow-visible rounded-xl px-4 py-3 text-[14px] leading-6 text-white',
+            CONTAINER,
+          )}
+          style={{ minHeight: 50 }}
+        >
+          {ticket.resolution || ticket.comments || '—'}
+        </div>
+      </section>
 
-      <div className="flex items-center justify-between border-t border-white/[0.06] pt-5">
+      <div className="flex items-center justify-between border-t border-white/10 pt-5">
         <button
           type="button"
           disabled={
@@ -210,26 +275,11 @@ export function TicketDetailPage() {
   )
 }
 
-function InfoPill({
-  label,
-  value,
-  width,
-}: {
-  label: string
-  value: React.ReactNode
-  width?: number
-}) {
+function MetaField({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      className="radius-md bg-brand-bg flex min-h-[44px] flex-col justify-center gap-0.5 border border-white/[0.06] px-3 py-2"
-      style={{ width: width ? `${width}px` : undefined }}
-    >
-      <span className="text-body-sm text-muted leading-[18px]">{label}</span>
-      {typeof value === 'string' ? (
-        <span className="text-body-sm-medium text-brand-text leading-[18px]">{value}</span>
-      ) : (
-        <div className="mt-0.5">{value}</div>
-      )}
+    <div className="min-w-0">
+      <p className="text-body-sm text-muted mb-1.5">{label}</p>
+      <p className="text-body-sm-semibold text-brand-text truncate">{value}</p>
     </div>
   )
 }
