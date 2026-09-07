@@ -1,6 +1,6 @@
 import { AlertCircle, Info } from 'lucide-react'
 
-import { SettingsToggleRow } from './settings-toggle-row'
+import { SettingsToggle } from './settings-toggle-row'
 import { cn } from '@/shared/lib/cn'
 
 type NotificationItem = {
@@ -17,25 +17,6 @@ type NotificationGroupCardProps = {
   onChange: (key: string, checked: boolean) => void
 }
 
-const toneStyles = {
-  general: {
-    header: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
-    icon: 'text-emerald-400',
-  },
-  timeSensitive: {
-    header: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
-    icon: 'text-amber-400',
-  },
-  critical: {
-    header: 'bg-orange-500/10 border-orange-500/20 text-orange-300',
-    icon: 'text-orange-400',
-  },
-  adminPanel: {
-    header: 'bg-rose-500/10 border-rose-500/20 text-rose-300',
-    icon: 'text-rose-400',
-  },
-}
-
 export function NotificationGroupCard({
   title,
   tone,
@@ -44,34 +25,36 @@ export function NotificationGroupCard({
   onChange,
 }: NotificationGroupCardProps) {
   const enabledCount = items.filter((item) => values[item.key]).length
-  const styles = toneStyles[tone]
   const Icon = tone === 'general' ? Info : AlertCircle
 
   return (
-    <section className="settings-section-card overflow-hidden !p-0">
-      <div
-        className={cn(
-          'flex items-center justify-between border-b px-4 py-3 sm:px-5',
-          styles.header,
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <Icon className={cn('size-4', styles.icon)} />
-          <h3 className="text-sm font-semibold">{title}</h3>
+    <section className={cn('notif-group-card', `is-${tone}`)}>
+      <div className="notif-group-header">
+        <div className="notif-group-header-left">
+          <span className="notif-group-icon" aria-hidden="true">
+            <Icon className="notif-group-icon-svg" />
+          </span>
+          <h3 className="notif-group-title">{title}</h3>
         </div>
-        <span className="text-xs font-medium">
+        <span className="notif-group-count">
           {enabledCount} of {items.length} Enabled
         </span>
       </div>
-      <div className="settings-section-card-body px-4 sm:px-5">
+
+      <div className="notif-group-body">
         {items.map((item) => (
-          <SettingsToggleRow
-            key={item.key}
-            label={item.label}
-            description={item.description}
-            checked={values[item.key] ?? false}
-            onChange={(checked) => onChange(item.key, checked)}
-          />
+          <div key={item.key} className="notif-toggle-row">
+            <div className="notif-toggle-copy">
+              <p className="notif-toggle-label">{item.label}</p>
+              <p className="notif-toggle-desc">{item.description}</p>
+            </div>
+            <SettingsToggle
+              checked={values[item.key] ?? false}
+              onChange={(checked) => onChange(item.key, checked)}
+              ariaLabel={item.label}
+              showCaption={false}
+            />
+          </div>
         ))}
       </div>
     </section>

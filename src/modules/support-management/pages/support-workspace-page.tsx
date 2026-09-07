@@ -235,8 +235,8 @@ export function SupportWorkspacePage() {
           />
         </div>
 
-        <div className="mx-auto flex h-full min-h-0 w-full max-w-[597px] flex-col gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111112] p-4">
-          <div className="flex h-10 shrink-0 gap-1 rounded-lg border border-white/[0.06] bg-[#18181A] p-1">
+        <div className="mx-auto flex h-full min-h-0 w-full max-w-[597px] flex-col gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-[#141414] p-4">
+          <div className="flex h-10 shrink-0 gap-1 rounded-lg border border-white/[0.06] bg-[#050505] p-1">
             {(['intelligence', 'messages'] as const).map((tab) => {
               const isActive = workspaceTab === tab
               return (
@@ -247,7 +247,7 @@ export function SupportWorkspacePage() {
                   className={cn(
                     'flex flex-1 items-center justify-center rounded-md px-4 py-1.5 text-[12px] leading-[18px] font-medium capitalize transition-colors',
                     isActive
-                      ? 'text-brand-text bg-[#252528] shadow-sm'
+                      ? 'text-brand-text bg-[#141414] shadow-sm'
                       : 'text-muted hover:text-brand-text hover:bg-white/[0.02]',
                   )}
                 >

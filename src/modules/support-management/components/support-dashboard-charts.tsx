@@ -17,7 +17,7 @@ import { useSupportStats } from '../hooks/use-support'
 import { cn } from '@/shared/lib/cn'
 import { ChartSkeleton } from '@/shared/components/ui/skeleton'
 
-const CHART_BG = '#111112'
+const CHART_BG = '#141414'
 const BRAND_GREEN = '#22C55E'
 const BRAND_BLUE = '#3B82F6'
 const BRAND_ORANGE = '#FBC078'
@@ -47,11 +47,11 @@ const TEAM_COLOR_BY_KEY: Record<string, string> = {
 const SERIES_PALETTE = [BRAND_ORANGE, BRAND_BLUE, BRAND_GREEN, '#E5E7EB', '#A855F7', '#94A3B8']
 
 const tooltipStyle: React.CSSProperties = {
-  background: '#18181A',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: '#FFFFFF',
+  border: '1px solid rgba(0,0,0,0.08)',
   borderRadius: '10px',
   padding: '10px 12px',
-  color: '#FFFFFF',
+  color: '#111112',
   boxShadow: '0 16px 40px rgba(0,0,0,0.35)',
 }
 
@@ -95,11 +95,11 @@ function CompactSeriesTooltip({
   if (!active || !payload?.length) return null
   return (
     <div style={tooltipStyle}>
-      <p className="text-body-sm text-brand-text mb-1.5 font-semibold">{label}</p>
+      <p className="text-body-sm mb-1.5 font-semibold text-[#111112]">{label}</p>
       <div className="space-y-1">
         {payload.map((entry) => (
           <p key={String(entry.dataKey)} className="text-body-sm" style={{ color: entry.color }}>
-            {entry.name}: <span className="text-brand-text font-semibold">{entry.value ?? 0}</span>
+            {entry.name}: <span className="font-semibold text-[#111112]">{entry.value ?? 0}</span>
           </p>
         ))}
       </div>
@@ -111,14 +111,18 @@ function ChartCard({
   title,
   children,
   className,
+  titleClassName,
 }: PropsWithChildren<{
   title: string
   className?: string
+  titleClassName?: string
 }>) {
   return (
-    <div className={cn('rounded-xl border border-white/[0.08] bg-[#111112] p-4 sm:p-5', className)}>
+    <div className={cn('rounded-xl bg-[#141414] p-4 sm:p-5', className)}>
       <div className="mb-4">
-        <h2 className="text-body-sm text-brand-text font-semibold">{title}</h2>
+        <h2 className={cn('text-brand-text text-[16px] leading-6 font-semibold', titleClassName)}>
+          {title}
+        </h2>
       </div>
       {children}
     </div>
@@ -186,12 +190,12 @@ function TicketTrendTooltip({
   const resolved = payload.find((p) => p.dataKey === 'resolved')?.value
   return (
     <div style={tooltipStyle}>
-      <p className="text-body-sm text-brand-text mb-2 font-semibold">{label}</p>
+      <p className="text-body-sm mb-2 font-semibold text-[#111112]">{label}</p>
       <p className="text-body-sm" style={{ color: BRAND_BLUE }}>
-        Total Tickets: <span className="text-brand-text font-semibold">{total ?? 0}</span>
+        Total Tickets: <span className="font-semibold text-[#111112]">{total ?? 0}</span>
       </p>
       <p className="text-body-sm" style={{ color: BRAND_GREEN }}>
-        Resolved: <span className="text-brand-text font-semibold">{resolved ?? 0}</span>
+        Resolved: <span className="font-semibold text-[#111112]">{resolved ?? 0}</span>
       </p>
     </div>
   )
@@ -204,11 +208,11 @@ export function SupportDashboardCharts() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <ChartSkeleton title="Ticket Trends" height="280px" className="xl:col-span-2" />
-          <ChartSkeleton title="Tickets by User Type" height="280px" />
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,652fr)_minmax(0,584fr)]">
+          <ChartSkeleton title="Ticket Trends" height="310px" className="h-[382px]" />
+          <ChartSkeleton title="Tickets by User Type" height="310px" className="h-[382px]" />
         </div>
-        <ChartSkeleton title="Tickets by Module" height="260px" />
+        <ChartSkeleton title="Tickets by Module" height="280px" className="h-[360px]" />
       </div>
     )
   }
@@ -251,9 +255,9 @@ export function SupportDashboardCharts() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <ChartCard title="Ticket Trends" className="xl:col-span-2">
-          <div className="h-[280px] w-full min-w-0">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,652fr)_minmax(0,584fr)]">
+        <ChartCard title="Ticket Trends" className="flex h-[382px] flex-col">
+          <div className="h-[310px] min-h-0 w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={ticketTrends} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <defs>
@@ -297,17 +301,17 @@ export function SupportDashboardCharts() {
           </div>
         </ChartCard>
 
-        <ChartCard title="Tickets by User Type">
-          <div className="flex h-[280px] flex-col justify-center gap-6 sm:flex-row sm:items-center">
-            <div className="relative mx-auto h-[190px] w-[190px] shrink-0 overflow-visible sm:mx-0">
+        <ChartCard title="Tickets by User Type" className="flex h-[382px] flex-col">
+          <div className="flex min-h-0 flex-1 items-center gap-5">
+            <div className="relative mx-auto size-[208px] shrink-0 overflow-visible sm:mx-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieData}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={56}
-                    outerRadius={84}
+                    innerRadius={62}
+                    outerRadius={92}
                     paddingAngle={userTypeTotal > 0 ? 4 : 0}
                     stroke={CHART_BG}
                     strokeWidth={userTypeTotal > 0 ? 4 : 0}
@@ -333,7 +337,7 @@ export function SupportDashboardCharts() {
               ) : null}
             </div>
 
-            <div className="flex w-full flex-1 flex-col gap-4">
+            <div className="flex h-[208px] w-full min-w-0 flex-1 flex-col justify-between">
               {(userTypeTotal > 0 ? ticketsByUserType : DEFAULT_USER_TYPES).map((entry) => {
                 const color = colorForKey(entry.key, 0, USER_TYPE_COLOR_BY_KEY)
                 return (
@@ -344,14 +348,14 @@ export function SupportDashboardCharts() {
                         style={{ backgroundColor: color }}
                       />
                       <div className="min-w-0">
-                        <p className="text-body-sm text-brand-text truncate font-medium">
+                        <p className="truncate text-[14px] leading-5 font-medium text-white">
                           {entry.name}
                         </p>
-                        <p className="text-body-xs text-muted">{entry.value}</p>
+                        <p className="text-[12px] leading-4 text-white/70">{entry.value}</p>
                       </div>
                     </div>
-                    <span className="text-body-sm shrink-0 font-semibold" style={{ color }}>
-                      {entry.percent}%
+                    <span className="w-11 shrink-0 text-right text-[14px] leading-5 font-semibold text-white">
+                      {String(entry.percent).padStart(2, '0')}%
                     </span>
                   </div>
                 )
@@ -361,14 +365,15 @@ export function SupportDashboardCharts() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Tickets by Module">
-        <div className="min-w-0">
-          <div className="h-[260px] w-full min-w-0">
+      <ChartCard title="Tickets by Module" className="flex h-[360px] w-full flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="min-h-0 w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={ticketsByModule.data}
                 margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                barGap={4}
+                barGap={6}
+                barCategoryGap="18%"
               >
                 <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tick={axisTickStyle} />
@@ -387,7 +392,7 @@ export function SupportDashboardCharts() {
                     name={series.name}
                     fill={colorForKey(series.key, index, MODULE_COLOR_BY_KEY)}
                     radius={[4, 4, 0, 0]}
-                    maxBarSize={28}
+                    maxBarSize={36}
                   />
                 ))}
               </BarChart>
@@ -397,9 +402,9 @@ export function SupportDashboardCharts() {
         </div>
       </ChartCard>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <ChartCard title="Tickets by Reason">
-          <div className="space-y-5 py-1">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,652fr)_minmax(0,584fr)]">
+        <ChartCard title="Tickets by Reason" className="flex h-[360px] flex-col">
+          <div className="flex min-h-0 flex-1 flex-col justify-between space-y-5 py-1">
             {ticketsByReason.map((reason, index) => (
               <div key={reason.label}>
                 <div className="text-body-sm mb-1.5 flex items-center justify-between gap-3">
@@ -426,9 +431,9 @@ export function SupportDashboardCharts() {
           </div>
         </ChartCard>
 
-        <ChartCard title="Escalations to Other Teams">
-          <div className="min-w-0">
-            <div className="h-[240px] w-full min-w-0">
+        <ChartCard title="Escalations to Other Teams" className="flex h-[360px] flex-col">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="min-h-0 w-full flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={escalations.data}
@@ -452,7 +457,7 @@ export function SupportDashboardCharts() {
                       name={series.name}
                       fill={colorForKey(series.key, index, TEAM_COLOR_BY_KEY)}
                       radius={[4, 4, 0, 0]}
-                      maxBarSize={24}
+                      maxBarSize={50}
                     />
                   ))}
                 </BarChart>

@@ -289,6 +289,7 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           description="Enable or disable system maintenance mode"
           checked={value.generalSettings.maintenanceMode}
           boxed
+          showCaption={false}
           onChange={(checked) => {
             if (checked) {
               setScheduleOpen(true)
@@ -361,15 +362,27 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         </div>
         <div className="settings-policy-section">
           <p className="settings-field-label">Policy Management</p>
-          <div className="settings-policy-block">
-            <span className="settings-policy-label">Expert Application Policy</span>
-            <Button
-              variant="primary"
-              className="settings-policy-view-btn"
-              onClick={() => navigate('/settings/policies?application=expert')}
-            >
-              View
-            </Button>
+          <div className="settings-policy-grid">
+            <div className="settings-policy-block">
+              <span className="settings-policy-label">User Application Policy</span>
+              <Button
+                variant="primary"
+                className="settings-policy-view-btn"
+                onClick={() => navigate('/settings/policies?application=user')}
+              >
+                View
+              </Button>
+            </div>
+            <div className="settings-policy-block">
+              <span className="settings-policy-label">Expert Application Policy</span>
+              <Button
+                variant="primary"
+                className="settings-policy-view-btn"
+                onClick={() => navigate('/settings/policies?application=expert')}
+              >
+                View
+              </Button>
+            </div>
           </div>
         </div>
       </SettingsSectionCard>

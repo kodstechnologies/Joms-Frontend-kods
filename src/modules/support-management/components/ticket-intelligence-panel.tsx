@@ -21,7 +21,7 @@ type TicketIntelligencePanelProps = {
 
 function IntelligenceIconTile({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-white/[0.06] bg-[#111112]">
+    <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-white/[0.06] bg-[#141414]">
       {children}
     </span>
   )
@@ -73,7 +73,7 @@ export function TicketIntelligencePanel({
         <h3 className="text-muted mb-2 text-[10px] font-semibold tracking-[0.12em] uppercase">
           Activity
         </h3>
-        <div className="overflow-hidden rounded-lg border border-white/[0.06] bg-[#18181A]">
+        <div className="overflow-hidden rounded-lg border border-white/[0.06] bg-[#050505]">
           {isLoading ? (
             <p className="text-body-sm text-muted py-6 text-center">Loading activity…</p>
           ) : activities.length === 0 ? (
@@ -122,7 +122,7 @@ function ContextCard({
   subtitle: string
 }) {
   return (
-    <div className="min-h-[88px] rounded-lg border border-white/[0.06] bg-[#18181A] p-3.5">
+    <div className="min-h-[88px] rounded-lg border border-white/[0.06] bg-[#050505] p-3.5">
       <div className="flex items-start justify-between gap-2">
         <span className="text-muted text-[11px] font-medium">{label}</span>
         <IntelligenceIconTile>{icon}</IntelligenceIconTile>

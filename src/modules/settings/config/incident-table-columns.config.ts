@@ -6,77 +6,31 @@ export type IncidentTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
+const col = (
+  id: string,
+  label: string,
+  type: string,
+  description: string,
+  defaultVisible = false,
+): IncidentTableColumnCatalogItem => ({
+  id,
+  label,
+  type,
+  description,
+  defaultVisible,
+})
+
 export const INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG: IncidentTableColumnCatalogItem[] = [
-  {
-    id: 'incident-id',
-    label: 'Incident ID',
-    type: 'Text',
-    description: 'Unique incident identifier',
-    defaultVisible: true,
-  },
-  {
-    id: 'incident-title',
-    label: 'Incident Title',
-    type: 'Text',
-    description: 'Short incident title or subject',
-    defaultVisible: true,
-  },
-  {
-    id: 'reported-at',
-    label: 'Reported At',
-    type: 'Date',
-    description: 'When the incident was reported',
-    defaultVisible: true,
-  },
-  {
-    id: 'severity',
-    label: 'Severity',
-    type: 'Text',
-    description: 'Incident severity level',
-    defaultVisible: true,
-  },
-  {
-    id: 'first-response-time',
-    label: 'First Response Time',
-    type: 'Text',
-    description: 'Time to first response',
-    defaultVisible: true,
-  },
-  {
-    id: 'closed-at',
-    label: 'Closed At',
-    type: 'Date',
-    description: 'When the incident was closed',
-    defaultVisible: true,
-  },
-  {
-    id: 'module',
-    label: 'Module',
-    type: 'Text',
-    description: 'Affected platform module',
-    defaultVisible: true,
-  },
-  {
-    id: 'status',
-    label: 'Status',
-    type: 'Status',
-    description: 'Current incident status',
-    defaultVisible: true,
-  },
-  {
-    id: 'assignee',
-    label: 'Assignee',
-    type: 'Text',
-    description: 'Assigned owner',
-    defaultVisible: true,
-  },
-  {
-    id: 'root-cause',
-    label: 'Root Cause',
-    type: 'Text',
-    description: 'Identified root cause',
-    defaultVisible: true,
-  },
+  col('incident-id', 'Incident ID', 'Text', 'Unique incident identifier', true),
+  col('incident-title', 'Incident Title', 'Text', 'Short incident title or subject', false),
+  col('reported-at', 'Created On', 'Date', 'When the incident was reported', true),
+  col('severity', 'Severity', 'Text', 'Incident severity level', true),
+  col('first-response-time', 'First Response Time', 'Text', 'Time to first response', false),
+  col('closed-at', 'Closed At', 'Date', 'When the incident was closed', false),
+  col('module', 'Module', 'Text', 'Affected platform module', true),
+  col('status', 'Status', 'Status', 'Current incident status', true),
+  col('assignee', 'Assignee', 'Text', 'Assigned owner', true),
+  col('root-cause', 'Root Cause', 'Text', 'Identified root cause', false),
 ]
 
 export const DEFAULT_INCIDENT_TRACKING_VISIBLE_COLUMN_IDS =

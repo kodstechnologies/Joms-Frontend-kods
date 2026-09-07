@@ -84,6 +84,9 @@ export function normalizePlatformHealthDashboard(
     apiResponseMs: row.apiResponseMs,
     errorRate: row.errorRate,
     queueSeconds: row.queueSeconds,
+    cpu: row.cpu ?? 0,
+    memory: row.memory ?? 0,
+    requestsPerMin: row.requestsPerMin ?? 0,
   }))
 
   const securityCompliance = (data.charts.securityCompliance || []).map((row) => ({

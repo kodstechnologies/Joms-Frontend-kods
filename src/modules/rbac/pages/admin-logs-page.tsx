@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, ClipboardList, ExternalLink, Flag, UserRound } from 'lucide-react'
+import { ArrowLeft, ExternalLink, FileText, Flag, UserRound } from 'lucide-react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -9,6 +9,7 @@ import { useFlagAuditLog, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac
 import { fetchRoleLogs, fetchSubAdminLogs } from '../api/rbac-api'
 import type { AdminLogSubject, AuditLog } from '../types/rbac'
 import { AdminNoteModal } from '../components/admin-note-modal'
+import { FlagActionModal } from '../components/flag-action-modal'
 import { RbacLoader } from '../components/rbac-loader'
 import { RoleUsersModal } from '../components/role-users-modal'
 import { VersionHistoryPanel } from '../components/version-history-panel'
@@ -26,7 +27,6 @@ import { Button } from '@/shared/components/ui/button'
 import { LogStatusBadge } from '@/shared/components/ui/log-status-badge'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { uiTokens } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -68,9 +68,13 @@ const LOG_EXPORT_COLUMN_MAP: Record<
   createdAt: { header: 'Timestamp', accessor: (log) => exportDisplayValue(log.createdAt) },
 }
 
+const OVERVIEW_LABEL_CLASS = 'admin-info-label'
+const OVERVIEW_VALUE_CLASS = 'admin-info-value'
+
 const formatOverviewDate = (value?: string) => {
   if (!value) return '—'
   const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
   const day = date.toLocaleString('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -84,6 +88,73 @@ const formatOverviewDate = (value?: string) => {
   return `${day}, ${time}`
 }
 
+function OverviewField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="admin-info-field">
+      <p className={OVERVIEW_LABEL_CLASS}>{label}</p>
+      {children}
+    </div>
+  )
+}
+
+function RoleNamePill({ label }: { label: string }) {
+  return <span className="admin-info-role-pill">{label}</span>
+}
+
+function EntityStatusPill({ status }: { status: string }) {
+  const isActive = status.toLowerCase() === 'active'
+  return (
+    <span className={cn('admin-info-status-pill', isActive ? 'is-active' : 'is-inactive')}>
+      {isActive ? 'Active' : status}
+    </span>
+  )
+}
+
+function ModulePill({ label }: { label: string }) {
+  return (
+    <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-[#0A0A0A] px-2.5 py-1 text-sm font-medium">
+      {label}
+    </span>
+  )
+}
+
+function AdminInfoCard({
+  children,
+  createdAt,
+  createdBy,
+}: {
+  children: ReactNode
+  createdAt?: string
+  createdBy: string
+}) {
+  return (
+    <section className="admin-info-card">
+      <div className="admin-info-card-left">
+        <div className="admin-info-card-heading">
+          <div className="admin-info-avatar">
+            <UserRound className="size-4" strokeWidth={1.75} />
+          </div>
+          <h3 className="admin-info-title">Admin Info</h3>
+        </div>
+        <div className="admin-info-card-main">{children}</div>
+      </div>
+
+      <div className="admin-info-card-right">
+        <div className="admin-info-meta">
+          <p className={OVERVIEW_LABEL_CLASS}>Created At</p>
+          <p className={`${OVERVIEW_VALUE_CLASS} whitespace-nowrap`}>
+            {formatOverviewDate(createdAt)}
+          </p>
+        </div>
+        <div className="admin-info-meta">
+          <p className={OVERVIEW_LABEL_CLASS}>Created By</p>
+          <p className={OVERVIEW_VALUE_CLASS}>{createdBy}</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function UserOverviewCard({
   subject,
   onOpenUser,
@@ -93,7 +164,7 @@ function UserOverviewCard({
 }) {
   if (!subject || subject.type !== 'subAdmin') {
     return (
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
+      <div className="admin-info-card admin-info-card-loading">
         <RbacLoader label="Loading overview..." className="min-h-[120px]" />
       </div>
     )
@@ -103,69 +174,28 @@ function UserOverviewCard({
   const createdBy = subject.createdBy || 'Super Admin'
 
   return (
-    <section>
-      <h2 className="text-brand-text mb-3 text-sm font-semibold">Admin Overview</h2>
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
-              <UserRound className="size-4" />
-            </div>
-            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
-          </div>
-          <p className="text-brand-muted text-xs">
-            Created At:{' '}
-            <span className="text-brand-text font-medium">
-              {formatOverviewDate(subject.createdAt)}
-            </span>
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-4">
-            <div>
-              <p className="text-brand-muted text-xs">Name</p>
-              <button
-                type="button"
-                onClick={() => onOpenUser(subject.id)}
-                className="text-brand-text decoration-brand-muted/40 hover:text-brand-accent mt-1 text-base font-semibold underline underline-offset-4 transition-colors"
-              >
-                {subject.fullname}
-              </button>
-            </div>
-            <div>
-              <p className="text-brand-muted text-xs">Role</p>
-              <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold">
-                {roleLabel}
-              </span>
-            </div>
-            <div>
-              <p className="text-brand-muted text-xs">Status</p>
-              <span
-                className={cn(
-                  'text-body-sm-semibold mt-2 inline-flex rounded-full border px-2.5 py-0.5 capitalize',
-                  subject.status === 'active'
-                    ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-                    : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-                )}
-              >
-                {subject.status}
-              </span>
-            </div>
-            <div>
-              <p className="text-brand-muted text-xs">Email ID</p>
-              <p className="text-brand-text mt-1 text-sm font-medium">{subject.email}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end justify-end">
-            <p className="text-brand-muted text-xs">
-              Created By: <span className="text-brand-text font-semibold">{createdBy}</span>
-            </p>
-          </div>
-        </div>
+    <AdminInfoCard createdAt={subject.createdAt} createdBy={createdBy}>
+      <div className="admin-info-user-grid">
+        <OverviewField label="Name">
+          <button
+            type="button"
+            onClick={() => onOpenUser(subject.id)}
+            className="admin-info-name-link"
+          >
+            {subject.fullname}
+          </button>
+        </OverviewField>
+        <OverviewField label="Role">
+          <RoleNamePill label={roleLabel} />
+        </OverviewField>
+        <OverviewField label="Status">
+          <EntityStatusPill status={subject.status} />
+        </OverviewField>
+        <OverviewField label="Email ID">
+          <p className={OVERVIEW_VALUE_CLASS}>{subject.email}</p>
+        </OverviewField>
       </div>
-    </section>
+    </AdminInfoCard>
   )
 }
 
@@ -178,7 +208,7 @@ function RoleOverviewCard({
 }) {
   if (!subject || subject.type !== 'role') {
     return (
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
+      <div className="admin-info-card admin-info-card-loading">
         <RbacLoader label="Loading overview..." className="min-h-[120px]" />
       </div>
     )
@@ -187,69 +217,32 @@ function RoleOverviewCard({
   const createdBy = subject.createdBy || 'Super Admin'
 
   return (
-    <section>
-      <h2 className="text-brand-text mb-3 text-sm font-semibold">Admin Overview</h2>
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
-              <UserRound className="size-4" />
-            </div>
-            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
-          </div>
-          <p className="text-brand-muted text-xs">
-            Created At:{' '}
-            <span className="text-brand-text font-medium">
-              {formatOverviewDate(subject.createdAt)}
-            </span>
+    <AdminInfoCard createdAt={subject.createdAt} createdBy={createdBy}>
+      <div className="admin-info-role-grid">
+        <OverviewField label="Role">
+          <RoleNamePill label={subject.name} />
+        </OverviewField>
+        <OverviewField label="Status">
+          <EntityStatusPill status={subject.status} />
+        </OverviewField>
+        <OverviewField label="No. Of Users">
+          <button
+            type="button"
+            onClick={() => onViewRoleUsers(subject.id)}
+            className="admin-info-users-link"
+            aria-label={`View users assigned to ${subject.name}`}
+          >
+            {String(subject.userCount).padStart(2, '0')}
+            <ExternalLink className="size-3.5" />
+          </button>
+        </OverviewField>
+        <OverviewField label="Last Action">
+          <p className={`${OVERVIEW_VALUE_CLASS} whitespace-nowrap`}>
+            {formatOverviewDate(subject.lastActionAt)}
           </p>
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <p className="text-brand-muted text-xs">Role</p>
-            <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold">
-              {subject.name}
-            </span>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Status</p>
-            <span
-              className={cn(
-                'text-body-sm-semibold mt-2 inline-flex rounded-full border px-2.5 py-0.5 capitalize',
-                subject.status === 'active'
-                  ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-                  : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-              )}
-            >
-              {subject.status}
-            </span>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">No. Of Users</p>
-            <button
-              type="button"
-              onClick={() => onViewRoleUsers(subject.id)}
-              className="text-brand-text hover:text-brand-accent mt-2 flex items-center gap-1.5 text-sm font-semibold transition-colors"
-              aria-label={`View users assigned to ${subject.name}`}
-            >
-              {String(subject.userCount).padStart(2, '0')}
-              <ExternalLink className="size-3.5" />
-            </button>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Last Action</p>
-            <p className="text-brand-text mt-2 text-sm font-medium">
-              {formatOverviewDate(subject.lastActionAt)}
-            </p>
-          </div>
-        </div>
-
-        <p className="text-brand-muted mt-5 text-right text-xs">
-          Created By: <span className="text-brand-text font-medium">{createdBy}</span>
-        </p>
+        </OverviewField>
       </div>
-    </section>
+    </AdminInfoCard>
   )
 }
 
@@ -271,6 +264,7 @@ export function AdminLogsPage() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
   const [roleUsersModalId, setRoleUsersModalId] = useState<string | null>(null)
+  const [flagLogId, setFlagLogId] = useState<string | null>(null)
 
   const logParams = useMemo(
     () =>
@@ -362,18 +356,24 @@ export function AdminLogsPage() {
   }, [])
 
   const handleFlag = useCallback(
-    async (logId: string) => {
+    async (_payload: { reasons: string[]; note: string }) => {
+      if (!flagLogId) return
       try {
-        await flagMutation.mutateAsync(logId)
+        await flagMutation.mutateAsync(flagLogId)
         toast.success('Action flagged')
+        setFlagLogId(null)
         logsQuery.refetch()
       } catch {
         toast.error('Failed to flag action')
       }
-      setActiveDropdownId(null)
     },
-    [flagMutation, logsQuery],
+    [flagLogId, flagMutation, logsQuery],
   )
+
+  const openFlagModal = useCallback((logId: string) => {
+    setFlagLogId(logId)
+    setActiveDropdownId(null)
+  }, [])
 
   const renderAdminNoteCell = useCallback((note?: string) => {
     if (!note?.trim()) {
@@ -384,13 +384,41 @@ export function AdminLogsPage() {
       <button
         type="button"
         onClick={() => setSelectedAdminNote(note)}
-        className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from max-w-[220px] truncate text-left text-xs font-medium underline underline-offset-2"
+        className="text-brand-text max-w-[220px] truncate text-left"
         title={note}
       >
         {note}
       </button>
     )
   }, [])
+
+  const renderLogActions = useCallback(
+    (log: AuditLog) => {
+      const logId = log.id || log._id || ''
+      return (
+        <TableActionsDropdown
+          label="Open log actions"
+          isOpen={activeDropdownId === logId}
+          onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
+        >
+          <TableActionsItem icon={<FileText className="size-3.5" />} onClick={openHistory}>
+            View Pre-Version
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Flag className="size-3.5" />}
+            onClick={() => {
+              if (log.flagged) return
+              openFlagModal(logId)
+            }}
+            className={log.flagged ? undefined : 'ui-table-actions-item-danger'}
+          >
+            {log.flagged ? 'Already Flagged' : 'Flag Action'}
+          </TableActionsItem>
+        </TableActionsDropdown>
+      )
+    },
+    [activeDropdownId, openFlagModal, openHistory],
+  )
 
   const userColumns = useMemo<ColumnDef<AuditLog>[]>(
     () =>
@@ -403,7 +431,7 @@ export function AdminLogsPage() {
               <button
                 type="button"
                 onClick={openHistory}
-                className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-xs font-semibold underline underline-offset-2"
+                className="text-brand-text text-left underline underline-offset-2"
               >
                 {row.original.action}
               </button>
@@ -412,11 +440,7 @@ export function AdminLogsPage() {
           {
             accessorKey: 'module',
             header: 'Module',
-            cell: ({ row }) => (
-              <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
-                {row.original.module}
-              </span>
-            ),
+            cell: ({ row }) => <ModulePill label={row.original.module} />,
           },
           {
             accessorKey: 'createdAt',
@@ -426,7 +450,7 @@ export function AdminLogsPage() {
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => <LogStatusBadge status={row.original.status} />,
+            cell: ({ row }) => <LogStatusBadge status={row.original.status} variant="solid" />,
           },
           { accessorKey: 'ipAddress', header: 'IP Address' },
           {
@@ -439,38 +463,12 @@ export function AdminLogsPage() {
             header: 'Actions',
             enableSorting: false,
             meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => {
-              const logId = row.original.id || row.original._id || ''
-              return (
-                <TableActionsDropdown
-                  label="Open log actions"
-                  isOpen={activeDropdownId === logId}
-                  onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
-                >
-                  <TableActionsItem
-                    icon={<ClipboardList className="size-3.5" />}
-                    onClick={openHistory}
-                  >
-                    View Pre-Version
-                  </TableActionsItem>
-                  <TableActionsItem
-                    icon={<Flag className="text-brand-danger size-3.5" />}
-                    onClick={() => handleFlag(logId)}
-                  >
-                    <span
-                      className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}
-                    >
-                      {row.original.flagged ? 'Already Flagged' : 'Flag Action'}
-                    </span>
-                  </TableActionsItem>
-                </TableActionsDropdown>
-              )
-            },
+            cell: ({ row }) => renderLogActions(row.original),
           },
         ],
         USER_LOG_SORT_FIELD_MAP,
       ),
-    [activeDropdownId, handleFlag, openHistory, renderAdminNoteCell],
+    [openHistory, renderAdminNoteCell, renderLogActions],
   )
 
   const roleColumns = useMemo<ColumnDef<AuditLog>[]>(
@@ -484,7 +482,7 @@ export function AdminLogsPage() {
               <button
                 type="button"
                 onClick={openHistory}
-                className="text-brand-accent text-left text-xs font-semibold hover:underline"
+                className="text-brand-text text-left underline underline-offset-2"
               >
                 {row.original.action}
               </button>
@@ -494,11 +492,7 @@ export function AdminLogsPage() {
           {
             accessorKey: 'module',
             header: 'Module',
-            cell: ({ row }) => (
-              <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
-                {row.original.module}
-              </span>
-            ),
+            cell: ({ row }) => <ModulePill label={row.original.module} />,
           },
           {
             accessorKey: 'createdAt',
@@ -508,7 +502,7 @@ export function AdminLogsPage() {
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => <LogStatusBadge status={row.original.status} />,
+            cell: ({ row }) => <LogStatusBadge status={row.original.status} variant="solid" />,
           },
           { accessorKey: 'ipAddress', header: 'IP Address' },
           {
@@ -521,41 +515,30 @@ export function AdminLogsPage() {
             header: 'Actions',
             enableSorting: false,
             meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => {
-              const logId = row.original.id || row.original._id || ''
-              return (
-                <TableActionsDropdown
-                  label="Open log actions"
-                  isOpen={activeDropdownId === logId}
-                  onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
-                >
-                  <TableActionsItem
-                    icon={<ClipboardList className="size-3.5" />}
-                    onClick={openHistory}
-                  >
-                    View Pre-Version
-                  </TableActionsItem>
-                  <TableActionsItem
-                    icon={<Flag className="text-brand-danger size-3.5" />}
-                    onClick={() => handleFlag(logId)}
-                  >
-                    <span
-                      className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}
-                    >
-                      {row.original.flagged ? 'Already Flagged' : 'Flag Action'}
-                    </span>
-                  </TableActionsItem>
-                </TableActionsDropdown>
-              )
-            },
+            cell: ({ row }) => renderLogActions(row.original),
           },
         ],
         ROLE_LOG_SORT_FIELD_MAP,
       ),
-    [activeDropdownId, handleFlag, openHistory, renderAdminNoteCell],
+    [openHistory, renderAdminNoteCell, renderLogActions],
   )
 
   const columns = isRole ? roleColumns : userColumns
+
+  if (historyOpen) {
+    return (
+      <VersionHistoryPanel
+        open
+        logs={historyQuery.data?.data.logs ?? logs}
+        isLoading={historyQuery.isLoading}
+        onClose={() => setHistoryOpen(false)}
+        onRolledBack={() => {
+          void logsQuery.refetch()
+          void historyQuery.refetch()
+        }}
+      />
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -599,8 +582,8 @@ export function AdminLogsPage() {
       )}
 
       <div>
-        <h2 className="text-brand-text text-lg font-semibold">Action Logs</h2>
-        <p className="text-brand-muted mt-1 text-sm">
+        <h2 className="text-brand-text text-2xl leading-6 font-semibold">Action Logs</h2>
+        <p className="mt-1 text-sm text-white/50">
           Complete history of actions performed by this admin
         </p>
       </div>
@@ -635,20 +618,16 @@ export function AdminLogsPage() {
 
       {exportFilterModals}
 
-      <VersionHistoryPanel
-        open={historyOpen}
-        logs={historyQuery.data?.data.logs ?? logs}
-        isLoading={historyQuery.isLoading}
-        onClose={() => setHistoryOpen(false)}
-        onRolledBack={() => {
-          void logsQuery.refetch()
-          void historyQuery.refetch()
-        }}
-      />
       <AdminNoteModal
         open={Boolean(selectedAdminNote)}
         note={selectedAdminNote ?? undefined}
         onClose={() => setSelectedAdminNote(null)}
+      />
+      <FlagActionModal
+        open={Boolean(flagLogId)}
+        onClose={() => setFlagLogId(null)}
+        onConfirm={handleFlag}
+        isSubmitting={flagMutation.isPending}
       />
       <RoleUsersModal
         open={Boolean(roleUsersModalId)}

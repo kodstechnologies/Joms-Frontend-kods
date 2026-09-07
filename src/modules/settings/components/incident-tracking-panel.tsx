@@ -27,10 +27,8 @@ import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SETTINGS_INCIDENTS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
-import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
-import { uiTokens } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -47,7 +45,7 @@ import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-
 import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
-const PAGE_SIZE = 8
+const PAGE_SIZE = 10
 
 type IncidentTrackingPanelProps = {
   highlightIncidentId?: string | null
@@ -56,6 +54,14 @@ type IncidentTrackingPanelProps = {
 const INCIDENT_SORT_FIELD_MAP = buildCatalogSortFieldMap(INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG)
 
 const dash = (value: string | null | undefined) => (value && String(value).trim() ? value : '—')
+
+/** Figma display labels (IDs stay the same) */
+const METRIC_TITLE_MAP: Record<string, string> = {
+  'open-incidents': 'Active Incidents',
+  critical: 'Critical Errors',
+  'resolved-mtd': 'Resolved',
+  mttr: 'Avg. Resolution Time',
+}
 
 const INCIDENT_EXPORT_COLUMN_MAP: Record<
   string,
@@ -67,7 +73,7 @@ const INCIDENT_EXPORT_COLUMN_MAP: Record<
     accessor: (row) => exportDisplayValue(dash(row.title)),
   },
   'reported-at': {
-    header: 'Reported At',
+    header: 'Created On',
     accessor: (row) => exportDisplayValue(dash(row.reportedAt || row.createdOn)),
   },
   severity: { header: 'Severity', accessor: (row) => exportDisplayValue(row.severity) },
@@ -92,37 +98,15 @@ const INCIDENT_EXPORT_COLUMN_MAP: Record<
 }
 
 function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
-  const styles: Record<IncidentSeverity, string> = {
-    Low: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-    Medium: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-    High: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
-    Critical: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
-  }
   return (
-    <span
-      className={cn(
-        'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
-        styles[severity],
-      )}
-    >
-      {severity}
-    </span>
+    <span className={cn('incident-severity-pill', `is-${severity.toLowerCase()}`)}>{severity}</span>
   )
 }
 
 function StatusBadge({ status }: { status: IncidentStatus }) {
-  const styles: Record<IncidentStatus, string> = {
-    Open: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-    Investigating: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
-    Resolved: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-  }
-  return (
-    <span
-      className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[status])}
-    >
-      {status}
-    </span>
-  )
+  const label = status === 'Investigating' ? 'In-Progress' : status
+  const tone = status === 'Investigating' ? 'in-progress' : status === 'Open' ? 'open' : 'resolved'
+  return <span className={cn('incident-status-pill', `is-${tone}`)}>{label}</span>
 }
 
 const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
@@ -130,20 +114,20 @@ const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
     id: 'incident-id',
     accessorKey: 'incidentId',
     header: 'Incident ID',
-    cell: ({ row }) => <span className="font-medium text-white">{row.original.incidentId}</span>,
+    cell: ({ row }) => <span className="incident-cell-primary">{row.original.incidentId}</span>,
   },
   {
     id: 'incident-title',
     accessorKey: 'title',
     header: 'Incident Title',
-    cell: ({ row }) => <span className="text-slate-300">{dash(row.original.title)}</span>,
+    cell: ({ row }) => <span className="incident-cell-muted">{dash(row.original.title)}</span>,
   },
   {
     id: 'reported-at',
     accessorFn: (row) => row.reportedAt || row.createdOn,
-    header: 'Reported At',
+    header: 'Created On',
     cell: ({ row }) => (
-      <span className="text-slate-400">
+      <span className="incident-cell-primary">
         {dash(row.original.reportedAt || row.original.createdOn)}
       </span>
     ),
@@ -159,20 +143,20 @@ const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
     accessorKey: 'firstResponseTime',
     header: 'First Response Time',
     cell: ({ row }) => (
-      <span className="text-slate-400">{dash(row.original.firstResponseTime)}</span>
+      <span className="incident-cell-muted">{dash(row.original.firstResponseTime)}</span>
     ),
   },
   {
     id: 'closed-at',
     accessorKey: 'closedAt',
     header: 'Closed At',
-    cell: ({ row }) => <span className="text-slate-400">{dash(row.original.closedAt)}</span>,
+    cell: ({ row }) => <span className="incident-cell-muted">{dash(row.original.closedAt)}</span>,
   },
   {
     id: 'module',
     accessorKey: 'module',
     header: 'Module',
-    cell: ({ row }) => <span className="text-slate-300">{row.original.module}</span>,
+    cell: ({ row }) => <span className="incident-cell-primary">{row.original.module}</span>,
   },
   {
     id: 'status',
@@ -185,14 +169,14 @@ const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
     accessorKey: 'assignee',
     header: 'Assignee',
     cell: ({ row }) => (
-      <span className="text-slate-400">{row.original.assignee || 'Unassigned'}</span>
+      <span className="incident-cell-primary">{row.original.assignee || 'Unassigned'}</span>
     ),
   },
   {
     id: 'root-cause',
     accessorKey: 'rootCause',
     header: 'Root Cause',
-    cell: ({ row }) => <span className="text-slate-400">{dash(row.original.rootCause)}</span>,
+    cell: ({ row }) => <span className="incident-cell-muted">{dash(row.original.rootCause)}</span>,
   },
 ]
 
@@ -234,7 +218,11 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
   const metricCards = useMemo(() => {
     const cards = metrics.filter((metric) => metric.id && INCIDENT_METRIC_ID_SET.has(metric.id))
     return orderByActiveMetricIds(
-      cards.map((metric) => ({ ...metric, id: metric.id! })),
+      cards.map((metric) => ({
+        ...metric,
+        id: metric.id!,
+        title: METRIC_TITLE_MAP[metric.id!] || metric.title,
+      })),
       filteredActiveMetricIds,
     )
   }, [filteredActiveMetricIds, metrics])
@@ -316,11 +304,12 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
     const actionsColumn: ColumnDef<IncidentRow> = {
       id: 'actions',
       header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
       cell: ({ row }) => (
         <button
           type="button"
           onClick={() => setSelected(row.original)}
-          className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
+          className="incident-action-btn"
           aria-label="Assign user"
         >
           <ClipboardList className="size-4" />
@@ -335,11 +324,11 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
   }, [tableColumnPreferencesQuery.data])
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="incident-page">
+      <div className="incident-header">
         <div>
-          <h2 className="text-lg font-semibold text-white">Error Reporting & Incident Tracking</h2>
-          <p className="text-sm text-slate-400">Track errors & incident in the platform</p>
+          <h2 className="referral-page-title">Error Reporting &amp; Incident Tracking</h2>
+          <p className="referral-page-subtitle mt-1">Track errors &amp; incident in the platform</p>
         </div>
         <Button
           variant="secondary"
@@ -351,25 +340,24 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
         </Button>
       </div>
 
-      <ResponsiveGrid mobileCols={1} tabletCols={2} desktopCols={4} gap={4}>
+      <div className="incident-stats-grid">
         {metricsLoading
           ? Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
+              <div key={index} className="incident-stats-skeleton" />
             ))
           : metricCards.map((metric) => (
               <StatCard
                 key={metric.id}
+                className="incident-stat-card"
                 title={metric.title}
                 value={metric.value}
                 trend={metric.trend}
                 hint={metric.hint}
               />
             ))}
-      </ResponsiveGrid>
+      </div>
 
-      <div
-        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
-      >
+      <div className="incident-table-card">
         <DataTable
           columns={columns}
           data={rows}
@@ -383,7 +371,7 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by incident ID or title"
+          searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}
@@ -394,7 +382,7 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
             totalPages,
             onPageChange: setPage,
           }}
-          resourceLabel="incidents"
+          resourceLabel="users"
         />
       </div>
 

@@ -17,7 +17,12 @@ export const isAdminKycApproved = (expert?: ExpertApplicationExpert) =>
 export const isKycSubmittedForApplication = (
   expert?: ExpertApplicationExpert,
   kyc?: ExpertApplicationKyc,
-) => Boolean(kyc?._id) || isAdminKycApproved(expert)
+) =>
+  Boolean(kyc?._id) ||
+  kyc?.status === 'APPROVED' ||
+  (kyc as { kycMandatory?: boolean })?.kycMandatory === false ||
+  (kyc as { isExempt?: boolean })?.isExempt === true ||
+  isAdminKycApproved(expert)
 
 export const getDisplayKycStatus = (
   expert?: ExpertApplicationExpert,

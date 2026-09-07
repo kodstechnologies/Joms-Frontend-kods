@@ -56,6 +56,12 @@ import {
   ADMIN_LOGS_METRICS_CATALOG,
   ADMIN_LOGS_MODULE_KEY,
 } from '@/modules/settings/config/admin-logs-metrics.config'
+import {
+  BACKUP_HISTORY_COLUMNS_CATALOG,
+  BACKUP_MAX_ACTIVE_METRICS,
+  BACKUP_METRICS_CATALOG,
+  BACKUP_MODULE_KEY,
+} from '@/modules/settings/config/backup-metrics.config'
 import { mapColumnsCatalog, mapMetricsCatalog, type ModuleMetricsDefinition } from './types'
 
 /** Support / settings / ops entries — written as explicit objects (avoid stamp helpers). */
@@ -106,6 +112,14 @@ export const SUPPORT_SETTINGS_MODULE_METRICS: Record<string, ModuleMetricsDefini
     maxActiveMetrics: INCIDENT_MAX_ACTIVE_METRICS,
     metrics: mapMetricsCatalog(INCIDENT_METRICS_CATALOG),
     columns: mapColumnsCatalog(INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG),
+  },
+  'backup-configuration': {
+    moduleKey: BACKUP_MODULE_KEY,
+    moduleName: 'Backup Configuration',
+    returnTo: '/settings/main',
+    maxActiveMetrics: BACKUP_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(BACKUP_METRICS_CATALOG),
+    columns: mapColumnsCatalog(BACKUP_HISTORY_COLUMNS_CATALOG),
   },
   communication: {
     moduleKey: COMMUNICATION_MODULE_KEY,

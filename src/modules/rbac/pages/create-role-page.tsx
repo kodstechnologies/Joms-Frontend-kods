@@ -1,4 +1,4 @@
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -36,6 +36,10 @@ export function CreateRolePage() {
   }
 
   const catalog = catalogData?.data ?? {}
+  const pageTitle = isEdit ? 'Edit Role' : 'Create New Role'
+  const pageSubtitle = isEdit
+    ? 'Role Based Access / Edit Role'
+    : 'Role Based Access / Create New Role'
 
   const handleSubmit = async () => {
     if (!name.trim() || !description.trim()) {
@@ -63,44 +67,39 @@ export function CreateRolePage() {
   const isSubmitting = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
+    <div className="create-role-page">
+      <div className="create-role-header">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-          className="rounded-brand-md text-brand-muted hover:text-brand-text border border-white/10 p-2 transition-colors hover:bg-white/5"
+          className="create-role-back"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-5" aria-hidden="true" />
+          <span>{pageTitle}</span>
         </button>
-        <div>
-          <h1 className="text-brand-text text-2xl font-bold">
-            {isEdit ? 'Edit Role' : 'Create New Role'}
-          </h1>
-          <p className="text-brand-muted text-sm">
-            Role Based Access / {isEdit ? 'Edit Role' : 'Create New Role'}
-          </p>
-        </div>
+        <p className="create-role-breadcrumb">{pageSubtitle}</p>
       </div>
 
-      <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-5 md:p-6">
-        <h2 className="text-brand-text text-lg font-semibold">Role Details</h2>
-        <p className="text-brand-muted mt-1 text-sm">Provide basic information about this role.</p>
+      <div className="create-role-card">
+        <h2 className="create-role-card-title">Role Details</h2>
+        <p className="create-role-card-subtitle">Provide basic information about this role.</p>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label htmlFor="role-name" className="text-brand-text text-sm font-medium">
+        <div className="create-role-details-grid">
+          <div className="create-role-field">
+            <label htmlFor="role-name" className="create-role-field-label">
               Role Name <RequiredMark />
             </label>
             <Input
               id="role-name"
+              className="create-role-field-control"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Venues Manager"
+              placeholder="Full Name"
               disabled={isLoading}
             />
           </div>
-          <div className="space-y-2 md:col-span-2">
-            <label htmlFor="role-description" className="text-brand-text text-sm font-medium">
+          <div className="create-role-field create-role-field-span">
+            <label htmlFor="role-description" className="create-role-field-label">
               Description <RequiredMark />
             </label>
             <textarea
@@ -109,19 +108,21 @@ export function CreateRolePage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this role is responsible for"
               rows={3}
-              className="rounded-brand-md bg-brand-bg text-brand-text placeholder:text-brand-muted focus:ring-brand-accent/40 w-full resize-none border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2"
+              disabled={isLoading}
+              className="create-role-textarea"
             />
           </div>
         </div>
       </div>
 
-      <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-5 md:p-6">
-        <h2 className="text-brand-text text-lg font-semibold">Assign Permissions</h2>
-        <p className="text-brand-muted mt-1 text-sm">
-          Enable permissions for Venues and Services modules only.
+      <div className="create-role-card">
+        <h2 className="create-role-card-title">Assign Permissions</h2>
+        <p className="create-role-card-subtitle">
+          Enable or disable permissions for each module. These permissions define what actions this
+          role can perform.
         </p>
 
-        <div className="mt-5">
+        <div className="create-role-permissions-body">
           {Object.keys(catalog).length ? (
             <PermissionAccordions
               catalog={catalog}
@@ -134,15 +135,19 @@ export function CreateRolePage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="create-role-footer">
         <Button
           variant="secondary"
+          className="create-role-footer-prev"
           onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
         >
           Previous
         </Button>
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          <Save className="size-4" />
+        <Button
+          className="create-role-footer-primary"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+        >
           {isEdit ? 'Save Role' : 'Create New Role'}
         </Button>
       </div>

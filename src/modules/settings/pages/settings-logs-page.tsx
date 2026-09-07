@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ClipboardList, ArrowLeft, RotateCcw, UserRound } from 'lucide-react'
+import { ArrowLeft, RotateCcw, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -52,13 +52,13 @@ import { formatDateTimeEnInLogs as formatDateTime } from '@/shared/lib/format-da
 
 const PAGE_SIZE = 10
 
-const MODULE_TABS: Array<{ key: SettingsModule | 'all'; label: string }> = [
-  { key: 'all', label: 'All Modules' },
+/** Figma Setting Logs module tabs (filter keys accepted by logs API). */
+const MODULE_TABS: Array<{ key: string; label: string }> = [
   { key: 'platform', label: 'Platform Controls' },
   { key: 'security', label: 'Security & Access' },
-  { key: 'notifications', label: 'Notifications' },
-  { key: 'finance', label: 'Finance & Transactional' },
+  { key: 'user', label: 'User Application' },
   { key: 'expert', label: 'Expert Application' },
+  { key: 'event', label: 'Event Management' },
   { key: 'venue', label: 'Venue Management' },
   { key: 'service', label: 'Service Marketplace' },
 ]
@@ -132,16 +132,31 @@ function summarizeChanges(log: SettingsLog) {
 
 function ModulePill({ label }: { label: string }) {
   return (
-    <span className="inline-flex rounded-full border border-white/10 bg-[#0A0A0A] px-2.5 py-0.5 text-xs font-medium text-white">
+    <span className="inline-flex max-w-[180px] truncate rounded-[10px] border border-white/10 bg-[#0A0A0A] px-2.5 py-1 text-xs font-medium text-white">
       {label}
     </span>
+  )
+}
+
+function UserIdCell({ name }: { name: string }) {
+  const label = name?.trim() || '—'
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span
+        className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+        aria-hidden="true"
+      >
+        <UserRound className="size-4" />
+      </span>
+      <span className="text-brand-text truncate text-sm font-medium">{label}</span>
+    </div>
   )
 }
 
 export function SettingsLogsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
-  const [activeModuleTab, setActiveModuleTab] = useState<SettingsModule | 'all'>('all')
+  const [activeModuleTab, setActiveModuleTab] = useState<string>('service')
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
   const [versionHistoryModule, setVersionHistoryModule] = useState<SettingsModule | null>(null)
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
@@ -154,7 +169,7 @@ export function SettingsLogsPage() {
   })
   const [isExporting, setIsExporting] = useState(false)
 
-  const metricsModule = activeModuleTab === 'all' ? undefined : activeModuleTab
+  const metricsModule = activeModuleTab
   const { data: metricsData, isLoading: metricsLoading } = useSettingsLogMetrics({
     module: metricsModule,
   })
@@ -180,7 +195,7 @@ export function SettingsLogsPage() {
     () => ({
       page,
       limit: PAGE_SIZE,
-      ...(activeModuleTab !== 'all' ? { module: activeModuleTab } : {}),
+      module: activeModuleTab,
       ...serverSort.sortParams,
     }),
     [activeModuleTab, page, serverSort.sortParams],
@@ -204,7 +219,7 @@ export function SettingsLogsPage() {
       SETTINGS_LOG_EXPORT_COLUMN_MAP,
       'settings_logs_export',
       {
-        ...(activeModuleTab !== 'all' ? { module: activeModuleTab } : {}),
+        module: activeModuleTab,
       },
     )
   }, [activeModuleTab])
@@ -241,18 +256,14 @@ export function SettingsLogsPage() {
         id: 'performed-by',
         accessorKey: 'performedBy',
         header: 'User ID',
-        cell: ({ row }) => (
-          <span className="text-brand-text text-sm font-medium">
-            {row.original.performedBy || '—'}
-          </span>
-        ),
+        cell: ({ row }) => <UserIdCell name={row.original.performedBy || '—'} />,
       },
       {
         id: 'role',
         accessorKey: 'role',
         header: 'Roles',
         cell: ({ row }) => (
-          <span className="text-brand-muted text-sm">{row.original.role || 'Admin'}</span>
+          <span className="text-brand-text text-sm">{row.original.role || 'Admin'}</span>
         ),
       },
       {
@@ -276,7 +287,7 @@ export function SettingsLogsPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const summary = summarizeChanges(row.original)
-          return <span className="text-brand-muted text-sm">{summary.oldValue}</span>
+          return <span className="text-brand-text text-sm">{summary.oldValue}</span>
         },
       },
       {
@@ -292,7 +303,7 @@ export function SettingsLogsPage() {
         id: 'status',
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => <LogStatusBadge status={row.original.status} />,
+        cell: ({ row }) => <LogStatusBadge status={row.original.status} variant="solid" />,
       },
       {
         id: 'created-at',
@@ -315,6 +326,7 @@ export function SettingsLogsPage() {
               label="Open log actions"
               isOpen={isOpen}
               onOpenChange={(open) => setActiveMenuId(open ? log.id : null)}
+              menuWidth={220}
             >
               <TableActionsItem
                 icon={<UserRound className="size-4" />}
@@ -333,15 +345,6 @@ export function SettingsLogsPage() {
                 }}
               >
                 Restore Previous Version
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<ClipboardList className="size-4" />}
-                onClick={() => {
-                  setActiveMenuId(null)
-                  setSelectedLogId(log.id)
-                }}
-              >
-                View Details
               </TableActionsItem>
             </TableActionsDropdown>
           )
@@ -375,9 +378,6 @@ export function SettingsLogsPage() {
           </button>
           <div>
             <h1 className="text-h1 text-brand-text font-semibold tracking-tight">Setting Logs</h1>
-            <p className="text-body-md text-muted mt-1">
-              Complete history of settings changes across all admin modules
-            </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -452,7 +452,7 @@ export function SettingsLogsPage() {
         <div className="border-b border-white/10 px-4 py-5 sm:px-5">
           <h2 className="text-brand-text text-lg font-semibold">Action Logs</h2>
           <p className="text-brand-muted mt-1 text-sm">
-            Complete history of actions performed by admins
+            Complete history of actions performed by this admin.
           </p>
         </div>
 

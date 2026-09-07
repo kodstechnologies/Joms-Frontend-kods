@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
+import { Search, X } from 'lucide-react'
 
 import { useNotificationCatalog } from '../hooks/use-settings'
 import type { NotificationCatalogGroup, NotificationSettings } from '../types/settings'
 import { NotificationGroupCard } from './notification-group-card'
-import { settingsControlClass } from './settings-control-classes'
 
 type NotificationSettingsPanelProps = {
   value: NotificationSettings
@@ -30,12 +30,17 @@ const FALLBACK_CATALOG: NotificationCatalogGroup[] = [
       {
         key: 'email',
         label: 'Email Notifications',
-        description: 'Send email notifications to partners',
+        description: 'Send email notifications to users',
       },
       {
         key: 'venue',
         label: 'Venue Notifications',
         description: 'Notifications for venue bookings, approvals, and availability updates',
+      },
+      {
+        key: 'community',
+        label: 'Community Notifications',
+        description: 'Activity alerts from communities, including posts, joins, and moderation',
       },
     ],
   },
@@ -48,18 +53,32 @@ const FALLBACK_CATALOG: NotificationCatalogGroup[] = [
       {
         key: 'sms',
         label: 'SMS Notifications',
-        description:
-          'Send SMS text messages to partners. Login and verification OTPs are always sent.',
+        description: 'Send SMS text messages (requires SMS provider)',
+      },
+      {
+        key: 'event',
+        label: 'Event Notifications',
+        description: 'Updates about event creation, approvals, changes, and live status',
+      },
+      {
+        key: 'networking',
+        label: 'Networking Notifications',
+        description: 'Connection requests, messages, and profile interaction alerts',
       },
       {
         key: 'membershipSubscription',
         label: 'Membership & Subscription Notifications',
-        description: 'Partner plan activation, renewals, expiry, and subscription alerts',
+        description: 'Alerts related to plan activation, renewals, expiry, and suspension',
       },
       {
         key: 'bulkEmail',
         label: 'Bulk Email Operations',
-        description: 'Send mass emails to partner audiences',
+        description: 'Send mass emails to multiple user segments',
+      },
+      {
+        key: 'dataExport',
+        label: 'Data Export',
+        description: 'Allow exporting user and system data',
       },
     ],
   },
@@ -87,17 +106,17 @@ const FALLBACK_CATALOG: NotificationCatalogGroup[] = [
       {
         key: 'userAccountSuspension',
         label: 'User Account Suspension',
-        description: 'Alerts when a partner or admin account is suspended or blocked',
+        description: 'Temporarily disable user account',
       },
       {
         key: 'rolePermissionModification',
         label: 'Role & Permission Modification',
-        description: 'Alerts when admin roles or access permissions change',
+        description: 'Change user roles and access permissions',
       },
       {
         key: 'paymentGatewayConfiguration',
         label: 'Payment Gateway Configuration',
-        description: 'Alerts when payment processing settings or integrations change',
+        description: 'Modify payment processing settings and integrations',
       },
     ],
   },
@@ -110,22 +129,27 @@ const FALLBACK_CATALOG: NotificationCatalogGroup[] = [
       {
         key: 'coverageSupport',
         label: 'Coverage & Support Notifications',
-        description: 'Updates on customer support requests and helpdesk tickets',
+        description: 'Updates on customer support requests and customer community',
       },
       {
         key: 'permanentUserDeletion',
         label: 'Permanent User Deletion',
-        description: 'Alerts when partner accounts are permanently deleted',
+        description: 'Permanently delete user accounts and all associated data',
       },
       {
         key: 'databaseOperations',
         label: 'Database Operations',
-        description: 'Notifications for executing direct database queries and bulk operations',
+        description: 'Execute direct database queries and bulk operations',
       },
       {
         key: 'systemMaintenanceMode',
         label: 'System Maintenance Mode',
-        description: 'Alerts when maintenance mode is enabled or disabled',
+        description: 'Enable maintenance mode and system-wide shutdowns',
+      },
+      {
+        key: 'rolePermissionModification',
+        label: 'Role & Permission Modification',
+        description: 'Change user roles and access permissions',
       },
     ],
   },
@@ -169,18 +193,31 @@ export function NotificationSettingsPanel({ value, onChange }: NotificationSetti
   }, [catalog, onChange, query, value])
 
   return (
-    <div className="space-y-6">
-      <input
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder="Search notifications"
-        className={settingsControlClass}
-      />
+    <div className="notif-settings-panel">
+      <div className="notif-search-wrap">
+        <Search className="notif-search-icon" aria-hidden="true" />
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search by name, ID or profession"
+          aria-label="Search notifications"
+          className="notif-search-input"
+        />
+        {search.trim() ? (
+          <button
+            type="button"
+            className="notif-search-clear"
+            onClick={() => setSearch('')}
+            aria-label="Clear search"
+          >
+            <X className="size-3.5" aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-[#111111] p-8 text-center text-sm text-slate-400">
-          No notification settings match your search.
-        </div>
+        <div className="notif-empty">No notification settings match your search.</div>
       ) : (
         groups.map((group) => (
           <NotificationGroupCard
