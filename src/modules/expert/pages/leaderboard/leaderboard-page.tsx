@@ -25,9 +25,9 @@ import { cn } from '@/shared/lib/cn'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 
-import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--1--on-the-circula (1).png'
-import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--2--on-the-circula (1).png'
-import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/create-a-high-quality-3d-icon-of-a-gold-trophy-wit 2.png'
+import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-2-medal.png'
+import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-3-medal.png'
+import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-1-trophy.png'
 
 import { fetchExpertLeaderboard } from '../../api/leaderboard-api'
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
