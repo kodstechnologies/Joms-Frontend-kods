@@ -55,7 +55,7 @@ const INCIDENT_SORT_FIELD_MAP = buildCatalogSortFieldMap(INCIDENT_TRACKING_TABLE
 
 const dash = (value: string | null | undefined) => (value && String(value).trim() ? value : '—')
 
-/** Figma display labels (IDs stay the same) */
+/** Display labels (IDs stay the same) */
 const METRIC_TITLE_MAP: Record<string, string> = {
   'open-incidents': 'Active Incidents',
   critical: 'Critical Errors',

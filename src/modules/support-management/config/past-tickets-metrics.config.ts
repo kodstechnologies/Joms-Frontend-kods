@@ -1,4 +1,8 @@
-import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
 
 export const PAST_TICKETS_MODULE_KEY = 'past-tickets'
 
@@ -10,36 +14,16 @@ export type PastTicketsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const PAST_TICKETS_METRICS_CATALOG: PastTicketsMetricCatalogItem[] = [
-  {
-    id: 'closed',
-    label: 'Closed',
-    type: 'Count',
-    description: 'Closed tickets',
-    defaultActive: true,
-  },
-  {
-    id: 'resolved',
-    label: 'Resolved',
-    type: 'Count',
-    description: 'Resolved tickets',
-    defaultActive: true,
-  },
-  {
-    id: 'avg-resolution',
-    label: 'Avg. Resolution',
-    type: 'Average',
-    description: 'Average resolution time',
-    defaultActive: true,
-  },
-  {
-    id: 'reopened',
-    label: 'Reopened',
-    type: 'Count',
-    description: 'Reopened tickets',
-    defaultActive: true,
-  },
+const PAST_TICKETS_METRIC_DEFS: MetricRowTuple[] = [
+  ['closed', 'Closed', 'Count', 'Closed tickets', true],
+  ['resolved', 'Resolved', 'Count', 'Resolved tickets', true],
+  ['avg-resolution', 'Avg. Resolution', 'Average', 'Average resolution time', true],
+  ['reopened', 'Reopened', 'Count', 'Reopened tickets', true],
 ]
+
+export const PAST_TICKETS_METRICS_CATALOG = catalogFromMetricRows(
+  PAST_TICKETS_METRIC_DEFS,
+) as PastTicketsMetricCatalogItem[]
 
 const derived = deriveMetricExports(PAST_TICKETS_METRICS_CATALOG)
 export const PAST_TICKETS_METRIC_IDS = derived.ids

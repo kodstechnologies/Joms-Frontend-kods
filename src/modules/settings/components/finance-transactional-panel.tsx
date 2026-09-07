@@ -40,7 +40,7 @@ function FinanceToggleRow({
   description?: string
   checked: boolean
   onChange: (checked: boolean) => void
-  /** Figma escrow: description sits under the label+toggle row */
+  /** Escrow: description sits under the label+toggle row */
   descriptionBelow?: boolean
 }) {
   return (

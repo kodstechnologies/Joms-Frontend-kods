@@ -1,36 +1,31 @@
-/** Admin Logs metrics for the RBAC / access settings surface. */
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
 
 export const ADMIN_LOGS_MODULE_KEY = 'admin-logs'
 
-export const ADMIN_LOGS_METRICS_CATALOG = [
-  {
-    id: 'events-today',
-    label: 'Events Today',
-    type: 'Count',
-    description: 'Log events today',
-    defaultActive: true,
-  },
-  {
-    id: 'critical',
-    label: 'Critical',
-    type: 'Count',
-    description: 'Critical events',
-    defaultActive: true,
-  },
-  {
-    id: 'warnings',
-    label: 'Warnings',
-    type: 'Count',
-    description: 'Warning events',
-    defaultActive: true,
-  },
-  {
-    id: 'unique-actors',
-    label: 'Unique Actors',
-    type: 'Count',
-    description: 'Distinct actors',
-    defaultActive: true,
-  },
-] as const
+export type AdminLogsMetricCatalogItem = {
+  id: string
+  label: string
+  type: string
+  description: string
+  defaultActive: boolean
+}
 
-export const ADMIN_LOGS_MAX_ACTIVE_METRICS = ADMIN_LOGS_METRICS_CATALOG.length
+const ADMIN_LOGS_METRIC_DEFS: MetricRowTuple[] = [
+  ['events-today', 'Events Today', 'Count', 'Log events today', true],
+  ['critical', 'Critical', 'Count', 'Critical events', true],
+  ['warnings', 'Warnings', 'Count', 'Warning events', true],
+  ['unique-actors', 'Unique Actors', 'Count', 'Distinct actors', true],
+]
+
+export const ADMIN_LOGS_METRICS_CATALOG = catalogFromMetricRows(
+  ADMIN_LOGS_METRIC_DEFS,
+) as AdminLogsMetricCatalogItem[]
+
+const derived = deriveMetricExports(ADMIN_LOGS_METRICS_CATALOG)
+export const ADMIN_LOGS_MAX_ACTIVE_METRICS = derived.maxActive
+export const ADMIN_LOGS_METRIC_IDS = derived.ids
+export const DEFAULT_ADMIN_LOGS_METRIC_IDS = derived.defaultIds

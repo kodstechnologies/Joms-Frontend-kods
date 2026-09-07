@@ -1,4 +1,8 @@
-import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
 
 export const ESCALATIONS_MODULE_KEY = 'escalations'
 
@@ -10,36 +14,16 @@ export type EscalationsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const ESCALATIONS_METRICS_CATALOG: EscalationsMetricCatalogItem[] = [
-  {
-    id: 'total-escalation',
-    label: 'Total Escalation',
-    type: 'Count',
-    description: 'Total escalation cases',
-    defaultActive: true,
-  },
-  {
-    id: 'open-escalation',
-    label: 'Open Escalation',
-    type: 'Count',
-    description: 'Currently open escalation cases',
-    defaultActive: true,
-  },
-  {
-    id: 'in-review',
-    label: 'In Review',
-    type: 'Count',
-    description: 'Escalations currently in review',
-    defaultActive: true,
-  },
-  {
-    id: 'resolved',
-    label: 'Resolved',
-    type: 'Count',
-    description: 'Resolved escalation cases',
-    defaultActive: true,
-  },
+const ESCALATIONS_METRIC_DEFS: MetricRowTuple[] = [
+  ['total-escalation', 'Total Escalation', 'Count', 'Total escalation cases', true],
+  ['open-escalation', 'Open Escalation', 'Count', 'Currently open escalation cases', true],
+  ['in-review', 'In Review', 'Count', 'Escalations currently in review', true],
+  ['resolved', 'Resolved', 'Count', 'Resolved escalation cases', true],
 ]
+
+export const ESCALATIONS_METRICS_CATALOG = catalogFromMetricRows(
+  ESCALATIONS_METRIC_DEFS,
+) as EscalationsMetricCatalogItem[]
 
 const derived = deriveMetricExports(ESCALATIONS_METRICS_CATALOG)
 export const ESCALATIONS_METRIC_IDS = derived.ids

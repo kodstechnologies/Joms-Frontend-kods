@@ -1,4 +1,8 @@
-import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
 
 export const SETTINGS_LOGS_MODULE_KEY = 'settings-logs'
 
@@ -10,36 +14,22 @@ export type SettingsLogsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const SETTINGS_LOGS_METRICS_CATALOG: SettingsLogsMetricCatalogItem[] = [
-  {
-    id: 'total-actions',
-    label: 'Total Actions Performed',
-    type: 'Count',
-    description: 'Total settings actions logged',
-    defaultActive: true,
-  },
-  {
-    id: 'successful-actions',
-    label: 'Successful Actions',
-    type: 'Count',
-    description: 'Successfully completed settings actions',
-    defaultActive: true,
-  },
-  {
-    id: 'failed-actions',
-    label: 'Failed Actions',
-    type: 'Count',
-    description: 'Failed settings actions',
-    defaultActive: true,
-  },
-  {
-    id: 'pending-actions',
-    label: 'Pending Actions',
-    type: 'Count',
-    description: 'Pending settings actions',
-    defaultActive: true,
-  },
+const SETTINGS_LOGS_METRIC_DEFS: MetricRowTuple[] = [
+  ['total-actions', 'Total Actions Performed', 'Count', 'Total settings actions logged', true],
+  [
+    'successful-actions',
+    'Successful Actions',
+    'Count',
+    'Successfully completed settings actions',
+    true,
+  ],
+  ['failed-actions', 'Failed Actions', 'Count', 'Failed settings actions', true],
+  ['pending-actions', 'Pending Actions', 'Count', 'Pending settings actions', true],
 ]
+
+export const SETTINGS_LOGS_METRICS_CATALOG = catalogFromMetricRows(
+  SETTINGS_LOGS_METRIC_DEFS,
+) as SettingsLogsMetricCatalogItem[]
 
 const derived = deriveMetricExports(SETTINGS_LOGS_METRICS_CATALOG)
 export const SETTINGS_LOGS_MAX_ACTIVE_METRICS = derived.maxActive

@@ -1,6 +1,6 @@
 import type { RefundSummaryMetric } from '@/modules/payments/types/finance-table-rows'
 
-/** Design-time refund summary cards — Figma finance refunds spec. */
+/** Placeholder refund summary cards shown while live metrics load. */
 export const refundSummarySamples: RefundSummaryMetric[] = [
   {
     label: 'Pending Refunds',

@@ -1,4 +1,8 @@
-import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
 
 export const VENUE_CATEGORY_MANAGEMENT_MODULE_KEY = 'venue-category-management'
 
@@ -10,72 +14,26 @@ export type VenueCategoryManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG: VenueCategoryManagementMetricCatalogItem[] =
+const VENUE_CATEGORY_METRIC_DEFS: MetricRowTuple[] = [
+  ['total-categories', 'Total Venue Categories', 'Count', 'Count(Venue Categories)', true],
+  ['active-categories', 'Active Categories', 'Count', 'Count(Status=Active)', true],
+  ['paused-categories', 'Paused Categories', 'Count', 'Count(Status=Paused)'],
+  ['deleted-categories', 'Deleted Categories', 'Count', 'Count(Status=Deleted)'],
+  ['top-revenue-category', 'Top Revenue Category', 'Text', 'Highest Revenue Category', true],
+  ['lowest-revenue-category', 'Lowest Revenue Category', 'Text', 'Lowest Revenue Category'],
+  ['total-bookings', 'Total Bookings', 'Count', 'Count(Bookings)', true],
+  ['completed-bookings', 'Completed Bookings', 'Count', 'Count(Completed Bookings)'],
   [
-    {
-      id: 'total-categories',
-      label: 'Total Venue Categories',
-      type: 'Count',
-      description: 'Count(Venue Categories)',
-      defaultActive: true,
-    },
-    {
-      id: 'active-categories',
-      label: 'Active Categories',
-      type: 'Count',
-      description: 'Count(Status=Active)',
-      defaultActive: true,
-    },
-    {
-      id: 'paused-categories',
-      label: 'Paused Categories',
-      type: 'Count',
-      description: 'Count(Status=Paused)',
-      defaultActive: false,
-    },
-    {
-      id: 'deleted-categories',
-      label: 'Deleted Categories',
-      type: 'Count',
-      description: 'Count(Status=Deleted)',
-      defaultActive: false,
-    },
-    {
-      id: 'top-revenue-category',
-      label: 'Top Revenue Category',
-      type: 'Text',
-      description: 'Highest Revenue Category',
-      defaultActive: true,
-    },
-    {
-      id: 'lowest-revenue-category',
-      label: 'Lowest Revenue Category',
-      type: 'Text',
-      description: 'Lowest Revenue Category',
-      defaultActive: false,
-    },
-    {
-      id: 'total-bookings',
-      label: 'Total Bookings',
-      type: 'Count',
-      description: 'Count(Bookings)',
-      defaultActive: true,
-    },
-    {
-      id: 'completed-bookings',
-      label: 'Completed Bookings',
-      type: 'Count',
-      description: 'Count(Completed Bookings)',
-      defaultActive: false,
-    },
-    {
-      id: 'booking-completion-rate',
-      label: 'Booking Completion Rate',
-      type: 'Percentage',
-      description: 'Completed Bookings / Total Bookings ×100',
-      defaultActive: false,
-    },
-  ]
+    'booking-completion-rate',
+    'Booking Completion Rate',
+    'Percentage',
+    'Completed Bookings / Total Bookings ×100',
+  ],
+]
+
+export const VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG = catalogFromMetricRows(
+  VENUE_CATEGORY_METRIC_DEFS,
+) as VenueCategoryManagementMetricCatalogItem[]
 
 const derived = deriveMetricExports(VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG)
 export const VENUE_CATEGORY_MANAGEMENT_METRIC_IDS = derived.ids

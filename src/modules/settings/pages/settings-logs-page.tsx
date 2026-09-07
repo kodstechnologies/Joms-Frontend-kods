@@ -52,7 +52,7 @@ import { formatDateTimeEnInLogs as formatDateTime } from '@/shared/lib/format-da
 
 const PAGE_SIZE = 10
 
-/** Figma Setting Logs module tabs (filter keys accepted by logs API). */
+/** Setting Logs module tabs (filter keys accepted by logs API). */
 const MODULE_TABS: Array<{ key: string; label: string }> = [
   { key: 'platform', label: 'Platform Controls' },
   { key: 'security', label: 'Security & Access' },

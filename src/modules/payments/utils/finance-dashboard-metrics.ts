@@ -109,7 +109,7 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : designSampleOrPlaceholder('pending-payouts', 'Pending Payouts', '₹8,43,290'),
+      : designSampleOrPlaceholder('pending-payouts', 'Pending Payouts', '₹5,67,120'),
   )
 
   push(
@@ -122,7 +122,7 @@ export function buildFinanceDashboardMetricCards(
           changeType: 'up',
           changeNote: 'vs last month',
         }
-      : designSampleOrPlaceholder('disputed-amount', 'Disputed Amount', '₹8,43,290'),
+      : designSampleOrPlaceholder('disputed-amount', 'Disputed Amount', '₹1,24,650'),
   )
 
   push('gmv', designSampleOrPlaceholder('gmv', 'Gross Merchandise Value (GMV)', '₹10,00,000'))
@@ -190,7 +190,11 @@ export function buildFinanceDashboardMetricCards(
 
   push(
     'average-payout-cycle-time',
-    designSampleOrPlaceholder('average-payout-cycle-time', 'Average Payout Cycle Time', '24-48 hrs'),
+    designSampleOrPlaceholder(
+      'average-payout-cycle-time',
+      'Average Payout Cycle Time',
+      '24-48 hrs',
+    ),
   )
 
   const refundRateValue =
@@ -241,7 +245,11 @@ export function buildFinanceDashboardMetricCards(
   push('payouts-released-this-month', placeholder('Payouts Released This Month', '₹2,10,000'))
   push(
     'average-payout-cycle-time',
-    designSampleOrPlaceholder('average-payout-cycle-time', 'Average Payout Cycle Time', '3 Days 04:00'),
+    designSampleOrPlaceholder(
+      'average-payout-cycle-time',
+      'Average Payout Cycle Time',
+      '3 Days 04:00',
+    ),
   )
   push('escrow-release-rate', placeholder('Escrow Release Rate', '78.2%'))
   push('platform-commission-earned', placeholder('Platform Commission Earned', '₹1,15,986'))

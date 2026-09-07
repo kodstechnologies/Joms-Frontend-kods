@@ -1,4 +1,8 @@
-import { deriveMetricExports } from '@/shared/lib/define-metrics-catalog'
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
 
 export const INCIDENT_MODULE_KEY = 'incident-tracking'
 
@@ -10,36 +14,22 @@ export type IncidentMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const INCIDENT_METRICS_CATALOG: IncidentMetricCatalogItem[] = [
-  {
-    id: 'open-incidents',
-    label: 'Active Incidents',
-    type: 'Count',
-    description: 'Currently open and investigating incidents',
-    defaultActive: true,
-  },
-  {
-    id: 'critical',
-    label: 'Critical Errors',
-    type: 'Count',
-    description: 'Unresolved critical incidents',
-    defaultActive: true,
-  },
-  {
-    id: 'resolved-mtd',
-    label: 'Resolved',
-    type: 'Count',
-    description: 'Resolved this month',
-    defaultActive: true,
-  },
-  {
-    id: 'mttr',
-    label: 'Avg. Resolution Time',
-    type: 'Average',
-    description: 'Mean time to resolve this month',
-    defaultActive: true,
-  },
+const INCIDENT_METRIC_DEFS: MetricRowTuple[] = [
+  [
+    'open-incidents',
+    'Active Incidents',
+    'Count',
+    'Currently open and investigating incidents',
+    true,
+  ],
+  ['critical', 'Critical Errors', 'Count', 'Unresolved critical incidents', true],
+  ['resolved-mtd', 'Resolved', 'Count', 'Resolved this month', true],
+  ['mttr', 'Avg. Resolution Time', 'Average', 'Mean time to resolve this month', true],
 ]
+
+export const INCIDENT_METRICS_CATALOG = catalogFromMetricRows(
+  INCIDENT_METRIC_DEFS,
+) as IncidentMetricCatalogItem[]
 
 const derived = deriveMetricExports(INCIDENT_METRICS_CATALOG)
 export const INCIDENT_METRIC_IDS = derived.ids

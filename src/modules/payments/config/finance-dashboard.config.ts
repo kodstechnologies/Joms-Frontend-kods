@@ -1,4 +1,4 @@
-/** Design-time chart and metric samples — values match Figma finance dashboard spec. */
+/** Fallback chart and metric samples shown before live finance data loads. */
 export type TrendMetric = {
   label: string
   value: string
@@ -17,14 +17,14 @@ export const summaryCardSamples: TrendMetric[] = [
   },
   {
     label: 'Pending Payout',
-    value: '₹8,43,290',
+    value: '₹5,67,120',
     change: '6.7%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
   {
     label: 'Disputed Amount',
-    value: '₹8,43,290',
+    value: '₹1,24,650',
     change: '6.7%',
     changeType: 'up',
     changeNote: 'vs last month',
