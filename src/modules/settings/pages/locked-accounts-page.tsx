@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 
 import { useLockedAccounts, useUnlockAccount } from '../hooks/use-security'
 import type { LockedAccountRow } from '../types/settings'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { cn } from '@/shared/lib/cn'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -162,7 +163,7 @@ export function LockedAccountsPage() {
           setSelected(null)
           toast.success('Account unlocked')
         },
-        onError: () => toast.error('Failed to unlock account'),
+        onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to unlock account')),
       })
     },
     [unlockMutation],
