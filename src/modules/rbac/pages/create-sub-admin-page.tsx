@@ -18,6 +18,7 @@ import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
 import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
+import { grantsToMap } from '@/shared/lib/permissions'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
@@ -51,10 +52,11 @@ const getModuleAccess = (
   catalog: PermissionCatalog,
 ): ModuleAccess => {
   const mod = catalog[moduleKey]
-  if (!mod?.permissions.length) return 'none'
+  if (!mod?.permissions?.length) return 'none'
 
+  const roleGrants = grantsToMap(role.permissions || [])
   const keys = mod.permissions.map((p) => p.key)
-  const granted = keys.filter((k) => role.permissions.includes(k))
+  const granted = keys.filter((k) => Boolean(roleGrants[k]))
   if (!granted.length) return 'none'
   if (granted.length === keys.length) return 'full'
   return 'limited'
@@ -711,9 +713,8 @@ export function CreateSubAdminPage() {
             <div className="mt-4 max-h-72 space-y-3 overflow-auto">
               {permissionViewRole.permissions.length ? (
                 Object.entries(catalog).map(([moduleKey, mod]) => {
-                  const rolePerms = mod.permissions.filter((p) =>
-                    permissionViewRole.permissions.includes(p.key),
-                  )
+                  const roleGrants = grantsToMap(permissionViewRole.permissions || [])
+                  const rolePerms = mod.permissions.filter((p) => Boolean(roleGrants[p.key]))
                   if (!rolePerms.length) return null
                   return (
                     <div

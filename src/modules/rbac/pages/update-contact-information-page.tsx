@@ -1,21 +1,43 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Check, Copy, ImageIcon } from 'lucide-react'
-import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, Check, Copy, ImageIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+
+function MdiCalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className || 'size-4'}
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z" />
+    </svg>
+  )
+}
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { getDefaultHomeRoute } from '@/app/layouts/navigation/navigation.filter'
 import { useCompleteContactSetup, useContactSetupProfile } from '../hooks/use-rbac'
+import { checkSubAdminPhone, verifySubAdminMfa } from '../api/rbac-api'
+import { VerificationOtpModal } from '@/modules/expert/components/verification-otp-modal'
 import { RbacLoader } from '../components/rbac-loader'
 import type { PermissionCatalog, SubAdminRole } from '../types/rbac'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { grantsToMap, type PermissionLevel } from '@/shared/lib/permissions'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 type ModuleAccess = 'full' | 'limited' | 'none'
+
+const LEVEL_SHORT_LABEL: Partial<Record<PermissionLevel, string>> = {
+  full: 'Full',
+  read_only: 'Read',
+  scoped: 'Scoped',
+  secondary_approval: 'Approval',
+  restricted: 'Restricted',
+  sandbox: 'Sandbox',
+}
 
 const getModuleAccess = (
   role: SubAdminRole,
@@ -23,10 +45,11 @@ const getModuleAccess = (
   catalog: PermissionCatalog,
 ): ModuleAccess => {
   const mod = catalog[moduleKey]
-  if (!mod?.permissions.length) return 'none'
+  if (!mod?.permissions?.length) return 'none'
 
+  const roleGrants = grantsToMap(role.permissions || [])
   const keys = mod.permissions.map((p) => p.key)
-  const granted = keys.filter((k) => role.permissions.includes(k))
+  const granted = keys.filter((k) => Boolean(roleGrants[k]))
   if (!granted.length) return 'none'
   if (granted.length === keys.length) return 'full'
   return 'limited'
@@ -36,6 +59,11 @@ const accessLabel = (access: ModuleAccess) => {
   if (access === 'full') return 'Full Access'
   if (access === 'limited') return 'Limited Access'
   return 'No Access'
+}
+
+type PermissionModalTarget = {
+  role: SubAdminRole
+  moduleKey?: string
 }
 
 export function UpdateContactInformationPage() {
@@ -51,16 +79,36 @@ export function UpdateContactInformationPage() {
     () => profileQuery.data?.data.permissionCatalog ?? {},
     [profileQuery.data?.data.permissionCatalog],
   )
-  const primaryRole = profile?.roles?.[0]
+
+  const roles = useMemo(() => {
+    if (profile?.roles?.length) return profile.roles
+    return []
+  }, [profile])
+
+  const assignedRolesLabel = useMemo(() => {
+    if (!roles.length) return 'Admin'
+    return roles.map((r) => r.name).join(', ')
+  }, [roles])
 
   const [phone, setPhone] = useState('')
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false)
+  const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false)
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+
   const [emergencyContact, setEmergencyContact] = useState('')
   const [emergencyContactName, setEmergencyContactName] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
+  const dateInputRef = useRef<HTMLInputElement>(null)
   const [bloodGroup, setBloodGroup] = useState('')
+
   const [mfaCode, setMfaCode] = useState('')
+  const [isMfaVerified, setIsMfaVerified] = useState(false)
+  const [isVerifyingMfa, setIsVerifyingMfa] = useState(false)
+
   const [profileImageUrl, setProfileImageUrl] = useState('')
-  const [permissionViewRole, setPermissionViewRole] = useState<SubAdminRole | null>(null)
+  const [permissionModalTarget, setPermissionModalTarget] = useState<PermissionModalTarget | null>(
+    null,
+  )
   const [hydratedProfile, setHydratedProfile] = useState(profile)
 
   useEffect(() => {
@@ -89,14 +137,48 @@ export function UpdateContactInformationPage() {
     }
   }
 
-  const moduleRows = useMemo(() => {
-    if (!primaryRole) return []
-    return Object.entries(catalog).map(([moduleKey, mod]) => ({
-      key: moduleKey,
-      label: mod.label,
-      access: getModuleAccess(primaryRole, moduleKey, catalog),
-    }))
-  }, [catalog, primaryRole])
+  const roleModuleMap = useMemo(() => {
+    const map = new Map<string, { key: string; label: string; access: ModuleAccess }[]>()
+    roles.forEach((role) => {
+      const rows = Object.entries(catalog)
+        .map(([moduleKey, mod]) => ({
+          key: moduleKey,
+          label: mod.label,
+          access: getModuleAccess(role, moduleKey, catalog),
+        }))
+        .filter((r) => r.access !== 'none')
+      map.set(role.id, rows)
+    })
+    return map
+  }, [catalog, roles])
+
+  const permissionModalModules = useMemo(() => {
+    if (!permissionModalTarget) return []
+    const { role, moduleKey } = permissionModalTarget
+    const roleGrants = grantsToMap(role.permissions || [])
+
+    const modulesToProcess =
+      moduleKey && catalog[moduleKey]
+        ? ([[moduleKey, catalog[moduleKey]]] as const)
+        : Object.entries(catalog)
+
+    return modulesToProcess
+      .map(([modKey, mod]) => {
+        const grantedPerms = mod.permissions
+          .filter((p) => Boolean(roleGrants[p.key]))
+          .map((p) => ({
+            ...p,
+            level: roleGrants[p.key],
+          }))
+        if (!grantedPerms.length) return null
+        return {
+          moduleKey: modKey,
+          label: mod.label,
+          permissions: grantedPerms,
+        }
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+  }, [catalog, permissionModalTarget])
 
   const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -121,9 +203,69 @@ export function UpdateContactInformationPage() {
     }
   }
 
+  const handleOpenPhoneVerify = async () => {
+    const trimmed = phone.trim()
+    if (!trimmed) {
+      toast.error('Please enter a phone number to verify.')
+      return
+    }
+    const cleanDigits = trimmed.replace(/\D/g, '')
+    if (cleanDigits.length < 10) {
+      toast.error('Please enter a valid 10-digit phone number.')
+      return
+    }
+
+    try {
+      setIsCheckingPhone(true)
+      const res = await checkSubAdminPhone(cleanDigits)
+      if (res?.data && !res.data.available) {
+        toast.error('This phone number is already associated with another sub-admin.')
+        return
+      }
+      setIsPhoneVerifyModalOpen(true)
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      toast.error(error?.response?.data?.message || 'Failed to verify phone availability.')
+    } finally {
+      setIsCheckingPhone(false)
+    }
+  }
+
+  const handleVerifyMfaCode = async () => {
+    const cleanCode = mfaCode.trim()
+    if (!cleanCode) {
+      toast.error('Please enter the 6-digit code from your authenticator app.')
+      return
+    }
+    if (!/^\d{6}$/.test(cleanCode)) {
+      toast.error('Please enter a valid 6-digit code.')
+      return
+    }
+
+    try {
+      setIsVerifyingMfa(true)
+      await verifySubAdminMfa(cleanCode)
+      setIsMfaVerified(true)
+      toast.success('Authenticator code verified successfully!')
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      toast.error(
+        error?.response?.data?.message ||
+          'Invalid authenticator code. Please check your authenticator app.',
+      )
+    } finally {
+      setIsVerifyingMfa(false)
+    }
+  }
+
   const handleSubmit = async () => {
-    if (!phone.trim()) {
+    const trimmedPhone = phone.trim()
+    if (!trimmedPhone) {
       toast.error('Phone number is required.')
+      return
+    }
+    if (!isPhoneVerified) {
+      toast.error('Please verify your phone number before proceeding.')
       return
     }
     if (!emergencyContact.trim()) {
@@ -134,14 +276,20 @@ export function UpdateContactInformationPage() {
       toast.error('Emergency contact name is required.')
       return
     }
-    if (profile?.mfaEnabled && !/^\d{6}$/.test(mfaCode.trim())) {
-      toast.error('Enter a valid 6 digit authenticator code.')
-      return
+    if (profile?.mfaEnabled) {
+      if (!mfaCode.trim()) {
+        toast.error('Authenticator 6-digit code is required.')
+        return
+      }
+      if (!isMfaVerified) {
+        toast.error('Please verify your authenticator 6-digit code before proceeding.')
+        return
+      }
     }
 
     try {
       await completeMutation.mutateAsync({
-        phone: phone.trim(),
+        phone: trimmedPhone,
         emergencyContact: emergencyContact.trim(),
         emergencyContactName: emergencyContactName.trim(),
         dateOfBirth: dateOfBirth || undefined,
@@ -156,8 +304,9 @@ export function UpdateContactInformationPage() {
       })
       toast.success('Contact information updated successfully')
       navigate(getDefaultHomeRoute(user!), { replace: true })
-    } catch {
-      toast.error('Failed to update contact information')
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } }
+      toast.error(error?.response?.data?.message || 'Failed to update contact information')
     }
   }
 
@@ -165,262 +314,408 @@ export function UpdateContactInformationPage() {
     return <RbacLoader label="Loading contact information..." fullScreen />
   }
 
+  const mfaSecretDisplay = profile?.mfaSecret
+    ? profile.mfaSecret
+        .toUpperCase()
+        .replace(/\s+/g, '')
+        .match(/.{1,4}/g)
+        ?.join(' ') || profile.mfaSecret
+    : ''
+
   return (
-    <div className="bg-brand-bg text-brand-text min-h-screen px-4 py-6 md:px-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <div className="flex flex-col gap-2">
+    <div className="min-h-screen bg-black px-4 py-8 text-white md:px-12">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+        {/* Page Header */}
+        <div className="flex flex-col gap-1.5">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/auth/login')}
-            className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
+            className="group flex w-fit items-center gap-2.5 text-xl font-bold tracking-tight text-white transition-colors hover:text-[#F6CB86]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Update Contact Information</span>
           </button>
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
+          <div className="flex items-center gap-1.5 pl-7 text-xs text-white/50">
             <span>Log In</span>
-            <span className="text-brand-text/30">/</span>
-            <span className="text-brand-text font-bold">Contact Information</span>
+            <span>/</span>
+            <span className="font-semibold text-white">Contact Information</span>
           </div>
         </div>
 
-        <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        {/* Contact Details Card */}
+        <div className="rounded-2xl border border-white/5 bg-[#121212] p-6 md:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-brand-text text-lg font-semibold">Contact Details</h2>
-              <p className="text-brand-muted mt-1 text-sm">
-                Mandatory entry gate - Identity verification required to proceed.
+              <h2 className="text-base font-bold text-white">Contact Details</h2>
+              <p className="mt-1 text-xs text-white/50">
+                Mandatory entry gate - Identity verification required to proceed
               </p>
             </div>
 
-            <label className="flex cursor-pointer flex-col items-center gap-2">
+            <label className="group flex cursor-pointer flex-col items-center gap-2">
               <input
                 type="file"
                 accept="image/*"
                 className="hidden"
                 onChange={handleProfileImageChange}
               />
-              <div className="bg-brand-surface grid size-20 place-items-center overflow-hidden rounded-full border border-white/10">
+              <div className="flex size-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#1c1c1c] transition-all group-hover:border-[#F6CB86]/50">
                 {profileImageUrl ? (
                   <img src={profileImageUrl} alt="Profile" className="size-full object-cover" />
                 ) : (
-                  <ImageIcon className="text-brand-muted size-6" />
+                  <div className="flex size-8 items-center justify-center rounded-full border border-dashed border-white/20 text-white/40">
+                    <ImageIcon className="size-4" />
+                  </div>
                 )}
               </div>
-              <span className="text-brand-muted text-xs">Profile Picture</span>
+              <span className="text-[11px] text-white/40 italic">Profile Picture</span>
             </label>
           </div>
 
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium">
-                Phone Number <span className="text-brand-danger">*</span>
+          <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+            {/* Phone Number (Row 1, Col 1) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Phone Number <span className="text-red-500">*</span>
               </label>
-              <Input
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                placeholder="Enter phone number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium">
-                Emergency contact <span className="text-brand-danger">*</span>
-              </label>
-              <Input
-                value={emergencyContact}
-                onChange={(event) => setEmergencyContact(event.target.value)}
-                placeholder="Enter emergency contact number"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium">
-                Emergency contact name <span className="text-brand-danger">*</span>
-              </label>
-              <Input
-                value={emergencyContactName}
-                onChange={(event) => setEmergencyContactName(event.target.value)}
-                placeholder="Enter emergency contact name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium">Date of Birth</label>
-              <div className="relative">
-                <Input
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(event) => setDateOfBirth(event.target.value)}
-                  className="pr-10"
+              <div className="flex items-center gap-3">
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => {
+                    setPhone(event.target.value)
+                    setIsPhoneVerified(false)
+                  }}
+                  placeholder="Enter Phone Number here"
+                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
                 />
-                <img
-                  src={calendarIcon}
-                  alt="calendar"
-                  className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 style={{ filter: 'brightness(0) invert(1)' }}"
-                  aria-hidden="true"
-                />
+                <button
+                  type="button"
+                  onClick={handleOpenPhoneVerify}
+                  disabled={isCheckingPhone}
+                  className={cn(
+                    'h-11 shrink-0 rounded-xl px-5 text-xs font-semibold transition-all',
+                    isPhoneVerified
+                      ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
+                      : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95 disabled:opacity-50',
+                  )}
+                >
+                  {isCheckingPhone ? 'Checking…' : isPhoneVerified ? 'Verified ✓' : 'Verify'}
+                </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium">Blood Group</label>
-              <Input
-                value={bloodGroup}
-                onChange={(event) => setBloodGroup(event.target.value)}
-                placeholder="Enter blood group"
+            {/* Emergency Contact (Row 1, Col 2) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Emergency contact <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={emergencyContact}
+                onChange={(event) => setEmergencyContact(event.target.value)}
+                placeholder="Enter number here"
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium">Assigned role</label>
-              <Input value={primaryRole?.name || '—'} readOnly className="bg-brand-surface" />
+            {/* Emergency Contact Name (Row 2, Col 1) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Emergency contact name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={emergencyContactName}
+                onChange={(event) => setEmergencyContactName(event.target.value)}
+                placeholder="Enter name"
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+              />
             </div>
 
-            {profile?.mfaEnabled ? (
-              <>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-brand-text text-sm font-medium">
-                    Authenticator app code
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      value={profile.mfaSecret || ''}
-                      readOnly
-                      className="bg-brand-surface font-mono tracking-[0.2em]"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleCopySecret}
-                      className="rounded-brand-md text-brand-muted hover:text-brand-text border border-white/10 p-2 transition-colors hover:bg-white/10"
-                      aria-label="Copy authenticator code"
-                    >
-                      <Copy className="size-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-brand-text text-sm font-medium">
-                    Enter 6 digit code here <span className="text-brand-danger">*</span>
-                  </label>
-                  <Input
-                    value={mfaCode}
-                    onChange={(event) =>
-                      setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+            {/* Date of Birth (Row 2, Col 2) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">Date of Birth</label>
+              <div className="relative">
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(event) => setDateOfBirth(event.target.value)}
+                  onClick={() => {
+                    try {
+                      dateInputRef.current?.showPicker()
+                    } catch {
+                      dateInputRef.current?.focus()
                     }
-                    placeholder="Enter emergency contact number"
-                    inputMode="numeric"
-                  />
-                </div>
-              </>
-            ) : null}
+                  }}
+                  placeholder="dd-mm-yyyy"
+                  className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-[#181818] px-4 pr-12 text-xs text-white [color-scheme:dark] transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      dateInputRef.current?.showPicker()
+                    } catch {
+                      dateInputRef.current?.focus()
+                    }
+                  }}
+                  className="absolute top-1/2 right-2.5 z-10 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md bg-[#FF5500] text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
+                  aria-label="Select date of birth"
+                >
+                  <MdiCalendarIcon className="size-4 fill-white text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Blood Group (Row 3, Col 1) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">Blood Group</label>
+              <input
+                type="text"
+                value={bloodGroup}
+                onChange={(event) => setBloodGroup(event.target.value)}
+                placeholder="Enter text"
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Assigned Role (Row 3, Col 2) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">Assigned role</label>
+              <input
+                type="text"
+                value={assignedRolesLabel}
+                readOnly
+                className="h-11 w-full cursor-not-allowed rounded-xl border border-white/5 bg-[#141414] px-4 text-xs text-white/70 select-none"
+              />
+            </div>
+
+            {/* Authenticator app code (Row 4, Col 1 - side-by-side with Enter 6 digit code) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Authenticator app code
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={mfaSecretDisplay}
+                  placeholder="Loading authenticator secret..."
+                  readOnly
+                  className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] pr-11 pl-4 font-mono text-xs tracking-widest text-white/90 select-all placeholder:text-white/30"
+                />
+                <button
+                  type="button"
+                  onClick={handleCopySecret}
+                  title="Copy code"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-white/60 transition-colors hover:text-white"
+                >
+                  <Copy className="size-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Enter 6 digit code here (Row 4, Col 2 - side-by-side with Authenticator app code) */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Enter 6 digit code here <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(event) => {
+                    setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))
+                    setIsMfaVerified(false)
+                  }}
+                  placeholder="Enter number here"
+                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 font-mono text-xs tracking-wider text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyMfaCode}
+                  disabled={isVerifyingMfa}
+                  className={cn(
+                    'h-11 shrink-0 rounded-xl px-5 text-xs font-semibold transition-all',
+                    isMfaVerified
+                      ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
+                      : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95 disabled:opacity-50',
+                  )}
+                >
+                  {isVerifyingMfa ? 'Verifying…' : isMfaVerified ? 'Verified ✓' : 'Verify'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <section>
-          <h2 className="text-brand-text text-lg font-semibold">Your Role &amp; Permissions</h2>
-          <div className="rounded-brand-lg border-brand-accent-muted bg-brand-accent/10 mt-4 border p-5">
-            <p className="text-brand-text text-base font-semibold">
-              {primaryRole?.name || 'Admin'}
-            </p>
-            <p className="text-brand-text mt-4 text-sm font-medium">Key Permissions</p>
+        {/* Your Role & Permissions Card */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-white">Your Role &amp; Permissions</h2>
+          <div className="create-user-permission-stack">
+            {roles.length ? (
+              roles.map((role) => {
+                const rows = roleModuleMap.get(role.id) ?? []
+                return (
+                  <div key={role.id} className="create-user-permission-card">
+                    <p className="create-user-permission-role">{role.name}</p>
+                    <p className="create-user-permission-heading">Key Permissions</p>
 
-            <div className="mt-3 space-y-3">
-              {moduleRows.length ? (
-                moduleRows.map((row) => (
-                  <div
-                    key={row.key}
-                    className="rounded-brand-md bg-brand-surface flex flex-wrap items-center justify-between gap-3 border border-white/10 px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="bg-brand-success/15 text-brand-success grid size-5 place-items-center rounded-full">
-                        <Check className="size-3" />
-                      </span>
-                      <span className="text-brand-text text-sm font-medium">{row.label}</span>
-                      <span className="bg-brand-accent/20 text-brand-accent text-body-sm-semibold rounded-full px-2.5 py-0.5">
-                        {accessLabel(row.access)}
-                      </span>
+                    <div className="create-user-permission-rows">
+                      {rows.length ? (
+                        rows.map((row) => (
+                          <div key={row.key} className="create-user-permission-row">
+                            <div className="create-user-permission-name">
+                              <Check className="size-3.5 shrink-0 text-white" strokeWidth={2.5} />
+                              <span>{row.label}</span>
+                              <span
+                                className={cn(
+                                  'create-user-access-badge',
+                                  row.access === 'limited' &&
+                                    'border border-[#F6CB86]/40 bg-[#F6CB86]/10 text-[#F6CB86]',
+                                )}
+                              >
+                                {accessLabel(row.access)}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setPermissionModalTarget({ role, moduleKey: row.key })}
+                              className="create-user-view-permission"
+                            >
+                              View Permission
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-brand-muted text-sm text-white/50">
+                          No permissions assigned to this role.
+                        </p>
+                      )}
                     </div>
-                    {primaryRole ? (
-                      <button
-                        type="button"
-                        className="text-brand-muted hover:text-brand-accent text-xs underline underline-offset-2"
-                        onClick={() => setPermissionViewRole(primaryRole)}
-                      >
-                        View Permission
-                      </button>
-                    ) : null}
                   </div>
-                ))
-              ) : (
-                <p className="text-brand-muted text-sm">No permissions assigned to this role.</p>
-              )}
-            </div>
+                )
+              })
+            ) : (
+              <div className="create-user-permission-card">
+                <p className="text-brand-muted text-sm text-white/50">
+                  No roles assigned to this account.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
-        <div className="flex items-center justify-between">
-          <Button
-            variant="secondary"
+        {/* Bottom Actions */}
+        <div className="flex items-center justify-between pt-2">
+          <button
+            type="button"
             onClick={() => navigateBackOrFallback(navigate, '/auth/login')}
+            className="h-11 rounded-xl border border-white/20 bg-transparent px-8 text-xs font-medium text-white transition-colors hover:bg-white/5"
           >
             Previous
-          </Button>
-          <Button onClick={handleSubmit} disabled={completeMutation.isPending}>
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={completeMutation.isPending}
+            className="h-11 rounded-xl bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-8 text-xs font-bold text-[#050505] transition-all hover:brightness-95 disabled:opacity-50"
+          >
             {completeMutation.isPending ? 'Updating...' : 'Update Contact'}
-          </Button>
+          </button>
         </div>
       </div>
 
-      {permissionViewRole ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      {/* Phone OTP Verification Modal */}
+      <VerificationOtpModal
+        open={isPhoneVerifyModalOpen}
+        type="phone"
+        targetValue={phone}
+        onClose={() => setIsPhoneVerifyModalOpen(false)}
+        onVerified={() => {
+          setIsPhoneVerified(true)
+          setIsPhoneVerifyModalOpen(false)
+        }}
+      />
+
+      {/* Role Permissions Details Modal (RBAC Module Modal standard) */}
+      {permissionModalTarget ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setPermissionModalTarget(null)}
+        >
           <div
-            className={cn(
-              'bg-brand-surface w-full max-w-lg border border-white/10 p-6',
-              uiTokens.radiusCard,
-              uiTokens.shadowElevated,
-            )}
+            className="rounded-brand-lg w-full max-w-lg border border-white/10 bg-[#141414] p-6 text-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-brand-text text-lg font-semibold">
-                {permissionViewRole.name} Permissions
-              </h3>
+              <div>
+                <h3 className="text-brand-text text-lg font-semibold text-white">
+                  {permissionModalTarget.moduleKey && catalog[permissionModalTarget.moduleKey]
+                    ? `${catalog[permissionModalTarget.moduleKey].label} Permissions`
+                    : `${permissionModalTarget.role.name} Permissions`}
+                </h3>
+                {permissionModalTarget.moduleKey ? (
+                  <button
+                    type="button"
+                    onClick={() => setPermissionModalTarget({ role: permissionModalTarget.role })}
+                    className="mt-0.5 text-xs text-[#F6CB86] underline underline-offset-2 hover:opacity-85"
+                  >
+                    View all {permissionModalTarget.role.name} permissions
+                  </button>
+                ) : null}
+              </div>
               <button
                 type="button"
-                onClick={() => setPermissionViewRole(null)}
-                className="text-brand-muted hover:text-brand-text rounded-full p-1 hover:bg-white/10"
+                onClick={() => setPermissionModalTarget(null)}
+                className="rounded-full p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Close modal"
               >
-                ×
+                <X className="size-5" />
               </button>
             </div>
-            <div className="mt-4 max-h-72 space-y-3 overflow-auto">
-              {permissionViewRole.permissions.length ? (
-                Object.entries(catalog).map(([moduleKey, mod]) => {
-                  const rolePerms = mod.permissions.filter((p) =>
-                    permissionViewRole.permissions.includes(p.key),
-                  )
-                  if (!rolePerms.length) return null
-                  return (
-                    <div
-                      key={moduleKey}
-                      className="rounded-brand-md overflow-hidden border border-white/10"
-                    >
-                      <p className="text-brand-text border-b border-white/10 bg-white/5 px-3 py-2 text-sm font-medium">
-                        {mod.label}
-                      </p>
-                      <div className="divide-y divide-white/5">
-                        {rolePerms.map((permission) => (
-                          <div key={permission.key} className="text-brand-text px-3 py-2 text-sm">
-                            {permission.label}
+            <div className="mt-4 max-h-80 space-y-3 overflow-auto pr-1">
+              {permissionModalModules.length ? (
+                permissionModalModules.map(({ moduleKey, label, permissions: rolePerms }) => (
+                  <div
+                    key={moduleKey}
+                    className="rounded-brand-md overflow-hidden border border-white/10 bg-black/40"
+                  >
+                    <p className="text-brand-text border-b border-white/10 bg-white/5 px-3.5 py-2.5 text-sm font-medium text-white">
+                      {label}
+                    </p>
+                    <div className="divide-y divide-white/5">
+                      {rolePerms.map((permission) => (
+                        <div
+                          key={permission.key}
+                          className="text-brand-text flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-white/90"
+                        >
+                          <span className="font-medium">{permission.label}</span>
+                          <div className="flex items-center gap-2">
+                            {permission.level && permission.level !== 'full' ? (
+                              <span className="rounded border border-[#F6CB86]/40 bg-[#F6CB86]/10 px-2 py-0.5 text-xs text-[#F6CB86]">
+                                {LEVEL_SHORT_LABEL[permission.level as PermissionLevel] ||
+                                  permission.level}
+                              </span>
+                            ) : null}
+                            {permission.risk === 'high' || permission.risk === 'very_high' ? (
+                              <span className="rounded bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-400">
+                                High Risk
+                              </span>
+                            ) : null}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )
-                })
+                  </div>
+                ))
               ) : (
-                <p className="text-brand-muted text-sm">No permissions assigned to this role.</p>
+                <p className="text-brand-muted text-sm text-white/50">
+                  No permissions assigned to this role.
+                </p>
               )}
             </div>
           </div>
