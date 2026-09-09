@@ -10,7 +10,7 @@ export const dateFormatOptions = ['DD/MM/YY', 'MM/DD/YY', 'YYYY-MM-DD']
 
 export const currencyOptions = ['₹ INR']
 
-export const languageOptions = ['English', 'Hindi', 'Tamil']
+export const languageOptions = ['English']
 
 export const refreshIntervalOptions = ['15 Seconds', '30 Seconds', '60 Seconds', '5 Minutes']
 
