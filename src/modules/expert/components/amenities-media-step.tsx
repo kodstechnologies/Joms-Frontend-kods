@@ -149,6 +149,47 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
     setVenueData((prev) => ({ ...prev, contacts: updated }))
   }
 
+  const removeCoverImage = () => {
+    setVenueData((prev) =>
+      syncGalleryPreviews(prev, {
+        venueCoverImage: null,
+        venueCoverImageUrl: '',
+      }),
+    )
+  }
+
+  const removeVenueImage = () => {
+    setVenueData((prev) =>
+      syncGalleryPreviews(prev, {
+        venueImage: null,
+        venueImageUrl: '',
+      }),
+    )
+  }
+
+  const removeGalleryUrl = (index: number) => {
+    setVenueData((prev) =>
+      syncGalleryPreviews(prev, {
+        galleryImageUrls: prev.galleryImageUrls.filter((_, i) => i !== index),
+      }),
+    )
+  }
+
+  const coverImagePreview = venueData.venueCoverImage
+    ? URL.createObjectURL(venueData.venueCoverImage)
+    : venueData.venueCoverImageUrl || ''
+
+  const venueImagePreview = venueData.venueImage
+    ? URL.createObjectURL(venueData.venueImage)
+    : venueData.venueImageUrl || ''
+
+  const hasUploadedImages = Boolean(
+    coverImagePreview ||
+      venueImagePreview ||
+      venueData.galleryImages.length > 0 ||
+      venueData.galleryImageUrls.length > 0,
+  )
+
   return (
     <>
       <div className="mx-auto w-full max-w-[1140px] space-y-5">
@@ -246,13 +287,39 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                 className="hidden"
                 onChange={handleCoverImageChange}
               />
-              <div
-                onClick={() => coverImageRef.current?.click()}
-                className="bg-brand-bg hover:border-brand-accent/50 flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/10"
-              >
-                <Upload size={18} className="text-muted mb-1.5" />
-                <span className="text-body-sm text-muted">Upload Image</span>
-              </div>
+              {coverImagePreview ? (
+                <div className="group relative flex h-[100px] w-full overflow-hidden rounded-lg border border-white/10 bg-[#141414]">
+                  <img
+                    src={coverImagePreview}
+                    alt="Venue Cover"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      type="button"
+                      onClick={() => coverImageRef.current?.click()}
+                      className="rounded bg-white/20 px-2.5 py-1 text-xs text-white hover:bg-white/30"
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={removeCoverImage}
+                      className="rounded bg-red-600/80 px-2.5 py-1 text-xs text-white hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => coverImageRef.current?.click()}
+                  className="bg-brand-bg hover:border-brand-accent/50 flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/10"
+                >
+                  <Upload size={18} className="text-muted mb-1.5" />
+                  <span className="text-body-sm text-muted">Upload Image</span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -264,13 +331,39 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                 className="hidden"
                 onChange={handleVenueImageChange}
               />
-              <div
-                onClick={() => venueImageRef.current?.click()}
-                className="bg-brand-bg hover:border-brand-accent/50 flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/10"
-              >
-                <Upload size={18} className="text-muted mb-1.5" />
-                <span className="text-body-sm text-muted">Upload Image</span>
-              </div>
+              {venueImagePreview ? (
+                <div className="group relative flex h-[100px] w-full overflow-hidden rounded-lg border border-white/10 bg-[#141414]">
+                  <img
+                    src={venueImagePreview}
+                    alt="Venue Space"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      type="button"
+                      onClick={() => venueImageRef.current?.click()}
+                      className="rounded bg-white/20 px-2.5 py-1 text-xs text-white hover:bg-white/30"
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={removeVenueImage}
+                      className="rounded bg-red-600/80 px-2.5 py-1 text-xs text-white hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => venueImageRef.current?.click()}
+                  className="bg-brand-bg hover:border-brand-accent/50 flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/10"
+                >
+                  <Upload size={18} className="text-muted mb-1.5" />
+                  <span className="text-body-sm text-muted">Upload Image</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -293,55 +386,75 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
             </div>
           </div>
 
-          {(venueData.venueCoverImage ||
-            venueData.venueImage ||
-            venueData.galleryImages.length > 0) && (
+          {hasUploadedImages && (
             <div className="mt-5">
               <p className="mb-3 text-xs font-medium text-white">Uploaded Images</p>
 
               <div className="flex flex-wrap gap-3">
-                {venueData.venueCoverImage && (
-                  <div className="relative overflow-hidden rounded-lg">
+                {coverImagePreview && (
+                  <div className="relative h-[80px] w-[120px] overflow-hidden rounded-lg border border-white/10">
                     <img
-                      src={URL.createObjectURL(venueData.venueCoverImage)}
+                      src={coverImagePreview}
                       alt="venue cover"
-                      className="h-[80px] w-[120px] object-cover"
+                      className="h-full w-full object-cover"
                     />
                     <span className="absolute right-0 bottom-0 left-0 bg-black/60 py-0.5 text-center text-[9px] text-white">
                       Cover
                     </span>
                     <button
                       type="button"
-                      onClick={() => setVenueData((prev) => ({ ...prev, venueCoverImage: null }))}
+                      onClick={removeCoverImage}
                       className="bg-brand-danger absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-white shadow"
                     >
                       <X size={10} />
                     </button>
                   </div>
                 )}
-                {venueData.venueImage && (
-                  <div className="relative overflow-hidden rounded-lg">
+
+                {venueImagePreview && (
+                  <div className="relative h-[80px] w-[120px] overflow-hidden rounded-lg border border-white/10">
                     <img
-                      src={URL.createObjectURL(venueData.venueImage)}
-                      alt="venue"
-                      className="h-[80px] w-[120px] object-cover"
+                      src={venueImagePreview}
+                      alt="venue space"
+                      className="h-full w-full object-cover"
                     />
                     <span className="absolute right-0 bottom-0 left-0 bg-black/60 py-0.5 text-center text-[9px] text-white">
                       Venue
                     </span>
                     <button
                       type="button"
-                      onClick={() => setVenueData((prev) => ({ ...prev, venueImage: null }))}
+                      onClick={removeVenueImage}
                       className="bg-brand-danger absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-white shadow"
                     >
                       <X size={10} />
                     </button>
                   </div>
                 )}
+
+                {venueData.galleryImageUrls.map((url, index) => (
+                  <div
+                    key={`gurl-${index}`}
+                    className="relative h-[80px] w-[80px] overflow-hidden rounded-lg border border-white/10"
+                  >
+                    <img
+                      src={url}
+                      alt={`gallery-existing-${index}`}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryUrl(index)}
+                      className="bg-brand-danger absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-white shadow"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+
                 {venueData.galleryImages.map((file, index) => (
                   <div
                     key={`gfile-${index}`}
-                    className="relative h-[80px] w-[80px] overflow-hidden rounded-lg"
+                    className="relative h-[80px] w-[80px] overflow-hidden rounded-lg border border-white/10"
                   >
                     <img
                       src={URL.createObjectURL(file)}
