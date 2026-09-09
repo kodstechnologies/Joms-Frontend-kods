@@ -425,11 +425,20 @@ export const buildGalleryFormData = (venueData: VenueFormData): FormData => {
 
   if (venueData.venueCoverImage) {
     formData.append('venueCoverImages', venueData.venueCoverImage)
+  } else if (venueData.venueCoverImageUrl?.trim()) {
+    formData.append('existingVenueCoverImageUrl', venueData.venueCoverImageUrl.trim())
   }
 
   if (venueData.venueImage) {
     formData.append('spaceCoverImages', venueData.venueImage)
+  } else if (venueData.venueImageUrl?.trim()) {
+    formData.append('existingVenueImageUrl', venueData.venueImageUrl.trim())
   }
+
+  formData.append(
+    'existingGalleryImageUrls',
+    JSON.stringify(venueData.galleryImageUrls.filter((url) => url.trim())),
+  )
 
   venueData.galleryImages.forEach((file) => {
     formData.append('interiorGalleryImages', file)

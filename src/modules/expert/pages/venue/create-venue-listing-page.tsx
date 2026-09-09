@@ -100,6 +100,9 @@ type DraftVenue = {
     cancellation?: { freeCancellationHours?: number; refundPercentage?: number }
     faqs?: DraftFaq[]
   }
+  profileImageUrl?: string
+  coverImageUrl?: string
+  venueImages?: string[]
 }
 
 const toEntityId = (value?: unknown) => {
@@ -124,24 +127,65 @@ const extractVenueCategory = (venue?: DraftVenue) => {
   return (venue as unknown as { venueCategory?: string })?.venueCategory || ''
 }
 
-const resolveGalleryUrls = (source?: {
-  venueCoverImages?: Array<{ url: string }>
-  spaceCoverImages?: Array<{ url: string }>
-  galleryImages?: Array<{ url: string }>
-  galleryContact?: { contacts?: DraftContact[] }
-}) => ({
-  venueCoverImageUrl: source?.venueCoverImages?.[0]?.url || '',
-  venueImageUrl: source?.spaceCoverImages?.[0]?.url || '',
-  galleryImageUrls: (source?.galleryImages || []).map((img) => img.url).filter(Boolean),
-  contacts:
-    source?.galleryContact?.contacts && source.galleryContact.contacts.length > 0
-      ? source.galleryContact.contacts.map((contact) => ({
+const toImageUrl = (img: unknown): string => {
+  if (!img) return ''
+  if (typeof img === 'string') return img.trim()
+  if (
+    typeof img === 'object' &&
+    img !== null &&
+    'url' in img &&
+    typeof (img as { url?: unknown }).url === 'string'
+  ) {
+    return ((img as { url: string }).url || '').trim()
+  }
+  return ''
+}
+
+const resolveGalleryUrls = (space?: DraftVenueSpace, venue?: DraftVenue) => {
+  const gallery = space ? space : venue?.gallery
+
+  const venueCoverImageUrl =
+    toImageUrl(space?.venueCoverImages?.[0]) ||
+    toImageUrl(venue?.gallery?.venueCoverImages?.[0]) ||
+    toImageUrl(venue?.coverImageUrl) ||
+    toImageUrl(venue?.profileImageUrl) ||
+    toImageUrl(venue?.venueImages?.[0]) ||
+    ''
+
+  const venueImageUrl =
+    toImageUrl(space?.spaceCoverImages?.[0]) ||
+    toImageUrl(venue?.gallery?.spaceCoverImages?.[0]) ||
+    toImageUrl(venue?.venueImages?.[1]) ||
+    ''
+
+  const spaceGalleryImgs = (space?.galleryImages || []).map(toImageUrl).filter(Boolean)
+  const venueGalleryImgs = (venue?.gallery?.galleryImages || []).map(toImageUrl).filter(Boolean)
+  const venueDirectImgs = (venue?.venueImages || []).map(toImageUrl).filter(Boolean)
+
+  const allGalleryUrls = Array.from(
+    new Set([...spaceGalleryImgs, ...venueGalleryImgs, ...venueDirectImgs]),
+  ).filter((url) => url !== venueCoverImageUrl && url !== venueImageUrl)
+
+  const contacts =
+    space?.galleryContact?.contacts && space.galleryContact.contacts.length > 0
+      ? space.galleryContact.contacts
+      : venue?.gallery?.contact?.contacts && venue.gallery.contact.contacts.length > 0
+        ? venue.gallery.contact.contacts
+        : null
+
+  return {
+    venueCoverImageUrl,
+    venueImageUrl,
+    galleryImageUrls: allGalleryUrls,
+    contacts: contacts
+      ? contacts.map((contact) => ({
           name: contact.name || '',
           phone: contact.phone || '',
           email: contact.email || '',
         }))
       : null,
-})
+  }
+}
 
 export const CreateVenueListingPage = () => {
   const [searchParams] = useSearchParams()
@@ -183,8 +227,7 @@ export const CreateVenueListingPage = () => {
         const venue = response?.data as DraftVenue | undefined
         const spaces = venue?.spaces || []
         const space = spaces[0]
-        const gallerySource = space ?? venue?.gallery
-        const galleryUrls = resolveGalleryUrls(gallerySource)
+        const galleryUrls = resolveGalleryUrls(space, venue)
         const pricing = isEditMode ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
         const terms = venue?.terms
 
@@ -343,7 +386,7 @@ export const CreateVenueListingPage = () => {
           const refreshed = await fetchAdminDraftVenue(venueId)
           const refreshedVenue = refreshed?.data as DraftVenue | undefined
           const refreshedSpace = refreshedVenue?.spaces?.[0]
-          const refreshedGalleryUrls = resolveGalleryUrls(refreshedSpace ?? refreshedVenue?.gallery)
+          const refreshedGalleryUrls = resolveGalleryUrls(refreshedSpace, refreshedVenue)
 
           setVenueData((prev) => ({
             ...prev,
