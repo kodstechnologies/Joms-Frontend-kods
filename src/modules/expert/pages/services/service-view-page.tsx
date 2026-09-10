@@ -161,7 +161,7 @@ const isPendingReview = (status: string | undefined, isConsultationListing: bool
     return normalized === 'submitted'
   }
 
-  return normalized === 'in_review' || normalized === 'pending'
+  return normalized === 'in_review' || normalized === 'pending' || normalized === 'submitted'
 }
 
 const parseOutlineItems = (value?: string) =>
@@ -902,7 +902,14 @@ export const ServiceViewPage = () => {
         <div className="space-y-6">
           <div className="relative h-[230px] w-full overflow-hidden rounded-lg bg-[#050505]">
             {activeImage ? (
-              <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
+              <a
+                href={activeImage}
+                target="_blank"
+                rel="noreferrer"
+                className="block h-full w-full cursor-zoom-in"
+              >
+                <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
+              </a>
             ) : (
               <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                 <ImageIcon className="size-8" aria-hidden="true" />
@@ -916,7 +923,7 @@ export const ServiceViewPage = () => {
                   type="button"
                   aria-label="Previous image"
                   onClick={handlePrevImage}
-                  className="absolute top-1/2 left-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                  className="absolute top-1/2 left-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronLeft className="size-4" />
                 </button>
@@ -924,14 +931,14 @@ export const ServiceViewPage = () => {
                   type="button"
                   aria-label="Next image"
                   onClick={handleNextImage}
-                  className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                  className="absolute top-1/2 right-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronRight className="size-4" />
                 </button>
               </>
             )}
 
-            <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[10px] font-semibold text-white">
+            <div className="absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[10px] font-semibold text-white">
               <ImageIcon className="size-3" />
               {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
             </div>
@@ -1130,7 +1137,7 @@ export const ServiceViewPage = () => {
               onRequestChanges={() => openDecisionModal('requestChanges')}
               onEscalate={() => openDecisionModal('escalate')}
               onReject={() => openDecisionModal('reject')}
-              showEscalate={isSuperAdmin}
+              showEscalate
               escalateDisabled={escalateDisabled}
             />
           </div>

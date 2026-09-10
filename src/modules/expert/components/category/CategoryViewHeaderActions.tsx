@@ -10,6 +10,7 @@ import { DeleteCategoryModal } from './delete-category-modal'
 import { PauseCategoryModal } from './pause-category-modal'
 import {
   usePauseServiceCategory,
+  useServiceCategory,
   useSoftDeleteServiceCategory,
 } from '../../hooks/use-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
@@ -23,6 +24,10 @@ export const CategoryViewHeaderActions = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const pauseMutation = usePauseServiceCategory()
   const softDeleteMutation = useSoftDeleteServiceCategory()
+  const { data: category } = useServiceCategory(id)
+  const relatedListPath = id
+    ? `${scope.relatedListPath}?category=${encodeURIComponent(category?.name || '')}&categoryId=${encodeURIComponent(id)}`
+    : scope.relatedListPath
 
   return (
     <>
@@ -32,7 +37,7 @@ export const CategoryViewHeaderActions = () => {
           Add Sub-Category
         </Button>
 
-        <Button variant="secondary" onClick={() => navigate(scope.relatedListPath)}>
+        <Button variant="secondary" onClick={() => navigate(relatedListPath)}>
           <Eye className="size-4" aria-hidden="true" />
           {scope.relatedListLabel}
         </Button>

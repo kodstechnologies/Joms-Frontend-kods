@@ -84,6 +84,7 @@ export function LoginPage() {
   const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [mfaMethod, setMfaMethod] = useState<'emailOtp' | 'authenticator'>('emailOtp')
   const [showPassword, setShowPassword] = useState(false)
 
   const credentialsForm = useForm<LoginSchema>({
@@ -170,8 +171,13 @@ export function LoginPage() {
       }
 
       setPendingEmail(values.email)
+      setMfaMethod(session?.mfaMethod === 'authenticator' ? 'authenticator' : 'emailOtp')
       setStep('otp')
-      toast.success('OTP sent to your email')
+      toast.success(
+        session?.mfaMethod === 'authenticator'
+          ? 'Enter the code from your authenticator app'
+          : 'OTP sent to your email',
+      )
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Invalid credentials'))
     }
@@ -236,7 +242,9 @@ export function LoginPage() {
                   Two Factor Authentication
                 </h1>
                 <p className="text-sm font-normal text-[#717182]">
-                  Enter 6 digit authorisation code sent to your email.
+                  {mfaMethod === 'authenticator'
+                    ? 'Enter the 6 digit code from your authenticator app.'
+                    : 'Enter 6 digit authorisation code sent to your email.'}
                 </p>
               </div>
 

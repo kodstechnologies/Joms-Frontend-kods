@@ -215,7 +215,7 @@ const DEFAULT_SERVICE_METRIC_IDS = ZERO_SERVICE_METRICS.map((metric) => metric.i
 
 const RANGE_PRESETS_MAP: Record<string, DateRangePreset> = {
   'last-3-months': 'quarter',
-  'last-6-months': 'quarter',
+  'last-6-months': 'last6months',
   'last-12-months': 'year',
 }
 

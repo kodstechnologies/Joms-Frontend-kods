@@ -7,6 +7,7 @@ import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { getDefaultHomeRoute } from '@/app/layouts/navigation/navigation.filter'
 import { useCompleteContactSetup, useContactSetupProfile } from '../hooks/use-rbac'
 import { checkSubAdminPhone, verifySubAdminMfa } from '../api/rbac-api'
+import { sendAdminPhoneOtp, verifyAdminPhoneOtp } from '@/modules/auth/api/auth-api'
 import { VerificationOtpModal } from '@/modules/expert/components/verification-otp-modal'
 import { RbacLoader } from '../components/rbac-loader'
 import type { PermissionCatalog, SubAdminRole } from '../types/rbac'
@@ -77,6 +78,7 @@ export function UpdateContactInformationPage() {
   }, [roles])
 
   const [phone, setPhone] = useState('')
+  const [otpPhone, setOtpPhone] = useState('')
   const [isPhoneVerified, setIsPhoneVerified] = useState(false)
   const [isPhoneVerifyModalOpen, setIsPhoneVerifyModalOpen] = useState(false)
   const [isCheckingPhone, setIsCheckingPhone] = useState(false)
@@ -144,9 +146,7 @@ export function UpdateContactInformationPage() {
     const roleGrants = grantsToMap(role.permissions || [])
 
     const modulesToProcess =
-      moduleKey && catalog[moduleKey]
-        ? ([[moduleKey, catalog[moduleKey]]] as const)
-        : Object.entries(catalog)
+      moduleKey && catalog[moduleKey] ? ([[moduleKey, catalog[moduleKey]]] as const) : []
 
     return modulesToProcess
       .map(([modKey, mod]) => {
@@ -208,6 +208,7 @@ export function UpdateContactInformationPage() {
         toast.error('This phone number is already associated with another sub-admin.')
         return
       }
+      setOtpPhone(cleanDigits.slice(-10))
       setIsPhoneVerifyModalOpen(true)
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -436,7 +437,7 @@ export function UpdateContactInformationPage() {
                     }
                   }}
                   placeholder="dd-mm-yyyy"
-                  className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-[#181818] px-4 pr-12 text-xs text-white [color-scheme:dark] transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-[#181818] px-4 pr-12 text-xs text-white [color-scheme:dark] transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:opacity-0"
                 />
                 <button
                   type="button"
@@ -447,10 +448,10 @@ export function UpdateContactInformationPage() {
                       dateInputRef.current?.focus()
                     }
                   }}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-white/50 transition-colors hover:text-white"
+                  className="absolute top-1/2 right-2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label="Select date of birth"
                 >
-                  <Calendar className="size-4" />
+                  <Calendar className="size-5" />
                 </button>
               </div>
             </div>
@@ -619,7 +620,10 @@ export function UpdateContactInformationPage() {
       <VerificationOtpModal
         open={isPhoneVerifyModalOpen}
         type="phone"
-        targetValue={phone}
+        targetValue={otpPhone || phone}
+        length={6}
+        sendOtp={sendAdminPhoneOtp}
+        verifyOtp={verifyAdminPhoneOtp}
         onClose={() => setIsPhoneVerifyModalOpen(false)}
         onVerified={() => {
           setIsPhoneVerified(true)
@@ -644,20 +648,11 @@ export function UpdateContactInformationPage() {
                     ? `${catalog[permissionModalTarget.moduleKey].label} Permissions`
                     : `${permissionModalTarget.role.name} Permissions`}
                 </h3>
-                {permissionModalTarget.moduleKey ? (
-                  <button
-                    type="button"
-                    onClick={() => setPermissionModalTarget({ role: permissionModalTarget.role })}
-                    className="mt-0.5 text-xs text-[#F6CB86] underline underline-offset-2 hover:opacity-85"
-                  >
-                    View all {permissionModalTarget.role.name} permissions
-                  </button>
-                ) : null}
               </div>
               <button
                 type="button"
                 onClick={() => setPermissionModalTarget(null)}
-                className="rounded-full p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex size-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="Close modal"
               >
                 <X className="size-5" />

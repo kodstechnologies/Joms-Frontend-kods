@@ -4,6 +4,7 @@ export type DateRangePreset =
   | 'last30days'
   | 'thisMonth'
   | 'quarter'
+  | 'last6months'
   | 'year'
   | 'custom'
 

@@ -585,6 +585,24 @@ export function ExpertApplicationViewPage() {
     return entry?.status || null
   }
 
+  const kycDocsApproved = [
+    { uploaded: kycPanUrl, status: getKycReviewStatus('panCardUrl') },
+    { uploaded: kycGstUrl, status: getKycReviewStatus('gstCertificateUrl') },
+    { uploaded: kycCertificateUrl, status: getKycReviewStatus('licenceOrCertificateUrl') },
+    { uploaded: kycSampleWorkUrl, status: getKycReviewStatus('sampleWorkFileUrl') },
+    {
+      uploaded: kyc?.documents?.digilockerDocumentUrl,
+      status: getKycReviewStatus('digilockerDocumentUrl'),
+    },
+  ]
+    .filter((item) => Boolean(item.uploaded))
+    .every((item) => String(item.status || '').toUpperCase() === 'APPROVED')
+
+  const bankingDocsApproved =
+    !cancelledChequeUrl || String(getBankingReviewStatus('cancelledChequeUrl') || '').toUpperCase() === 'APPROVED'
+
+  const sectionDocsApproved = decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
+
   const openDocumentViewer = (document: ViewerDocument) => {
     setViewerDocument(document)
   }
@@ -961,13 +979,18 @@ export function ExpertApplicationViewPage() {
               {String(activeDecisionStatus).toLowerCase()}.
             </p>
           )}
+          {activeSectionSubmitted && activeDecisionStatus === 'PENDING' && !sectionDocsApproved && (
+            <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
+              Approve each uploaded document before approving this section.
+            </p>
+          )}
           <DecisionControlButtons
             onApprove={() => openDecisionModal(decisionTargetForTab, 'approve')}
             onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
-            showEscalate={isSuperAdmin}
-            approveDisabled={decisionDisabled}
+            showEscalate
+            approveDisabled={decisionDisabled || !sectionDocsApproved}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}

@@ -661,7 +661,7 @@ export const ConsultationViewPage = () => {
               onRequestChanges={() => openDecisionModal('requestChanges')}
               onEscalate={() => openDecisionModal('escalate')}
               onReject={() => openDecisionModal('reject')}
-              showEscalate={isSuperAdmin}
+              showEscalate
               escalateDisabled={escalateDisabled}
             />
           </div>

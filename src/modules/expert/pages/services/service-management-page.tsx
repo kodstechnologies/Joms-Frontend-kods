@@ -19,7 +19,7 @@ import {
   Upload,
   type LucideIcon,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
@@ -88,6 +88,9 @@ import {
 } from '@/modules/my-tasks/api/escalation-api'
 
 export const ServiceManagementPage = () => {
+  const [searchParams] = useSearchParams()
+  const categoryFromUrl = searchParams.get('category') || ''
+  const categoryIdFromUrl = searchParams.get('categoryId') || ''
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
@@ -321,8 +324,10 @@ export const ServiceManagementPage = () => {
         ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
+        category: categoryFromUrl || undefined,
+        categoryId: categoryIdFromUrl || undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams, categoryFromUrl, categoryIdFromUrl],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
