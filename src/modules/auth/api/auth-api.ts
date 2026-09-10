@@ -65,7 +65,7 @@ export async function verifyPartnerPhoneOtp(phone: string, otp: string) {
 }
 
 export async function sendPartnerEmailOtp(email: string) {
-  const response = await authApiClient.post('/auth/otp/email/send', { email })
+  const response = await authApiClient.post('/auth/otp/email/send', { email, type: 'register' })
   return response.data
 }
 

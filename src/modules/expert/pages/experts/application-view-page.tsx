@@ -330,6 +330,7 @@ export function ExpertApplicationViewPage() {
     payload: DocumentStatusPayload,
   ) => {
     if (!viewerDocument) return
+    if (viewerDocument.key === 'digilockerDocumentUrl') return
 
     const mutationFn =
       viewerDocument.target === 'banking' ? updateBankingDocument : updateKycDocument
@@ -585,24 +586,6 @@ export function ExpertApplicationViewPage() {
     return entry?.status || null
   }
 
-  const kycDocsApproved = [
-    { uploaded: kycPanUrl, status: getKycReviewStatus('panCardUrl') },
-    { uploaded: kycGstUrl, status: getKycReviewStatus('gstCertificateUrl') },
-    { uploaded: kycCertificateUrl, status: getKycReviewStatus('licenceOrCertificateUrl') },
-    { uploaded: kycSampleWorkUrl, status: getKycReviewStatus('sampleWorkFileUrl') },
-    {
-      uploaded: kyc?.documents?.digilockerDocumentUrl,
-      status: getKycReviewStatus('digilockerDocumentUrl'),
-    },
-  ]
-    .filter((item) => Boolean(item.uploaded))
-    .every((item) => String(item.status || '').toUpperCase() === 'APPROVED')
-
-  const bankingDocsApproved =
-    !cancelledChequeUrl || String(getBankingReviewStatus('cancelledChequeUrl') || '').toUpperCase() === 'APPROVED'
-
-  const sectionDocsApproved = decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
-
   const openDocumentViewer = (document: ViewerDocument) => {
     setViewerDocument(document)
   }
@@ -791,7 +774,7 @@ export function ExpertApplicationViewPage() {
                           label: 'Digilocker Verified Document',
                           url: digilockerDocUrl,
                           target: 'kyc',
-                          reviewStatus: getKycReviewStatus('digilockerDocumentUrl'),
+                          reviewStatus: null,
                         })
                       }
                       className="cursor-pointer text-body-sm font-medium text-white/80 transition-colors hover:text-white"
@@ -979,18 +962,13 @@ export function ExpertApplicationViewPage() {
               {String(activeDecisionStatus).toLowerCase()}.
             </p>
           )}
-          {activeSectionSubmitted && activeDecisionStatus === 'PENDING' && !sectionDocsApproved && (
-            <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
-              Approve each uploaded document before approving this section.
-            </p>
-          )}
           <DecisionControlButtons
             onApprove={() => openDecisionModal(decisionTargetForTab, 'approve')}
             onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
             showEscalate
-            approveDisabled={decisionDisabled || !sectionDocsApproved}
+            approveDisabled={decisionDisabled}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}
@@ -1058,10 +1036,12 @@ export function ExpertApplicationViewPage() {
         requestChangesReasonOptions={requestChangesReasonOptions}
         actionsDisabled={
           !viewerDocument ||
+          viewerDocument.key === 'digilockerDocumentUrl' ||
           (viewerDocument.target === 'banking'
             ? !isBankingSubmitted || application?.banking?.status !== 'PENDING'
             : !isKycSubmitted || displayKycStatus !== 'PENDING')
         }
+        hideActions={viewerDocument?.key === 'digilockerDocumentUrl'}
         isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
         onClose={() => setViewerDocument(null)}
         onSubmitDecision={handleDocumentDecision}

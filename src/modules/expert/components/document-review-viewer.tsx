@@ -24,6 +24,7 @@ type DocumentReviewViewerProps = {
   reasonOptions: DecisionActionModalOption[]
   requestChangesReasonOptions?: DecisionActionModalOption[]
   actionsDisabled?: boolean
+  hideActions?: boolean
   isSubmitting?: boolean
   mimeType?: string
   onClose: () => void
@@ -76,6 +77,7 @@ function DocumentReviewViewerContent({
   reasonOptions,
   requestChangesReasonOptions,
   actionsDisabled = false,
+  hideActions = false,
   isSubmitting = false,
   mimeType,
   onClose,
@@ -148,8 +150,9 @@ function DocumentReviewViewerContent({
   const actualUrl = blobData.url || url
   const actualMimeType = blobData.type || mimeType
 
-  const resolvedReviewStatus = resolveDocumentReviewStatus(url, reviewStatus)
+  const resolvedReviewStatus = hideActions ? null : resolveDocumentReviewStatus(url, reviewStatus)
   const decisionActionsDisabled =
+    hideActions ||
     actionsDisabled ||
     resolvedReviewStatus === 'APPROVED' ||
     resolvedReviewStatus === 'REJECTED' ||
@@ -257,7 +260,7 @@ function DocumentReviewViewerContent({
           </button>
           <div className="min-w-0">
             <p className="text-body-md-semibold truncate text-white">{filename}</p>
-            {resolvedReviewStatus === 'APPROVED' ? (
+            {hideActions ? null : resolvedReviewStatus === 'APPROVED' ? (
               <p className="text-body-sm text-brand-positive font-medium">Approved</p>
             ) : resolvedReviewStatus === 'REJECTED' ? (
               <p className="text-body-sm text-brand-danger font-medium">Rejected</p>
@@ -269,6 +272,7 @@ function DocumentReviewViewerContent({
           </div>
         </div>
 
+        {!hideActions ? (
         <div className="relative" ref={menuRef}>
           <button
             type="button"
@@ -318,6 +322,7 @@ function DocumentReviewViewerContent({
             </div>
           ) : null}
         </div>
+        ) : null}
       </header>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto px-4 pt-2 pb-24">
