@@ -31,7 +31,11 @@ import {
   User,
   Users,
 } from 'lucide-react'
-import { AdvanceFilterIcon, ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import {
+  AdvanceFilterIcon,
+  ExportDataIcon,
+  ManageMetricsIcon,
+} from '@/shared/components/icons/action-button-icons'
 
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
@@ -2027,7 +2031,7 @@ export function VenueProfileViewPage() {
               onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
               className="hover:text-brand-text transition-colors"
             >
-              Event management
+              Venue management
             </button>
             <span className="text-muted">/</span>
             <span className="font-bold text-white">{venue.name}</span>

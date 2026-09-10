@@ -338,15 +338,16 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 function SafeAvatar({ src, name }: { src?: string | null; name: string }) {
-  if (src) {
+  const [failed, setFailed] = useState(false)
+  const showImage = Boolean(src) && !failed
+
+  if (showImage) {
     return (
       <img
-        src={src}
+        src={src as string}
         alt={name}
         className="size-12 rounded-full object-cover ring-2 ring-white/10"
-        onError={(e) => {
-          e.currentTarget.style.display = 'none'
-        }}
+        onError={() => setFailed(true)}
       />
     )
   }

@@ -127,6 +127,7 @@ export const SERVICE_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
     type: 'serviceType',
     category: 'categoryName',
     'sub-category': 'subCategoryName',
+    'pricing-model': 'pricingType',
     'expert-id': 'expertName',
     'service-id': 'createdAt',
     status: 'status',

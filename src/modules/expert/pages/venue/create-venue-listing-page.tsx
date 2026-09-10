@@ -17,7 +17,8 @@ import {
 
 import { useVenueStepMutations } from '@/modules/expert/hooks/use-create-venue'
 import { fetchAdminDraftVenue } from '../../api/venue-api'
-import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useVenuePublicSettings } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
   createDefaultWeeklyAvailability,
   createEmptyVenueFormData,
@@ -27,6 +28,33 @@ import {
   mapVenueAmenitySelections,
   type VenueFormData,
 } from '../../utils/venue-form'
+
+const parseMoneyInput = (value?: string) => {
+  if (value == null || !String(value).trim()) return undefined
+  const normalized = String(value).replace(/[^0-9.-]/g, '')
+  if (!normalized) return undefined
+  const amount = Number(normalized)
+  return Number.isFinite(amount) ? amount : undefined
+}
+
+const clearSpaceGalleryFields = (): Pick<
+  VenueFormData,
+  | 'venueCoverImage'
+  | 'venueImage'
+  | 'galleryImages'
+  | 'venueCoverImageUrl'
+  | 'venueImageUrl'
+  | 'galleryImageUrls'
+  | 'galleryPreviews'
+> => ({
+  venueCoverImage: null,
+  venueImage: null,
+  galleryImages: [],
+  venueCoverImageUrl: '',
+  venueImageUrl: '',
+  galleryImageUrls: [],
+  galleryPreviews: [],
+})
 
 type DraftWeeklyAvailabilityEntry = { day: string; from?: string; to?: string; enabled?: boolean }
 type DraftBlockedDate = { date?: string; from?: string; to?: string }
@@ -40,6 +68,8 @@ type DraftAmenity = {
 type DraftContact = { name?: string; phone?: string; email?: string }
 type DraftFaq = { question?: string; answer?: string }
 type DraftPricing = {
+  serviceType?: string
+  setDays?: number
   weekdayPrice?: number
   weekendPrice?: number
   discount?: number
@@ -54,6 +84,16 @@ type DraftVenueSpace = {
   seatingStyle?: string
   areaSqFeet?: number
   isSameAsVenueLocation?: boolean
+  location?: {
+    address?: string
+    landmark?: string
+    city?: string
+    pincode?: string
+    state?: string
+    country?: string
+    latitude?: number | null
+    longitude?: number | null
+  }
   inHouseCatering?: boolean
   decorationAvailable?: boolean
   parkingAvailable?: boolean
@@ -141,33 +181,19 @@ const toImageUrl = (img: unknown): string => {
   return ''
 }
 
-const resolveGalleryUrls = (space?: DraftVenueSpace, venue?: DraftVenue) => {
-  const venueCoverImageUrl =
-    toImageUrl(space?.venueCoverImages?.[0]) ||
-    toImageUrl(venue?.gallery?.venueCoverImages?.[0]) ||
-    toImageUrl(venue?.coverImageUrl) ||
-    toImageUrl(venue?.profileImageUrl) ||
-    toImageUrl(venue?.venueImages?.[0]) ||
-    ''
-
-  const venueImageUrl =
-    toImageUrl(space?.spaceCoverImages?.[0]) ||
-    toImageUrl(venue?.gallery?.spaceCoverImages?.[0]) ||
-    toImageUrl(venue?.venueImages?.[1]) ||
-    ''
-
+const resolveGalleryUrls = (space?: DraftVenueSpace, _venue?: DraftVenue) => {
+  // Only use this space's gallery — never fall back to venue-level / other-space images.
+  const venueCoverImageUrl = toImageUrl(space?.venueCoverImages?.[0]) || ''
+  const venueImageUrl = toImageUrl(space?.spaceCoverImages?.[0]) || ''
   const spaceGalleryImgs = (space?.galleryImages || []).map(toImageUrl).filter(Boolean)
-  const venueGalleryImgs = (venue?.gallery?.galleryImages || []).map(toImageUrl).filter(Boolean)
-  const venueDirectImgs = (venue?.venueImages || []).map(toImageUrl).filter(Boolean)
 
   const cleanCover = venueCoverImageUrl.split('?')[0].trim().toLowerCase()
   const cleanVenue = venueImageUrl.split('?')[0].trim().toLowerCase()
 
-  const rawGalleryUrls = [...spaceGalleryImgs, ...venueGalleryImgs, ...venueDirectImgs]
   const seen = new Set<string>()
   const allGalleryUrls: string[] = []
 
-  for (const url of rawGalleryUrls) {
+  for (const url of spaceGalleryImgs) {
     const clean = url.split('?')[0].trim().toLowerCase()
     if (!clean || clean === cleanCover || clean === cleanVenue || seen.has(clean)) {
       continue
@@ -179,9 +205,7 @@ const resolveGalleryUrls = (space?: DraftVenueSpace, venue?: DraftVenue) => {
   const contacts =
     space?.galleryContact?.contacts && space.galleryContact.contacts.length > 0
       ? space.galleryContact.contacts
-      : venue?.gallery?.contact?.contacts && venue.gallery.contact.contacts.length > 0
-        ? venue.gallery.contact.contacts
-        : null
+      : null
 
   return {
     venueCoverImageUrl,
@@ -217,6 +241,15 @@ export const CreateVenueListingPage = () => {
     saveTerms,
     submitVenueListing,
   } = useVenueStepMutations()
+
+  const { data: venueSettings } = useVenuePublicSettings()
+  const pricingControls = venueSettings?.pricingControls
+  const allowBaseRates =
+    pricingControls?.hourlyRates !== false || pricingControls?.fullDayRates !== false
+  const allowFullDay = pricingControls?.fullDayRates !== false
+  const allowHourlyOnly =
+    pricingControls?.hourlyRates !== false && pricingControls?.fullDayRates === false
+  const allowWeekendPricing = Boolean(pricingControls?.weekendPricing)
 
   const [venueData, setVenueData] = useState<VenueFormData>(createEmptyVenueFormData)
 
@@ -287,6 +320,38 @@ export const CreateVenueListingPage = () => {
           seatingType: isEditMode ? space?.seatingStyle || '' : '',
           areaSqFt: isEditMode && space?.areaSqFeet != null ? String(space.areaSqFeet) : '',
           locationType: isEditMode && space?.isSameAsVenueLocation === false ? 'different' : 'same',
+          spaceAddress:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? String(space?.location?.address || '')
+              : '',
+          spaceLandmark:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? String(space?.location?.landmark || '')
+              : '',
+          spaceCity:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? String(space?.location?.city || '')
+              : '',
+          spacePincode:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? String(space?.location?.pincode || '')
+              : '',
+          spaceState:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? String(space?.location?.state || '')
+              : '',
+          spaceCountry:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? String(space?.location?.country || '')
+              : '',
+          spaceLatitude:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? (space?.location?.latitude ?? null)
+              : null,
+          spaceLongitude:
+            isEditMode && space?.isSameAsVenueLocation === false
+              ? (space?.location?.longitude ?? null)
+              : null,
           seatedCapacity:
             isEditMode && space?.capacityMode === 'seated' && space?.capacityRange != null
               ? String(space.capacityRange)
@@ -305,29 +370,32 @@ export const CreateVenueListingPage = () => {
               )
             : [],
 
-          venueCoverImageUrl: galleryUrls.venueCoverImageUrl || prev.venueCoverImageUrl,
-          venueImageUrl: galleryUrls.venueImageUrl || prev.venueImageUrl,
-          galleryImageUrls:
-            galleryUrls.galleryImageUrls.length > 0
-              ? galleryUrls.galleryImageUrls
-              : prev.galleryImageUrls,
-          galleryPreviews: buildVenueGalleryPreviewsFromUrls({
-            venueCoverImageUrl: galleryUrls.venueCoverImageUrl || prev.venueCoverImageUrl,
-            venueImageUrl: galleryUrls.venueImageUrl || prev.venueImageUrl,
-            galleryImageUrls:
-              galleryUrls.galleryImageUrls.length > 0
-                ? galleryUrls.galleryImageUrls
-                : prev.galleryImageUrls,
-          }),
+          ...(isEditMode
+            ? {
+                venueCoverImageUrl: galleryUrls.venueCoverImageUrl || '',
+                venueImageUrl: galleryUrls.venueImageUrl || '',
+                galleryImageUrls: galleryUrls.galleryImageUrls,
+                galleryPreviews: buildVenueGalleryPreviewsFromUrls({
+                  venueCoverImageUrl: galleryUrls.venueCoverImageUrl || '',
+                  venueImageUrl: galleryUrls.venueImageUrl || '',
+                  galleryImageUrls: galleryUrls.galleryImageUrls,
+                }),
+                contacts: galleryUrls.contacts ?? prev.contacts,
+              }
+            : {
+                ...clearSpaceGalleryFields(),
+                contacts: prev.contacts,
+              }),
           venueCoverImage: null,
           venueImage: null,
           galleryImages: [],
-          contacts: galleryUrls.contacts ?? prev.contacts,
 
           weekdayPrice: pricing?.weekdayPrice ? String(pricing.weekdayPrice) : '',
           weekendPrice: pricing?.weekendPrice ? String(pricing.weekendPrice) : '',
           discount: pricing?.discount ? String(pricing.discount) : '',
           reservationFee: pricing?.reservationFee ? String(pricing.reservationFee) : '',
+          serviceType: pricing?.serviceType || 'entire_space',
+          setDays: pricing?.setDays != null ? String(pricing.setDays) : '',
 
           terms: Array.isArray(terms?.terms) ? terms.terms.join('\n') : String(terms?.terms || ''),
           cancellationPolicy: mapHoursToCancellationPolicy(
@@ -371,12 +439,24 @@ export const CreateVenueListingPage = () => {
       }
 
       if (currentStep === 3 && venueId) {
+        const creatingNewSpace = !spaceId
         const result = await saveSpace.mutateAsync({ venueId, spaceId, venueData })
 
         const newSpaceId = result?.data?._id || result?._id || spaceId
         if (newSpaceId) setSpaceId(String(newSpaceId))
+
+        if (creatingNewSpace) {
+          setVenueData((prev) => ({
+            ...prev,
+            ...clearSpaceGalleryFields(),
+            amenities: [],
+          }))
+        }
+
         toast.success(
-          isEditMode && spaceId ? 'Space updated successfully' : 'Space created successfully',
+          isEditMode && !creatingNewSpace
+            ? 'Space updated successfully'
+            : 'Space created successfully',
         )
       }
 
@@ -395,7 +475,9 @@ export const CreateVenueListingPage = () => {
         if (venueId) {
           const refreshed = await fetchAdminDraftVenue(venueId)
           const refreshedVenue = refreshed?.data as DraftVenue | undefined
-          const refreshedSpace = refreshedVenue?.spaces?.[0]
+          const refreshedSpace =
+            refreshedVenue?.spaces?.find((s) => String(s._id) === String(spaceId)) ||
+            refreshedVenue?.spaces?.[0]
           const refreshedGalleryUrls = resolveGalleryUrls(refreshedSpace, refreshedVenue)
 
           setVenueData((prev) => ({
@@ -420,6 +502,24 @@ export const CreateVenueListingPage = () => {
           )
           return
         }
+
+        const allowWeekend = allowWeekendPricing || Boolean(parseMoneyInput(venueData.weekendPrice))
+        const pricingMissing: string[] = []
+        if (!venueData.serviceType?.trim()) pricingMissing.push('Service type')
+        if (allowBaseRates && parseMoneyInput(venueData.weekdayPrice) == null) {
+          pricingMissing.push('Weekday price')
+        }
+        if (allowWeekend && parseMoneyInput(venueData.weekendPrice) == null) {
+          pricingMissing.push('Weekend price')
+        }
+        if (allowFullDay && !allowHourlyOnly && !String(venueData.setDays || '').trim()) {
+          pricingMissing.push('Set days')
+        }
+        if (pricingMissing.length) {
+          toast.error(`Missing required fields: ${pricingMissing.join(', ')}`)
+          return
+        }
+
         await savePricing.mutateAsync({ spaceId, venueData })
         toast.success('Pricing & availability saved')
       }
@@ -445,8 +545,7 @@ export const CreateVenueListingPage = () => {
       }
       setCurrentStep((prev) => Math.min(prev + 1, 7))
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error?.response?.data?.message || 'Failed to save. Please try again.')
+      toast.error(getApiErrorMessage(err, 'Failed to save. Please try again.'))
     }
   }
   const isLoading =

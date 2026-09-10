@@ -15,6 +15,7 @@ import type { CreateSubAdminPayload, PermissionCatalog, Role } from '../types/rb
 import { requiredLabel } from '@/shared/components/form/required-label'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
 import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
@@ -186,10 +187,25 @@ export function CreateSubAdminPage() {
   }
 
   const validateForm = () => {
-    if (!form.firstName || !form.lastName || !form.email) {
-      toast.error('First name, last name and email are required')
-      return false
+    const requiredTextFields: Array<[keyof CreateSubAdminPayload, string]> = [
+      ['firstName', 'First name'],
+      ['lastName', 'Last name'],
+      ['email', 'Email'],
+      ['department', 'Department'],
+      ['jobTitle', 'Job title'],
+      ['employeeId', 'Employee ID'],
+      ['employmentType', 'Employment type'],
+      ['workplaceFlexibility', 'Workplace flexibility'],
+      ['location', 'Location'],
+    ]
+
+    for (const [key, label] of requiredTextFields) {
+      if (!String(form[key] ?? '').trim()) {
+        toast.error(`${label} is required`)
+        return false
+      }
     }
+
     if (!form.roleIds.length) {
       toast.error('Select at least one role')
       return false
@@ -216,8 +232,8 @@ export function CreateSubAdminPage() {
           : 'User created successfully.',
       )
       navigate('/settings/access')
-    } catch {
-      toast.error('Failed to create sub-admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to create sub-admin'))
     }
   }
 
@@ -254,8 +270,8 @@ export function CreateSubAdminPage() {
       setConfirmOpen(false)
       toast.success('User updated successfully. Role and permissions are now in effect.')
       navigate('/settings/access')
-    } catch {
-      toast.error('Failed to update user')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to update user'))
     }
   }
 
@@ -326,7 +342,7 @@ export function CreateSubAdminPage() {
               ))}
 
               <div className="create-user-field">
-                <label className="create-user-field-label">Employee ID</label>
+                <label className="create-user-field-label">{requiredLabel('Employee ID *')}</label>
                 <Input
                   className="create-user-field-control"
                   value={form.employeeId}

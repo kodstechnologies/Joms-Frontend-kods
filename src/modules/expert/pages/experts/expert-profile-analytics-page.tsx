@@ -235,7 +235,7 @@ export function ExpertProfileAnalyticsPage() {
       },
       {
         label: 'Client Satisfaction',
-        value: rs?.available ? `${rs.average}/5` : '0/5',
+        value: rs?.available ? `${rs.average}/5` : '--',
       },
       {
         label: 'Revenue Growth Rate',
