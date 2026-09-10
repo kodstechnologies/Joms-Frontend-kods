@@ -137,7 +137,14 @@ export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormD
     formData.append('offerings', JSON.stringify(form.offerings))
   }
 
-  if (form.sampleWorkLink) formData.append('sampleWorkLink', form.sampleWorkLink.trim())
+  if (form.sampleWorkLink) {
+    const rawLink = form.sampleWorkLink.trim()
+    const link =
+      rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')
+        ? `https://${rawLink}`
+        : rawLink
+    formData.append('sampleWorkLink', link)
+  }
 
   if (form.coverImage) formData.append('coverImage', form.coverImage)
   if (form.profileImage) formData.append('profileImage', form.profileImage)
@@ -184,6 +191,13 @@ export const buildWorkExperiencePayload = (form: ExpertOnboardingFormData) => ({
 export const buildGalleryFormData = (form: ExpertOnboardingFormData): FormData => {
   const formData = new FormData()
   form.galleryImages.forEach((file) => formData.append('galleryImages', file))
+
+  const existingImages = form.galleryPreviews.filter(
+    (preview) =>
+      typeof preview === 'string' && preview.trim().length > 0 && !preview.startsWith('blob:'),
+  )
+  formData.append('existingGalleryImages', JSON.stringify(existingImages))
+
   return formData
 }
 

@@ -1,21 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Check, Copy, ImageIcon, X } from 'lucide-react'
+import { ArrowLeft, Calendar, Check, Copy, ImageIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-
-function MdiCalendarIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className || 'size-4'}
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path d="M19,19H5V8H19M16,1V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3H18V1M17,12H12V17H17V12Z" />
-    </svg>
-  )
-}
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { getDefaultHomeRoute } from '@/app/layouts/navigation/navigation.filter'
@@ -387,7 +373,7 @@ export function UpdateContactInformationPage() {
                     setIsPhoneVerified(false)
                   }}
                   placeholder="Enter Phone Number here"
-                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
                 />
                 <button
                   type="button"
@@ -415,7 +401,7 @@ export function UpdateContactInformationPage() {
                 value={emergencyContact}
                 onChange={(event) => setEmergencyContact(event.target.value)}
                 placeholder="Enter number here"
-                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
               />
             </div>
 
@@ -429,7 +415,7 @@ export function UpdateContactInformationPage() {
                 value={emergencyContactName}
                 onChange={(event) => setEmergencyContactName(event.target.value)}
                 placeholder="Enter name"
-                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
               />
             </div>
 
@@ -450,7 +436,7 @@ export function UpdateContactInformationPage() {
                     }
                   }}
                   placeholder="dd-mm-yyyy"
-                  className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-[#181818] px-4 pr-12 text-xs text-white [color-scheme:dark] transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-[#181818] px-4 pr-12 text-xs text-white [color-scheme:dark] transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:w-0 [&::-webkit-calendar-picker-indicator]:opacity-0"
                 />
                 <button
                   type="button"
@@ -461,10 +447,10 @@ export function UpdateContactInformationPage() {
                       dateInputRef.current?.focus()
                     }
                   }}
-                  className="absolute top-1/2 right-2.5 z-10 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md bg-[#FF5500] text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-white/50 transition-colors hover:text-white"
                   aria-label="Select date of birth"
                 >
-                  <MdiCalendarIcon className="size-4 fill-white text-white" />
+                  <Calendar className="size-4" />
                 </button>
               </div>
             </div>
@@ -477,7 +463,7 @@ export function UpdateContactInformationPage() {
                 value={bloodGroup}
                 onChange={(event) => setBloodGroup(event.target.value)}
                 placeholder="Enter text"
-                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
               />
             </div>
 
@@ -532,7 +518,7 @@ export function UpdateContactInformationPage() {
                     setIsMfaVerified(false)
                   }}
                   placeholder="Enter number here"
-                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 font-mono text-xs tracking-wider text-white transition-all placeholder:text-white/30 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 focus:outline-none"
+                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 font-mono text-xs tracking-wider text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
                 />
                 <button
                   type="button"

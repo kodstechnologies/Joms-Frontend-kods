@@ -142,8 +142,6 @@ const toImageUrl = (img: unknown): string => {
 }
 
 const resolveGalleryUrls = (space?: DraftVenueSpace, venue?: DraftVenue) => {
-  const gallery = space ? space : venue?.gallery
-
   const venueCoverImageUrl =
     toImageUrl(space?.venueCoverImages?.[0]) ||
     toImageUrl(venue?.gallery?.venueCoverImages?.[0]) ||
@@ -162,9 +160,21 @@ const resolveGalleryUrls = (space?: DraftVenueSpace, venue?: DraftVenue) => {
   const venueGalleryImgs = (venue?.gallery?.galleryImages || []).map(toImageUrl).filter(Boolean)
   const venueDirectImgs = (venue?.venueImages || []).map(toImageUrl).filter(Boolean)
 
-  const allGalleryUrls = Array.from(
-    new Set([...spaceGalleryImgs, ...venueGalleryImgs, ...venueDirectImgs]),
-  ).filter((url) => url !== venueCoverImageUrl && url !== venueImageUrl)
+  const cleanCover = venueCoverImageUrl.split('?')[0].trim().toLowerCase()
+  const cleanVenue = venueImageUrl.split('?')[0].trim().toLowerCase()
+
+  const rawGalleryUrls = [...spaceGalleryImgs, ...venueGalleryImgs, ...venueDirectImgs]
+  const seen = new Set<string>()
+  const allGalleryUrls: string[] = []
+
+  for (const url of rawGalleryUrls) {
+    const clean = url.split('?')[0].trim().toLowerCase()
+    if (!clean || clean === cleanCover || clean === cleanVenue || seen.has(clean)) {
+      continue
+    }
+    seen.add(clean)
+    allGalleryUrls.push(url)
+  }
 
   const contacts =
     space?.galleryContact?.contacts && space.galleryContact.contacts.length > 0
