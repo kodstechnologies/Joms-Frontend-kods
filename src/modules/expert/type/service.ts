@@ -14,6 +14,7 @@ export interface Service {
   subCategoryName?: string | null
   pricing: number
   pricingModel?: string | null
+  pricingType?: string | null
   tierName?: string | null
   platformDiscountPercent?: number | null
   finalPrice?: number | null
@@ -144,8 +145,7 @@ export type UpdateServiceStatusRejectPayload = {
 }
 
 export type UpdateServiceStatusPayload =
-  | UpdateServiceStatusApprovePayload
-  | UpdateServiceStatusRejectPayload
+  UpdateServiceStatusApprovePayload | UpdateServiceStatusRejectPayload
 
 export interface ServiceDetail {
   _id: string
@@ -190,6 +190,7 @@ export interface ServiceStatusUpdateResponse {
 
 export interface ConsultationTopic {
   _id: string
+  id?: string
   name: string
 }
 
@@ -259,8 +260,7 @@ export type UpdateConsultationStatusRejectPayload = {
 }
 
 export type UpdateConsultationStatusPayload =
-  | UpdateConsultationStatusApprovePayload
-  | UpdateConsultationStatusRejectPayload
+  UpdateConsultationStatusApprovePayload | UpdateConsultationStatusRejectPayload
 
 export interface ConsultationStatusUpdateResponse {
   success: boolean

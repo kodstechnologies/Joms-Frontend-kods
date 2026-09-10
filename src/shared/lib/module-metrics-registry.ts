@@ -46,6 +46,11 @@ import {
   SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG,
   SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY,
 } from '@/modules/expert/config/service-category-management-metrics.config'
+import {
+  SERVICE_DASHBOARD_MAX_ACTIVE_METRICS,
+  SERVICE_DASHBOARD_METRICS_CATALOG,
+  SERVICE_DASHBOARD_MODULE_KEY,
+} from '@/modules/expert/config/service-dashboard-metrics.config'
 import { SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/service-category-management-table-columns.config'
 import {
   VENUE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS,
@@ -1008,11 +1013,17 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     })),
   },
   'service-dashboard': {
-    moduleKey: 'service-dashboard',
+    moduleKey: SERVICE_DASHBOARD_MODULE_KEY,
     moduleName: 'Service Marketplace',
     returnTo: '/services/dashboard',
-    maxActiveMetrics: 100,
-    metrics: [],
+    maxActiveMetrics: SERVICE_DASHBOARD_MAX_ACTIVE_METRICS,
+    metrics: SERVICE_DASHBOARD_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
   },
   'venue-management': {
     moduleKey: VENUE_MANAGEMENT_MODULE_KEY,

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -83,6 +83,8 @@ export function LoginPage() {
   const { mutateAsync: login, isPending: isLoginPending } = useLoginMutation()
   const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
+  const loginSubmitLockRef = useRef(false)
+  const otpSubmitLockRef = useRef(false)
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [mfaMethod, setMfaMethod] = useState<'emailOtp' | 'authenticator'>('emailOtp')
   const [showPassword, setShowPassword] = useState(false)
@@ -152,6 +154,8 @@ export function LoginPage() {
   }
 
   const onSubmitCredentials = async (values: LoginSchema) => {
+    if (loginSubmitLockRef.current || isLoginPending) return
+    loginSubmitLockRef.current = true
     try {
       if (!values.email) {
         toast.error('Email is required')
@@ -180,10 +184,13 @@ export function LoginPage() {
       )
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Invalid credentials'))
+    } finally {
+      loginSubmitLockRef.current = false
     }
   }
 
   const onSubmitOtp = async (values: OtpSchema) => {
+    if (otpSubmitLockRef.current || isVerifyPending) return
     if (!pendingEmail) {
       setStep('credentials')
       return
@@ -194,6 +201,7 @@ export function LoginPage() {
       return
     }
 
+    otpSubmitLockRef.current = true
     try {
       const response = await verifyOtp({ email: pendingEmail, otp: values.code })
       const session = response?.data
@@ -207,6 +215,8 @@ export function LoginPage() {
       await finalizeLogin(token, session?.admin, pendingEmail)
     } catch {
       toast.error('Invalid or expired OTP')
+    } finally {
+      otpSubmitLockRef.current = false
     }
   }
 

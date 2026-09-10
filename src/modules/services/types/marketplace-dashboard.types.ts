@@ -1,12 +1,5 @@
 export type DateRangePreset =
-  | 'today'
-  | 'last7days'
-  | 'last30days'
-  | 'thisMonth'
-  | 'quarter'
-  | 'last6months'
-  | 'year'
-  | 'custom'
+  'today' | 'last7days' | 'last30days' | 'thisMonth' | 'quarter' | 'last6months' | 'year' | 'custom'
 
 export interface DashboardFilters {
   dateRange?: DateRangePreset
@@ -98,6 +91,11 @@ export interface ServiceKpis {
   repeatServicePct: number
   experts: ServiceExpertStats
   mostOptedCategory: OptedCategory | null
+  mostOptedSubCategory?: OptedCategory | null
+  refunds?: {
+    total: MoneyValue
+    rate: number
+  }
 }
 
 export interface ConsultationListingCounts {
@@ -133,6 +131,7 @@ export interface ConsultationKpis {
   revenue: ConsultationRevenue
   duration: ConsultationDuration
   mostOptedCategory: OptedCategory | null
+  quality?: ServiceQualityStats
 }
 
 export interface DashboardSummary {

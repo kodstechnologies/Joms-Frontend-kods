@@ -259,6 +259,14 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
 
               <textarea
                 rows={3}
+                value={venueData.spaceAddress || ''}
+                onChange={(e) =>
+                  setVenueData((prev) => ({
+                    ...prev,
+                    spaceAddress: e.target.value,
+                  }))
+                }
+                placeholder="Enter space address"
                 className="focus:border-brand-accent w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none"
               />
             </div>
@@ -302,23 +310,23 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
           </div>
 
           <GoogleMapPicker
-            latitude={venueData.latitude}
-            longitude={venueData.longitude}
-            address={venueData.address}
-            city={venueData.city}
-            landmark={venueData.landmark}
+            latitude={venueData.spaceLatitude}
+            longitude={venueData.spaceLongitude}
+            address={venueData.spaceAddress}
+            city={venueData.spaceCity}
+            landmark={venueData.spaceLandmark}
             height="240px"
             onLocationSelect={(details: LocationDetails) => {
               setVenueData((prev) => ({
                 ...prev,
-                latitude: details.latitude,
-                longitude: details.longitude,
-                address: details.address || prev.address,
-                city: details.city || prev.city,
-                landmark: details.landmark || prev.landmark,
-                pincode: details.pincode || prev.pincode,
-                state: details.state || prev.state,
-                country: details.country || prev.country,
+                spaceLatitude: details.latitude,
+                spaceLongitude: details.longitude,
+                spaceAddress: details.address || prev.spaceAddress,
+                spaceCity: details.city || prev.spaceCity,
+                spaceLandmark: details.landmark || prev.spaceLandmark,
+                spacePincode: details.pincode || prev.spacePincode,
+                spaceState: details.state || prev.spaceState,
+                spaceCountry: details.country || prev.spaceCountry,
               }))
             }}
           />

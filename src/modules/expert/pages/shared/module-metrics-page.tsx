@@ -97,6 +97,11 @@ import {
   SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY,
 } from '@/modules/expert/config/service-category-management-metrics.config'
 import {
+  SERVICE_DASHBOARD_METRICS_CATALOG,
+  SERVICE_DASHBOARD_METRIC_IDS,
+  SERVICE_DASHBOARD_MODULE_KEY,
+} from '@/modules/expert/config/service-dashboard-metrics.config'
+import {
   VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG,
   VENUE_CATEGORY_MANAGEMENT_METRIC_IDS,
   VENUE_CATEGORY_MANAGEMENT_MODULE_KEY,
@@ -215,6 +220,10 @@ export function ModuleMetricsPage({
 
     if (moduleKey === SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY) {
       return SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG
+    }
+
+    if (moduleKey === SERVICE_DASHBOARD_MODULE_KEY) {
+      return SERVICE_DASHBOARD_METRICS_CATALOG
     }
 
     if (moduleKey === VENUE_CATEGORY_MANAGEMENT_MODULE_KEY) {
@@ -338,6 +347,9 @@ export function ModuleMetricsPage({
     }
     if (moduleKey === SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY) {
       return sortIdsByCatalogOrder(result, SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS)
+    }
+    if (moduleKey === SERVICE_DASHBOARD_MODULE_KEY) {
+      return sortIdsByCatalogOrder(result, SERVICE_DASHBOARD_METRIC_IDS)
     }
     if (moduleKey === VENUE_CATEGORY_MANAGEMENT_MODULE_KEY) {
       return sortIdsByCatalogOrder(result, VENUE_CATEGORY_MANAGEMENT_METRIC_IDS)

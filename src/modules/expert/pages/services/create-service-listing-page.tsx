@@ -591,10 +591,15 @@ export const CreateServiceListingPage = () => {
 
   const addTopicById = (topicId: string) => {
     if (!topicId) return
-    const topic = topicOptions.find((option) => option._id === topicId)
+    const topic = topicOptions.find((option) => option._id === topicId || option.id === topicId)
     if (!topic) return
-    if (topics.some((selected) => selected._id === topic._id)) return
-    setTopics((current) => [...current, topic])
+    const normalized = {
+      _id: String(topic._id || topic.id || ''),
+      name: String(topic.name || ''),
+    }
+    if (!normalized._id || !normalized.name) return
+    if (topics.some((selected) => selected._id === normalized._id)) return
+    setTopics((current) => [...current, normalized])
   }
 
   const removeTopic = (topicId: string) => {
@@ -785,12 +790,17 @@ export const CreateServiceListingPage = () => {
             }
           }
 
+          const topicPayload = topics.map((topic) => ({
+            _id: topic._id,
+            name: topic.name,
+          }))
+
           const response = listingId
             ? await updateConsultationBasicMutation.mutateAsync({
                 id: listingId,
                 payload: {
                   title: consultationTitle.trim(),
-                  topics,
+                  topics: topicPayload,
                   sessionOutline: sessionOutline.trim(),
                   whoItsFor: whoItsFor.trim(),
                 },
@@ -798,7 +808,7 @@ export const CreateServiceListingPage = () => {
             : await createConsultationMutation.mutateAsync({
                 partnerId,
                 title: consultationTitle.trim(),
-                topics,
+                topics: topicPayload,
                 sessionOutline: sessionOutline.trim(),
                 whoItsFor: whoItsFor.trim(),
               })
@@ -934,12 +944,18 @@ export const CreateServiceListingPage = () => {
                         : 'Select a topic'}
                   </option>
                   {topicOptions
-                    .filter((option) => !topics.some((selected) => selected._id === option._id))
-                    .map((option) => (
-                      <option key={option._id} value={option._id}>
-                        {option.name}
-                      </option>
-                    ))}
+                    .filter((option) => {
+                      const optionId = String(option._id || option.id || '')
+                      return optionId && !topics.some((selected) => selected._id === optionId)
+                    })
+                    .map((option) => {
+                      const optionId = String(option._id || option.id || '')
+                      return (
+                        <option key={optionId} value={optionId}>
+                          {option.name}
+                        </option>
+                      )
+                    })}
                 </select>
               </div>
               {topics.length > 0 && (
@@ -2199,9 +2215,7 @@ export const CreateServiceListingPage = () => {
                       d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <span>
-                    {uploadedImages.length > 0 ? `1/${uploadedImages.length}` : '0/0'}
-                  </span>
+                  <span>{uploadedImages.length > 0 ? `1/${uploadedImages.length}` : '0/0'}</span>
                 </div>
               </div>
 

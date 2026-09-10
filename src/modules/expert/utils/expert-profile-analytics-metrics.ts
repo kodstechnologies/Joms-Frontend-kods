@@ -68,9 +68,7 @@ export function buildExpertProfileAnalyticsMetricCards(
       : DASH,
     'profile-views': visibility?.profileViews?.available
       ? formatNumber(visibility.profileViews.count)
-      : formatNumber(visibility?.profileViews?.count ?? null) === DASH
-        ? DASH
-        : formatNumber(visibility?.profileViews?.count),
+      : DASH,
     'services-listed': formatNumber(market?.servicesListed ?? listing?.servicesListed),
     'active-services': formatNumber(market?.activeServices),
     'paused-services': formatNumber(market?.pausedServices),
@@ -128,11 +126,6 @@ export function buildExpertProfileAnalyticsMetricCards(
     ),
     'average-first-response-time':
       ops?.averageFirstResponseTime || analytics?.serviceAnalytics?.avgResponseTime?.label || DASH,
-  }
-
-  // Profile views: API marks available:false even when count exists — still show count if > 0
-  if (valueById['profile-views'] === DASH && visibility?.profileViews?.count != null) {
-    valueById['profile-views'] = formatNumber(visibility.profileViews.count)
   }
 
   return EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.map((metric) => ({

@@ -14,7 +14,7 @@ export const ServiceMetricsPage = () => (
 export const ServiceDashboardMetricsPage = () => (
   <ModuleMetricsPage
     moduleKey="service-dashboard"
-    moduleName="Service Dashboard"
+    moduleName="Service Marketplace"
     returnTo="/services/dashboard"
     section="dashboard"
     includeTableColumns={false}
