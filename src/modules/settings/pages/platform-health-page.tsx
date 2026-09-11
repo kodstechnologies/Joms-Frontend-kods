@@ -97,7 +97,6 @@ const PLATFORM_TREND_BAR_GAP = 4
 const PLATFORM_TREND_CATEGORY_PAD = 48
 const PLATFORM_TREND_CATEGORY_WIDTH =
   PLATFORM_TREND_BAR_SIZE * 2 + PLATFORM_TREND_BAR_GAP + PLATFORM_TREND_CATEGORY_PAD
-/** Figma axis tick: Figtree SemiBold 16 / 20, fill #FFFFFF */
 const PLATFORM_TREND_AXIS_TICK = {
   fill: '#FFFFFF',
   fontSize: 16,
@@ -114,12 +113,10 @@ type PlatformTrendAxisTickProps = {
   y?: number | string
   payload?: { value?: string | number }
   textAnchor?: 'start' | 'middle' | 'end' | 'inherit'
-  /** Ignored — Recharts passes fill="#666"; Figma requires #FFFFFF. */
   fill?: string
   formatValue?: (value: string | number) => string
 }
 
-/** Custom tick: always Figtree 600 / 16px / #FFFFFF (ignore Recharts default #666 fill). */
 function PlatformTrendAxisTick({
   x = 0,
   y = 0,
@@ -182,7 +179,6 @@ type PlatformTrendBarShapeProps = {
   fill?: string
 }
 
-/** Force Figma bar width (Rectangle 8830 = 70px). Recharts otherwise shrinks bars when points are dense. */
 function PlatformTrendBarShape({
   x = 0,
   y = 0,
@@ -318,7 +314,6 @@ const SECURITY_LEGEND_COLORS: Record<string, string> = {
   'Issues Resolved': '#00A63E',
   'Security Incidents': '#D3191C',
 }
-/** Figma legend label: Figtree SemiBold 12 / 14 */
 const PLATFORM_TREND_LEGEND_TEXT_CLASS =
   "font-['Figtree',ui-sans-serif,system-ui,sans-serif] text-[12px] leading-[14px] font-semibold tracking-normal"
 
@@ -501,7 +496,7 @@ function ChartPanel({
   onRangeChange,
   onRefresh,
   isLoading,
-  figmaTrendTypography = false,
+  trendTypography = false,
 }: {
   title: string
   children: ReactNode
@@ -509,7 +504,7 @@ function ChartPanel({
   onRangeChange: (value: string) => void
   onRefresh?: () => void
   isLoading?: boolean
-  figmaTrendTypography?: boolean
+  trendTypography?: boolean
 }) {
   return (
     <section
@@ -518,7 +513,7 @@ function ChartPanel({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2
           className={cn(
-            figmaTrendTypography
+            trendTypography
               ? cn(PLATFORM_TREND_TEXT_CLASS, 'text-brand-text')
               : 'text-body-md-semibold text-brand-text',
           )}
@@ -531,7 +526,7 @@ function ChartPanel({
             onChange={(event) => onRangeChange(event.target.value)}
             className={cn(
               'radius-md bg-brand-bg text-brand-text/80 h-9 min-w-[140px] border border-white/10 px-3',
-              figmaTrendTypography ? PLATFORM_TREND_TEXT_CLASS : 'text-body-sm',
+              trendTypography ? PLATFORM_TREND_TEXT_CLASS : 'text-body-sm',
             )}
           >
             {RANGE_OPTIONS.map((option) => (
@@ -726,7 +721,7 @@ export function PlatformHealthPage() {
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
-        figmaTrendTypography
+        trendTypography
       >
         <div className="platform-health-trends-chart w-full overflow-x-auto">
           <div className="h-[420px]" style={{ minWidth: platformTrendChartMinWidth }}>
@@ -847,7 +842,7 @@ export function PlatformHealthPage() {
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
-        figmaTrendTypography
+        trendTypography
       >
         <div className="platform-health-trends-chart h-[420px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -982,7 +977,7 @@ export function PlatformHealthPage() {
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
-        figmaTrendTypography
+        trendTypography
       >
         <div className="platform-health-trends-chart h-[420px] w-full">
           <ResponsiveContainer width="100%" height="100%">

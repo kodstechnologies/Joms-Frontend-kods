@@ -24,6 +24,7 @@ type DocumentReviewViewerProps = {
   reasonOptions: DecisionActionModalOption[]
   requestChangesReasonOptions?: DecisionActionModalOption[]
   actionsDisabled?: boolean
+  hideActions?: boolean
   isSubmitting?: boolean
   mimeType?: string
   onClose: () => void
@@ -76,6 +77,7 @@ function DocumentReviewViewerContent({
   reasonOptions,
   requestChangesReasonOptions,
   actionsDisabled = false,
+  hideActions = false,
   isSubmitting = false,
   mimeType,
   onClose,
@@ -148,8 +150,9 @@ function DocumentReviewViewerContent({
   const actualUrl = blobData.url || url
   const actualMimeType = blobData.type || mimeType
 
-  const resolvedReviewStatus = resolveDocumentReviewStatus(url, reviewStatus)
+  const resolvedReviewStatus = hideActions ? null : resolveDocumentReviewStatus(url, reviewStatus)
   const decisionActionsDisabled =
+    hideActions ||
     actionsDisabled ||
     resolvedReviewStatus === 'APPROVED' ||
     resolvedReviewStatus === 'REJECTED' ||
@@ -257,7 +260,7 @@ function DocumentReviewViewerContent({
           </button>
           <div className="min-w-0">
             <p className="text-body-md-semibold truncate text-white">{filename}</p>
-            {resolvedReviewStatus === 'APPROVED' ? (
+            {hideActions ? null : resolvedReviewStatus === 'APPROVED' ? (
               <p className="text-body-sm text-brand-positive font-medium">Approved</p>
             ) : resolvedReviewStatus === 'REJECTED' ? (
               <p className="text-body-sm text-brand-danger font-medium">Rejected</p>
@@ -269,55 +272,57 @@ function DocumentReviewViewerContent({
           </div>
         </div>
 
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            aria-label="Document actions"
-            disabled={decisionActionsDisabled}
-            onClick={() => {
-              if (decisionActionsDisabled) return
-              setMenuOpen((openMenu) => !openMenu)
-            }}
-            className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white/80"
-          >
-            <MoreVertical className="size-5" />
-          </button>
+        {!hideActions ? (
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              aria-label="Document actions"
+              disabled={decisionActionsDisabled}
+              onClick={() => {
+                if (decisionActionsDisabled) return
+                setMenuOpen((openMenu) => !openMenu)
+              }}
+              className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white/80"
+            >
+              <MoreVertical className="size-5" />
+            </button>
 
-          {menuOpen && !decisionActionsDisabled ? (
-            <div className="ui-table-actions-menu absolute top-full right-0 z-10 mt-2">
-              <button
-                type="button"
-                onClick={() => openDecisionModal('approve')}
-                className="ui-table-actions-item"
-              >
-                <span className="bg-brand-positive flex size-6 items-center justify-center rounded-full text-white">
-                  <Check className="size-3.5" strokeWidth={3} />
-                </span>
-                Approve Document
-              </button>
-              <button
-                type="button"
-                onClick={() => openDecisionModal('reject')}
-                className="ui-table-actions-item"
-              >
-                <span className="bg-brand-danger flex size-6 items-center justify-center rounded-full text-white">
-                  <X className="size-3.5" strokeWidth={3} />
-                </span>
-                Reject Document
-              </button>
-              <button
-                type="button"
-                onClick={() => openDecisionModal('requestChanges')}
-                className="ui-table-actions-item"
-              >
-                <span className="bg-brand-teal flex size-6 items-center justify-center rounded-full text-white">
-                  <RefreshCw className="size-3.5" strokeWidth={2.5} />
-                </span>
-                Request Changes
-              </button>
-            </div>
-          ) : null}
-        </div>
+            {menuOpen && !decisionActionsDisabled ? (
+              <div className="ui-table-actions-menu absolute top-full right-0 z-10 mt-2">
+                <button
+                  type="button"
+                  onClick={() => openDecisionModal('approve')}
+                  className="ui-table-actions-item"
+                >
+                  <span className="bg-brand-positive flex size-6 items-center justify-center rounded-full text-white">
+                    <Check className="size-3.5" strokeWidth={3} />
+                  </span>
+                  Approve Document
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openDecisionModal('reject')}
+                  className="ui-table-actions-item"
+                >
+                  <span className="bg-brand-danger flex size-6 items-center justify-center rounded-full text-white">
+                    <X className="size-3.5" strokeWidth={3} />
+                  </span>
+                  Reject Document
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openDecisionModal('requestChanges')}
+                  className="ui-table-actions-item"
+                >
+                  <span className="bg-brand-teal flex size-6 items-center justify-center rounded-full text-white">
+                    <RefreshCw className="size-3.5" strokeWidth={2.5} />
+                  </span>
+                  Request Changes
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto px-4 pt-2 pb-24">

@@ -10,8 +10,8 @@ import {
   mergeWithDefaults,
   resolveBranding,
   type BrandingState,
-} from '@/modules/settings/utils/branding-defaults'
-import { platformDefaults } from '@/modules/settings/mock/settings.defaults'
+} from '@/modules/settings/utils/branding-config'
+import { platformDefaults } from '@/modules/settings/config/settings.config'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 function upsertFavicon(href: string) {

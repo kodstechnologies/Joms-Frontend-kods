@@ -5,13 +5,12 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { fetchExpertApplicationView, updateExpertKycStatus } from '../../api/expert-application-api'
-import { fetchExperts } from '../../api/expert-api'
 import {
   DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS,
   EXPERT_PENDING_APPROVALS_MODULE_KEY,
+  EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
 } from '../../config/expert-management-table-columns.config'
-import { useExperts } from '../../hooks/use-expert'
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { useExpertStatusList } from '../../hooks/use-expert-status-list'
 import type { Expert } from '../../type/expert'
 import {
   buildExpertDataColumnsById,
@@ -19,20 +18,10 @@ import {
 } from '../../utils/expert-preference-columns'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
-import {
-  buildExpertListQueryParams,
-  createFilteredExportHandler,
-} from '@/shared/utils/export-filter-utils'
 import { ExpertListHeader } from './expert-list-shared'
 import { createExpertSelectColumn } from './expert-list-columns'
-import { useExpertListSelection } from './use-expert-list-selection'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { EXPERT_PENDING_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -47,24 +36,12 @@ import {
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
 
-const fetchPendingExpertsForExport = async (params: Record<string, unknown>) => {
-  const response = await fetchExperts({ ...params, status: 'pending' })
-  return {
-    data: (response.data || []).filter((expert) => expert.status === 'pending'),
-    meta: response.meta,
-  }
-}
+const filterPendingExperts = (experts: Expert[]) =>
+  experts.filter((expert) => expert.status === 'pending')
 
 export function ExpertPendingApprovalsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [revokeExpertTarget, setRevokeExpertTarget] = useState<Expert | null>(null)
   const [approveExpertTarget, setApproveExpertTarget] = useState<Expert | null>(null)
   const [approveAdminNotes, setApproveAdminNotes] = useState('')
@@ -74,62 +51,41 @@ export function ExpertPendingApprovalsPage() {
   const [revokeReasonDetails, setRevokeReasonDetails] = useState('')
   const [revokeAdminNotes, setRevokeAdminNotes] = useState('')
   const [isRevoking, setIsRevoking] = useState(false)
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const catalogColumnIds = useMemo(
+    () => EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+
+  const {
+    currentPage,
+    setCurrentPage,
+    activeDropdownId,
+    setActiveDropdownId,
+    serverSort,
+    enhancedSearch,
+    experts,
+    meta,
+    isLoading,
+    selection,
+    visibleColumnIds,
+    onAdvancedFilter,
+    onExport,
+    exportFilterModals,
+  } = useExpertStatusList({
+    moduleKey: EXPERT_PENDING_APPROVALS_MODULE_KEY,
+    status: 'pending',
+    defaultVisibleColumnIds: DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    exportFileName: 'pending_experts_export',
+    filterExperts: filterPendingExperts,
+    // Match prior pending export: full mapped columns.
+    restrictExportToVisibleColumns: false,
+  })
 
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: revokeReasonOptions, buildPayload: buildRevokeReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
-
-  const expertQueryParams = useMemo(
-    () =>
-      buildExpertListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
-        status: 'pending',
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
-
-  const { data, isLoading } = useExperts(expertQueryParams)
-
-  const experts = useMemo(
-    () => (data?.data || []).filter((expert) => expert.status === 'pending'),
-    [data?.data],
-  )
-  const meta = data?.meta
-  const selection = useExpertListSelection(experts)
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
-
-  const handleExportData = useMemo(
-    () =>
-      createFilteredExportHandler(
-        fetchPendingExpertsForExport,
-        EXPERT_EXPORT_COLUMN_MAP,
-        'pending_experts_export',
-        {
-          search: enhancedSearch.globalSearch.trim() || undefined,
-        },
-      ),
-    [enhancedSearch.globalSearch],
-  )
-
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: EXPERT_PENDING_APPROVALS_MODULE_KEY,
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
-  })
-
-  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_PENDING_APPROVALS_MODULE_KEY)
 
   const toggleRevokeReason = useCallback((value: string) => {
     setRevokeReasons((current) =>
@@ -278,9 +234,6 @@ export function ExpertPendingApprovalsPage() {
 
   const columns = useMemo<ColumnDef<Expert>[]>(() => {
     const dataColumnsById = buildExpertDataColumnsById()
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-      ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS
 
     return withServerSortMeta(
       [
@@ -293,7 +246,7 @@ export function ExpertPendingApprovalsPage() {
         }),
         ...pickPreferenceColumns(
           dataColumnsById,
-          visibleIds,
+          visibleColumnIds,
           DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS,
         ),
         {
@@ -373,7 +326,7 @@ export function ExpertPendingApprovalsPage() {
       ],
       EXPERT_COLUMN_SORT_FIELDS,
     )
-  }, [activeDropdownId, navigate, selection, tableColumnPreferencesQuery.data])
+  }, [activeDropdownId, navigate, selection, visibleColumnIds])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

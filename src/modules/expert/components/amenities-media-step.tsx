@@ -185,9 +185,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
 
   const hasUploadedImages = Boolean(
     coverImagePreview ||
-      venueImagePreview ||
-      venueData.galleryImages.length > 0 ||
-      venueData.galleryImageUrls.length > 0,
+    venueImagePreview ||
+    venueData.galleryImages.length > 0 ||
+    venueData.galleryImageUrls.length > 0,
   )
 
   return (

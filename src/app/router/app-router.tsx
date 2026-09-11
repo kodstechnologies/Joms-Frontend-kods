@@ -596,12 +596,6 @@ const FinanceEscalationDetailPage = lazy(() =>
   })),
 )
 
-const FinanceEventsPage = lazy(() =>
-  import('@/modules/payments').then((m) => ({
-    default: m.FinanceEventsPage,
-  })),
-)
-
 const MembershipManagementPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.MembershipManagementPage,
@@ -635,12 +629,6 @@ const InvoicesBillingPage = lazy(() =>
 const InvoiceDetailViewPage = lazy(() =>
   import('@/modules/payments/pages/invoice-detail-view-page').then((m) => ({
     default: m.InvoiceDetailViewPage,
-  })),
-)
-
-const FinanceCategoryPage = lazy(() =>
-  import('@/modules/payments').then((m) => ({
-    default: m.FinanceCategoryPage,
   })),
 )
 
@@ -843,6 +831,7 @@ export function AppRouter() {
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
+                <Route path="/settings/escalations" element={<EscalationPage />} />
               </Route>
 
               <Route element={<PermissionRoute permission="settings.rbac_management" />}>
@@ -870,7 +859,6 @@ export function AppRouter() {
                 <Route path="/finance/escalations/:id" element={<FinanceEscalationDetailPage />} />
                 <Route path="/finance/revenue" element={<RevenueOverviewPage />} />
                 <Route path="/finance/revenue/:id" element={<PaymentDetailViewPage />} />
-                <Route path="/finance/events" element={<FinanceEventsPage />} />
                 <Route path="/finance/services" element={<FinanceServicesPage />} />
                 <Route path="/finance/services/:id" element={<ServicePaymentDetailViewPage />} />
                 <Route path="/finance/venues" element={<FinanceVenuesPage />} />
@@ -888,7 +876,6 @@ export function AppRouter() {
                   path="/finance/reconciliation/:id"
                   element={<ReconciliationDetailViewPage />}
                 />
-                <Route path="/finance/categories" element={<FinanceCategoryPage />} />
                 <Route path="/finance/escrow" element={<EscrowManagementPage />} />
                 <Route path="/finance/escrow/:id" element={<EscrowDetailViewPage />} />
                 <Route path="/finance/refunds" element={<FinanceRefundsPage />} />
@@ -1069,8 +1056,6 @@ export function AppRouter() {
                   path="/venues/management/profile/:venueId/space/:spaceId/analytics"
                   element={<SpaceAnalyticsPage />}
                 />
-
-                <Route path="/settings/escalations" element={<EscalationPage />} />
 
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />

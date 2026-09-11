@@ -8,34 +8,98 @@ export type PastTicketsTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-const col = (
-  id: string,
-  label: string,
-  type: string,
-  description: string,
-  defaultVisible = false,
-): PastTicketsTableColumnCatalogItem => ({
-  id,
-  label,
-  type,
-  description,
-  defaultVisible,
-})
-
 export const PAST_TICKETS_TABLE_COLUMNS_CATALOG: PastTicketsTableColumnCatalogItem[] = [
-  col('ticket-id', 'Ticket ID', 'Text', 'Ticket identifier', true),
-  col('subject', 'Subject', 'Text', 'Ticket title', true),
-  col('status', 'Status', 'Status', 'Ticket status (Resolved, Closed)', true),
-  col('priority', 'Priority', 'Text', 'Ticket priority', true),
-  col('category', 'Category', 'Text', 'Ticket category', true),
-  col('sla-timer', 'SLA Timer', 'Duration', 'Remaining SLA (if unresolved)', true),
-  col('assigned-on', 'Assigned On', 'Date', 'Assignment timestamp', true),
-  col('assigned-by', 'Assigned By', 'Text', 'Assigning admin', true),
-  col('assigned-to', 'Assigned To', 'Text', 'Assigned support agent', true),
-  col('resolved-at', 'Resolved At', 'Date', 'Resolution timestamp', true),
-  col('resolved-by', 'Resolved By', 'Text', 'Resolving admin', true),
-  col('resolution-time', 'Resolution Time', 'Duration', 'Total resolution duration', true),
-  col('last-updated-at', 'Last Updated At', 'Date', 'Last activity timestamp', true),
+  {
+    id: 'ticket-id',
+    label: 'Ticket ID',
+    type: 'Text',
+    description: 'Ticket identifier',
+    defaultVisible: true,
+  },
+  {
+    id: 'subject',
+    label: 'Subject',
+    type: 'Text',
+    description: 'Ticket title',
+    defaultVisible: true,
+  },
+  {
+    id: 'status',
+    label: 'Status',
+    type: 'Status',
+    description: 'Ticket status (Resolved, Closed)',
+    defaultVisible: true,
+  },
+  {
+    id: 'priority',
+    label: 'Priority',
+    type: 'Text',
+    description: 'Ticket priority',
+    defaultVisible: true,
+  },
+  {
+    id: 'category',
+    label: 'Category',
+    type: 'Text',
+    description: 'Ticket category',
+    defaultVisible: true,
+  },
+  {
+    id: 'sla-timer',
+    label: 'SLA Timer',
+    type: 'Duration',
+    description: 'Remaining SLA (if unresolved)',
+    defaultVisible: true,
+  },
+  {
+    id: 'assigned-on',
+    label: 'Assigned On',
+    type: 'Date',
+    description: 'Assignment timestamp',
+    defaultVisible: true,
+  },
+  {
+    id: 'assigned-by',
+    label: 'Assigned By',
+    type: 'Text',
+    description: 'Assigning admin',
+    defaultVisible: true,
+  },
+  {
+    id: 'assigned-to',
+    label: 'Assigned To',
+    type: 'Text',
+    description: 'Assigned support agent',
+    defaultVisible: true,
+  },
+  {
+    id: 'resolved-at',
+    label: 'Resolved At',
+    type: 'Date',
+    description: 'Resolution timestamp',
+    defaultVisible: true,
+  },
+  {
+    id: 'resolved-by',
+    label: 'Resolved By',
+    type: 'Text',
+    description: 'Resolving admin',
+    defaultVisible: true,
+  },
+  {
+    id: 'resolution-time',
+    label: 'Resolution Time',
+    type: 'Duration',
+    description: 'Total resolution duration',
+    defaultVisible: true,
+  },
+  {
+    id: 'last-updated-at',
+    label: 'Last Updated At',
+    type: 'Date',
+    description: 'Last activity timestamp',
+    defaultVisible: true,
+  },
 ]
 
 export const PAST_TICKETS_LEGACY_COLUMN_ID_MAP: Record<string, string> = {

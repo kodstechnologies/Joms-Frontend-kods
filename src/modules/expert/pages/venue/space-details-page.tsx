@@ -559,7 +559,7 @@ export function SpaceDetailsPage() {
   const spaceStatus = detailSpace?.status ?? summary?.status ?? 'submitted'
   const isDecisionPending = spaceStatus === 'submitted'
   const decisionDisabled = !isDecisionPending || spaceStatusMutation.isPending || !spaceId
-  const escalateDisabled = !isDecisionPending || escalateVenueSpace.isPending || !spaceId
+  const escalateDisabled = spaceStatus === 'approved' || escalateVenueSpace.isPending || !spaceId
   const escalation = escalationData?.data
   const isEscalateFlow = decisionVariant === 'escalate'
   const escalationOptions: DecisionActionModalOption[] =
@@ -655,7 +655,7 @@ export function SpaceDetailsPage() {
 
       {(isHidden || isSuspended) && (
         <div className="text-body-sm rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 font-semibold text-amber-200">
-          This space is currently {isSuspended ? 'suspended' : 'hidden'} and is not visible in
+          This space is currently {isSuspended ? 'Suspended' : 'hidden'} and is not visible in
           partner-facing listings.
         </div>
       )}
@@ -895,7 +895,7 @@ export function SpaceDetailsPage() {
             onRequestChanges={() => openDecisionModal('requestChanges')}
             onEscalate={() => openDecisionModal('escalate')}
             onReject={() => openDecisionModal('reject')}
-            showEscalate={isSuperAdmin}
+            showEscalate
             approveDisabled={decisionDisabled || !allowApproveVenues}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}

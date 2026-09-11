@@ -76,8 +76,6 @@ export type ModuleFilterKey =
   | 'finance-invoices'
   | 'finance-reconciliation'
   | 'finance-escrow'
-  | 'finance-events'
-  | 'finance-categories'
   | 'expert-memberships'
   | 'expert-clientele'
   | 'expert-profile-services'

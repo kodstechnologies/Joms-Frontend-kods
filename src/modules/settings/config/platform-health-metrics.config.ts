@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const PLATFORM_HEALTH_MODULE_KEY = 'platform-health'
 
 export type PlatformHealthMetricCatalogItem = {
@@ -8,162 +14,100 @@ export type PlatformHealthMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const PLATFORM_HEALTH_METRICS_CATALOG: PlatformHealthMetricCatalogItem[] = [
-  {
-    id: 'system-uptime',
-    label: 'System Uptime',
-    type: 'Percentage',
-    description: 'Operational time ÷ total time',
-    defaultActive: true,
-  },
-  {
-    id: 'compliance-flags',
-    label: 'Compliance Flags',
-    type: 'Count',
-    description: 'Open compliance and security flags',
-    defaultActive: true,
-  },
-  {
-    id: 'admin-actions-mtd',
-    label: 'Admin Actions (MTD)',
-    type: 'Count',
-    description: 'Admin actions logged this month',
-    defaultActive: true,
-  },
-  {
-    id: 'critical-actions-logged',
-    label: 'Critical Actions Logged',
-    type: 'Count',
-    description: 'High-risk admin actions such as delete and role change',
-    defaultActive: true,
-  },
-  {
-    id: 'avg-approval-time',
-    label: 'Avg. Approval Time',
-    type: 'Average',
-    description: 'Average escalation approval turnaround',
-    defaultActive: true,
-  },
-  {
-    id: 'impersonation-sessions',
-    label: 'Impersonation Sessions',
-    type: 'Count',
-    description: 'Admin impersonation sessions',
-    defaultActive: true,
-  },
-  {
-    id: 'api-response-time',
-    label: 'Average API Response Time',
-    type: 'Average',
-    description: 'Average backend health-probe latency',
-    defaultActive: true,
-  },
-  {
-    id: 'api-success-rate',
-    label: 'API Success Rate',
-    type: 'Percentage',
-    description: 'Successful probes ÷ total probes',
-    defaultActive: false,
-  },
-  {
-    id: 'error-rate',
-    label: 'Error Rate',
-    type: 'Percentage',
-    description: 'Failed probes ÷ total probes',
-    defaultActive: true,
-  },
-  {
-    id: 'database-query-time',
-    label: 'Database Health Score',
-    type: 'Percentage',
-    description: 'Database availability and latency score',
-    defaultActive: true,
-  },
-  {
-    id: 'background-jobs-success-rate',
-    label: 'Background Jobs Success Rate',
-    type: 'Percentage',
-    description: 'Successful background jobs ÷ total jobs',
-    defaultActive: false,
-  },
-  {
-    id: 'queue-processing-time',
-    label: 'Queue Processing Time',
-    type: 'Average',
-    description: 'Average queue processing duration',
-    defaultActive: false,
-  },
-  {
-    id: 'data-backup-success',
-    label: 'Data Backup Success Rate',
-    type: 'Percentage',
-    description: 'Successful backups ÷ backup attempts',
-    defaultActive: true,
-  },
-  {
-    id: 'last-successful-backup',
-    label: 'Last Successful Backup',
-    type: 'Timestamp',
-    description: 'Most recent completed backup timestamp',
-    defaultActive: false,
-  },
-  {
-    id: 'open-support-tickets',
-    label: 'Active Incidents',
-    type: 'Count',
-    description: 'Open platform incidents',
-    defaultActive: true,
-  },
-  {
-    id: 'security-alerts',
-    label: 'Security Alerts',
-    type: 'Count',
-    description: 'Security-related alerts in range',
-    defaultActive: false,
-  },
-  {
-    id: 'failed-login-attempts',
-    label: 'Failed Login Attempts',
-    type: 'Count',
-    description: 'Failed admin login attempts',
-    defaultActive: false,
-  },
-  {
-    id: 'storage-utilization',
-    label: 'Storage Utilization',
-    type: 'Percentage',
-    description: 'Storage capacity used',
-    defaultActive: false,
-  },
-  {
-    id: 'failed-transactions',
-    label: 'Failed Transactions',
-    type: 'Count',
-    description: 'Failed payment or booking transactions in range',
-    defaultActive: false,
-  },
-  {
-    id: 'avg-ticket-resolution-time',
-    label: 'Avg. Ticket Resolution Time',
-    type: 'Average',
-    description: 'Average ticket resolution duration',
-    defaultActive: false,
-  },
-  {
-    id: 'first-response-time',
-    label: 'First Response Time',
-    type: 'Average',
-    description: 'Average first response duration',
-    defaultActive: false,
-  },
-  {
-    id: 'customer-satisfaction-csat',
-    label: 'Customer Satisfaction (CSAT)',
-    type: 'Percentage',
-    description: 'Positive support feedback percentage',
-    defaultActive: false,
-  },
+const HEALTH_METRIC_DEFS: MetricRowTuple[] = [
+  ['system-uptime', 'System Uptime', 'Percentage', 'Operational time ÷ total time', true],
+  ['compliance-flags', 'Compliance Flags', 'Count', 'Open compliance and security flags', true],
+  ['admin-actions-mtd', 'Admin Actions (MTD)', 'Count', 'Admin actions logged this month', true],
+  [
+    'critical-actions-logged',
+    'Critical Actions Logged',
+    'Count',
+    'High-risk admin actions such as delete and role change',
+    true,
+  ],
+  [
+    'avg-approval-time',
+    'Avg. Approval Time',
+    'Average',
+    'Average escalation approval turnaround',
+    true,
+  ],
+  [
+    'impersonation-sessions',
+    'Impersonation Sessions',
+    'Count',
+    'Admin impersonation sessions',
+    true,
+  ],
+  [
+    'api-response-time',
+    'Average API Response Time',
+    'Average',
+    'Average backend health-probe latency',
+    true,
+  ],
+  ['api-success-rate', 'API Success Rate', 'Percentage', 'Successful probes ÷ total probes'],
+  ['error-rate', 'Error Rate', 'Percentage', 'Failed probes ÷ total probes', true],
+  [
+    'database-query-time',
+    'Database Health Score',
+    'Percentage',
+    'Database availability and latency score',
+    true,
+  ],
+  [
+    'background-jobs-success-rate',
+    'Background Jobs Success Rate',
+    'Percentage',
+    'Successful background jobs ÷ total jobs',
+  ],
+  [
+    'queue-processing-time',
+    'Queue Processing Time',
+    'Average',
+    'Average queue processing duration',
+  ],
+  [
+    'data-backup-success',
+    'Data Backup Success Rate',
+    'Percentage',
+    'Successful backups ÷ backup attempts',
+    true,
+  ],
+  [
+    'last-successful-backup',
+    'Last Successful Backup',
+    'Timestamp',
+    'Most recent completed backup timestamp',
+  ],
+  ['open-support-tickets', 'Active Incidents', 'Count', 'Open platform incidents', true],
+  ['security-alerts', 'Security Alerts', 'Count', 'Security-related alerts in range'],
+  ['failed-login-attempts', 'Failed Login Attempts', 'Count', 'Failed admin login attempts'],
+  ['storage-utilization', 'Storage Utilization', 'Percentage', 'Storage capacity used'],
+  [
+    'failed-transactions',
+    'Failed Transactions',
+    'Count',
+    'Failed payment or booking transactions in range',
+  ],
+  [
+    'avg-ticket-resolution-time',
+    'Avg. Ticket Resolution Time',
+    'Average',
+    'Average ticket resolution duration',
+  ],
+  ['first-response-time', 'First Response Time', 'Average', 'Average first response duration'],
+  [
+    'customer-satisfaction-csat',
+    'Customer Satisfaction (CSAT)',
+    'Percentage',
+    'Positive support feedback percentage',
+  ],
 ]
+
+export const PLATFORM_HEALTH_METRICS_CATALOG = catalogFromMetricRows(
+  HEALTH_METRIC_DEFS,
+) as PlatformHealthMetricCatalogItem[]
 
 export const PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'avg-api-response-time': 'api-response-time',
@@ -172,12 +116,8 @@ export const PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'data-backup-success-rate': 'data-backup-success',
 }
 
-export const PLATFORM_HEALTH_METRIC_IDS = PLATFORM_HEALTH_METRICS_CATALOG.map((metric) => metric.id)
-
-export const PLATFORM_HEALTH_METRIC_ID_SET = new Set(PLATFORM_HEALTH_METRIC_IDS)
-
-export const DEFAULT_PLATFORM_HEALTH_METRIC_IDS = PLATFORM_HEALTH_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const PLATFORM_HEALTH_MAX_ACTIVE_METRICS = PLATFORM_HEALTH_METRICS_CATALOG.length
+const derived = deriveMetricExports(PLATFORM_HEALTH_METRICS_CATALOG)
+export const PLATFORM_HEALTH_METRIC_IDS = derived.ids
+export const PLATFORM_HEALTH_METRIC_ID_SET = derived.idSet
+export const DEFAULT_PLATFORM_HEALTH_METRIC_IDS = derived.defaultIds
+export const PLATFORM_HEALTH_MAX_ACTIVE_METRICS = derived.maxActive

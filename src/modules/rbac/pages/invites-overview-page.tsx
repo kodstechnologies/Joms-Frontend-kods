@@ -11,11 +11,18 @@ import type { SubAdminInvite } from '../types/rbac'
 import { InviteStatusBadge } from '../components/invite-status-badge'
 import { formatInviteTimestamp } from '../utils/invite-format'
 import { InviteActionModals } from '../components/invite-action-modals'
+import {
+  DEFAULT_RBAC_HUB_INVITES_VISIBLE_COLUMN_IDS,
+  RBAC_HUB_INVITES_COLUMN_PREFIX,
+  RBAC_HUB_INVITES_TABLE_COLUMNS_CATALOG,
+} from '../config/rbac-hub-table-columns.config'
+import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { RBAC_INVITE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -30,34 +37,54 @@ import {
   createPrefixedListExportHandler,
   buildPrefixedListQueryParams,
 } from '@/shared/utils/export-filter-utils'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
-  'inviteId',
-  'username',
-  'roleId',
-  'roleName',
-  'email',
-  'sentAt',
-  'status',
-])
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(RBAC_HUB_INVITES_TABLE_COLUMNS_CATALOG, {
+  'invites-invite-id': 'inviteId',
+  'invites-username': 'username',
+  'invites-email': 'email',
+  'invites-role-id': 'roleId',
+  'invites-role-name': 'roleName',
+  'invites-scope': null,
+  'invites-sent-at': 'sentAt',
+  'invites-expiry': null,
+  'invites-status': 'status',
+})
 
 const INVITE_EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (invite: SubAdminInvite) => string }
 > = {
-  inviteId: { header: 'Invite ID', accessor: (invite) => exportDisplayValue(invite.inviteId) },
-  username: { header: 'Username', accessor: (invite) => exportDisplayValue(invite.username) },
-  roleId: { header: 'Role ID', accessor: (invite) => exportDisplayValue(invite.roleId) },
-  roleName: { header: 'Role Name', accessor: (invite) => exportDisplayValue(invite.roleName) },
-  email: { header: 'Email ID', accessor: (invite) => exportDisplayValue(invite.email) },
-  sentAt: {
-    header: 'Time stamp',
+  'invites-invite-id': {
+    header: 'Invite ID',
+    accessor: (invite) => exportDisplayValue(invite.inviteId),
+  },
+  'invites-username': {
+    header: 'Username',
+    accessor: (invite) => exportDisplayValue(invite.username),
+  },
+  'invites-email': { header: 'Email ID', accessor: (invite) => exportDisplayValue(invite.email) },
+  'invites-role-id': {
+    header: 'Role ID',
+    accessor: (invite) => exportDisplayValue(invite.roleId || invite.roleCode),
+  },
+  'invites-role-name': {
+    header: 'Role Name',
+    accessor: (invite) => exportDisplayValue(invite.roleName),
+  },
+  'invites-scope': { header: 'Scope', accessor: () => '—' },
+  'invites-sent-at': {
+    header: 'Invitation Sent At',
     accessor: (invite) =>
       exportDisplayValue(formatInviteTimestamp(invite.sentAt || invite.timestamp)),
   },
-  status: { header: 'Status', accessor: (invite) => exportDisplayValue(invite.status) },
+  'invites-expiry': { header: 'Invitation Expiry', accessor: () => '—' },
+  'invites-status': {
+    header: 'Status',
+    accessor: (invite) => exportDisplayValue(invite.status),
+  },
 }
 
 export function InvitesOverviewPage() {
@@ -74,6 +101,7 @@ export function InvitesOverviewPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedInvite, setSelectedInvite] = useState<SubAdminInvite | null>(null)
   const [actionMode, setActionMode] = useState<'revoke' | 'reinvite' | null>(null)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(RBAC_HUB_MODULE_KEY)
 
   const listQueryParams = useMemo(
     () =>
@@ -120,70 +148,100 @@ export function InvitesOverviewPage() {
     onExportData: handleExportData,
   })
 
-  const columns = useMemo<ColumnDef<SubAdminInvite>[]>(
-    () =>
-      withServerSortMeta(
-        [
-          { accessorKey: 'inviteId', header: 'Invite ID' },
-          { accessorKey: 'username', header: 'Username' },
-          { accessorKey: 'roleId', header: 'Role ID' },
-          { accessorKey: 'roleName', header: 'Role Name' },
-          { accessorKey: 'email', header: 'Email ID' },
-          {
-            accessorKey: 'sentAt',
-            header: 'Time stamp',
-            cell: ({ row }) => formatInviteTimestamp(row.original.sentAt || row.original.timestamp),
-          },
-          {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => <InviteStatusBadge status={row.original.status} />,
-          },
-          {
-            id: 'actions',
-            header: 'Actions',
-            enableSorting: false,
-            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => {
-              if (row.original.status !== 'pending') {
-                return <span className="text-brand-muted text-sm">—</span>
-              }
+  const columns = useMemo<ColumnDef<SubAdminInvite>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<SubAdminInvite>> = {
+      'invites-invite-id': {
+        id: 'invites-invite-id',
+        accessorKey: 'inviteId',
+        header: 'Invite ID',
+      },
+      'invites-username': { id: 'invites-username', accessorKey: 'username', header: 'Username' },
+      'invites-email': { id: 'invites-email', accessorKey: 'email', header: 'Email ID' },
+      'invites-role-id': {
+        id: 'invites-role-id',
+        accessorFn: (row) => row.roleId || row.roleCode,
+        header: 'Role ID',
+      },
+      'invites-role-name': {
+        id: 'invites-role-name',
+        accessorKey: 'roleName',
+        header: 'Role Name',
+      },
+      'invites-scope': { id: 'invites-scope', header: 'Scope', cell: () => '—' },
+      'invites-sent-at': {
+        id: 'invites-sent-at',
+        accessorKey: 'sentAt',
+        header: 'Invitation Sent At',
+        cell: ({ row }) => formatInviteTimestamp(row.original.sentAt || row.original.timestamp),
+      },
+      'invites-expiry': { id: 'invites-expiry', header: 'Invitation Expiry', cell: () => '—' },
+      'invites-status': {
+        id: 'invites-status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <InviteStatusBadge status={row.original.status} />,
+      },
+    }
 
-              return (
-                <TableActionsDropdown
-                  label="Open invite actions"
-                  isOpen={activeDropdownId === row.original.id}
-                  onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
-                >
-                  <TableActionsItem
-                    icon={<RotateCcw className="size-3.5" />}
-                    onClick={() => {
-                      setSelectedInvite(row.original)
-                      setActionMode('reinvite')
-                      setActiveDropdownId(null)
-                    }}
-                  >
-                    Re-Invite
-                  </TableActionsItem>
-                  <TableActionsItem
-                    icon={<XCircle className="text-brand-danger size-3.5" />}
-                    onClick={() => {
-                      setSelectedInvite(row.original)
-                      setActionMode('revoke')
-                      setActiveDropdownId(null)
-                    }}
-                  >
-                    <span className="text-brand-danger">Revoke Invite</span>
-                  </TableActionsItem>
-                </TableActionsDropdown>
-              )
-            },
-          },
-        ],
-        SORT_FIELD_MAP,
-      ),
-    [activeDropdownId],
-  )
+    const catalogIds = RBAC_HUB_INVITES_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const filteredSaved = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds.filter((id) =>
+          id.startsWith(RBAC_HUB_INVITES_COLUMN_PREFIX),
+        )
+      : []
+    const savedIds = filteredSaved.length
+      ? filteredSaved
+      : DEFAULT_RBAC_HUB_INVITES_VISIBLE_COLUMN_IDS
+    const preferenceColumns = sortIdsByCatalogOrder(
+      savedIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
+
+    const actionsColumn: ColumnDef<SubAdminInvite> = {
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => {
+        if (row.original.status !== 'pending') {
+          return <span className="text-brand-muted text-sm">—</span>
+        }
+
+        return (
+          <TableActionsDropdown
+            label="Open invite actions"
+            isOpen={activeDropdownId === row.original.id}
+            onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+          >
+            <TableActionsItem
+              icon={<RotateCcw className="size-3.5" />}
+              onClick={() => {
+                setSelectedInvite(row.original)
+                setActionMode('reinvite')
+                setActiveDropdownId(null)
+              }}
+            >
+              Re-Invite
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<XCircle className="text-brand-danger size-3.5" />}
+              onClick={() => {
+                setSelectedInvite(row.original)
+                setActionMode('revoke')
+                setActiveDropdownId(null)
+              }}
+            >
+              <span className="text-brand-danger">Revoke Invite</span>
+            </TableActionsItem>
+          </TableActionsDropdown>
+        )
+      },
+    }
+
+    return withServerSortMeta([...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
+  }, [activeDropdownId, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">

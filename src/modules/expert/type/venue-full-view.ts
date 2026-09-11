@@ -49,6 +49,7 @@ export interface VenueFullViewVenue {
   status?: string
   venueStatus?: string
   isSuspend?: boolean
+  displayStatus?: string
   currentStep?: string
   profileImageUrl?: string
   coverImageUrl?: string

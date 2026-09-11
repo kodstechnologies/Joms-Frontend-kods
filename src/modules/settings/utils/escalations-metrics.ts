@@ -7,7 +7,7 @@ import type { StatCardProps } from '@/shared/components/dashboard/stat-card'
 
 export type EscalationsMetricCard = StatCardProps & { id: string }
 
-const mockTrend = {
+const defaultTrend = {
   direction: 'up' as const,
   percentage: 6.7,
   label: 'vs last month',
@@ -39,6 +39,6 @@ export function buildEscalationsMetricCards(
     id,
     title: labelById.get(id) ?? id,
     value: formatMetricValue(id, metrics),
-    trend: mockTrend,
+    trend: defaultTrend,
   }))
 }

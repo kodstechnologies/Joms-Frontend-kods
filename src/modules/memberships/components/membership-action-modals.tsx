@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useMembership, useMemberships } from '../hooks/use-memberships'
 import type { MembershipPlan } from '../types/membership'
 import type { MembershipSubscription } from '../types/membership-subscription'
-import { PAUSE_REASON_OPTIONS, PLAN_CHANGE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
+import { PAUSE_REASON_OPTIONS, PLAN_CHANGE_REASON_OPTIONS } from '../config/membership-options'
 import {
   formatMembershipDate,
   formatMembershipPriceValue,

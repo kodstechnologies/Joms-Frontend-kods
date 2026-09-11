@@ -1,4 +1,4 @@
-import { venueApiClient, adminApiClient } from '@/shared/lib/axios'
+import { venueApiClient, adminApiClient, kycApiClient } from '@/shared/lib/axios'
 import type {
   VenueResponse,
   VenueDetailResponse,
@@ -247,7 +247,12 @@ export const createAdminVenue = async (payload: {
 
 export const updateAdminVenueDetails = async (
   venueId: string,
-  payload: { venueCategoryId?: string[]; aboutVenue?: string },
+  payload: {
+    name?: string
+    venueType?: string
+    venueCategoryId?: string[]
+    aboutVenue?: string
+  },
 ) => {
   const response = await venueApiClient.patch(`/venues/admin/details/${venueId}`, payload)
   return response.data
@@ -354,6 +359,7 @@ export const submitAdminVenue = async (venueId: string) => {
 
 export const buildSpacePayload = (venueData: VenueFormData) => {
   const spaceType = mapSpaceTypeToApi(venueData.spaceType)
+  const isSameAsVenueLocation = venueData.locationType === 'same'
 
   return {
     name: venueData.spaceName,
@@ -371,13 +377,22 @@ export const buildSpacePayload = (venueData: VenueFormData) => {
           guestLimit: venueData.guestCount ? Number(venueData.guestCount) : undefined,
         }),
 
-    isSameAsVenueLocation: venueData.locationType === 'same',
+    isSameAsVenueLocation,
 
-    ...(venueData.locationType === 'different'
-      ? {
-          location: null,
-        }
-      : {}),
+    ...(isSameAsVenueLocation
+      ? { location: null }
+      : {
+          location: {
+            address: venueData.spaceAddress || '',
+            landmark: venueData.spaceLandmark || '',
+            city: venueData.spaceCity || '',
+            latitude: venueData.spaceLatitude,
+            longitude: venueData.spaceLongitude,
+            pincode: venueData.spacePincode || '',
+            state: venueData.spaceState || '',
+            country: venueData.spaceCountry || '',
+          },
+        }),
 
     parkingAvailable: venueData.parkingAvailable,
     accessibility: venueData.accessibility,
@@ -386,14 +401,24 @@ export const buildSpacePayload = (venueData: VenueFormData) => {
   }
 }
 
-export const buildPricingPayload = (venueData: VenueFormData) => ({
-  serviceType: venueData.serviceType === 'per_guest' ? 'per_guest' : 'entire_space',
-  setDays: venueData.setDays ? Number(venueData.setDays) : undefined,
-  weekdayPrice: venueData.weekdayPrice ? Number(venueData.weekdayPrice) : undefined,
-  weekendPrice: venueData.weekendPrice ? Number(venueData.weekendPrice) : undefined,
-  discount: venueData.discount ? Number(venueData.discount) : undefined,
-  reservationFee: venueData.reservationFee ? Number(venueData.reservationFee) : undefined,
-})
+export const buildPricingPayload = (venueData: VenueFormData) => {
+  const parseMoney = (value?: string) => {
+    if (value == null || !String(value).trim()) return undefined
+    const normalized = String(value).replace(/[^0-9.-]/g, '')
+    if (!normalized) return undefined
+    const amount = Number(normalized)
+    return Number.isFinite(amount) ? amount : undefined
+  }
+
+  return {
+    serviceType: venueData.serviceType === 'per_guest' ? 'per_guest' : 'entire_space',
+    setDays: venueData.setDays ? Number(venueData.setDays) : undefined,
+    weekdayPrice: parseMoney(venueData.weekdayPrice),
+    weekendPrice: parseMoney(venueData.weekendPrice),
+    discount: parseMoney(venueData.discount),
+    reservationFee: parseMoney(venueData.reservationFee),
+  }
+}
 
 export const buildAvailabilityPayload = (venueData: VenueFormData) => ({
   weeklyAvailability: (venueData.weeklyAvailability || [])
@@ -427,12 +452,16 @@ export const buildGalleryFormData = (venueData: VenueFormData): FormData => {
     formData.append('venueCoverImages', venueData.venueCoverImage)
   } else if (venueData.venueCoverImageUrl?.trim()) {
     formData.append('existingVenueCoverImageUrl', venueData.venueCoverImageUrl.trim())
+  } else {
+    formData.append('existingVenueCoverImageUrl', '')
   }
 
   if (venueData.venueImage) {
     formData.append('spaceCoverImages', venueData.venueImage)
   } else if (venueData.venueImageUrl?.trim()) {
     formData.append('existingVenueImageUrl', venueData.venueImageUrl.trim())
+  } else {
+    formData.append('existingVenueImageUrl', '')
   }
 
   formData.append(
@@ -606,7 +635,7 @@ export const bulkDeleteVenues = async (venueIdsOrPayload: string[] | BulkVenueAc
   const payload = Array.isArray(venueIdsOrPayload)
     ? { venueIds: venueIdsOrPayload }
     : venueIdsOrPayload
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-delete', payload)
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-delete', payload)
   return response.data
 }
 
@@ -614,57 +643,60 @@ export const bulkPauseVenues = async (venueIdsOrPayload: string[] | BulkVenueAct
   const payload = Array.isArray(venueIdsOrPayload)
     ? { venueIds: venueIdsOrPayload }
     : venueIdsOrPayload
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-pause', payload)
+  const response = await venueApiClient.post('/venues/admin/bulk-suspend', payload)
   return response.data
 }
 
 export const bulkHideVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-hide', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-hide', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkDisableVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-disable', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-disable', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkExportVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-export', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-export', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkNotifyVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-notify', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-notify', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkMessageVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-message', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-message', {
     venueIds,
   })
   return response.data
 }
 
 export const fetchVenueReports = async (params?: Record<string, unknown>) => {
-  const response = await venueApiClient.get('/kyc/internal/admin/reports/venues', { params })
+  const response = await kycApiClient.get('/venue-kyc/internal/admin/reports/venues', { params })
   return response.data
 }
 
 export const fetchVenueReportDetail = async (id: string) => {
-  const response = await venueApiClient.get(`/kyc/internal/admin/reports/venues/${id}`)
+  const response = await kycApiClient.get(`/venue-kyc/internal/admin/reports/venues/${id}`)
   return response.data
 }
 
 export const updateVenueReport = async (id: string, payload: Record<string, unknown>) => {
-  const response = await venueApiClient.patch(`/kyc/internal/admin/reports/venues/${id}`, payload)
+  const response = await kycApiClient.patch(
+    `/venue-kyc/internal/admin/reports/venues/${id}`,
+    payload,
+  )
   return response.data
 }
 

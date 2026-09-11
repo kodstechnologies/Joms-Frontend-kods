@@ -211,9 +211,7 @@ export function VenuePaymentDetailViewPage() {
         (snapshot.spaceId || moduleData.spaceId ? '—' : 'No space on booking'),
       location,
       approvedStatus: (status === 'Paid' ? 'Approved' : 'Pending') as
-        | 'Approved'
-        | 'Pending'
-        | 'Rejected',
+        'Approved' | 'Pending' | 'Rejected',
     },
     parties: {
       clientId,

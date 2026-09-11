@@ -42,7 +42,7 @@ export function SidebarItem({
 
   const renderContent = (isActive?: boolean) => {
     const resolvedActive = isActive ?? active
-    // Collapsed (Figma): no white pill — active icon is brighter, others stay evenly visible
+    // Collapsed: no white pill — active icon is brighter, others stay evenly visible
     const showCompactActive = compact && depth === 0 && (moduleActive || resolvedActive)
 
     return (

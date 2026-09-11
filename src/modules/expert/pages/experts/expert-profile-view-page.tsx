@@ -52,6 +52,7 @@ import {
   consultationPerformancePath,
   getExpertServiceDrilldownPath,
   getServiceManagementViewPath,
+  isPendingListingReview,
 } from '../../lib/service-navigation'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
 import {
@@ -63,13 +64,13 @@ import {
 } from '../../hooks/use-expert'
 import {
   useDeleteService,
-  useSuspendService,
   useUpdateConsultationStatus,
   useBulkDeleteServices,
   useBulkPauseServices,
   useBulkHideServices,
   useBulkDisableServices,
 } from '../../hooks/use-services'
+import { usePauseConsultationListing } from '../../hooks/use-consultation-drilldown'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
@@ -309,15 +310,22 @@ const viewExpertService = async (
 
   try {
     await fetchServiceById(service._id)
+    const isPending = isPendingListingReview(service.status)
     navigate(
-      getExpertServiceDrilldownPath(
-        {
-          _id: service._id,
-          serviceType: 'Service',
-          partnerId: expertId,
-        },
-        expertId,
-      ),
+      isPending
+        ? getServiceManagementViewPath({
+            _id: service._id,
+            serviceType: 'Service',
+            partnerId: expertId,
+          })
+        : getExpertServiceDrilldownPath(
+            {
+              _id: service._id,
+              serviceType: 'Service',
+              partnerId: expertId,
+            },
+            expertId,
+          ),
     )
   } catch {
     toast.error('Service not found')
@@ -1058,6 +1066,9 @@ function ConsultationDetailCard({
     .split(/[.\n]/)
     .map((item) => item.trim())
     .filter(Boolean)
+  const isSuspended = Boolean(consultation.isSuspend)
+  const isPaused = Boolean(consultation.isPaused)
+  const statusLabel = isSuspended ? 'Suspended' : isPaused ? 'Paused' : null
 
   return (
     <div className="min-w-0 overflow-x-hidden rounded-xl bg-[#141414] p-4 sm:p-6">
@@ -1075,6 +1086,16 @@ function ConsultationDetailCard({
                   {consultation.title || 'Untitled Consultation'}
                 </button>
               </h3>
+              {statusLabel ? (
+                <span
+                  className={cn(
+                    'mt-1 inline-flex rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+                    isSuspended ? 'bg-amber-500/90 text-white' : 'bg-white/15 text-white/80',
+                  )}
+                >
+                  {statusLabel}
+                </span>
+              ) : null}
               <p className="text-muted mt-1 text-[13px]">Business</p>
             </div>
           </div>
@@ -1968,7 +1989,7 @@ function ConsultationsSubTab({
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
 
   const updateConsultationStatus = useUpdateConsultationStatus()
-  const suspendServiceMutation = useSuspendService()
+  const pauseConsultationMutation = usePauseConsultationListing()
   const deleteServiceMutation = useDeleteService()
   const recordReasonUsage = useRecordModerationReasonUsage()
 
@@ -2073,11 +2094,10 @@ function ConsultationsSubTab({
     }
 
     try {
-      await suspendServiceMutation.mutateAsync({
-        id: pauseTarget._id,
+      await pauseConsultationMutation.mutateAsync({
+        consultationId: pauseTarget._id,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
-          suspendIndefinitely: true,
           reasonDetails: reasonPayload.reasonDetails,
           adminNotes: pauseAdminNotes.trim(),
         },
@@ -2099,7 +2119,7 @@ function ConsultationsSubTab({
     pauseReasons,
     pauseTarget,
     recordReasonUsage,
-    suspendServiceMutation,
+    pauseConsultationMutation,
   ])
 
   const handleDeleteSubmit = useCallback(async () => {
@@ -2236,7 +2256,7 @@ function ConsultationsSubTab({
         onAdminNotesChange={setPauseAdminNotes}
         onClose={closePauseModal}
         onSubmit={handlePauseSubmit}
-        isSubmitting={suspendServiceMutation.isPending}
+        isSubmitting={pauseConsultationMutation.isPending}
       />
 
       <DecisionActionModal

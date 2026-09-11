@@ -11,10 +11,12 @@ export function ExpertListHeader({
   title,
   breadcrumb,
   metricsPath = '/experts/management/metrics?section=table',
+  backTo = '/experts/management',
 }: {
   title: string
   breadcrumb: string
   metricsPath?: string
+  backTo?: string
 }) {
   const navigate = useNavigate()
 
@@ -23,7 +25,7 @@ export function ExpertListHeader({
       <header className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
+          onClick={() => navigateBackOrFallback(navigate, backTo)}
           className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, ImageIcon, Plus, Search, Upload, X, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { checkPartnerAvailability } from '@/modules/auth/api/auth-api'
 import { STANDARD_INDUSTRIES, STANDARD_OFFERINGS } from '../config/expert-profile-options.config'
 import { useOfferingsList, useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
@@ -9,6 +10,7 @@ import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
 import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
+import { apiErrorMessage } from '@/shared/lib/api-error'
 
 const fieldClass = 'ui-input'
 
@@ -21,9 +23,15 @@ type Props = {
   formData: ExpertOnboardingFormData
   setFormData: React.Dispatch<React.SetStateAction<ExpertOnboardingFormData>>
   lockedServiceType?: 'concierge' | 'venue'
+  excludePartnerId?: string | null
 }
 
-export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceType }: Props) => {
+export const ExpertBasicProfileStep = ({
+  formData,
+  setFormData,
+  lockedServiceType,
+  excludePartnerId,
+}: Props) => {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const profileInputRef = useRef<HTMLInputElement>(null)
   const sampleFileInputRef = useRef<HTMLInputElement>(null)
@@ -66,12 +74,28 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [])
 
-  const handleOpenPhoneVerify = () => {
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
+
+  const handleOpenPhoneVerify = async () => {
     const error = validateMobileNumber(formData.phoneNumber)
     if (error) {
       toast.error(error)
       return
     }
+
+    try {
+      setIsCheckingAvailability(true)
+      await checkPartnerAvailability({
+        phone: formData.phoneNumber.trim(),
+        excludePartnerId: excludePartnerId || undefined,
+      })
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Phone number is already using'))
+      return
+    } finally {
+      setIsCheckingAvailability(false)
+    }
+
     setVerifyModal({
       open: true,
       type: 'phone',
@@ -79,7 +103,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     })
   }
 
-  const handleOpenEmailVerify = () => {
+  const handleOpenEmailVerify = async () => {
     if (!formData.email.trim()) {
       toast.error('Please enter an email ID before verifying.')
       return
@@ -89,6 +113,20 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
       toast.error('Please enter a valid email address.')
       return
     }
+
+    try {
+      setIsCheckingAvailability(true)
+      await checkPartnerAvailability({
+        email: formData.email.trim(),
+        excludePartnerId: excludePartnerId || undefined,
+      })
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Email is already using'))
+      return
+    } finally {
+      setIsCheckingAvailability(false)
+    }
+
     setVerifyModal({
       open: true,
       type: 'email',
@@ -339,7 +377,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
-                    Sample Work Link
+                    Sample Work Link <RequiredMark />
                   </label>
                   <input
                     value={formData.sampleWorkLink}
@@ -353,7 +391,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
-                    Upload Sample Work File
+                    Upload Sample Work File <RequiredMark />
                   </label>
                   <button
                     type="button"
@@ -741,15 +779,20 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     />
                     <button
                       type="button"
-                      onClick={handleOpenPhoneVerify}
+                      onClick={() => void handleOpenPhoneVerify()}
+                      disabled={isCheckingAvailability || formData.isPhoneVerified}
                       className={cn(
-                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                         formData.isPhoneVerified
                           ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
                           : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
                       )}
                     >
-                      {formData.isPhoneVerified ? 'Verified ✓' : 'Verify'}
+                      {formData.isPhoneVerified
+                        ? 'Verified ✓'
+                        : isCheckingAvailability
+                          ? 'Checking…'
+                          : 'Verify'}
                     </button>
                   </div>
                 </div>
@@ -775,15 +818,20 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     />
                     <button
                       type="button"
-                      onClick={handleOpenEmailVerify}
+                      onClick={() => void handleOpenEmailVerify()}
+                      disabled={isCheckingAvailability || formData.isEmailVerified}
                       className={cn(
-                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                         formData.isEmailVerified
                           ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
                           : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
                       )}
                     >
-                      {formData.isEmailVerified ? 'Verified ✓' : 'Verify'}
+                      {formData.isEmailVerified
+                        ? 'Verified ✓'
+                        : isCheckingAvailability
+                          ? 'Checking…'
+                          : 'Verify'}
                     </button>
                   </div>
                 </div>

@@ -185,7 +185,6 @@ export type ExpertApplicationViewData = {
   digilocker?: ExpertApplicationDigilocker
 }
 
-
 export type KycDecisionPayload =
   | { status: 'APPROVED' }
   | {

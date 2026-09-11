@@ -329,7 +329,9 @@ function ProfileSidebar({
     kycStatus: null,
   }
   const overview = data.overview
-  const venueStatus = overview?.venue?.status
+  const venue = overview?.venue
+  const venueStatus =
+    venue?.isSuspend || venue?.displayStatus === 'suspended' ? 'suspended' : venue?.status
   const kycStatusLabel = formatVenueKycStatusLabel(venueStatus)
   const kycStatusTone = getVenueKycStatusTone(venueStatus)
   const ratingValue = profile.ratings ?? overview?.venue?.ratings ?? null
@@ -2031,7 +2033,7 @@ export function VenueProfileViewPage() {
               onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
               className="hover:text-brand-text transition-colors"
             >
-              Event management
+              Venue management
             </button>
             <span className="text-muted">/</span>
             <span className="font-bold text-white">{venue.name}</span>

@@ -6,9 +6,9 @@ import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import {
-  escrowBookingRowsMock,
-  escrowManagementTabs,
-} from '@/modules/payments/mock/finance-escrow.mock'
+  escrowBookingPreviewRows,
+  escrowViewTabs,
+} from '@/modules/payments/config/finance-escrow.config'
 import type {
   EscrowBookingRow,
   EscrowHoldRow,
@@ -149,7 +149,7 @@ export function EscrowManagementPage() {
   }, [activeTab, liveEscrowRows])
 
   const bookingTabRows = useMemo(
-    () => escrowBookingRowsMock.filter((row) => row.tab === activeTab),
+    () => escrowBookingPreviewRows.filter((row) => row.tab === activeTab),
     [activeTab],
   )
 
@@ -516,7 +516,7 @@ export function EscrowManagementPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {escrowManagementTabs.map((tab) => (
+        {escrowViewTabs.map((tab) => (
           <button
             key={tab.id}
             type="button"

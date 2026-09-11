@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:chat-test": "vite --config ../Joms-Dev-Tools/chat-test/vite.config.ts",
-    "build": "tsc -b && vite build",
-    "typecheck": "tsc -b",
+    "build": "node scripts/build.mjs",
+    "typecheck": "node scripts/build.mjs --typecheck",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",

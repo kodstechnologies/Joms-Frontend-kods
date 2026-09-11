@@ -40,7 +40,7 @@ export const formatManagementStatusLabel = (key: ManagementStatusKey): string =>
     case 'approved':
       return 'Approved'
     case 'suspended':
-      return 'Suspend'
+      return 'Suspended'
     case 'deleted':
       return 'Deleted'
     case 'rejected':

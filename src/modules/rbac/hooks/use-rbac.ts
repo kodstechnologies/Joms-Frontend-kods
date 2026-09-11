@@ -74,6 +74,9 @@ export function useContactSetupProfile(enabled = true) {
     queryFn: fetchContactSetupProfile,
     enabled,
     retry: false,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 }
 

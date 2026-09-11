@@ -1,12 +1,5 @@
 export type PlatformHealthDateRange =
-  | 'today'
-  | 'last7days'
-  | 'last30days'
-  | 'thisMonth'
-  | 'lastMonth'
-  | 'quarter'
-  | 'year'
-  | 'custom'
+  'today' | 'last7days' | 'last30days' | 'thisMonth' | 'lastMonth' | 'quarter' | 'year' | 'custom'
 
 export type PlatformHealthMetricTrend = {
   value: string

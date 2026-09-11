@@ -2,6 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { ReactNode } from 'react'
 
 import type { Expert } from '../type/expert'
+import type { ExpertReportItem } from '../components/expert-report-detail-modal'
 import { renderTableDateTimeCell as formatDateTime } from '@/shared/components/table/table-datetime-column'
 import { displayExpertValue } from '../pages/experts/expert-list-format'
 import { ExpertStatusBadge } from '../pages/experts/expert-list-shared'
@@ -330,4 +331,200 @@ export function pickPreferenceColumns(
 ): ColumnDef<Expert>[] {
   const ids = visibleIds.length ? visibleIds : fallbackIds
   return ids.map((id) => dataColumnsById[id]).filter(Boolean) as ColumnDef<Expert>[]
+}
+
+export function pickExpertReportPreferenceColumns(
+  dataColumnsById: Record<string, ColumnDef<ExpertReportItem>>,
+  visibleIds: string[],
+  fallbackIds: string[],
+): ColumnDef<ExpertReportItem>[] {
+  const ids = visibleIds.length ? visibleIds : fallbackIds
+  return ids.map((id) => dataColumnsById[id]).filter(Boolean) as ColumnDef<ExpertReportItem>[]
+}
+
+export function buildExpertReportDataColumnsById(): Record<string, ColumnDef<ExpertReportItem>> {
+  const dashReport = (value: unknown) =>
+    value === null || value === undefined || value === '' ? '—' : String(value)
+
+  return {
+    'report-id': {
+      id: 'report-id',
+      header: 'Report ID',
+      accessorFn: (row) => row.reportId ?? '',
+      cell: ({ row }) => (
+        <span className="font-mono font-semibold text-[#E5B54E]">
+          {row.original.reportId || '—'}
+        </span>
+      ),
+    },
+    'expert-id': {
+      id: 'expert-id',
+      header: 'Expert ID',
+      accessorFn: (row) =>
+        row.expertId ||
+        (row.partnerId ? `EXP-${String(row.partnerId).slice(-4).toUpperCase()}` : ''),
+      cell: ({ row }) =>
+        dashReport(
+          row.original.expertId ||
+            (row.original.partnerId
+              ? `EXP-${String(row.original.partnerId).slice(-4).toUpperCase()}`
+              : null),
+        ),
+    },
+    'expert-name': {
+      id: 'expert-name',
+      header: 'Expert Name',
+      accessorFn: (row) => row.expertName ?? '',
+      cell: ({ row }) => (
+        <span className="font-semibold text-white">{dashReport(row.original.expertName)}</span>
+      ),
+    },
+    'reported-by': {
+      id: 'reported-by',
+      header: 'Reported By',
+      accessorFn: (row) => row.reporterName ?? '',
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium text-slate-200">{dashReport(row.original.reporterName)}</div>
+          <div className="text-[11px] text-slate-400">{dashReport(row.original.reporterType)}</div>
+        </div>
+      ),
+    },
+    'reporter-id': {
+      id: 'reporter-id',
+      header: 'Reporter ID',
+      accessorFn: (row) => row.reporterId ?? '',
+      cell: ({ row }) => dashReport(row.original.reporterId),
+    },
+    'report-category': {
+      id: 'report-category',
+      header: 'Report Category',
+      accessorFn: (row) => row.issueType ?? '',
+      cell: ({ row }) => (
+        <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
+          {dashReport(row.original.issueType)}
+        </span>
+      ),
+    },
+    'report-reason': {
+      id: 'report-reason',
+      header: 'Report Reason',
+      accessorFn: (row) => row.reason ?? '',
+      cell: ({ row }) => (
+        <div className="max-w-xs truncate text-xs text-slate-300" title={row.original.reason}>
+          {dashReport(row.original.reason)}
+        </div>
+      ),
+    },
+    'evidence-attached': {
+      id: 'evidence-attached',
+      header: 'Evidence Attached',
+      accessorFn: (row) =>
+        row.hasSupportingDocuments || (row.supportingDocuments?.length ?? 0) > 0 ? 'Yes' : 'No',
+      cell: ({ row }) =>
+        dashReport(
+          row.original.hasSupportingDocuments || (row.original.supportingDocuments?.length ?? 0) > 0
+            ? 'Yes'
+            : 'No',
+        ),
+    },
+    severity: {
+      id: 'severity',
+      header: 'Severity',
+      accessorFn: (row) => row.businessImpact ?? '',
+      cell: ({ row }) => dashReport(row.original.businessImpact),
+    },
+    'case-status': {
+      id: 'case-status',
+      header: 'Case Status',
+      accessorFn: (row) => row.investigationStatus || 'New',
+      cell: ({ row }) => {
+        const status = row.original.investigationStatus || 'New'
+        const isResolved = status === 'Resolved' || status === 'Closed'
+        const isReview = status === 'Under Review' || status === 'Escalated'
+        return (
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              isResolved
+                ? 'bg-emerald-500/15 text-emerald-400'
+                : isReview
+                  ? 'bg-amber-500/15 text-amber-400'
+                  : 'bg-blue-500/15 text-blue-400'
+            }`}
+          >
+            {status}
+          </span>
+        )
+      },
+    },
+    'assigned-to': {
+      id: 'assigned-to',
+      header: 'Assigned To',
+      accessorFn: (row) => row.investigatingAdmin ?? '',
+      cell: ({ row }) => dashReport(row.original.investigatingAdmin),
+    },
+    'reported-at': {
+      id: 'reported-at',
+      header: 'Reported At',
+      accessorFn: (row) => row.submittedAt ?? '',
+      cell: ({ row }) =>
+        row.original.submittedAt ? formatDateTime(row.original.submittedAt) : '—',
+    },
+    'last-updated': {
+      id: 'last-updated',
+      header: 'Last Updated',
+      accessorFn: (row) => row.latestActionTimestamp ?? '',
+      cell: ({ row }) =>
+        row.original.latestActionTimestamp
+          ? formatDateTime(row.original.latestActionTimestamp)
+          : '—',
+    },
+    'escalated-by': {
+      id: 'escalated-by',
+      header: 'Escalated By',
+      accessorFn: (row) => row.adminWhoEscalated ?? '',
+      cell: ({ row }) => dashReport(row.original.adminWhoEscalated),
+    },
+    'escalated-at': {
+      id: 'escalated-at',
+      header: 'Escalated At',
+      accessorFn: (row) => row.escalatedAt || row.escalationTimestamp || '',
+      cell: ({ row }) => {
+        const value = row.original.escalatedAt || row.original.escalationTimestamp
+        return value ? formatDateTime(value) : '—'
+      },
+    },
+    resolution: {
+      id: 'resolution',
+      header: 'Resolution',
+      accessorFn: (row) => row.finalOutcome ?? '',
+      cell: ({ row }) => dashReport(row.original.finalOutcome),
+    },
+    'resolution-notes': {
+      id: 'resolution-notes',
+      header: 'Resolution Notes',
+      accessorFn: (row) => row.internalNotes ?? '',
+      cell: ({ row }) => dashReport(row.original.internalNotes),
+    },
+    'compliance-flag': {
+      id: 'compliance-flag',
+      header: 'Compliance Flag',
+      accessorFn: (row) =>
+        row.complianceReviewRequired == null ? '' : row.complianceReviewRequired ? 'Yes' : 'No',
+      cell: ({ row }) =>
+        dashReport(
+          row.original.complianceReviewRequired == null
+            ? null
+            : row.original.complianceReviewRequired
+              ? 'Yes'
+              : 'No',
+        ),
+    },
+    'related-ticket-id': {
+      id: 'related-ticket-id',
+      header: 'Related Ticket ID',
+      accessorFn: (row) => row.linkedSupportTicket ?? '',
+      cell: ({ row }) => dashReport(row.original.linkedSupportTicket),
+    },
+  }
 }

@@ -27,7 +27,7 @@ import {
   securityDefaults,
   serviceDefaults,
   venueDefaults,
-} from '../mock/settings.defaults'
+} from '../config/settings.config'
 import { normalizeSecuritySettings, countEnabledMfaMethods } from '../utils/security-settings'
 import type { SettingsModule } from '../types/settings'
 import { SettingsTopTabs } from '../components/settings-top-tabs'

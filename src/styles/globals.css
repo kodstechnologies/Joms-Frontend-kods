@@ -306,7 +306,7 @@ button:disabled,
   padding: 16px 18px;
 }
 
-/* ===== Security & Access (Figma) ===== */
+/* ===== Security & Access ===== */
 .security-access-panel {
   display: flex;
   flex-direction: column;
@@ -800,7 +800,7 @@ button:disabled,
   opacity: 0.8;
 }
 
-/* ===== IP Address modal (Figma) ===== */
+/* ===== IP Address modal ===== */
 .ip-modal-overlay {
   position: fixed;
   inset: 0;
@@ -987,7 +987,7 @@ button:disabled,
   }
 }
 
-/* ===== Locked Accounts (Figma) ===== */
+/* ===== Locked Accounts ===== */
 .locked-accounts-page {
   display: flex;
   flex-direction: column;
@@ -1212,7 +1212,7 @@ button:disabled,
   color: #000000;
 }
 
-/* ===== Locked Account Details modal (Figma) ===== */
+/* ===== Locked Account Details modal ===== */
 .locked-accounts-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1373,7 +1373,7 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* ===== Security Questions modal (Figma) ===== */
+/* ===== Security Questions modal ===== */
 .sq-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1804,7 +1804,7 @@ button:disabled,
   filter: brightness(1.05);
 }
 
-/* ===== Admin Login Trails (Figma) ===== */
+/* ===== Admin Login Trails ===== */
 .login-trails-page {
   display: flex;
   flex-direction: column;
@@ -1882,7 +1882,7 @@ button:disabled,
   padding-left: 34px;
 }
 
-/* Figma: Login Alerts control — 200 × 52, bordered, switch + label */
+/* Login Alerts control — 200 × 52, bordered, switch + label */
 .login-trails-alerts {
   box-sizing: border-box;
   display: inline-flex;
@@ -2649,7 +2649,7 @@ select.settings-control,
   padding: 0 24px;
 }
 
-/* ===== Backup Configuration page (Figma) ===== */
+/* ===== Backup Configuration page ===== */
 .backup-config-page {
   display: flex;
   max-width: 999px;
@@ -3000,7 +3000,7 @@ select.settings-control,
   }
 }
 
-/* ===== Finance & Transactional Settings (Figma) ===== */
+/* ===== Finance & Transactional Settings ===== */
 .finance-settings-panel {
   display: flex;
   flex-direction: column;
@@ -3308,7 +3308,7 @@ select.settings-control,
   }
 }
 
-/* ===== Notification Settings (Figma) ===== */
+/* ===== Notification Settings ===== */
 .notif-settings-panel {
   display: flex;
   flex-direction: column;
@@ -4522,7 +4522,7 @@ button.ui-manage-metrics:hover,
   outline-offset: 2px;
 }
 
-/* ===== Create User — User Details (Figma) ===== */
+/* ===== Create User — User Details ===== */
 .create-user-details-card {
   box-sizing: border-box;
   width: 100%;
@@ -4580,7 +4580,7 @@ button.ui-manage-metrics:hover,
   color: #ffffff;
 }
 
-/* Figma: required asterisk is white, not danger red */
+/* Required asterisk is white, not danger red */
 .create-user-details-card .create-user-field-label .text-brand-danger {
   color: #ffffff;
 }
@@ -4701,7 +4701,7 @@ button.ui-manage-metrics:hover,
   background: #050505;
 }
 
-/* ===== Create User — Assign Role (Figma) ===== */
+/* ===== Create User — Assign Role ===== */
 .create-user-assign-card {
   box-sizing: border-box;
   width: 100%;
@@ -4963,7 +4963,7 @@ button.ui-manage-metrics:hover,
   border: none !important;
 }
 
-/* ===== Create / Edit Role (Figma) ===== */
+/* ===== Create / Edit Role ===== */
 .create-role-page {
   display: flex;
   max-width: 999px;
@@ -5371,7 +5371,7 @@ button.ui-manage-metrics:hover,
   left: 23px;
 }
 
-/* ===== RBAC Version History (Figma) ===== */
+/* ===== RBAC Version History ===== */
 .vh-page {
   display: flex;
   max-width: 999px;
@@ -5580,7 +5580,7 @@ button.ui-manage-metrics:hover,
   }
 }
 
-/* ===== Admin Details page (Figma) ===== */
+/* ===== Admin Details page ===== */
 .ad-page {
   display: flex;
   flex-direction: column;
@@ -6030,7 +6030,7 @@ button.ui-manage-metrics:hover,
   }
 }
 
-/* ===== Admin Info card — role/user logs (Figma) ===== */
+/* ===== Admin Info card — role/user logs ===== */
 .admin-info-card {
   box-sizing: border-box;
   display: flex;
@@ -6131,7 +6131,7 @@ button.ui-manage-metrics:hover,
   gap: 6px;
 }
 
-/* Name | Role | Status on row 1; Email under Name on row 2 — tighter Figma spacing */
+/* Name | Role | Status on row 1; Email under Name on row 2 — tighter spacing */
 .admin-info-user-grid {
   display: grid;
   grid-template-columns: max-content max-content max-content;
@@ -6268,7 +6268,7 @@ button.ui-manage-metrics:hover,
   }
 }
 
-/* ===== RBAC Hub — /settings/access (Figma) ===== */
+/* ===== RBAC Hub — /settings/access ===== */
 .rbac-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -6277,11 +6277,13 @@ button.ui-manage-metrics:hover,
 
 .rbac-stats-card {
   box-sizing: border-box;
-  min-height: 88px;
+  min-height: 110px;
   border-radius: 10px;
   border: none;
   background: #141414;
   padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
 }
 
 .rbac-stats-card-label {
@@ -6310,6 +6312,50 @@ button.ui-manage-metrics:hover,
   border-radius: 6px;
   background: rgb(255 255 255 / 10%);
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+.rbac-stats-card-trend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.rbac-stats-card-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.rbac-stats-card-trend-badge.is-up {
+  background: color-mix(in srgb, var(--brand-positive, #22c55e) 15%, transparent);
+  color: var(--brand-positive, #22c55e);
+}
+
+.rbac-stats-card-trend-badge.is-down {
+  background: color-mix(in srgb, var(--brand-danger, #ef4444) 12%, transparent);
+  color: var(--brand-danger, #ef4444);
+}
+
+.rbac-stats-card-trend-badge.is-flat {
+  background: rgb(255 255 255 / 10%);
+  color: rgb(203 213 225);
+}
+
+.rbac-stats-card-trend-note {
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  color: rgb(255 255 255 / 45%);
 }
 
 .rbac-hub-tabs {
@@ -6400,7 +6446,7 @@ button.ui-manage-metrics:hover,
   }
 }
 
-/* ===== Create User — New User confirm modal (Figma) ===== */
+/* ===== Create User — New User confirm modal ===== */
 .new-user-confirm-modal {
   border-radius: 12px;
   border: 1px solid rgb(255 255 255 / 10%);
@@ -6479,7 +6525,7 @@ button.ui-manage-metrics:hover,
   color: #ffffff;
 }
 
-/* Figma: Admin notes asterisk is bright red */
+/* Admin notes asterisk is bright red */
 .new-user-confirm-required {
   color: #d3191c;
 }
@@ -6890,7 +6936,7 @@ select::-ms-expand {
   stroke: currentColor;
 }
 
-/* Settings / Access — Figma user actions menu (155×217) */
+/* Settings / Access — user actions menu (155×217) */
 .ui-table-actions-menu-access {
   width: 155px !important;
   min-width: 155px !important;
@@ -7131,7 +7177,7 @@ select::-ms-expand {
   line-height: 1;
 }
 
-/* ===== Update Password modal (Figma) ===== */
+/* ===== Update Password modal ===== */
 .update-password-modal {
   max-width: 570px;
 }
@@ -7269,7 +7315,7 @@ select::-ms-expand {
   filter: brightness(0.96);
 }
 
-/* ===== Flag Action modal (Figma) ===== */
+/* ===== Flag Action modal ===== */
 .flag-action-icon {
   display: grid;
   width: 64px;
@@ -7335,7 +7381,7 @@ select::-ms-expand {
   background: #050505 !important;
 }
 
-/* ===== Backup Configuration (Figma) ===== */
+/* ===== Backup Configuration ===== */
 .backup-page {
   display: flex;
   flex-direction: column;
@@ -7509,7 +7555,7 @@ select::-ms-expand {
   }
 }
 
-/* ===== Restore System Backup modal (Figma) ===== */
+/* ===== Restore System Backup modal ===== */
 .restore-backup-modal {
   max-width: 560px;
 }
@@ -7731,7 +7777,7 @@ select::-ms-expand {
   cursor: not-allowed;
 }
 
-/* ===== Incident Tracking (Figma) ===== */
+/* ===== Incident Tracking ===== */
 .incident-page {
   display: flex;
   flex-direction: column;
@@ -7883,7 +7929,7 @@ select::-ms-expand {
   }
 }
 
-/* ===== All Escalation (Figma) ===== */
+/* ===== All Escalation ===== */
 .escalation-page {
   display: flex;
   flex-direction: column;

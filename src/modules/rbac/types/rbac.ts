@@ -59,6 +59,7 @@ export type SubAdmin = {
   profileImageUrl?: string
   mfaEnabled: boolean
   mfaSecret?: string
+  otpauthUrl?: string
   contactSetupCompleted?: boolean
   roleIds: string[]
   roles: SubAdminRole[]
@@ -96,13 +97,28 @@ export type AuditLog = {
   createdAt: string
 }
 
+export type RbacMetricTrend = {
+  change: string
+  changeType: 'up' | 'down'
+  changeNote: string
+  percentage: number
+}
+
 export type RbacStats = {
   totalUsers: number
   totalActiveUsers: number
   currentlyOnlineUsers: number
   suspendedUsers: number
   totalRolesAvailable: number
+  deletedRoles: number
+  pendingInvitations: number
+  invitationAcceptanceRate: number
+  mfaAdoptionRate: number
+  privilegedUsers: number
+  activeRoleAssignments: number
+  permissionChangesMtd: number
   invitesSent: number
+  metricTrends?: Partial<Record<string, RbacMetricTrend | null>>
 }
 
 export type CreateRolePayload = {

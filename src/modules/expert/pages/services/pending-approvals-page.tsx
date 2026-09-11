@@ -5,19 +5,13 @@ import { useNavigate } from 'react-router-dom'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import {
-  buildServiceListQueryParams,
-  createServiceFilteredExportHandler,
-} from '@/shared/utils/export-filter-utils'
-import { fetchServices } from '../../api/service-api'
 import { SERVICE_PENDING_APPROVALS_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-
-import { useServices } from '../../hooks/use-services'
+import {
+  DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
+  SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-management-table-columns.config'
+import { useServiceStatusList } from '../../hooks/use-service-status-list'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
 import {
@@ -25,8 +19,6 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_PENDING_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -77,69 +69,46 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service)
 
 export function PendingApprovalsPage() {
   const navigate = useNavigate()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-  const tableColumnPreferencesQuery = useTableColumnPreferences(
-    SERVICE_PENDING_APPROVALS_MODULE_KEY,
+  const catalogColumnIds = useMemo(
+    () => SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
   )
 
-  const serviceQueryParams = useMemo(
-    () =>
-      buildServiceListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
-        status: 'in_review',
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
+  const list = useServiceStatusList({
+    moduleKey: SERVICE_PENDING_APPROVALS_MODULE_KEY,
+    status: 'in_review',
+    defaultVisibleColumnIds: DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    exportFileName: 'pending_services_export',
+    exportColumnMap: EXPORT_COLUMN_MAP,
+    // Match prior pending export: full mapped columns, no live search params.
+    restrictExportToVisibleColumns: false,
+    includeSearchInExport: false,
+  })
 
-  const { data, isLoading } = useServices(serviceQueryParams)
+  const {
+    currentPage,
+    setCurrentPage,
+    activeDropdownId,
+    setActiveDropdownId,
+    serverSort,
+    enhancedSearch,
+    services,
+    meta,
+    isLoading,
+    visibleColumnIds,
+    onAdvancedFilter,
+    onExport,
+    exportFilterModals,
+  } = list
 
-  const services = useMemo(() => data?.data ?? [], [data?.data])
-  const meta = data?.meta
   const visibleServiceIds = useMemo(() => services.map((service) => service._id), [services])
   const allVisibleServicesSelected =
     visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
   const someVisibleServicesSelected = visibleServiceIds.some((id) =>
     selectedServiceIds.includes(id),
   )
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
-
-  const handleExportData = useMemo(
-    () =>
-      createServiceFilteredExportHandler(
-        fetchServices,
-        EXPORT_COLUMN_MAP,
-        'pending_services_export',
-        {
-          status: 'in_review',
-        },
-      ),
-    [],
-  )
-
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: SERVICE_PENDING_APPROVALS_MODULE_KEY,
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
-  })
 
   const toggleVisibleServices = useCallback(() => {
     setSelectedServiceIds((currentIds) => {
@@ -161,9 +130,6 @@ export function PendingApprovalsPage() {
 
   const columns = useMemo<ColumnDef<Service>[]>(() => {
     const dataColumnsById = buildServiceDataColumnsById()
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-      ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS
 
     return withServerSortMeta(
       [
@@ -199,7 +165,7 @@ export function PendingApprovalsPage() {
         },
         ...pickServicePreferenceColumns(
           dataColumnsById,
-          visibleIds,
+          visibleColumnIds,
           DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
         ),
         {
@@ -252,9 +218,9 @@ export function PendingApprovalsPage() {
     navigate,
     selectedServiceIds,
     someVisibleServicesSelected,
-    tableColumnPreferencesQuery.data,
     toggleServiceSelection,
     toggleVisibleServices,
+    visibleColumnIds,
   ])
 
   return (

@@ -9,6 +9,7 @@ import { useCreateRole, usePermissionCatalog, useRole, useUpdateRole } from '../
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function CreateRolePage() {
@@ -42,8 +43,19 @@ export function CreateRolePage() {
     : 'Role Based Access / Create New Role'
 
   const handleSubmit = async () => {
-    if (!name.trim() || !description.trim()) {
-      toast.error('Role name and description are required')
+    const trimmedName = name.trim()
+    const trimmedDescription = description.trim()
+
+    if (!trimmedName || trimmedName.toLowerCase() === 'null') {
+      toast.error('Role name is required')
+      return
+    }
+    if (!trimmedDescription || trimmedDescription.toLowerCase() === 'null') {
+      toast.error('Role description is required')
+      return
+    }
+    if (!permissions.length) {
+      toast.error('Select at least one permission for this role')
       return
     }
 
@@ -51,16 +63,28 @@ export function CreateRolePage() {
       if (isEdit && id) {
         await updateMutation.mutateAsync({
           id,
-          payload: { name, description, permissions, mfaRequired },
+          payload: {
+            name: trimmedName,
+            description: trimmedDescription,
+            permissions,
+            mfaRequired,
+          },
         })
         toast.success('Role updated')
       } else {
-        await createMutation.mutateAsync({ name, description, permissions, mfaRequired })
+        await createMutation.mutateAsync({
+          name: trimmedName,
+          description: trimmedDescription,
+          permissions,
+          mfaRequired,
+        })
         toast.success('Role created')
       }
       navigate('/settings/access')
-    } catch {
-      toast.error(isEdit ? 'Failed to update role' : 'Failed to create role')
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, isEdit ? 'Failed to update role' : 'Failed to create role'),
+      )
     }
   }
 
@@ -94,7 +118,7 @@ export function CreateRolePage() {
               className="create-role-field-control"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Full Name"
+              placeholder="e.g. Support Manager"
               disabled={isLoading}
             />
           </div>
@@ -119,7 +143,7 @@ export function CreateRolePage() {
         <h2 className="create-role-card-title">Assign Permissions</h2>
         <p className="create-role-card-subtitle">
           Enable or disable permissions for each module. These permissions define what actions this
-          role can perform.
+          role can perform. At least one permission is required.
         </p>
 
         <div className="create-role-permissions-body">

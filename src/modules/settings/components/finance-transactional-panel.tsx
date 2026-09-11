@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import { ExtendSuspensionModal } from './extend-suspension-modal'
 import { SettingsToggle } from './settings-toggle-row'
-import { suspensionDurationOptions } from '../mock/finance-options.mock'
+import { suspensionDurationOptions } from '../config/finance-options'
 import type { FinanceTransactionalSettings } from '../types/settings'
 import { extendMembershipSuspension } from '@/modules/memberships/api/membership-subscription-api'
 import { cn } from '@/shared/lib/cn'
@@ -40,7 +40,7 @@ function FinanceToggleRow({
   description?: string
   checked: boolean
   onChange: (checked: boolean) => void
-  /** Figma escrow: description sits under the label+toggle row */
+  /** Escrow: description sits under the label+toggle row */
   descriptionBelow?: boolean
 }) {
   return (

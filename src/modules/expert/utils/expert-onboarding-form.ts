@@ -116,9 +116,11 @@ export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormD
   formData.append('fullname', form.fullname.trim())
   formData.append('email', form.email.trim())
   formData.append('phoneNumber', form.phoneNumber.trim())
+  formData.append('location', form.location.trim())
+  formData.append('bio', form.bio.trim())
+  formData.append('phoneVerified', form.isPhoneVerified ? 'true' : 'false')
+  formData.append('emailVerified', form.isEmailVerified ? 'true' : 'false')
 
-  if (form.location) formData.append('location', form.location.trim())
-  if (form.bio) formData.append('bio', form.bio.trim())
   if (form.industry) formData.append('industry', form.industry.trim())
 
   if (form.experienceYears !== '') {
@@ -128,23 +130,19 @@ export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormD
     formData.append('experienceMonths', String(Number(form.experienceMonths) || 0))
   }
 
-  if (form.serviceType) formData.append('serviceType', form.serviceType)
+  formData.append('serviceType', form.serviceType)
+  formData.append('serviceCategory', JSON.stringify(form.serviceCategory))
 
-  if (form.serviceCategory.length > 0) {
-    formData.append('serviceCategory', JSON.stringify(form.serviceCategory))
-  }
   if (form.offerings.length > 0) {
     formData.append('offerings', JSON.stringify(form.offerings))
   }
 
-  if (form.sampleWorkLink) {
-    const rawLink = form.sampleWorkLink.trim()
-    const link =
-      rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')
-        ? `https://${rawLink}`
-        : rawLink
-    formData.append('sampleWorkLink', link)
-  }
+  const rawLink = form.sampleWorkLink.trim()
+  const link =
+    rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')
+      ? `https://${rawLink}`
+      : rawLink
+  formData.append('sampleWorkLink', link)
 
   if (form.coverImage) formData.append('coverImage', form.coverImage)
   if (form.profileImage) formData.append('profileImage', form.profileImage)
@@ -405,8 +403,8 @@ export const mapExpertProfileToOnboardingForm = (profile: {
 
     internalNotes: profile.finalReview?.internalNotes || profile.adminNotes || '',
     isVerified: Boolean(profile.finalReview?.isVerified ?? profile.isVerified),
-    isPhoneVerified: Boolean(profile.phoneVerified ?? true),
-    isEmailVerified: Boolean(profile.emailVerified ?? true),
+    isPhoneVerified: Boolean(profile.phoneVerified),
+    isEmailVerified: Boolean(profile.emailVerified),
   }
 }
 

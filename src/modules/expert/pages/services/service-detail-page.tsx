@@ -507,7 +507,14 @@ export const ServiceDetailPage = () => {
         <div className="flex flex-col gap-5">
           <div className="relative h-[320px] w-full overflow-hidden rounded-xl bg-black">
             {activeImage ? (
-              <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
+              <a
+                href={activeImage}
+                target="_blank"
+                rel="noreferrer"
+                className="block h-full w-full cursor-zoom-in"
+              >
+                <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
+              </a>
             ) : (
               <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                 <ImageIcon className="size-8" aria-hidden="true" />
@@ -523,7 +530,7 @@ export const ServiceDetailPage = () => {
                   onClick={() =>
                     setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
                   }
-                  className="absolute top-1/2 left-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                  className="absolute top-1/2 left-3 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronLeft className="size-4" />
                 </button>
@@ -533,14 +540,14 @@ export const ServiceDetailPage = () => {
                   onClick={() =>
                     setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
                   }
-                  className="absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                  className="absolute top-1/2 right-3 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronRight className="size-4" />
                 </button>
               </>
             ) : null}
 
-            <div className="absolute right-3 bottom-3 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[11px] font-semibold text-white">
+            <div className="absolute right-3 bottom-3 z-10 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[11px] font-semibold text-white">
               <ImageIcon className="size-3" />
               {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
             </div>

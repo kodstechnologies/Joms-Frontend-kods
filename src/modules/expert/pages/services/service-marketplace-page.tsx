@@ -18,44 +18,68 @@ import { toast } from 'sonner'
 import type {
   MarketplaceMetric,
   ServiceConsultationTrendPoint,
-} from '@/modules/expert/mock/service-marketplace.mock'
+} from '@/modules/expert/config/service-marketplace.config'
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
 import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
 import { SERVICE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
+import {
+  DEFAULT_SERVICE_DASHBOARD_METRIC_IDS,
+  SERVICE_DASHBOARD_CONSULTATION_METRICS_CATALOG,
+  SERVICE_DASHBOARD_SERVICE_METRICS_CATALOG,
+} from '../../config/service-dashboard-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useMarketplaceDashboard } from '@/modules/services/hooks/use-marketplace-dashboard'
 import type {
   DateRangePreset,
+  MarketplaceDashboardData,
   MetricTrend,
 } from '@/modules/services/types/marketplace-dashboard.types'
 import { exportServiceMarketplaceExcel } from './service-marketplace-export'
 
-const ZERO_SERVICE_METRICS: MarketplaceMetric[] = [
-  { id: 'listed-services', label: 'Listed Services', value: '0' },
-  { id: 'active-services', label: 'Active Services', value: '0' },
-  { id: 'services-delivered', label: 'Services Delivered', value: '0' },
-  { id: 'service-completion', label: 'Service Completion %', value: '0%' },
-  { id: 'avg-delivery-time', label: 'Avg. Delivery Time', value: '0d 0h' },
-  { id: 'total-service-revenue', label: 'Total Service Revenue', value: '₹0.00' },
-  { id: 'avg-revenue-service', label: 'Avg. Revenue/Service', value: '₹0.00' },
-  { id: 'repeat-service', label: 'Repeat Service %', value: '0%' },
-  { id: 'avg-service-rating', label: 'Avg. Service Rating', value: '0/5' },
-  { id: 'customer-satisfaction', label: 'Customer Satisfaction', value: '0%' },
-  { id: 'on-time-delivery', label: 'On-Time Delivery', value: '0%' },
-  { id: 'service-cancellation-rate', label: 'Service Cancellation Rate', value: '0%' },
-]
+const formatCount = (value?: number | null) => (value ?? 0).toLocaleString('en-IN')
+const formatPct = (value?: number | null) => `${value ?? 0}%`
+const formatRating = (value?: number | null) =>
+  value == null || Number.isNaN(Number(value)) ? '—' : `${Number(value).toFixed(1)}/5`
+const formatText = (value?: string | null) => (value && String(value).trim() ? String(value) : '—')
+const formatMoneyLabel = (value?: { label?: string } | null) => value?.label || '₹0.00'
 
-const ZERO_CONSULTATION_METRICS: MarketplaceMetric[] = [
-  { id: 'listed-consultation', label: 'Listed Consultation', value: '0' },
-  { id: 'active-consultation', label: 'Active Consultation', value: '0' },
-  { id: 'completed', label: 'Completed', value: '0' },
-  { id: 'consultation-completion', label: 'Consultation Completion %', value: '0%' },
-  { id: 'avg-consultation-time', label: 'Avg. Consultation Time', value: '0 min' },
-  { id: 'total-consultation-revenue', label: 'Total Consultation Revenue', value: '₹0.00' },
-  { id: 'avg-revenue-consultation', label: 'Avg. Revenue/Consultation', value: '₹0.00' },
-  { id: 'repeat-consultation', label: 'Repeat Consultation %', value: '0%' },
-]
+const ZERO_SERVICE_METRICS: MarketplaceMetric[] = SERVICE_DASHBOARD_SERVICE_METRICS_CATALOG.map(
+  (item) => ({
+    id: item.id,
+    label: item.label,
+    value:
+      item.type === 'Currency'
+        ? '₹0.00'
+        : item.type === 'Percentage'
+          ? '0%'
+          : item.type === 'Duration'
+            ? '0d 0h'
+            : item.type === 'Decimal'
+              ? '0'
+              : item.type === 'String'
+                ? '—'
+                : '0',
+  }),
+)
+
+const ZERO_CONSULTATION_METRICS: MarketplaceMetric[] =
+  SERVICE_DASHBOARD_CONSULTATION_METRICS_CATALOG.map((item) => ({
+    id: item.id,
+    label: item.label,
+    value:
+      item.type === 'Currency'
+        ? '₹0.00'
+        : item.type === 'Percentage'
+          ? '0%'
+          : item.type === 'Duration'
+            ? '00:00'
+            : item.type === 'Decimal'
+              ? '0'
+              : item.type === 'String'
+                ? '—'
+                : '0',
+  }))
 
 function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   const isUp = trend?.direction === 'up'
@@ -72,7 +96,9 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
             </TrendBadge>
             <span className="text-muted text-[10px]">{trend.label ?? 'vs last month'}</span>
           </>
-        ) : null}
+        ) : (
+          <span className="text-muted text-[10px]">vs last month —</span>
+        )}
       </div>
     </div>
   )
@@ -203,11 +229,223 @@ const attachTrend = (
     trend: trends?.[metric.id],
   }))
 
-const DEFAULT_SERVICE_METRIC_IDS = ZERO_SERVICE_METRICS.map((metric) => metric.id)
+const DEFAULT_SERVICE_METRIC_IDS = DEFAULT_SERVICE_DASHBOARD_METRIC_IDS
+
+function buildServiceMetrics(dashboardData: MarketplaceDashboardData): MarketplaceMetric[] {
+  const s = dashboardData.services
+  const refundAmount = s.refunds
+  const mostOptedSub = s.mostOptedSubCategory?.name ?? null
+
+  return [
+    { id: 'listed-services', label: 'Listed Services', value: formatCount(s.listings.listed) },
+    { id: 'active-services', label: 'Active Services', value: formatCount(s.listings.active) },
+    { id: 'paused-services', label: 'Paused Services', value: formatCount(s.listings.paused) },
+    {
+      id: 'archived-services',
+      label: 'Archived Services',
+      value: formatCount(s.listings.archived),
+    },
+    { id: 'deleted-services', label: 'Deleted Services', value: formatCount(s.listings.deleted) },
+    {
+      id: 'most-opted-service-category',
+      label: 'Most Opted Service Category',
+      value: formatText(s.mostOptedCategory?.name),
+    },
+    {
+      id: 'most-opted-service-sub-category',
+      label: 'Most Opted Service Sub-Category',
+      value: formatText(mostOptedSub),
+    },
+    {
+      id: 'total-service-orders',
+      label: 'Total Service Orders',
+      value: formatCount(s.orders.total),
+    },
+    {
+      id: 'services-delivered',
+      label: 'Completed Service Orders',
+      value: formatCount(s.orders.completed),
+    },
+    {
+      id: 'in-progress-service-orders',
+      label: 'In Progress Service Orders',
+      value: formatCount(s.orders.inProgress),
+    },
+    {
+      id: 'disputed-service-orders',
+      label: 'Disputed Service Orders',
+      value: formatCount(s.orders.disputed),
+    },
+    {
+      id: 'service-completion',
+      label: 'Service Completion Rate',
+      value: formatPct(s.orders.completionRate),
+    },
+    {
+      id: 'avg-delivery-time',
+      label: 'Average Delivery Time',
+      value: s.delivery.averageTime?.label || '0d 0h',
+    },
+    {
+      id: 'total-service-revenue',
+      label: 'Total Service Revenue',
+      value: formatMoneyLabel(s.revenue.total),
+    },
+    {
+      id: 'avg-revenue-service',
+      label: 'Average Revenue per Service',
+      value: formatMoneyLabel(s.revenue.averagePerService),
+    },
+    {
+      id: 'average-order-value',
+      label: 'Average Order Value (AOV)',
+      value: formatMoneyLabel(s.revenue.averageOrderValue),
+    },
+    {
+      id: 'avg-service-rating',
+      label: 'Average Service Rating',
+      value: formatRating(s.quality?.avgRating),
+    },
+    {
+      id: 'customer-satisfaction',
+      label: 'Customer Satisfaction',
+      value: formatPct(s.quality?.customerSatisfactionPct),
+    },
+    {
+      id: 'on-time-delivery',
+      label: 'On-Time Delivery %',
+      value: formatPct(s.delivery.onTimeDeliveryPct),
+    },
+    {
+      id: 'avg-services-per-expert',
+      label: 'Average Services per Expert',
+      value: Number(s.experts?.avgServicesPerExpert ?? 0).toFixed(1),
+    },
+    {
+      id: 'total-refund-amount',
+      label: 'Total Refund Amount',
+      value: formatMoneyLabel(refundAmount?.total) || '₹0.00',
+    },
+    {
+      id: 'refund-rate',
+      label: 'Refund Rate',
+      value: formatPct(refundAmount?.rate ?? 0),
+    },
+    {
+      id: 'repeat-service',
+      label: 'Repeat Service %',
+      value: formatPct(s.repeatServicePct),
+    },
+    {
+      id: 'service-cancellation-rate',
+      label: 'Service Cancellation Rate',
+      value: formatPct(s.orders.cancellationRate),
+    },
+  ]
+}
+
+function buildConsultationMetrics(dashboardData: MarketplaceDashboardData): MarketplaceMetric[] {
+  const c = dashboardData.consultations
+  const quality = c.quality
+
+  return [
+    {
+      id: 'listed-consultation',
+      label: 'Listed Consultations',
+      value: formatCount(c.listings.listed),
+    },
+    {
+      id: 'active-consultation',
+      label: 'Active Consultations',
+      value: formatCount(c.listings.active),
+    },
+    {
+      id: 'paused-consultations',
+      label: 'Paused Consultations',
+      value: formatCount(c.listings.paused),
+    },
+    {
+      id: 'archived-consultations',
+      label: 'Archived Consultations',
+      value: formatCount(c.listings.archived),
+    },
+    {
+      id: 'deleted-consultations',
+      label: 'Deleted Consultations',
+      value: formatCount(c.listings.deleted),
+    },
+    {
+      id: 'consultation-bookings',
+      label: 'Consultation Bookings',
+      value: formatCount(c.bookings.total),
+    },
+    {
+      id: 'completed',
+      label: 'Completed Consultations',
+      value: formatCount(c.bookings.completed),
+    },
+    {
+      id: 'scheduled-consultations',
+      label: 'Scheduled Consultations',
+      value: formatCount(c.bookings.scheduled),
+    },
+    {
+      id: 'cancelled-consultations',
+      label: 'Cancelled Consultations',
+      value: formatCount(c.bookings.cancelled),
+    },
+    {
+      id: 'consultation-completion',
+      label: 'Consultation Completion Rate',
+      value: formatPct(c.bookings.completionRate),
+    },
+    {
+      id: 'avg-consultation-time',
+      label: 'Average Consultation Duration',
+      value: c.duration.label || `${c.duration.averageMinutes ?? 0} min`,
+    },
+    {
+      id: 'total-consultation-revenue',
+      label: 'Total Consultation Revenue',
+      value: formatMoneyLabel(c.revenue.total),
+    },
+    {
+      id: 'avg-revenue-consultation',
+      label: 'Average Revenue per Consultation',
+      value: formatMoneyLabel(c.revenue.averagePerBooking),
+    },
+    {
+      id: 'average-booking-value',
+      label: 'Average Booking Value',
+      value: formatMoneyLabel(c.revenue.averagePerBooking),
+    },
+    {
+      id: 'most-opted-consultation-category',
+      label: 'Most Opted Consultation Category',
+      value: formatText(c.mostOptedCategory?.name),
+    },
+    {
+      id: 'avg-consultation-rating',
+      label: 'Average Consultation Rating',
+      value: formatRating(quality?.avgRating),
+    },
+    {
+      id: 'consultation-satisfaction',
+      label: 'Consultation Satisfaction',
+      value:
+        quality?.customerSatisfactionPct != null ? formatPct(quality.customerSatisfactionPct) : '—',
+    },
+    {
+      id: 'repeat-consultation',
+      label: 'Repeat Consultation %',
+      value: formatPct(c.bookings.repeatConsultationPct),
+    },
+  ]
+}
 
 const RANGE_PRESETS_MAP: Record<string, DateRangePreset> = {
   'last-3-months': 'quarter',
-  'last-6-months': 'quarter',
+  'last-6-months': 'last6months',
   'last-12-months': 'year',
 }
 
@@ -264,121 +502,12 @@ export function ServiceMarketplacePage() {
 
   const liveServiceMetrics: MarketplaceMetric[] = useMemo(() => {
     if (!dashboardData) return ZERO_SERVICE_METRICS
-
-    const s = dashboardData.services
-    const cancellationPct = s.orders.cancellationRate ?? 0
-
-    return [
-      {
-        id: 'listed-services',
-        label: 'Listed Services',
-        value: (s.listings.listed ?? 0).toLocaleString('en-IN'),
-      },
-      {
-        id: 'active-services',
-        label: 'Active Services',
-        value: (s.listings.active ?? 0).toLocaleString('en-IN'),
-      },
-      {
-        id: 'services-delivered',
-        label: 'Services Delivered',
-        value: (s.orders.completed ?? 0).toLocaleString('en-IN'),
-      },
-      {
-        id: 'service-completion',
-        label: 'Service Completion %',
-        value: `${s.orders.completionRate ?? 0}%`,
-      },
-      {
-        id: 'avg-delivery-time',
-        label: 'Avg. Delivery Time',
-        value: s.delivery.averageTime?.label || '0d 0h',
-      },
-      {
-        id: 'total-service-revenue',
-        label: 'Total Service Revenue',
-        value: s.revenue.total?.label || '₹0.00',
-      },
-      {
-        id: 'avg-revenue-service',
-        label: 'Avg. Revenue/Service',
-        value: s.revenue.averagePerService?.label || '₹0.00',
-      },
-      {
-        id: 'repeat-service',
-        label: 'Repeat Service %',
-        value: `${s.repeatServicePct ?? 0}%`,
-      },
-      {
-        id: 'avg-service-rating',
-        label: 'Avg. Service Rating',
-        value: `${Number(s.quality?.avgRating ?? 0).toFixed(1)}/5`,
-      },
-      {
-        id: 'customer-satisfaction',
-        label: 'Customer Satisfaction',
-        value: `${s.quality?.customerSatisfactionPct ?? 0}%`,
-      },
-      {
-        id: 'on-time-delivery',
-        label: 'On-Time Delivery',
-        value: `${s.delivery.onTimeDeliveryPct ?? 0}%`,
-      },
-      {
-        id: 'service-cancellation-rate',
-        label: 'Service Cancellation Rate',
-        value: `${cancellationPct}%`,
-      },
-    ]
+    return buildServiceMetrics(dashboardData)
   }, [dashboardData])
 
   const liveConsultationMetrics: MarketplaceMetric[] = useMemo(() => {
     if (!dashboardData) return ZERO_CONSULTATION_METRICS
-
-    const c = dashboardData.consultations
-
-    return [
-      {
-        id: 'listed-consultation',
-        label: 'Listed Consultation',
-        value: (c.listings.listed ?? 0).toLocaleString('en-IN'),
-      },
-      {
-        id: 'active-consultation',
-        label: 'Active Consultation',
-        value: (c.listings.active ?? 0).toLocaleString('en-IN'),
-      },
-      {
-        id: 'completed',
-        label: 'Completed',
-        value: (c.bookings.completed ?? 0).toLocaleString('en-IN'),
-      },
-      {
-        id: 'consultation-completion',
-        label: 'Consultation Completion %',
-        value: `${c.bookings.completionRate ?? 0}%`,
-      },
-      {
-        id: 'avg-consultation-time',
-        label: 'Avg. Consultation Time',
-        value: `${c.duration.averageMinutes ?? 0} min`,
-      },
-      {
-        id: 'total-consultation-revenue',
-        label: 'Total Consultation Revenue',
-        value: c.revenue.total?.label || '₹0.00',
-      },
-      {
-        id: 'avg-revenue-consultation',
-        label: 'Avg. Revenue/Consultation',
-        value: c.revenue.averagePerBooking?.label || '₹0.00',
-      },
-      {
-        id: 'repeat-consultation',
-        label: 'Repeat Consultation %',
-        value: `${c.bookings.repeatConsultationPct ?? 0}%`,
-      },
-    ]
+    return buildConsultationMetrics(dashboardData)
   }, [dashboardData])
 
   const trendPoints: ServiceConsultationTrendPoint[] = useMemo(() => {
@@ -443,8 +572,12 @@ export function ServiceMarketplacePage() {
     [liveServiceMetrics, activeMetricIds, dashboardData?.metricTrends?.services],
   )
   const visibleConsultationMetrics = useMemo(
-    () => attachTrend(liveConsultationMetrics, dashboardData?.metricTrends?.consultations),
-    [liveConsultationMetrics, dashboardData?.metricTrends?.consultations],
+    () =>
+      orderByActiveMetricIds(
+        attachTrend(liveConsultationMetrics, dashboardData?.metricTrends?.consultations),
+        activeMetricIds,
+      ),
+    [liveConsultationMetrics, activeMetricIds, dashboardData?.metricTrends?.consultations],
   )
 
   const chartAxisDomains = useMemo(() => {

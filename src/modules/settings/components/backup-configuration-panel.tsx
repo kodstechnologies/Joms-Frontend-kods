@@ -5,7 +5,7 @@ import {
   backupFrequencyOptions,
   backupRetentionOptions,
   backupStorageOptions,
-} from '../mock/backup.mock'
+} from '../config/backup.config'
 import type { BackupSettings } from '../types/settings'
 import { cn } from '@/shared/lib/cn'
 

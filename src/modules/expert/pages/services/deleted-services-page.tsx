@@ -1,42 +1,31 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye, RotateCcw } from 'lucide-react'
+import { Eye, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
-
-import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
-import type { FilterValues } from '@/shared/types/data-filter'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
-import {
-  buildServiceListQueryParams,
-  createServiceFilteredExportHandler,
-  exportMappedItemsToFile,
-} from '@/shared/utils/export-filter-utils'
-import { fetchServices } from '../../api/service-api'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
+
 import { SERVICE_DELETED_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
-import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-
-import { useRestoreService, useServices } from '../../hooks/use-services'
+import { useRestoreService } from '../../hooks/use-services'
+import { useServiceStatusList } from '../../hooks/use-service-status-list'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
 import {
   buildServiceDataColumnsById,
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
+import { ExpertListHeader } from '../experts/expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
-import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
-import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
-import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_DELETED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { Button } from '@/shared/components/ui/button'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 
 const formatExportDateTime = (value?: string | null) =>
   value
@@ -71,45 +60,20 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service)
 
 export function DeletedServicesPage() {
   const navigate = useNavigate()
-  const [currentPage, setCurrentPage] = useState(1)
-  const serverSort = useServerTableSort({
-    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
-    onPageReset: () => setCurrentPage(1),
-  })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-  const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_DELETED_MODULE_KEY)
-
-  const serviceQueryParams = useMemo(
-    () =>
-      buildServiceListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...serverSort.sortParams,
-        ...enhancedSearch.buildSearchParams(),
-        status: 'deleted',
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
-
-  const { data, isLoading } = useServices(serviceQueryParams)
   const restoreServiceMutation = useRestoreService()
+  const catalogColumnIds = DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
 
-  const services = useMemo(() => data?.data || [], [data?.data])
-  const meta = data?.meta
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
+  const list = useServiceStatusList({
+    moduleKey: SERVICE_DELETED_MODULE_KEY,
+    status: 'deleted',
+    defaultVisibleColumnIds: DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    exportFileName: 'deleted_services_export',
+    exportColumnMap: EXPORT_COLUMN_MAP,
+  })
 
   const handleExportServiceRow = useCallback(
     async (service: Service) => {
-      const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-        ? tableColumnPreferencesQuery.data.visibleColumnIds
-        : DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
-
       try {
         await exportMappedItemsToFile(
           EXPORT_COLUMN_MAP,
@@ -117,7 +81,7 @@ export function DeletedServicesPage() {
           'excel',
           `deleted_service_${service.serviceid || service._id}`,
           {
-            columnIds: visibleIds,
+            columnIds: list.visibleColumnIds,
             catalogOrder: DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS,
           },
         )
@@ -126,32 +90,8 @@ export function DeletedServicesPage() {
         toast.error('Failed to export service')
       }
     },
-    [tableColumnPreferencesQuery.data],
+    [list.visibleColumnIds],
   )
-
-  const handleExportData = useMemo(
-    () =>
-      createServiceFilteredExportHandler(
-        fetchServices,
-        EXPORT_COLUMN_MAP,
-        'deleted_services_export',
-        {
-          status: 'deleted',
-          ...enhancedSearch.buildSearchParams(),
-        },
-      ),
-    [enhancedSearch],
-  )
-
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: SERVICE_DELETED_MODULE_KEY,
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
-  })
 
   const handleRestore = useCallback(
     (service: Service) => {
@@ -168,15 +108,12 @@ export function DeletedServicesPage() {
 
   const columns = useMemo<ColumnDef<Service>[]>(() => {
     const dataColumnsById = buildServiceDataColumnsById()
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-      ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
 
     return withServerSortMeta(
       [
         ...pickServicePreferenceColumns(
           dataColumnsById,
-          visibleIds,
+          list.visibleColumnIds,
           DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS,
         ),
         {
@@ -186,19 +123,19 @@ export function DeletedServicesPage() {
           meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
           cell: ({ row }) => {
             const service = row.original
-            const isOpen = activeDropdownId === service._id
+            const isOpen = list.activeDropdownId === service._id
 
             return (
               <TableActionsDropdown
                 label={`Open actions for ${service.title}`}
                 isOpen={isOpen}
-                onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
+                onOpenChange={(open) => list.setActiveDropdownId(open ? service._id : null)}
                 menuWidth={192}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" />}
                   onClick={() => {
-                    setActiveDropdownId(null)
+                    list.setActiveDropdownId(null)
                     navigate(getServiceManagementViewPath(service))
                   }}
                 >
@@ -207,7 +144,7 @@ export function DeletedServicesPage() {
                 <TableActionsItem
                   icon={<RotateCcw className="size-3.5" />}
                   onClick={() => {
-                    setActiveDropdownId(null)
+                    list.setActiveDropdownId(null)
                     handleRestore(service)
                   }}
                 >
@@ -216,7 +153,7 @@ export function DeletedServicesPage() {
                 <TableActionsItem
                   icon={<ExportDataIcon className="size-3.5" />}
                   onClick={() => {
-                    setActiveDropdownId(null)
+                    list.setActiveDropdownId(null)
                     void handleExportServiceRow(service)
                   }}
                 >
@@ -229,77 +166,44 @@ export function DeletedServicesPage() {
       ],
       SERVICE_COLUMN_SORT_FIELDS,
     )
-  }, [
-    activeDropdownId,
-    handleExportServiceRow,
-    handleRestore,
-    navigate,
-    tableColumnPreferencesQuery.data,
-  ])
+  }, [handleExportServiceRow, handleRestore, list, navigate])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <header className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
-          >
-            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-            <span>Deleted Services</span>
-          </button>
-
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-              className="transition-colors hover:text-white"
-            >
-              Service Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Deleted Services</span>
-          </div>
-        </header>
-        <Button
-          className="ui-manage-metrics h-9 w-full md:w-auto"
-          onClick={() =>
-            navigate('/metrics/service-deleted?returnTo=/services/management/deleted&section=table')
-          }
-        >
-          <ManageMetricsIcon />
-          Manage Metrics
-        </Button>
-      </div>
+      <ExpertListHeader
+        title="Deleted Services"
+        breadcrumb="Service Management / Deleted Services"
+        backTo="/services/management"
+        metricsPath="/metrics/service-deleted?returnTo=/services/management/deleted&section=table"
+      />
 
       <DataTable
         columns={columns}
-        data={services}
+        data={list.services}
         getRowId={(service) => service._id}
-        isLoading={isLoading}
-        searchValue={enhancedSearch.globalSearch}
-        onSearchChange={enhancedSearch.setGlobalSearch}
+        isLoading={list.isLoading}
+        searchValue={list.enhancedSearch.globalSearch}
+        onSearchChange={list.enhancedSearch.setGlobalSearch}
         searchableColumns={SERVICE_DELETED_SEARCH_COLUMNS}
-        columnSearches={enhancedSearch.columnSearches}
-        onColumnSearchChange={enhancedSearch.setColumnSearch}
-        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
-        onClearAllSearches={enhancedSearch.clearAll}
-        onAdvancedFilter={onAdvancedFilter}
-        onExport={onExport}
-        {...serverSort.dataTableSortProps}
+        columnSearches={list.enhancedSearch.columnSearches}
+        onColumnSearchChange={list.enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={list.enhancedSearch.removeColumnSearch}
+        onClearAllSearches={list.enhancedSearch.clearAll}
+        onAdvancedFilter={list.onAdvancedFilter}
+        onExport={list.onExport}
+        {...list.serverSort.dataTableSortProps}
         searchPlaceholder="Search by service name or ID"
         pagination={{
-          page: currentPage,
-          pageSize: meta?.pagination.limit || 10,
-          totalItems: meta?.pagination.total || 0,
-          totalPages: meta?.pagination.pages || 1,
-          onPageChange: setCurrentPage,
+          page: list.currentPage,
+          pageSize: list.meta?.pagination.limit || 10,
+          totalItems: list.meta?.pagination.total || 0,
+          totalPages: list.meta?.pagination.pages || 1,
+          onPageChange: list.setCurrentPage,
         }}
         resourceLabel="services"
         emptyMessage="No deleted services found."
       />
-      {exportFilterModals}
+      {list.exportFilterModals}
     </div>
   )
 }

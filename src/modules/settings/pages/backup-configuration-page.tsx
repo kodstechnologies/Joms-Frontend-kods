@@ -10,7 +10,7 @@ import {
   useSettingsModule,
   useUpdateSettings,
 } from '../hooks/use-settings'
-import { backupDefaults } from '../mock/settings.defaults'
+import { backupDefaults } from '../config/settings.config'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 

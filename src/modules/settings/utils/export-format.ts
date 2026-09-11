@@ -1,6 +1,6 @@
-import type { ExportFormatOption } from '../mock/platform-options.mock'
+import type { ExportFormatOption } from '../config/platform-options'
 import type { PlatformSettings } from '../types/settings'
-import { platformDefaults } from '../mock/settings.defaults'
+import { platformDefaults } from '../config/settings.config'
 
 export function resolveDefaultExportFormat(value?: string | null): ExportFormatOption {
   const normalized = String(value || '')

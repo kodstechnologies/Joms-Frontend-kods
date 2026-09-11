@@ -6,7 +6,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { Sidebar } from '@/app/layouts/components/sidebar-nav'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
-import { coverageAdminUser } from '@/test/coverage-stub'
+
+const adminUser = {
+  id: '1',
+  email: 'admin@example.com',
+  fullname: 'Admin',
+  kind: 'superadmin' as const,
+  isSuperAdmin: true,
+  permissions: ['finance.view'],
+}
 
 const logoutMutateAsync = vi.fn(async () => ({}))
 
@@ -30,7 +38,7 @@ describe('Sidebar', () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     })
-    useAuthStore.getState().setSession(coverageAdminUser, 'test-token')
+    useAuthStore.getState().setSession(adminUser, 'test-token')
     logoutMutateAsync.mockClear()
   })
 

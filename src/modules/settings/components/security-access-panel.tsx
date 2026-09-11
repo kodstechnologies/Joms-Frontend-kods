@@ -11,7 +11,7 @@ import {
   minimumLengthOptions,
   passwordExpiryOptions,
   sessionTimeoutOptions,
-} from '../mock/security-options.mock'
+} from '../config/security-options'
 import type { SecuritySettings } from '../types/settings'
 import { SettingsToggle } from './settings-toggle-row'
 
@@ -150,7 +150,7 @@ export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAcce
         </div>
       </section>
 
-      {/* Password & MFA Settings — single card (Figma) */}
+      {/* Password & MFA Settings — single card */}
       <section className="security-section">
         <header className="security-section-header">
           <h2 className="security-section-title">Password & MFA Settings</h2>

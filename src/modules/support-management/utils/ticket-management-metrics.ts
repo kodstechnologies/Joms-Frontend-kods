@@ -66,21 +66,6 @@ function buildFromApi(cards: SupportStatCard[]): TicketManagementMetricCard[] {
   ) as TicketManagementMetricCard[]
 }
 
-export function buildMockCards(): TicketManagementMetricCard[] {
-  return TICKET_MANAGEMENT_METRIC_IDS.map((id) => {
-    const label = labelById.get(id) ?? id
-    const fallback = defaultById[id]
-
-    return {
-      id,
-      title: label,
-      value: fallback?.value ?? emptyValueFor(id),
-      percentage: fallback?.changePercent ?? 0,
-      direction: 'up' as const,
-    }
-  })
-}
-
 export function buildTicketManagementMetricCards(
   cards?: SupportStatCard[],
 ): TicketManagementMetricCard[] {

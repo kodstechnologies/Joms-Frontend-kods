@@ -17,8 +17,6 @@ import { financeTaxFilterConfig } from './finance-tax.config'
 import { financeInvoicesFilterConfig } from './finance-invoices.config'
 import { financeReconciliationFilterConfig } from './finance-reconciliation.config'
 import { financeEscrowFilterConfig } from './finance-escrow.config'
-import { financeEventsFilterConfig } from './finance-events.config'
-import { financeCategoriesFilterConfig } from './finance-categories.config'
 import { expertMembershipsFilterConfig } from './expert-memberships.config'
 import { expertClienteleFilterConfig } from './expert-clientele.config'
 import { expertProfileServicesFilterConfig } from './expert-profile-services.config'
@@ -62,8 +60,6 @@ export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = 
   'finance-invoices': financeInvoicesFilterConfig,
   'finance-reconciliation': financeReconciliationFilterConfig,
   'finance-escrow': financeEscrowFilterConfig,
-  'finance-events': financeEventsFilterConfig,
-  'finance-categories': financeCategoriesFilterConfig,
   'expert-memberships': expertMembershipsFilterConfig,
   'expert-clientele': expertClienteleFilterConfig,
   'expert-profile-services': expertProfileServicesFilterConfig,

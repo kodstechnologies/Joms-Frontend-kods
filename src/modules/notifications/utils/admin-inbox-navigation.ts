@@ -133,6 +133,13 @@ const resolveByEventType = (
     return { path: '/settings/security/locked-accounts' }
   }
 
+  if (eventType === 'ADMIN_ESCALATION_ASSIGNED' || eventType.includes('ESCALATION')) {
+    if (ids.ticketId) {
+      return { path: `/support/tickets/${ids.ticketId}` }
+    }
+    return { path: '/my-tasks' }
+  }
+
   if (eventType.startsWith('EXPERT_REPORT')) {
     if (ids.partnerId) {
       return { path: `/experts/management/profile/${ids.partnerId}` }

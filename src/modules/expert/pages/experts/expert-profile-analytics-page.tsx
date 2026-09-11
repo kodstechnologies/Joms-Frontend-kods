@@ -235,7 +235,7 @@ export function ExpertProfileAnalyticsPage() {
       },
       {
         label: 'Client Satisfaction',
-        value: rs?.available ? `${rs.average}/5` : '0/5',
+        value: rs?.available ? `${rs.average}/5` : '--',
       },
       {
         label: 'Revenue Growth Rate',
@@ -285,7 +285,9 @@ export function ExpertProfileAnalyticsPage() {
 
   const conversionFunnel = useMemo(() => {
     const funnel = analyticsData?.charts?.conversionFunnel
-    const profileViews = Number(funnel?.profileViews || 0)
+    const profileViews = Number(
+      funnel?.profileViews ?? analyticsData?.visibilityMetrics?.profileViews?.count ?? 0,
+    )
     const listingViews = Number(funnel?.listingViews || 0)
     const ordersCount = Number(
       funnel?.ordersCount ?? analyticsData?.listingOverview?.ordersCompleted ?? 0,

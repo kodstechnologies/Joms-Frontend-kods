@@ -86,9 +86,7 @@ export function ServicePaymentDetailViewPage() {
       startDate: formatDate(payment.createdAt),
       endDate: formatDate(payment.updatedAt || payment.createdAt),
       completionStatus: (status === 'Paid' ? 'Completed' : 'Pending') as
-        | 'Completed'
-        | 'In Progress'
-        | 'Pending',
+        'Completed' | 'In Progress' | 'Pending',
       paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
     },
     timelineInformation: {

@@ -1,3 +1,9 @@
+import {
+  catalogFromMetricRows,
+  deriveMetricExports,
+  type MetricRowTuple,
+} from '@/shared/lib/define-metrics-catalog'
+
 export const RBAC_HUB_MODULE_KEY = 'rbac-hub'
 
 export type RbacHubMetricCatalogItem = {
@@ -8,58 +14,73 @@ export type RbacHubMetricCatalogItem = {
   defaultActive: boolean
 }
 
-export const RBAC_HUB_METRICS_CATALOG: RbacHubMetricCatalogItem[] = [
-  {
-    id: 'total-user',
-    label: 'Total User',
-    type: 'Count',
-    description: 'Total users in the RBAC system',
-    defaultActive: true,
-  },
-  {
-    id: 'total-active-users',
-    label: 'Total active users',
-    type: 'Count',
-    description: 'Total active user accounts',
-    defaultActive: true,
-  },
-  {
-    id: 'currently-online-users',
-    label: 'Currently online users',
-    type: 'Count',
-    description: 'Users currently online',
-    defaultActive: true,
-  },
-  {
-    id: 'suspended-users',
-    label: 'Suspended Users',
-    type: 'Count',
-    description: 'Suspended user accounts',
-    defaultActive: true,
-  },
-  {
-    id: 'total-roles-available',
-    label: 'Total Roles Available',
-    type: 'Count',
-    description: 'Total roles configured in the system',
-    defaultActive: true,
-  },
+/** Spec: JOMS_KODS_Web_Admin_Panel_full_data.json → RBAC Management → Dashboard Metrics */
+const RBAC_HUB_METRIC_DEFS: MetricRowTuple[] = [
+  ['total-user', 'Total Admin Users', 'Count', 'Total admin users registered', true],
+  ['total-active-users', 'Active Admin Users', 'Count', 'Admin users with active accounts', true],
+  ['currently-online-users', 'Currently Online Users', 'Count', 'Admins currently logged in', true],
+  ['total-roles-available', 'Total Roles Available', 'Count', 'Total RBAC roles configured', true],
+  ['suspended-users', 'Suspended Users', 'Count', 'Suspended admin accounts', true],
+  ['deleted-roles', 'Deleted Roles', 'Count', 'Roles marked as deleted/disabled', false],
+  ['pending-invitations', 'Pending Invitations', 'Count', 'Invitations awaiting acceptance', false],
+  [
+    'invitation-acceptance-rate',
+    'Invitation Acceptance Rate',
+    'Percentage',
+    'Accepted invitations ÷ total invitations sent',
+    false,
+  ],
+  [
+    'mfa-adoption-rate',
+    'MFA Adoption Rate',
+    'Percentage',
+    'Admin accounts with MFA enabled ÷ active admins',
+    false,
+  ],
+  [
+    'privileged-users',
+    'Privileged Users',
+    'Count',
+    'Users assigned high-risk / critical roles',
+    false,
+  ],
+  [
+    'active-role-assignments',
+    'Active Role Assignments',
+    'Count',
+    'Total active role-user mappings',
+    false,
+  ],
+  [
+    'permission-changes-mtd',
+    'Permission Changes (MTD)',
+    'Count',
+    'Role/permission updates in the current month',
+    false,
+  ],
 ]
 
-export const RBAC_HUB_METRIC_IDS = RBAC_HUB_METRICS_CATALOG.map((metric) => metric.id)
+export const RBAC_HUB_METRICS_CATALOG = catalogFromMetricRows(
+  RBAC_HUB_METRIC_DEFS,
+) as RbacHubMetricCatalogItem[]
 
-export const RBAC_HUB_METRIC_ID_SET = new Set(RBAC_HUB_METRIC_IDS)
-
-export const DEFAULT_RBAC_HUB_METRIC_IDS = RBAC_HUB_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
-
-export const RBAC_HUB_MAX_ACTIVE_METRICS = RBAC_HUB_METRICS_CATALOG.length
+const derived = deriveMetricExports(RBAC_HUB_METRICS_CATALOG)
+export const RBAC_HUB_METRIC_IDS = derived.ids
+export const RBAC_HUB_METRIC_ID_SET = derived.idSet
+export const DEFAULT_RBAC_HUB_METRIC_IDS = derived.defaultIds
+export const RBAC_HUB_MAX_ACTIVE_METRICS = derived.maxActive
 
 export const RBAC_HUB_STAT_KEYS = {
   'total-user': 'totalUsers',
   'total-active-users': 'totalActiveUsers',
   'currently-online-users': 'currentlyOnlineUsers',
-  'suspended-users': 'suspendedUsers',
   'total-roles-available': 'totalRolesAvailable',
+  'suspended-users': 'suspendedUsers',
+  'deleted-roles': 'deletedRoles',
+  'pending-invitations': 'pendingInvitations',
+  'invitation-acceptance-rate': 'invitationAcceptanceRate',
+  'mfa-adoption-rate': 'mfaAdoptionRate',
+  'privileged-users': 'privilegedUsers',
+  'active-role-assignments': 'activeRoleAssignments',
+  'permission-changes-mtd': 'permissionChangesMtd',
 } as const

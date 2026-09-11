@@ -91,7 +91,7 @@ export function ManageMetricsIcon({
   )
 }
 
-/** Settings / Access — user row actions (Figma) */
+/** Settings / Access — user row actions */
 const accessIconClass = 'size-3.5 shrink-0'
 
 export function AccessViewUserIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
@@ -255,7 +255,7 @@ export function AccessSuspendUserIcon({ className, ...props }: SVGProps<SVGSVGEl
   )
 }
 
-/** Settings / Access — role row actions (Figma) */
+/** Settings / Access — role row actions */
 export function AccessEditPermissionIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
