@@ -982,7 +982,7 @@ export const ServiceViewPage = () => {
               ? setDecisionReason
               : undefined
           }
-          reasonLabel={activeDecisionAction === 'requestChanges' ? 'Request Changes' : 'Reason'}
+          reasonLabel={activeDecisionAction === 'requestChanges' ? 'Request Change' : 'Reason'}
           reasonOptions={decisionModalConfig.reasonOptions}
           selectedReasons={selectedReasons}
           onReasonToggle={toggleDecisionReason}

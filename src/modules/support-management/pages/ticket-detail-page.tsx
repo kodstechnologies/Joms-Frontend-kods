@@ -68,7 +68,7 @@ export function TicketDetailPage() {
         </button>
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Ticket Management</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight.
           </p>

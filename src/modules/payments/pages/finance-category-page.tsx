@@ -236,7 +236,7 @@ export function FinanceCategoryPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-h2 text-brand-text tracking-tight">Category Management</h1>
-        <p className="text-body-md text-muted mt-1">
+        <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
           Configure platform fees, commission rates, and payout cycles by category
         </p>
         <p className="text-body-sm text-muted mt-3">

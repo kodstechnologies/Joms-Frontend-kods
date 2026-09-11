@@ -1,9 +1,39 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
+
+/** Clarity `eye-show-solid` — Figma 18×18 (viewBox 36×36, pupil r≈6.86) */
+const ClarityEyeShowSolidIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 36 36"
+    width={18}
+    height={18}
+    className={className}
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M33.62 17.53c-3.37-6.23-9.28-10-15.82-10S5.34 11.3 2 17.53l-.28.47l.26.48c3.37 6.23 9.28 10 15.82 10s12.46-3.72 15.82-10l.26-.48Zm-15.82 8.9C12.17 26.43 7 23.29 4 18c3-5.29 8.17-8.43 13.8-8.43S28.54 12.72 31.59 18c-3.05 5.29-8.17 8.43-13.79 8.43" />
+    <circle cx="18.09" cy="18.03" r="6.86" />
+  </svg>
+)
+
+/** Clarity `eye-hide-solid` — paired hide state at the same 18×18 size */
+const ClarityEyeHideSolidIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 36 36"
+    width={18}
+    height={18}
+    className={className}
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M18.37 11.17a6.8 6.8 0 0 0-2.37.43l8.8 8.8a6.8 6.8 0 0 0 .43-2.4a6.86 6.86 0 0 0-6.86-6.83" />
+    <path d="M34.29 17.53c-3.37-6.23-9.28-10-15.82-10a16.8 16.8 0 0 0-5.24.85L14.84 10a14.8 14.8 0 0 1 3.63-.47c5.63 0 10.75 3.14 13.8 8.43a17.8 17.8 0 0 1-4.37 5.1l1.42 1.42a19.9 19.9 0 0 0 5-6l.26-.48Z" />
+    <path d="m4.87 5.78l4.46 4.46a19.5 19.5 0 0 0-6.69 7.29l-.26.47l.26.48c3.37 6.23 9.28 10 15.82 10a16.9 16.9 0 0 0 7.37-1.69l5 5l1.75-1.5l-26-26Zm8.3 8.3a6.85 6.85 0 0 0 9.55 9.55l1.6 1.6a14.9 14.9 0 0 1-5.86 1.2c-5.63 0-10.75-3.14-13.8-8.43a17.3 17.3 0 0 1 6.12-6.3Z" />
+  </svg>
+)
 
 const LinkedInIcon = () => (
   <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor" aria-hidden="true">
@@ -220,7 +250,13 @@ export function LoginPage() {
 
       {/* Main Login / 2FA Card Center */}
       <div className="flex flex-1 items-center justify-center px-4 py-20">
-        <div className="w-full max-w-[565px] rounded-[32px] bg-[#050505] px-10 py-12 shadow-[0_25px_60px_rgba(0,0,0,0.65)] sm:px-14 sm:py-14">
+        <div
+          className={
+            step === 'otp'
+              ? 'w-full max-w-[565px] rounded-[32px] bg-[#050505] px-10 py-12 shadow-[0_25px_60px_rgba(0,0,0,0.65)] sm:px-14 sm:py-14'
+              : 'flex h-[478px] w-full max-w-[565px] flex-col justify-center rounded-[32px] bg-[#050505] px-10 py-12 shadow-[0_25px_60px_rgba(0,0,0,0.65)] sm:px-14 sm:py-14'
+          }
+        >
           {step === 'otp' ? (
             /* Two Factor Authentication View */
             <div className="space-y-6">
@@ -275,11 +311,11 @@ export function LoginPage() {
           ) : (
             /* Credentials View */
             <div>
-              <div className="space-y-1.5 text-center">
-                <h1 className="text-[28px] font-semibold tracking-tight text-white sm:text-[30px]">
+              <div className="space-y-2 text-center">
+                <h1 className="font-sans text-[32px] leading-5 font-semibold tracking-normal text-white">
                   Login
                 </h1>
-                <p className="text-sm font-normal text-[#717182]">
+                <p className="text-center font-sans text-[18px] leading-6 font-normal tracking-normal text-[#717182]">
                   Enter your credentials to access the admin panel
                 </p>
               </div>
@@ -318,11 +354,11 @@ export function LoginPage() {
                   >
                     Password
                   </label>
-                  <div className="relative flex items-center border-b border-[#717182]/50 transition-colors focus-within:border-[#E0A263]">
+                  <div className="flex items-center gap-2 border-b border-[#717182]/50 transition-colors focus-within:border-[#E0A263]">
                     <input
                       id="login-password"
                       type={showPassword ? 'text' : 'password'}
-                      className="w-full bg-transparent py-2 pr-8 text-sm text-white outline-none placeholder:text-[#717182] focus:outline-none"
+                      className="min-w-0 flex-1 bg-transparent py-2 text-sm leading-none text-white outline-none placeholder:text-[#717182] focus:outline-none"
                       placeholder="Enter your password"
                       autoComplete="current-password"
                       {...credentialsForm.register('password')}
@@ -330,13 +366,13 @@ export function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-0 cursor-pointer text-[#717182] transition-colors hover:text-white focus:outline-none"
+                      className="mb-px grid size-[18px] shrink-0 cursor-pointer place-items-center text-white opacity-100 transition-opacity hover:opacity-80 focus:outline-none"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
-                        <EyeOff className="size-[18px]" />
+                        <ClarityEyeHideSolidIcon className="size-[18px]" />
                       ) : (
-                        <Eye className="size-[18px]" />
+                        <ClarityEyeShowSolidIcon className="size-[18px]" />
                       )}
                     </button>
                   </div>

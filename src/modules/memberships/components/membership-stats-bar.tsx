@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { TrendingDown, TrendingUp } from 'lucide-react'
 
 import {
   DEFAULT_MEMBERSHIP_METRIC_IDS,
@@ -14,6 +13,7 @@ import {
   orderByActiveMetricIds,
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
+import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
@@ -161,18 +161,9 @@ function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
           <span className="text-muted text-[10px]">Require attention</span>
         ) : trend ? (
           <>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                isPositive
-                  ? 'bg-brand-positive/15 text-brand-positive'
-                  : 'bg-brand-danger/10 text-brand-danger',
-              )}
-            >
-              {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-              {isUp ? '+' : trend.percentage === 0 ? '' : '-'}
-              {trend.percentage}%
-            </span>
+            <TrendBadge tone={isPositive ? 'positive' : 'danger'} direction={isUp ? 'up' : 'down'}>
+              {formatTrendPercent(trend.percentage, isUp ? 'up' : 'down')}
+            </TrendBadge>
             <span className="text-muted truncate text-[10px]">
               {trend.label ?? 'vs last month'}
             </span>

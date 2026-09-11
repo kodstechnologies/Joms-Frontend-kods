@@ -1,6 +1,5 @@
-import { TrendingDown, TrendingUp } from 'lucide-react'
-
 import { cn } from '@/shared/lib/cn'
+import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 
 type SupportStatCardProps = {
   title: string
@@ -25,14 +24,12 @@ export function SupportStatCard({
         <div className="h-3.5 w-28 rounded bg-white/10" />
         <div className="mt-3 h-8 w-24 rounded bg-white/10" />
         <div className="mt-3 flex items-center gap-2">
-          <div className="h-4 w-12 rounded-md bg-white/10" />
+          <div className="h-[33px] w-[69px] rounded-[10px] bg-white/10" />
           <div className="h-3 w-16 rounded bg-white/5" />
         </div>
       </div>
     )
   }
-
-  const isUp = direction === 'up'
 
   return (
     <div className="flex min-h-[118px] flex-col justify-center rounded-xl border border-white/[0.08] bg-[#111112] p-4">
@@ -41,22 +38,8 @@ export function SupportStatCard({
         {value}
       </p>
       <div className="mt-2 flex items-center gap-2">
-        <span
-          className={cn(
-            'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-            isUp
-              ? 'bg-brand-positive/20 text-brand-positive'
-              : 'bg-brand-danger/20 text-brand-danger',
-          )}
-        >
-          {isUp ? (
-            <TrendingUp className="size-3" strokeWidth={2.5} />
-          ) : (
-            <TrendingDown className="size-3" strokeWidth={2.5} />
-          )}
-          {percentage}%
-        </span>
-        <span className="text-muted text-[10px]">{label}</span>
+        <TrendBadge direction={direction}>{formatTrendPercent(percentage, direction)}</TrendBadge>
+        <span className={cn('text-muted text-[10px]')}>{label}</span>
       </div>
     </div>
   )

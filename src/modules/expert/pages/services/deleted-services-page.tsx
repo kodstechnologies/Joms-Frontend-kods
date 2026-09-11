@@ -268,7 +268,7 @@ export function DeletedServicesPage() {
             navigate('/metrics/service-deleted?returnTo=/services/management/deleted&section=table')
           }
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

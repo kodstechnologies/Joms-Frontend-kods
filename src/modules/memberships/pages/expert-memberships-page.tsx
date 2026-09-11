@@ -327,7 +327,7 @@ export function ExpertMembershipsPage() {
             )
           }
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

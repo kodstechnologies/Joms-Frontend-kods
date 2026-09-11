@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 
-const DEFAULT_CHECKBOX_CLASS = 'rounded border-slate-700 bg-transparent'
+const DEFAULT_CHECKBOX_CLASS = 'ui-table-checkbox'
 
 type FinanceSelectColumnOptions<T> = {
   headerLabel: string

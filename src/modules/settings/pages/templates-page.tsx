@@ -351,7 +351,9 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           >
             Moderation Reason Manager
           </h1>
-          <p className="text-body-md text-muted mt-1">Manage action categories and reasons</p>
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+            Manage action categories and reasons
+          </p>
         </div>
       </div>
 

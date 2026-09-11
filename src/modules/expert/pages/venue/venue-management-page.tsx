@@ -11,14 +11,13 @@ import {
   Trash2,
   Upload,
   Ban,
-  Hourglass,
   LayoutDashboard,
   Bell,
   Mail,
   FileText,
   XCircle,
   EyeOff,
-  TrendingUp,
+  Hourglass,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -26,6 +25,7 @@ import { toast } from 'sonner'
 import { VENUE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import {
   useVenues,
   useSuspendVenue,
@@ -908,7 +908,7 @@ export const VenueManagementPage = () => {
             if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
           }}
           onChange={toggleVisibleVenues}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -918,7 +918,7 @@ export const VenueManagementPage = () => {
           checked={selectedVenueIds.includes(row.original._id)}
           onChange={() => toggleVenueSelection(row.original._id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -1302,7 +1302,7 @@ export const VenueManagementPage = () => {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold text-white md:text-3xl">Venue Management</h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Comprehensive user data and admin controls
           </p>
         </div>
@@ -1311,7 +1311,7 @@ export const VenueManagementPage = () => {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/metrics')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button
@@ -1354,19 +1354,12 @@ export const VenueManagementPage = () => {
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   {metric.change ? (
                     <>
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                          metric.changeType === 'down'
-                            ? 'bg-brand-danger/10 text-brand-danger'
-                            : 'bg-brand-positive/15 text-brand-positive',
+                      <TrendBadge direction={metric.changeType === 'down' ? 'down' : 'up'}>
+                        {ensureTrendChangeSign(
+                          metric.change,
+                          metric.changeType === 'down' ? 'down' : 'up',
                         )}
-                      >
-                        <TrendingUp
-                          className={cn('size-3', metric.changeType === 'down' && 'rotate-180')}
-                        />
-                        {metric.change}
-                      </span>
+                      </TrendBadge>
                       {metric.changeNote ? (
                         <span className="text-muted text-[10px]">{metric.changeNote}</span>
                       ) : null}

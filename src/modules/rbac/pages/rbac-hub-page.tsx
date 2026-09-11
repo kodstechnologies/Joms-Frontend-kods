@@ -701,14 +701,13 @@ export function RbacHubPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="referral-page-title">Role Based Access</h1>
-          <p className="referral-page-subtitle mt-1">Comprehensive user data and admin controls.</p>
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+            Comprehensive user data and admin controls.
+          </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-          <Button
-            className="ui-manage-metrics h-9 w-full rounded-[10px] bg-[#E0A263] px-5 text-sm font-semibold text-[#050505] shadow-none hover:bg-[#d49555] md:w-auto"
-            onClick={() => navigate('/metrics/rbac-hub')}
-          >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+          <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/rbac-hub')}>
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button

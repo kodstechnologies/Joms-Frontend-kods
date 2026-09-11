@@ -792,7 +792,7 @@ export const ExpertManagementPage = () => {
               input.indeterminate = someVisibleExpertsSelected && !allVisibleExpertsSelected
           }}
           onChange={toggleVisibleexperts}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -802,7 +802,7 @@ export const ExpertManagementPage = () => {
           checked={selectedExpertIds.includes(row.original.expertId)}
           onChange={() => toggleExpertSelection(row.original.expertId)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -1036,7 +1036,7 @@ export const ExpertManagementPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-white md:text-3xl">Expert Management</h1>
 
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Comprehensive user data and admin controls
           </p>
         </div>
@@ -1045,7 +1045,7 @@ export const ExpertManagementPage = () => {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/metrics/expert-management?returnTo=/experts/management')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 

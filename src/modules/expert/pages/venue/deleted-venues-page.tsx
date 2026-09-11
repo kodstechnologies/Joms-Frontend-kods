@@ -225,7 +225,7 @@ export function VenueDeletedPage() {
             if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
           }}
           onChange={toggleVisibleVenues}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -235,7 +235,7 @@ export function VenueDeletedPage() {
           checked={selectedVenueIds.includes(row.original._id)}
           onChange={() => toggleVenueSelection(row.original._id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
@@ -435,7 +435,7 @@ export function VenueDeletedPage() {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/metrics/venue-deleted?returnTo=/venues/management/deleted')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button

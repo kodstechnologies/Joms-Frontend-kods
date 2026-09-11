@@ -84,15 +84,15 @@ export function CreateListingWizard({
             return (
               <div key={step.id} className="relative flex flex-1 flex-col items-center gap-3">
                 {index < steps.length - 1 && (
-                  <div className="absolute top-[18px] left-[calc(50%+18px)] z-0 h-px w-[calc(100%-36px)] bg-[#D8D8D8]" />
+                  <div className="absolute top-[25px] left-[calc(50%+25px)] z-0 h-px w-[calc(100%-50px)] bg-[#D8D8D8]" />
                 )}
                 <div
                   className={cn(
-                    'text-body-sm relative z-10 flex size-9 items-center justify-center rounded-full font-bold transition-all duration-300',
+                    'relative z-10 flex size-[50px] items-center justify-center rounded-full text-[16px] leading-5 font-semibold tracking-normal transition-all duration-300',
                     isActive
-                      ? 'bg-brand-accent text-brand-text-dark shadow-[0_0_20px_rgba(255,200,73,0.15)]'
+                      ? 'bg-brand-accent text-black shadow-[0_0_20px_rgba(255,200,73,0.15)]'
                       : isCompleted
-                        ? 'bg-brand-success text-white'
+                        ? 'bg-[#0A5D29] text-[16px] leading-5 font-semibold tracking-normal text-[#FFFFFF]'
                         : 'border border-[#080808] bg-black text-white',
                   )}
                 >

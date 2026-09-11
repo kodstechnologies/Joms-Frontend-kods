@@ -219,7 +219,7 @@ export function VenueSuspendedPage() {
             if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
           }}
           onChange={toggleVisibleVenues}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -229,7 +229,7 @@ export function VenueSuspendedPage() {
           checked={selectedVenueIds.includes(row.original._id)}
           onChange={() => toggleVenueSelection(row.original._id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -443,7 +443,7 @@ export function VenueSuspendedPage() {
               navigate('/metrics/venue-suspended?returnTo=/venues/management/suspended')
             }
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button

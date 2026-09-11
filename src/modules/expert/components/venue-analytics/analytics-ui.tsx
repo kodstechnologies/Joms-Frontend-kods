@@ -1,6 +1,9 @@
 import bagSolidIcon from '@/assets/JOMS_ICONS-2/basil-bag-solid.svg'
-import { TrendingUp } from 'lucide-react'
 
+import {
+  formatTrendPercent,
+  TrendBadge as MetricTrendBadge,
+} from '@/shared/components/dashboard/trend-badge'
 import { cn } from '@/shared/lib/cn'
 
 export function VenueAnalyticsMetricIcon({ className }: { className?: string }) {
@@ -37,11 +40,11 @@ export function AnalyticsCard({
 }
 
 export function TrendBadge({ percent }: { percent: number }) {
+  const direction = percent < 0 ? 'down' : 'up'
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
-      <TrendingUp className="size-2.5" />
-      {percent}%
-    </span>
+    <MetricTrendBadge direction={direction}>
+      {formatTrendPercent(percent, direction)}
+    </MetricTrendBadge>
   )
 }
 

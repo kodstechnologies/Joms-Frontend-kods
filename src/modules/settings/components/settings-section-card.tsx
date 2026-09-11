@@ -18,7 +18,7 @@ export function SettingsSectionCard({
     <section className={cn('settings-section-card', className)}>
       <div className="settings-section-card-header space-y-1">
         <h2 className="settings-section-card-title">{title}</h2>
-        {description ? <p className="settings-section-description text-sm">{description}</p> : null}
+        {description ? <p className="settings-section-description">{description}</p> : null}
       </div>
       <div className="settings-section-card-body">{children}</div>
     </section>

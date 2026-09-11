@@ -13,14 +13,7 @@ import { cn } from '@/shared/lib/cn'
 import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
 
 export type DecisionActionModalVariant =
-  | 'approve'
-  | 'reject'
-  | 'requestChanges'
-  | 'escalate'
-  | 'suspend'
-  | 'delete'
-  | 'pause'
-  | 'warn'
+  'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend' | 'delete' | 'pause' | 'warn'
 
 export type DecisionActionModalOption = {
   label: string
@@ -28,13 +21,7 @@ export type DecisionActionModalOption = {
 }
 
 export type DecisionActionSubmitIcon =
-  | 'check'
-  | 'x'
-  | 'trash'
-  | 'userMinus'
-  | 'pause'
-  | 'circleArrowOutUpRight'
-  | 'none'
+  'check' | 'x' | 'trash' | 'userMinus' | 'pause' | 'circleArrowOutUpRight' | 'none'
 
 type DecisionActionModalProps = {
   open: boolean
@@ -93,6 +80,14 @@ const variantStyles: Record<
     adminNotesMinHeight?: string
     reasonMinHeight?: string
     descriptionMaxWidth?: string
+    descriptionCentered?: boolean
+    shellClass?: string
+    fieldLabelClass?: string
+    titleClass?: string
+    confirmationClass?: string
+    descriptionClass?: string
+    heroLayout?: 'stack' | 'inline'
+    reasonsLabelClass?: string
   }
 > = {
   approve: {
@@ -115,12 +110,17 @@ const variantStyles: Record<
   requestChanges: {
     submit: 'ui-modal-btn-request-changes',
     submitIcon: 'check',
-    checkIconColor: 'text-[#F97316]',
+    checkIconColor: 'text-[#B7540F]',
     showHero: false,
     showReasonsLabel: true,
-    adminNotesMinHeight: 'min-h-[137px]',
-    reasonMinHeight: 'min-h-[65px]',
-    descriptionMaxWidth: 'max-w-none',
+    adminNotesMinHeight: '!h-[117px] !min-h-[117px] !max-h-[117px] rounded-[10px]',
+    reasonMinHeight: '!h-[65px] !min-h-[65px] !max-h-[65px] rounded-[10px]',
+    descriptionMaxWidth: 'max-w-[333px]',
+    descriptionCentered: true,
+    descriptionClass:
+      'mx-auto w-[333px] max-w-full text-center text-[14px] font-semibold leading-6 tracking-normal text-white',
+    shellClass: '!h-[724px] !max-h-[724px]',
+    fieldLabelClass: 'mb-2 block text-[14px] font-semibold leading-6 tracking-normal text-white',
   },
   escalate: {
     submit: 'ui-modal-btn-gold',
@@ -143,15 +143,31 @@ const variantStyles: Record<
     submitIcon: 'x',
     showHero: true,
     heroShape: 'circle',
-    showReasonsLabel: false,
-    adminNotesMinHeight: 'min-h-[153px]',
-    descriptionMaxWidth: 'max-w-[302px]',
+    heroLayout: 'inline',
+    showReasonsLabel: true,
+    adminNotesMinHeight: '!h-[117px] !min-h-[117px] !max-h-[117px] rounded-[10px]',
+    descriptionMaxWidth: 'w-[268px]',
+    descriptionCentered: false,
+    fieldLabelClass: 'mb-2 block text-[14px] font-semibold leading-6 tracking-normal text-white',
+    shellClass: '!h-[636px] !max-h-[636px]',
+    titleClass: 'text-[24px] font-semibold leading-6 tracking-normal text-white',
+    confirmationClass: 'max-w-[405px] text-[14px] font-normal leading-5 tracking-normal text-white',
+    reasonsLabelClass:
+      'mb-[10px] block text-[14px] font-normal leading-5 tracking-normal text-[#FFFFFF80]',
   },
   pause: {
     submit: 'ui-modal-btn-negative',
     submitIcon: 'pause',
     showHero: false,
     showReasonsLabel: true,
+    descriptionClass: 'text-[14px] font-normal leading-5 tracking-normal text-[#FFFFFF80]',
+    titleClass: 'text-[24px] leading-8 font-semibold tracking-normal text-white',
+    fieldLabelClass: 'mb-2 block text-[14px] font-semibold leading-6 tracking-normal text-white',
+    reasonsLabelClass:
+      'mb-[10px] block text-[14px] font-normal leading-5 tracking-normal text-[#FFFFFF80]',
+    confirmationClass: 'text-[12px] font-normal leading-5 tracking-normal text-white',
+    adminNotesMinHeight: 'min-h-[119px] rounded-[10px] bg-[#050505]',
+    shellClass: 'max-w-[584px]',
   },
   warn: {
     submit: 'ui-modal-btn-gold',
@@ -217,7 +233,7 @@ export function DecisionActionModal({
   indefiniteLabel = 'Set Indefinitely',
   submitIcon,
   showHeroIcon,
-  heroLayout = 'stack',
+  heroLayout,
   checkIconColor,
 }: DecisionActionModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null)
@@ -236,6 +252,8 @@ export function DecisionActionModal({
     (variant === 'reject' ||
       variant === 'requestChanges' ||
       variant === 'pause' ||
+      variant === 'delete' ||
+      variant === 'suspend' ||
       reasonOptions.length > 0)
   const showReasonInput = Boolean(onReasonChange)
   const showConfirmation = Boolean(onConfirmationChange)
@@ -250,33 +268,43 @@ export function DecisionActionModal({
     checkIconColor ??
     styles.checkIconColor ??
     (styles.submit === 'ui-modal-btn-negative' ? 'text-[#D3191C]' : 'text-[#00A63E]')
-  const isInlineHero = heroLayout === 'inline' && resolvedShowHero
+  const isInlineHero = (heroLayout ?? styles.heroLayout ?? 'stack') === 'inline' && resolvedShowHero
   const hasBodyDescription = Boolean(description.trim())
   const isLeftAlignedCopy =
-    Boolean(warning) ||
-    isInlineHero ||
-    (Boolean(headerDescription) && !resolvedShowHero) ||
-    !resolvedShowHero
+    !styles.descriptionCentered &&
+    (Boolean(warning) ||
+      isInlineHero ||
+      (Boolean(headerDescription) && !resolvedShowHero) ||
+      !resolvedShowHero)
   const { primary, secondary } = splitDescription(description)
 
   const deleteHeroIcon = (
-    <span className="flex size-[70px] shrink-0 items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
-      <Trash2 className="size-7 text-[#D3191C]" strokeWidth={1.75} aria-hidden="true" />
+    <span className="flex size-[50px] shrink-0 items-center justify-center rounded-full bg-[#D3191C33]">
+      <Trash2 className="size-5 text-[#D3191C]" strokeWidth={1.75} aria-hidden="true" />
     </span>
   )
 
   const descriptionBlock = hasBodyDescription ? (
-    <div
-      className={cn(
-        'space-y-1',
-        isLeftAlignedCopy
-          ? 'max-w-none text-left'
-          : cn('mx-auto text-center', styles.descriptionMaxWidth ?? 'max-w-[333px]'),
-      )}
-    >
-      <p className="text-body-sm text-muted">{primary}</p>
-      {secondary ? <p className="text-body-sm text-muted">{secondary}</p> : null}
-    </div>
+    isInlineHero && variant === 'delete' ? (
+      <div className="flex w-[268px] max-w-[268px] flex-col text-left text-[14px] leading-6 font-semibold tracking-normal text-white">
+        <span>{primary}</span>
+        {secondary ? <span>{secondary}</span> : null}
+      </div>
+    ) : styles.descriptionClass ? (
+      <p className={styles.descriptionClass}>{description}</p>
+    ) : (
+      <div
+        className={cn(
+          'space-y-1',
+          isLeftAlignedCopy
+            ? 'max-w-none text-left'
+            : cn('mx-auto text-center', styles.descriptionMaxWidth ?? 'max-w-[333px]'),
+        )}
+      >
+        <p className="text-body-sm text-muted">{primary}</p>
+        {secondary ? <p className="text-body-sm text-muted">{secondary}</p> : null}
+      </div>
+    )
   ) : null
 
   return (
@@ -290,12 +318,15 @@ export function DecisionActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-action-modal-title"
-        className="ui-modal-shell w-full max-w-[551px]"
+        className={cn('ui-modal-shell w-full max-w-[551px]', styles.shellClass)}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="ui-modal-header !items-start !gap-3">
           <div className="min-w-0 flex-1 space-y-1.5">
-            <h2 id="decision-action-modal-title" className="text-h2 text-brand-text">
+            <h2
+              id="decision-action-modal-title"
+              className={styles.titleClass ?? 'text-h2 text-brand-text'}
+            >
               {title}
             </h2>
             {headerDescription ? (
@@ -316,7 +347,7 @@ export function DecisionActionModal({
           {warning ? <p className="text-body-sm text-muted">{warning}</p> : null}
 
           {isInlineHero && variant === 'delete' ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-[14px]">
               {deleteHeroIcon}
               {descriptionBlock}
             </div>
@@ -360,7 +391,13 @@ export function DecisionActionModal({
           {showReasons ? (
             <div>
               {resolvedShowReasonsLabel ? (
-                <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
+                <span
+                  className={
+                    styles.reasonsLabelClass ?? 'text-body-sm-medium text-muted mb-[10px] block'
+                  }
+                >
+                  Reasons
+                </span>
               ) : null}
               <div className="flex flex-wrap gap-[10px]">
                 {reasonOptions.length > 0 ? (
@@ -373,7 +410,7 @@ export function DecisionActionModal({
                         type="button"
                         onClick={() => onReasonToggle?.(option.value)}
                         className={cn(
-                          'ui-modal-reason-chip',
+                          'ui-modal-reason-chip rounded-xl',
                           isSelected
                             ? 'ui-modal-reason-chip-selected'
                             : 'ui-modal-reason-chip-idle',
@@ -393,14 +430,14 @@ export function DecisionActionModal({
           ) : null}
 
           {showConfirmation ? (
-            <label className="text-body-md text-brand-text flex cursor-pointer items-start gap-3">
+            <label className="flex cursor-pointer items-center gap-2.5">
               <input
                 type="checkbox"
                 checked={confirmationChecked}
                 onChange={(event) => onConfirmationChange?.(event.target.checked)}
-                className="mt-0.5 size-[15px] shrink-0 accent-white"
+                className="size-[15px] shrink-0 rounded-[3px] border border-solid border-white bg-transparent accent-white"
               />
-              <span>{resolvedConfirmationLabel}</span>
+              <span className={styles.confirmationClass}>{resolvedConfirmationLabel}</span>
             </label>
           ) : null}
 
@@ -499,10 +536,14 @@ export function DecisionActionModal({
           ) : null}
 
           {showReasonInput ? (
-            <label className="block">
-              <span className="text-body-sm-medium text-muted mb-2 block">
+            <label className="block w-full max-w-[502px]">
+              <span
+                className={styles.fieldLabelClass ?? 'text-body-sm-medium text-muted mb-2 block'}
+              >
                 {reasonLabel}
-                {reasonRequired ? <span className="text-[#D3191C]"> *</span> : null}
+                {reasonRequired || variant === 'requestChanges' ? (
+                  <span className="text-[#D3191C]"> *</span>
+                ) : null}
               </span>
               {reasonFieldType === 'input' ? (
                 <input
@@ -515,21 +556,25 @@ export function DecisionActionModal({
                 <textarea
                   value={reason}
                   onChange={(event) => onReasonChange?.(event.target.value)}
-                  className={cn('ui-textarea', styles.reasonMinHeight ?? 'min-h-[72px]')}
+                  className={cn('ui-textarea w-full', styles.reasonMinHeight ?? 'min-h-[72px]')}
                 />
               )}
             </label>
           ) : null}
 
           {showAdminNotes ? (
-            <label className="block">
-              <span className="text-body-sm-medium text-brand-text mb-2 block">
+            <label className="block w-full max-w-[502px]">
+              <span
+                className={
+                  styles.fieldLabelClass ?? 'text-body-sm-medium text-brand-text mb-2 block'
+                }
+              >
                 Admin notes <span className="text-[#D3191C]">*</span>
               </span>
               <textarea
                 value={adminNotes}
                 onChange={(event) => onAdminNotesChange?.(event.target.value)}
-                className={cn('ui-textarea', styles.adminNotesMinHeight ?? 'min-h-[119px]')}
+                className={cn('ui-textarea w-full', styles.adminNotesMinHeight ?? 'min-h-[119px]')}
               />
             </label>
           ) : null}

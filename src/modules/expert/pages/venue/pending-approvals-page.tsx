@@ -180,7 +180,7 @@ export function VenuePendingApprovalsPage() {
             if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
           }}
           onChange={toggleVisibleVenues}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -190,7 +190,7 @@ export function VenuePendingApprovalsPage() {
           checked={selectedVenueIds.includes(row.original._id)}
           onChange={() => toggleVenueSelection(row.original._id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -439,7 +439,7 @@ export function VenuePendingApprovalsPage() {
               navigate('/metrics/venue-pending-approvals?returnTo=/venues/management/pending')
             }
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button

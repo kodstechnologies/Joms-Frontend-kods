@@ -72,16 +72,18 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1140px]">
-      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
-        <div className="mb-2">
-          <h2 className="text-sm font-bold text-white">Gallery</h2>
-          <p className="text-muted mt-1 text-xs">
+    <div className="mx-auto w-full max-w-[999px]">
+      <div className="animate-in fade-in slide-in-from-right-4 h-[478px] w-full overflow-y-auto rounded-[10px] bg-[#141414] p-6 shadow-[0px_4px_4px_0px_#00000040] duration-300">
+        <div>
+          <h2 className="text-[16px] leading-5 font-semibold tracking-normal text-white">
+            Gallery
+          </h2>
+          <p className="mt-[10px] text-[14px] leading-5 font-normal tracking-normal text-[#FFFFFF80]">
             Upload visual assets to support your service (optional)
           </p>
         </div>
 
-        <p className="mb-4 text-xs font-medium text-white">
+        <p className="mt-[15px] mb-4 text-[14px] leading-5 font-semibold tracking-normal text-white">
           Maximum 5 images. Allowed formats: JPG, PNG, WebP
         </p>
 
@@ -94,15 +96,31 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`flex h-44 w-full flex-col items-center justify-center rounded-md border border-dashed transition-colors ${
-            isDragging ? 'border-brand-accent bg-brand-accent/5' : 'border-white/20 bg-black'
-          }`}
+          className="relative flex h-[150px] w-full max-w-[914px] flex-col items-center rounded-[10px] bg-[#050505] pt-[17px] transition-colors"
         >
-          <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white/5">
-            <Upload className="text-muted size-4" />
+          <svg
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+            aria-hidden="true"
+          >
+            <rect
+              x="0.5"
+              y="0.5"
+              width="99.7%"
+              height="99%"
+              rx="10"
+              ry="10"
+              fill="none"
+              stroke={isDragging ? 'var(--brand-accent)' : '#FFFFFF80'}
+              strokeWidth="1"
+              strokeDasharray="5 5"
+            />
+          </svg>
+          <div className="relative mb-[10px] flex size-[50px] items-center justify-center rounded-full bg-[#141414]">
+            <Upload className="size-6 text-white" strokeWidth={1.75} />
           </div>
-          <p className="text-sm text-white">Click to upload images</p>
-          <p className="text-muted mt-1 text-xs">Or drag &amp; drop</p>
+          <p className="relative text-[14px] leading-5 font-semibold tracking-normal text-white">
+            Click to upload Images
+          </p>
         </button>
         <input
           ref={inputRef}

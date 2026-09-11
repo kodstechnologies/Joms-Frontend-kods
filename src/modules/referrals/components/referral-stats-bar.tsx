@@ -1,5 +1,4 @@
-import { TrendingDown, TrendingUp } from 'lucide-react'
-
+import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import type { ReferralMetrics } from '../types/referral'
 import {
   formatReferralMetricValue,
@@ -31,7 +30,7 @@ function buildMetricCards(metrics: ReferralMetrics, activeMetricIds?: string[]):
     const trendPercent =
       trendObj?.percentage ??
       (typeof metrics.vsLastMonthPercent === 'number' ? metrics.vsLastMonthPercent : 0)
-    const trendDirection = trendObj?.direction ?? 'up'
+    const trendDirection = trendObj?.direction ?? (trendPercent < 0 ? 'down' : 'up')
     const trendLabel = trendObj?.label ?? 'vs last month'
     const raw = metrics[def.key]
 
@@ -73,15 +72,9 @@ function ReferralMetricCard({ metric }: { metric: MetricCardData }) {
         {metric.value}
       </p>
       <div className="mt-auto flex items-center gap-2 pt-3">
-        <span
-          className={cn(
-            'referral-stats-trend-badge inline-flex items-center gap-1',
-            !isUp && 'bg-rose-500/20 text-rose-400',
-          )}
-        >
-          {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-          {metric.trendPercent}%
-        </span>
+        <TrendBadge direction={isUp ? 'up' : 'down'}>
+          {formatTrendPercent(metric.trendPercent, isUp ? 'up' : 'down')}
+        </TrendBadge>
         <span className="referral-stats-trend-label">{metric.trendLabel || 'vs last month'}</span>
       </div>
     </div>

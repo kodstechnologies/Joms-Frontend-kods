@@ -1,5 +1,7 @@
-import type { SVGProps } from 'react'
-import { SlidersHorizontal, type LucideProps } from 'lucide-react'
+import type { ImgHTMLAttributes, SVGProps } from 'react'
+
+import manageMetricsIconSrc from '@/assets/JOMS_ICONS-2/manage-metrics-icon.png'
+import { cn } from '@/shared/lib/cn'
 
 export function AdvanceFilterIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
@@ -24,6 +26,7 @@ export function AdvanceFilterIcon({ className, ...props }: SVGProps<SVGSVGElemen
   )
 }
 
+/** Figma `solar:export-linear` — 20×20 frame; path ≈ 13.33×13.34 at (3.33, 3.33); stroke 1.5 */
 export function ExportDataIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -32,33 +35,57 @@ export function ExportDataIcon({ className, ...props }: SVGProps<SVGSVGElement>)
       viewBox="0 0 20 20"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className ?? 'size-5 min-h-5 min-w-5 shrink-0'}
+      className={className ?? 'ui-export-data-icon shrink-0'}
       stroke="currentColor"
-      strokeWidth="2.2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
       {...props}
     >
-      <path d="M3.5 10a6.5 6.5 0 0 0 13 0" />
-      <path d="M10 3v8" />
-      <path d="m6.5 6.5 3.5-3.5 3.5 3.5" />
+      <path d="M10 3.33v8.34" />
+      <path d="m6.67 6.67 3.33-3.34 3.33 3.34" />
+      <path d="M4.17 11.67a5.83 5.83 0 0 0 11.66 0" />
     </svg>
   )
 }
 
+/**
+ * Figma `basil:sort-outline` — table header sort mark, 16×16
+ */
+export function SortOutlineIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={cn('size-4 shrink-0', className)}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M13.47 7.53a.75.75 0 0 0 1.06 0l.72-.72V17a.75.75 0 0 0 1.5 0V6.81l.72.72a.75.75 0 1 0 1.06-1.06l-2-2a.75.75 0 0 0-1.06 0l-2 2a.75.75 0 0 0 0 1.06m-4.72 9.66l.72-.72a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06l.72.72V7a.75.75 0 0 1 1.5 0z" />
+    </svg>
+  )
+}
+
+/**
+ * Figma `oui:nav-manage` — Manage Metrics icon, always 20×20
+ */
 export function ManageMetricsIcon({
   className,
-  size = 16,
-  strokeWidth = 2,
+  alt = '',
   ...props
-}: LucideProps) {
+}: ImgHTMLAttributes<HTMLImageElement>) {
   return (
-    <SlidersHorizontal
-      size={size}
-      strokeWidth={strokeWidth}
-      className={className ?? 'size-4 shrink-0'}
-      aria-hidden="true"
+    <img
+      src={manageMetricsIconSrc}
+      alt={alt}
+      width={20}
+      height={20}
+      className={cn('ui-manage-metrics-icon', className)}
+      aria-hidden={alt ? undefined : true}
       {...props}
     />
   )

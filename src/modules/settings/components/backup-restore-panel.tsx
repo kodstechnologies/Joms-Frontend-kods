@@ -267,7 +267,9 @@ export function BackupRestorePanel() {
       <div className="backup-header">
         <div>
           <h2 className="referral-page-title">Backups &amp; Restore</h2>
-          <p className="referral-page-subtitle mt-1">View, download, and restore system backups</p>
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+            View, download, and restore system backups
+          </p>
         </div>
         <div className="backup-actions">
           <Button
@@ -275,7 +277,7 @@ export function BackupRestorePanel() {
             className="ui-manage-metrics inline-flex items-center gap-2"
             onClick={() => navigate('/metrics/backup-configuration')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button

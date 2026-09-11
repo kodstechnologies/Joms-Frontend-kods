@@ -621,7 +621,7 @@ export function ReferralManagementPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="referral-page-title">Referral Management</h1>
-          <p className="referral-page-subtitle mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track and manage user-driven and platform-driven referrals
           </p>
         </div>
@@ -632,7 +632,7 @@ export function ReferralManagementPage() {
               navigate('/metrics/referrals?returnTo=/referrals/management&section=dashboard')
             }
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 

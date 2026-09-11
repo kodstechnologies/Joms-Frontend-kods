@@ -118,10 +118,10 @@ export function DashboardLayout() {
           showCompact={showCompact}
         />
         <main
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth"
+          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain scroll-smooth"
           style={{ overflowY: !isDesktopShell && isSidebarOpen ? 'hidden' : 'auto' }}
         >
-          <div className="py-4 md:py-6">
+          <div className="min-w-0 py-4 md:py-6">
             <PageContainer>
               <Suspense fallback={<PageContentLoader />}>
                 <Outlet />

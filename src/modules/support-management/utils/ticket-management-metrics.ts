@@ -55,8 +55,9 @@ function buildFromApi(cards: SupportStatCard[]): TicketManagementMetricCard[] {
       id,
       title: labelById.get(id) ?? card.title,
       value: displayValue(id, card.value),
-      percentage: card.changePercent ?? 0,
-      direction: (card.changeDirection ?? 'up') as 'up' | 'down',
+      percentage: Math.abs(card.changePercent ?? 0),
+      direction: (card.changeDirection ?? ((card.changePercent ?? 0) < 0 ? 'down' : 'up')) as
+        'up' | 'down',
     })
   }
 

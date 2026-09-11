@@ -296,8 +296,8 @@ export function CommunicationListPage() {
 
     const selectColumn: ColumnDef<Communication> = {
       id: 'select',
-      header: () => <input type="checkbox" className="rounded border-white/20 bg-transparent" />,
-      cell: () => <input type="checkbox" className="rounded border-white/20 bg-transparent" />,
+      header: () => <input type="checkbox" className="ui-table-checkbox" />,
+      cell: () => <input type="checkbox" className="ui-table-checkbox" />,
       meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
       enableSorting: false,
     }
@@ -321,7 +321,7 @@ export function CommunicationListPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Communication Management</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Create and manage announcements across partner audiences.
           </p>
         </div>
@@ -331,7 +331,7 @@ export function CommunicationListPage() {
             onClick={() => navigate('/metrics/communication')}
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </button>
           <button

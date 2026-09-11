@@ -251,7 +251,7 @@ export function EscalationDetails() {
       <div className="escalation-header">
         <div>
           <h1 className="referral-page-title">All Escalation</h1>
-          <p className="referral-page-subtitle mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track revenue, payouts, and financial performance
           </p>
         </div>
@@ -261,7 +261,7 @@ export function EscalationDetails() {
           className="ui-manage-metrics inline-flex items-center gap-2"
           onClick={() => navigate('/metrics/escalations?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

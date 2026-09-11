@@ -29,7 +29,11 @@ export function SectionHeader({
     >
       <div className="space-y-1">
         <h1 className="text-h1 text-brand-text">{title}</h1>
-        {subtitle ? <p className="text-body-md text-muted">{subtitle}</p> : null}
+        {subtitle ? (
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+            {subtitle}
+          </p>
+        ) : null}
         {children}
       </div>
 
@@ -54,11 +58,11 @@ export function SectionHeader({
                 )}
               >
                 {isExportData ? (
-                  <ExportDataIcon className="size-5 shrink-0" />
+                  <ExportDataIcon />
                 ) : action.icon ? (
                   action.icon
                 ) : isManageMetrics ? (
-                  <ManageMetricsIcon className="size-4 shrink-0" />
+                  <ManageMetricsIcon />
                 ) : null}
                 {action.label}
               </Button>

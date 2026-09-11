@@ -1,8 +1,9 @@
 import type { SVGProps } from 'react'
-import { ArrowLeft, TrendingUp } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useCommunication } from '../hooks/use-communications'
+import { TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function SolidUserIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
@@ -225,10 +226,7 @@ export function CommunicationDetails() {
                   <p className="mt-1 text-2xl font-bold text-white">{card.value}</p>
                 </div>
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded bg-[#00A63E]/20 px-2 py-0.5 text-xs font-semibold text-[#00D062]">
-                    <TrendingUp className="size-3" />
-                    6.7%
-                  </span>
+                  <TrendBadge direction="up">6.7%</TrendBadge>
                   <span className="text-xs text-neutral-400">vs last month</span>
                 </div>
               </div>

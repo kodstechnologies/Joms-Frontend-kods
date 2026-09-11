@@ -686,7 +686,7 @@ export function PlatformHealthPage() {
           <h1 className="text-h1 text-brand-text sm:text-h1 font-semibold tracking-tight">
             Platform Health & Operations
           </h1>
-          <p className="text-body-md text-muted sm:text-body-lg mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             System performance, security metrics, and operational analytics
           </p>
         </div>
@@ -694,23 +694,23 @@ export function PlatformHealthPage() {
           <button
             type="button"
             onClick={handleExportData}
-            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+            className="ui-export-data ui-cta ui-cta-primary"
           >
-            <ExportDataIcon className="size-5 shrink-0" />
+            <ExportDataIcon />
             Export Data
           </button>
           <button
             type="button"
             onClick={() => navigate('/metrics/platform-health?section=table')}
-            className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+            className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:justify-items-start">
         {isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <PlatformHealthMetricCardSkeleton key={`health-metric-skel-${index}`} />
