@@ -14,6 +14,7 @@ import {
   type ServiceReportItem,
 } from '../../components/service-report-detail-modal'
 import { ExpertListHeader } from '../experts/expert-list-shared'
+import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import {
   buildServiceReportDataColumnsById,
   pickServicePreferenceColumns,

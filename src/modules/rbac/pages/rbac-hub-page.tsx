@@ -436,7 +436,7 @@ export function RbacHubPage() {
       'roles-user-count': {
         id: 'roles-user-count',
         accessorKey: 'userCount',
-        header: 'Users (No.)',
+        header: 'Users Assigned',
         cell: ({ row }) => (
           <button
             type="button"
@@ -447,13 +447,38 @@ export function RbacHubPage() {
           </button>
         ),
       },
+      'roles-assigned-tasks': {
+        id: 'roles-assigned-tasks',
+        header: 'Total Assigned Tasks',
+        cell: () => '—',
+      },
+      'roles-escalations': {
+        id: 'roles-escalations',
+        header: 'Total Escalations',
+        cell: () => '—',
+      },
+      'roles-created-at': {
+        id: 'roles-created-at',
+        accessorKey: 'createdAt',
+        header: 'Created At',
+        cell: ({ row }) => formatDateTime(row.original.createdAt),
+      },
+      'roles-updated-at': {
+        id: 'roles-updated-at',
+        accessorKey: 'updatedAt',
+        header: 'Updated At',
+        cell: ({ row }) => formatDateTime(row.original.updatedAt),
+      },
     }
 
     const catalogIds = RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const filteredSaved = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds.filter((id) =>
           id.startsWith(RBAC_HUB_ROLES_COLUMN_PREFIX),
         )
+      : []
+    const savedIds = filteredSaved.length
+      ? filteredSaved
       : DEFAULT_RBAC_HUB_ROLES_VISIBLE_COLUMN_IDS
     const preferenceColumns = sortIdsByCatalogOrder(
       savedIds.filter((id) => catalogIds.includes(id)),
@@ -538,6 +563,7 @@ export function RbacHubPage() {
     const dataColumnsById: Record<string, ColumnDef<SubAdmin>> = {
       'users-admin-code': { id: 'users-admin-code', accessorKey: 'adminCode', header: 'User ID' },
       'users-fullname': { id: 'users-fullname', accessorKey: 'fullname', header: 'Username' },
+      'users-email': { id: 'users-email', accessorKey: 'email', header: 'Email ID' },
       'users-role-id': {
         id: 'users-role-id',
         accessorFn: (row) => row.roles.map((r) => r.roleCode).join(', '),
@@ -571,7 +597,7 @@ export function RbacHubPage() {
       'users-permissions': {
         id: 'users-permissions',
         accessorKey: 'permissions',
-        header: 'Permissions',
+        header: 'Effective Permissions',
         cell: ({ row }) => formatPermissions(row.original.permissions),
       },
       'users-mfa-enabled': {
@@ -583,7 +609,7 @@ export function RbacHubPage() {
       'users-status': {
         id: 'users-status',
         accessorKey: 'status',
-        header: 'Status',
+        header: 'Account Status',
         cell: ({ row }) => {
           const status = row.original.status
           const isActive = status === 'active'
@@ -598,17 +624,36 @@ export function RbacHubPage() {
       },
       'users-last-action': {
         id: 'users-last-action',
+        header: 'Last Action Performed',
+        cell: () => '—',
+      },
+      'users-last-action-at': {
+        id: 'users-last-action-at',
         accessorKey: 'lastActionAt',
-        header: 'Last action performed',
+        header: 'Last Action Performed At',
         cell: ({ row }) => formatDateTime(row.original.lastActionAt),
+      },
+      'users-last-login-at': {
+        id: 'users-last-login-at',
+        header: 'Last Login At',
+        cell: () => '—',
+      },
+      'users-created-at': {
+        id: 'users-created-at',
+        accessorKey: 'createdAt',
+        header: 'Created At',
+        cell: ({ row }) => formatDateTime(row.original.createdAt),
       },
     }
 
     const catalogIds = RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const filteredSaved = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds.filter((id) =>
           id.startsWith(RBAC_HUB_USERS_COLUMN_PREFIX),
         )
+      : []
+    const savedIds = filteredSaved.length
+      ? filteredSaved
       : DEFAULT_RBAC_HUB_USERS_VISIBLE_COLUMN_IDS
     const preferenceColumns = sortIdsByCatalogOrder(
       savedIds.filter((id) => catalogIds.includes(id)),
