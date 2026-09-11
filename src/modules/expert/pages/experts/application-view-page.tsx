@@ -56,6 +56,7 @@ import {
   type DocumentDecisionVariant,
   type DocumentReviewStatus,
 } from '../../components/document-review-viewer'
+import { areUploadedDocumentsApproved } from '../../utils/document-review'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
@@ -259,6 +260,7 @@ export function ExpertApplicationViewPage() {
           assigneeName: selectedAssignee?.fullname || '',
           adminNote: adminNotes.trim(),
           escalationTarget: modalTarget,
+          applicationUrl: `/experts/management/application/${id}`,
         },
         {
           onSuccess: () => {
@@ -582,6 +584,22 @@ export function ExpertApplicationViewPage() {
         : (reviews as Record<string, { status?: DocumentReviewStatus }>)[key]
     return entry?.status || null
   }
+
+  const kycDocsApproved = areUploadedDocumentsApproved([
+    { uploaded: kycPanUrl, status: getKycReviewStatus('panCardUrl') },
+    { uploaded: kycGstUrl, status: getKycReviewStatus('gstCertificateUrl') },
+    { uploaded: kycCertificateUrl, status: getKycReviewStatus('licenceOrCertificateUrl') },
+    {
+      uploaded: kyc?.documents?.sampleWorkFileUrl,
+      status: getKycReviewStatus('sampleWorkFileUrl'),
+    },
+  ])
+
+  const bankingDocsApproved = areUploadedDocumentsApproved([
+    { uploaded: cancelledChequeUrl, status: getBankingReviewStatus('cancelledChequeUrl') },
+  ])
+
+  const sectionDocsApproved = decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
 
   const openDocumentViewer = (document: ViewerDocument) => {
     setViewerDocument(document)
@@ -959,13 +977,18 @@ export function ExpertApplicationViewPage() {
               {String(activeDecisionStatus).toLowerCase()}.
             </p>
           )}
+          {activeSectionSubmitted && activeDecisionStatus === 'PENDING' && !sectionDocsApproved && (
+            <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
+              Approve each uploaded document before approving this section.
+            </p>
+          )}
           <DecisionControlButtons
             onApprove={() => openDecisionModal(decisionTargetForTab, 'approve')}
             onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
             showEscalate
-            approveDisabled={decisionDisabled}
+            approveDisabled={decisionDisabled || !sectionDocsApproved}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}

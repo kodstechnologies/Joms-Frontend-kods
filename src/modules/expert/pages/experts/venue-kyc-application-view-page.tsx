@@ -47,9 +47,12 @@ import {
   type DocumentDecisionVariant,
   type DocumentReviewStatus,
 } from '../../components/document-review-viewer'
+import { areUploadedDocumentsApproved } from '../../utils/document-review'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { formatApplicationExpertId } from './expert-list-format'
+import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
+import { getVenueKycApplicationPath } from '../../utils/expert-application-navigation'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -214,6 +217,7 @@ export function VenueKycApplicationViewPage() {
   const { id } = useParams<{ id: string }>()
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
+  const [isResolvingPartnerKyc, setIsResolvingPartnerKyc] = useState(false)
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [modalOpen, setModalOpen] = useState(false)
@@ -230,6 +234,33 @@ export function VenueKycApplicationViewPage() {
   const { data: assigneesData } = useEscalationAssignees()
   const application = data?.data
   const partnerId = application?.header?.partnerId ?? undefined
+
+  useEffect(() => {
+    if (!id || !isError) return
+    const status = (error as { response?: { status?: number } })?.response?.status
+    if (status !== 404) return
+
+    let cancelled = false
+    setIsResolvingPartnerKyc(true)
+
+    fetchVenueKycByPartnerId(id)
+      .then((response) => {
+        const kycId = String(response?.data?._id || '').trim()
+        if (cancelled) return
+        if (kycId && kycId !== id) {
+          navigate(getVenueKycApplicationPath(kycId), { replace: true })
+          return
+        }
+        setIsResolvingPartnerKyc(false)
+      })
+      .catch(() => {
+        if (!cancelled) setIsResolvingPartnerKyc(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [error, id, isError, navigate])
 
   const updateKyc = useUpdateVenueKycStatus(id)
   const updateBanking = useUpdateVenueBankingStatus(id)
@@ -295,13 +326,14 @@ export function VenueKycApplicationViewPage() {
       const selectedAssignee = assigneesData?.data.find(
         (item) => item.id === selectedEscalationOption,
       )
-      escalateApplication.mutate(
-        {
-          assigneeSubAdminId: selectedEscalationOption,
-          assigneeName: selectedAssignee?.fullname || '',
-          adminNote: adminNotes.trim(),
-          escalationTarget: modalTarget,
-        },
+          escalateApplication.mutate(
+            {
+              assigneeSubAdminId: selectedEscalationOption,
+              assigneeName: selectedAssignee?.fullname || '',
+              adminNote: adminNotes.trim(),
+              escalationTarget: modalTarget,
+              applicationUrl: `/experts/management/application/${id}?source=venue_kyc`,
+            },
         {
           onSuccess: () => {
             toast.success('Application assigned successfully')
@@ -519,7 +551,7 @@ export function VenueKycApplicationViewPage() {
       value: item.id,
     })) ?? []
 
-  if (isLoading) {
+  if (isLoading || isResolvingPartnerKyc) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
@@ -610,6 +642,7 @@ export function VenueKycApplicationViewPage() {
     { label: 'FSSAI License', key: 'fssaiLicense' },
     { label: 'Property Lease Agreement', key: 'propertyLeaseAgreement' },
     { label: 'Authorized Signatory ID', key: 'authorizedSignatoryId' },
+    { label: 'GST Undertaking', key: 'gstUndertakingDocument' },
   ]
 
   const otherDocuments: Array<{
@@ -636,12 +669,29 @@ export function VenueKycApplicationViewPage() {
   otherCertificates.forEach((certUrl, index) => {
     otherDocuments.push({
       label: `Other Certificate ${index + 1}`,
-      key: `otherCertificates_${index}`,
+      key: 'otherCertificates',
       url: certUrl,
       reviewStatus: (kycDetails.documentReviews?.otherCertificates?.status ||
         null) as DocumentReviewStatus | null,
     })
   })
+
+  const kycDocsApproved = areUploadedDocumentsApproved(
+    [...uploadedDocuments, ...otherDocuments].map((doc) => ({
+      uploaded: doc.url,
+      status: doc.reviewStatus,
+    })),
+  )
+
+  const bankingDocsApproved = areUploadedDocumentsApproved([
+    {
+      uploaded: isBankingSubmitted ? bankingDetails.cancelledCheque : null,
+      status: bankingDetails.documentReviews?.cancelledCheque?.status || null,
+    },
+  ])
+
+  const sectionDocsApproved =
+    decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
 
   const openDocumentViewer = (document: {
     key: string
@@ -991,13 +1041,21 @@ export function VenueKycApplicationViewPage() {
               </p>
             )}
 
+          {activeDecisionStatus === 'PENDING' &&
+            !(decisionTargetForTab === 'banking' && !isBankingSubmitted) &&
+            !sectionDocsApproved && (
+              <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
+                Approve each uploaded document before approving this section.
+              </p>
+            )}
+
           <DecisionControlButtons
             onApprove={() => openDecisionModal(decisionTargetForTab, 'approve')}
             onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
             showEscalate
-            approveDisabled={decisionDisabled}
+            approveDisabled={decisionDisabled || !sectionDocsApproved}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}

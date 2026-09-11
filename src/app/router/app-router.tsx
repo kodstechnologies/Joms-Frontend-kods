@@ -831,6 +831,7 @@ export function AppRouter() {
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
+                <Route path="/settings/escalations" element={<EscalationPage />} />
               </Route>
 
               <Route element={<PermissionRoute permission="settings.rbac_management" />}>
@@ -1055,8 +1056,6 @@ export function AppRouter() {
                   path="/venues/management/profile/:venueId/space/:spaceId/analytics"
                   element={<SpaceAnalyticsPage />}
                 />
-
-                <Route path="/settings/escalations" element={<EscalationPage />} />
 
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />

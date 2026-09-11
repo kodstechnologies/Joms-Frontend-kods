@@ -59,6 +59,7 @@ export type SubAdmin = {
   profileImageUrl?: string
   mfaEnabled: boolean
   mfaSecret?: string
+  otpauthUrl?: string
   contactSetupCompleted?: boolean
   roleIds: string[]
   roles: SubAdminRole[]

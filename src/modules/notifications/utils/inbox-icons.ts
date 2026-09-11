@@ -16,6 +16,7 @@ export const getNotificationCategoryLabel = (item: InAppNotification) => {
     'critical.accountSecurity': 'Account & Security',
     'critical.paymentsTransaction': 'Payments',
     'critical.reportsAbuseModeration': 'Content Moderation',
+    'critical.escalations': 'Escalations',
     'critical.userAccountSuspension': 'User Management',
     'critical.rolePermissionModification': 'Access',
     'critical.paymentGatewayConfiguration': 'Payments',
@@ -40,6 +41,7 @@ export const getNotificationCategoryLabel = (item: InAppNotification) => {
 
 export const getInboxRowIcon = (item: InAppNotification) => {
   const category = `${getNotificationCategory(item)} ${item.eventType || ''} ${item.title}`
+  if (/escalat/i.test(category)) return supportIcon
   if (/payment|refund|gateway|finance|transaction/i.test(category)) return moneyIcon
   if (/dispute|chargeback/i.test(category)) return disputeIcon
   if (/report|moderation|abuse|content/i.test(category)) return fileSearchIcon

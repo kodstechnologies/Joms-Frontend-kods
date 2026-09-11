@@ -232,6 +232,7 @@ export type NotificationSettings = {
     accountSecurity: boolean
     paymentsTransaction: boolean
     reportsAbuseModeration: boolean
+    escalations: boolean
     rolePermissionModification: boolean
     paymentGatewayConfiguration: boolean
   }

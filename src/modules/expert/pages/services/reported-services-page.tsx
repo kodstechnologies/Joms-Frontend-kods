@@ -4,6 +4,7 @@ import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { fetchServiceReports } from '../../api/service-api'
+import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { SERVICE_REPORTED_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
 import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
@@ -132,7 +133,12 @@ export function ServiceReportedServicesPage() {
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveDropdownId(null)
-                    navigate(`/services/management/full-view/${reportItem.serviceId}`)
+                    navigate(
+                      getServiceManagementViewPath({
+                        _id: reportItem.serviceId,
+                        partnerId: reportItem.partnerId,
+                      }),
+                    )
                   }}
                 >
                   View Service

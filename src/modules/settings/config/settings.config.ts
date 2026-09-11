@@ -203,6 +203,7 @@ export const notificationsDefaults: NotificationSettings = {
     accountSecurity: true,
     paymentsTransaction: true,
     reportsAbuseModeration: true,
+    escalations: true,
     rolePermissionModification: true,
     paymentGatewayConfiguration: true,
   },

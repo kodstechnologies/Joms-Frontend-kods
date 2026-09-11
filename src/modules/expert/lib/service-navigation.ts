@@ -2,6 +2,18 @@ type ServiceViewTarget = {
   _id: string
   serviceType?: string
   partnerId?: string
+  status?: string
+}
+
+export const isPendingListingReview = (status?: string, isConsultation = false) => {
+  const normalized = (status || '').toLowerCase()
+  if (isConsultation) return normalized === 'submitted'
+  return normalized === 'in_review' || normalized === 'pending' || normalized === 'submitted'
+}
+
+export const isApprovedListingStatus = (status?: string) => {
+  const normalized = (status || '').toLowerCase()
+  return normalized === 'live' || normalized === 'approved'
 }
 
 export const getServiceManagementViewPath = (service: ServiceViewTarget) => {

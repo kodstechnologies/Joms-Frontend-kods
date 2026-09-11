@@ -9,6 +9,9 @@ import { isKycSubmittedForApplication } from '../utils/expert-application-helper
 
 const isVenueServiceType = (serviceType?: string | null) => serviceType?.toLowerCase() === 'venue'
 
+export const getVenueKycApplicationPath = (kycId: string) =>
+  `/experts/management/application/${kycId}?source=venue_kyc`
+
 export const getExpertApplicationPath = (expert: {
   id: string
   serviceType?: string | null
@@ -19,7 +22,7 @@ export const getExpertApplicationPath = (expert: {
       return null
     }
 
-    return `/experts/management/application/${expert.venueKycId}?source=venue_kyc`
+    return getVenueKycApplicationPath(expert.venueKycId)
   }
 
   return `/experts/management/application/${expert.id}`
@@ -35,7 +38,7 @@ export const openExpertApplicationView = async (
 ) => {
   if (isVenueServiceType(expert.serviceType)) {
     if (expert.venueKycId) {
-      navigate(`/experts/management/application/${expert.venueKycId}?source=venue_kyc`)
+      navigate(getVenueKycApplicationPath(expert.venueKycId))
       return
     }
 
@@ -80,7 +83,7 @@ export const openVenuePartnerProfile = async (partnerId: string, navigate: Navig
     const response = await fetchVenueKycByPartnerId(partnerId)
     const kycId = readKycId(response)
     if (kycId) {
-      navigate(`/experts/management/application/${kycId}?source=venue_kyc`)
+      navigate(getVenueKycApplicationPath(kycId))
       return
     }
   } catch {
@@ -105,7 +108,7 @@ export const openExpertKycFromProfile = async (
         return
       }
 
-      navigate(`/experts/management/application/${kycId}?source=venue_kyc`)
+      navigate(getVenueKycApplicationPath(kycId))
     } catch {
       toast.error('No venue KYC found for this partner.')
     }

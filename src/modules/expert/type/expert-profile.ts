@@ -122,6 +122,7 @@ export type ExpertConsultation = {
   status?: string
   serviceStatus?: string
   isSuspend?: boolean
+  isPaused?: boolean
   createdAt?: string
   updatedAt?: string
 }

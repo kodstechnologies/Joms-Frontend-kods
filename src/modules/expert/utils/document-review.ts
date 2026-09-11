@@ -10,3 +10,14 @@ export function resolveDocumentReviewStatus(
   if (reviewStatus === 'APPROVED' || reviewStatus === 'REJECTED') return reviewStatus
   return 'PENDING'
 }
+
+export function areUploadedDocumentsApproved(
+  items: Array<{ uploaded?: unknown; status?: string | null }>,
+): boolean {
+  const uploaded = items.filter((item) => {
+    const value = item.uploaded
+    if (Array.isArray(value)) return value.length > 0
+    return Boolean(value && String(value).trim())
+  })
+  return uploaded.every((item) => String(item.status || '').toUpperCase() === 'APPROVED')
+}

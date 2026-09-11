@@ -8,6 +8,13 @@ export type EscalationNavigationTarget = {
   applicationUrl?: string
 }
 
+const APPLICATION_ID_FROM_URL = /\/application\/([^/?#]+)/
+
+export const getVenueKycIdFromUrl = (url?: string) => {
+  if (!url || !url.includes('source=venue_kyc')) return ''
+  return url.match(APPLICATION_ID_FROM_URL)?.[1] || ''
+}
+
 const buildFallbackUrl = ({
   entityType,
   entityId,
@@ -37,7 +44,25 @@ const buildFallbackUrl = ({
 }
 
 export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
+  const canonical = buildFallbackUrl(target)
   const stored = target.applicationUrl?.trim()
-  if (stored && stored !== '/') return stored
-  return buildFallbackUrl(target)
+  const storedOrEmpty = stored && stored !== '/' ? stored : ''
+
+  if (target.entityType === 'venue_space') {
+    if (canonical) return canonical
+    if (storedOrEmpty.includes('/space/')) return storedOrEmpty
+    return null
+  }
+
+  if (target.entityType === 'consultation' || target.entityType === 'service') {
+    return canonical || storedOrEmpty || null
+  }
+
+  if (target.entityType === 'partner' && target.serviceType === 'venue') {
+    const storedKycId = getVenueKycIdFromUrl(storedOrEmpty)
+    if (storedKycId && storedKycId !== target.entityId) return storedOrEmpty
+    return canonical
+  }
+
+  return canonical || storedOrEmpty || null
 }

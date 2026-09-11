@@ -643,7 +643,7 @@ export const bulkPauseVenues = async (venueIdsOrPayload: string[] | BulkVenueAct
   const payload = Array.isArray(venueIdsOrPayload)
     ? { venueIds: venueIdsOrPayload }
     : venueIdsOrPayload
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-pause', payload)
+  const response = await venueApiClient.post('/venues/admin/bulk-suspend', payload)
   return response.data
 }
 

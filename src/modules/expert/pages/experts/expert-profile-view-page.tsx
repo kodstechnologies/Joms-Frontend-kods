@@ -48,6 +48,7 @@ import {
   consultationPerformancePath,
   getExpertServiceDrilldownPath,
   getServiceManagementViewPath,
+  isPendingListingReview,
 } from '../../lib/service-navigation'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
 import {
@@ -59,13 +60,13 @@ import {
 } from '../../hooks/use-expert'
 import {
   useDeleteService,
-  useSuspendService,
   useUpdateConsultationStatus,
   useBulkDeleteServices,
   useBulkPauseServices,
   useBulkHideServices,
   useBulkDisableServices,
 } from '../../hooks/use-services'
+import { usePauseConsultationListing } from '../../hooks/use-consultation-drilldown'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
@@ -293,15 +294,22 @@ const viewExpertService = async (
 
   try {
     await fetchServiceById(service._id)
+    const isPending = isPendingListingReview(service.status)
     navigate(
-      getExpertServiceDrilldownPath(
-        {
-          _id: service._id,
-          serviceType: 'Service',
-          partnerId: expertId,
-        },
-        expertId,
-      ),
+      isPending
+        ? getServiceManagementViewPath({
+            _id: service._id,
+            serviceType: 'Service',
+            partnerId: expertId,
+          })
+        : getExpertServiceDrilldownPath(
+            {
+              _id: service._id,
+              serviceType: 'Service',
+              partnerId: expertId,
+            },
+            expertId,
+          ),
     )
   } catch {
     toast.error('Service not found')
@@ -1003,6 +1011,9 @@ function ConsultationDetailCard({
     .split(/[.\n]/)
     .map((item) => item.trim())
     .filter(Boolean)
+  const isSuspended = Boolean(consultation.isSuspend)
+  const isPaused = Boolean(consultation.isPaused)
+  const statusLabel = isSuspended ? 'Suspended' : isPaused ? 'Paused' : null
 
   return (
     <div className="rounded-xl bg-[#141414] p-6">
@@ -1020,6 +1031,16 @@ function ConsultationDetailCard({
                   {consultation.title || 'Untitled Consultation'}
                 </button>
               </h3>
+              {statusLabel ? (
+                <span
+                  className={cn(
+                    'mt-1 inline-flex rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+                    isSuspended ? 'bg-amber-500/90 text-white' : 'bg-white/15 text-white/80',
+                  )}
+                >
+                  {statusLabel}
+                </span>
+              ) : null}
               <p className="text-muted mt-1 text-[13px]">Business</p>
             </div>
           </div>
@@ -1901,9 +1922,6 @@ function ConsultationsSubTab({
   const [requestAdminNotes, setRequestAdminNotes] = useState('')
 
   const [pauseReasons, setPauseReasons] = useState<string[]>([])
-  const [pauseStartDate, setPauseStartDate] = useState('')
-  const [pauseEndDate, setPauseEndDate] = useState('')
-  const [pauseIndefinitely, setPauseIndefinitely] = useState(false)
   const [pauseAdminNotes, setPauseAdminNotes] = useState('')
 
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
@@ -1911,7 +1929,7 @@ function ConsultationsSubTab({
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
 
   const updateConsultationStatus = useUpdateConsultationStatus()
-  const suspendServiceMutation = useSuspendService()
+  const pauseConsultationMutation = usePauseConsultationListing()
   const deleteServiceMutation = useDeleteService()
   const recordReasonUsage = useRecordModerationReasonUsage()
 
@@ -1932,9 +1950,6 @@ function ConsultationsSubTab({
   const closePauseModal = useCallback(() => {
     setPauseTarget(null)
     setPauseReasons([])
-    setPauseStartDate('')
-    setPauseEndDate('')
-    setPauseIndefinitely(false)
     setPauseAdminNotes('')
   }, [])
 
@@ -2002,10 +2017,6 @@ function ConsultationsSubTab({
       toast.error('Please select at least one reason.')
       return
     }
-    if (!pauseIndefinitely && (!pauseStartDate || !pauseEndDate)) {
-      toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
-      return
-    }
     if (!pauseAdminNotes.trim()) {
       toast.error('Admin notes are required.')
       return
@@ -2017,16 +2028,11 @@ function ConsultationsSubTab({
       return
     }
 
-    const toIso = (value: string) => new Date(`${value}T00:00:00.000Z`).toISOString()
-
     try {
-      await suspendServiceMutation.mutateAsync({
-        id: pauseTarget._id,
+      await pauseConsultationMutation.mutateAsync({
+        consultationId: pauseTarget._id,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
-          suspendIndefinitely: pauseIndefinitely,
-          startDate: pauseIndefinitely ? undefined : toIso(pauseStartDate),
-          endDate: pauseIndefinitely ? undefined : toIso(pauseEndDate),
           reasonDetails: reasonPayload.reasonDetails,
           adminNotes: pauseAdminNotes.trim(),
         },
@@ -2044,13 +2050,10 @@ function ConsultationsSubTab({
     buildPauseReasonPayload,
     closePauseModal,
     pauseAdminNotes,
-    pauseEndDate,
-    pauseIndefinitely,
     pauseReasons,
-    pauseStartDate,
     pauseTarget,
     recordReasonUsage,
-    suspendServiceMutation,
+    pauseConsultationMutation,
   ])
 
   const handleDeleteSubmit = useCallback(async () => {
@@ -2166,7 +2169,7 @@ function ConsultationsSubTab({
 
       <DecisionActionModal
         open={Boolean(pauseTarget)}
-        variant="suspend"
+        variant="pause"
         title="Pause Consultation"
         description="Are you sure you want to pause this consultation? It will be hidden from clients until reactivated."
         submitLabel="Pause Consultation"
@@ -2179,17 +2182,11 @@ function ConsultationsSubTab({
               : [...current, value],
           )
         }
-        startDate={pauseStartDate}
-        onStartDateChange={setPauseStartDate}
-        endDate={pauseEndDate}
-        onEndDateChange={setPauseEndDate}
-        indefinite={pauseIndefinitely}
-        onIndefiniteChange={setPauseIndefinitely}
         adminNotes={pauseAdminNotes}
         onAdminNotesChange={setPauseAdminNotes}
         onClose={closePauseModal}
         onSubmit={handlePauseSubmit}
-        isSubmitting={suspendServiceMutation.isPending}
+        isSubmitting={pauseConsultationMutation.isPending}
       />
 
       <DecisionActionModal

@@ -183,7 +183,7 @@ export function UpdateContactInformationPage() {
     if (!profile?.mfaSecret) return
     try {
       await navigator.clipboard.writeText(profile.mfaSecret.replace(/\s+/g, ''))
-      toast.success('Authenticator code copied')
+      toast.success('Authenticator setup key copied')
     } catch {
       toast.error('Failed to copy code')
     }
@@ -263,15 +263,13 @@ export function UpdateContactInformationPage() {
       toast.error('Emergency contact name is required.')
       return
     }
-    if (profile?.mfaEnabled) {
-      if (!mfaCode.trim()) {
-        toast.error('Authenticator 6-digit code is required.')
-        return
-      }
-      if (!isMfaVerified) {
-        toast.error('Please verify your authenticator 6-digit code before proceeding.')
-        return
-      }
+    if (!mfaCode.trim()) {
+      toast.error('Authenticator 6-digit code is required.')
+      return
+    }
+    if (!isMfaVerified) {
+      toast.error('Please verify your authenticator 6-digit code before proceeding.')
+      return
     }
 
     try {
@@ -282,7 +280,7 @@ export function UpdateContactInformationPage() {
         dateOfBirth: dateOfBirth || undefined,
         bloodGroup: bloodGroup.trim() || undefined,
         profileImageUrl: profileImageUrl || undefined,
-        mfaCode: profile?.mfaEnabled ? mfaCode.trim() : undefined,
+        mfaCode: mfaCode.trim(),
       })
 
       updateUser({
@@ -482,7 +480,7 @@ export function UpdateContactInformationPage() {
             {/* Authenticator app code (Row 4, Col 1 - side-by-side with Enter 6 digit code) */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Authenticator app code
+                Authenticator setup key
               </label>
               <div className="relative">
                 <input
@@ -495,12 +493,24 @@ export function UpdateContactInformationPage() {
                 <button
                   type="button"
                   onClick={handleCopySecret}
-                  title="Copy code"
+                  title="Copy setup key"
                   className="absolute top-1/2 right-3 -translate-y-1/2 text-white/60 transition-colors hover:text-white"
                 >
                   <Copy className="size-4" />
                 </button>
               </div>
+              <p className="mt-2 text-[11px] leading-4 text-white/45">
+                Add this key in Google Authenticator or Microsoft Authenticator as a new account.
+                Remove any older JOMS Admin entry first, then enter the current 6-digit code.
+              </p>
+              {profile?.otpauthUrl ? (
+                <a
+                  href={profile.otpauthUrl}
+                  className="mt-2 inline-flex text-[11px] font-medium text-[#E0A263] underline-offset-2 hover:underline"
+                >
+                  Open in authenticator app
+                </a>
+              ) : null}
             </div>
 
             {/* Enter 6 digit code here (Row 4, Col 2 - side-by-side with Authenticator app code) */}

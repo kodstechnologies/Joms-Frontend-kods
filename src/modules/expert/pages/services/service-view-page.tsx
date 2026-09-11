@@ -52,6 +52,7 @@ import type {
 } from '../../type/service'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { isApprovedListingStatus } from '../../lib/service-navigation'
 import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
@@ -200,13 +201,16 @@ export const ServiceViewPage = () => {
   const {
     data: serviceResponse,
     isLoading: isServiceLoading,
+    isFetched: isServiceFetched,
     error: serviceError,
   } = useService(resolvedServiceId, !shouldFetchConsultation)
+  const serviceLookupFailed =
+    !shouldFetchConsultation && isServiceFetched && Boolean(serviceError || !serviceResponse?.data)
   const {
     data: consultationResponse,
     isLoading: isConsultationLoading,
     error: consultationError,
-  } = useConsultation(resolvedServiceId, shouldFetchConsultation)
+  } = useConsultation(resolvedServiceId, shouldFetchConsultation || serviceLookupFailed)
   const { mutateAsync: updateServiceStatus, isPending: isUpdatingServiceStatus } =
     useUpdateServiceStatus()
   const { mutateAsync: updateConsultationStatus, isPending: isUpdatingConsultationStatus } =
@@ -237,15 +241,13 @@ export const ServiceViewPage = () => {
 
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
-  const escalationEntityType = shouldFetchConsultation ? 'consultation' : 'service'
+  const isConsultationListing =
+    shouldFetchConsultation || (serviceLookupFailed && Boolean(consultationResponse?.data))
+  const escalationEntityType = isConsultationListing ? 'consultation' : 'service'
   const { data: assigneesData } = useEscalationAssignees('services.*')
   const { data: escalationData } = useAdminEscalation(escalationEntityType, resolvedServiceId)
-  const escalateService = useEscalateServiceApplication(
-    shouldFetchConsultation ? undefined : resolvedServiceId,
-  )
-  const escalateConsultation = useEscalateConsultationApplication(
-    shouldFetchConsultation ? resolvedServiceId : undefined,
-  )
+  const escalateService = useEscalateServiceApplication(resolvedServiceId)
+  const escalateConsultation = useEscalateConsultationApplication(resolvedServiceId)
   const startEscalationReview = useStartAdminEscalationReview(
     escalationEntityType,
     resolvedServiceId,
@@ -263,9 +265,12 @@ export const ServiceViewPage = () => {
     setActiveImageIndex(0)
   }
 
-  const apiResponse = shouldFetchConsultation ? consultationResponse : serviceResponse
-  const isLoading = shouldFetchConsultation ? isConsultationLoading : isServiceLoading
-  const error = shouldFetchConsultation ? consultationError : serviceError
+  const apiResponse = isConsultationListing ? consultationResponse : serviceResponse
+  const isLoading =
+    (shouldFetchConsultation && isConsultationLoading) ||
+    (!shouldFetchConsultation && isServiceLoading) ||
+    (serviceLookupFailed && isConsultationLoading)
+  const error = isConsultationListing ? consultationError : serviceError
   const service = apiResponse?.data as ServiceViewDetail | undefined
 
   const resolvedPartnerId = expertId || partnerIdParam || service?.partnerId || ''
@@ -356,11 +361,11 @@ export const ServiceViewPage = () => {
         assigneeName: selectedAssignee?.fullname || '',
         adminNote: decisionAdminNotes.trim(),
         entityTitle: service?.title || service?.consultationTitle || '',
-        applicationUrl: shouldFetchConsultation
+        applicationUrl: isConsultationListing
           ? `/services/management/view/${resolvedServiceId}?type=consultation`
           : `/services/management/view/${resolvedServiceId}`,
       }
-      const escalateMutation = shouldFetchConsultation ? escalateConsultation : escalateService
+      const escalateMutation = isConsultationListing ? escalateConsultation : escalateService
 
       try {
         await escalateMutation.mutateAsync(payload)
@@ -464,7 +469,7 @@ export const ServiceViewPage = () => {
         decisionReason.trim() || reasonPayload?.reasonDetails || reasonFor.join(', ')
 
       try {
-        if (shouldFetchConsultation) {
+        if (isConsultationListing) {
           if (activeDecisionAction === 'approve') {
             await updateConsultationStatus({
               id: resolvedServiceId,
@@ -519,10 +524,10 @@ export const ServiceViewPage = () => {
       } catch (err) {
         const message = axios.isAxiosError(err)
           ? err.response?.data?.message ||
-            (shouldFetchConsultation
+            (isConsultationListing
               ? 'Failed to update consultation status.'
               : 'Failed to update service status.')
-          : shouldFetchConsultation
+          : isConsultationListing
             ? 'Failed to update consultation status.'
             : 'Failed to update service status.'
         toast.error(message)
@@ -535,7 +540,7 @@ export const ServiceViewPage = () => {
       <div className="flex h-96 w-full flex-col items-center justify-center gap-4">
         <Loader2 className="text-brand-accent size-10 animate-spin" />
         <p className="text-muted text-sm font-medium">
-          {shouldFetchConsultation
+          {isConsultationListing || serviceLookupFailed
             ? 'Fetching consultation information...'
             : 'Fetching service information...'}
         </p>
@@ -550,7 +555,9 @@ export const ServiceViewPage = () => {
           <Info className="size-10" />
         </div>
         <h3 className="text-lg font-semibold text-white">
-          {shouldFetchConsultation ? 'Consultation Not Found' : 'Service Not Found'}
+          {isConsultationListing || shouldFetchConsultation
+            ? 'Consultation Not Found'
+            : 'Service Not Found'}
         </h3>
         <p className="text-muted max-w-md text-sm">
           {apiResponse?.message ||
@@ -568,7 +575,7 @@ export const ServiceViewPage = () => {
   }
 
   const isConsultation =
-    shouldFetchConsultation || (service.serviceType || '').toLowerCase().includes('consultation')
+    isConsultationListing || (service.serviceType || '').toLowerCase().includes('consultation')
   const images = service.images || []
   const imageCount = images.length
   const activeImage =
@@ -584,7 +591,7 @@ export const ServiceViewPage = () => {
     : service.category?.name || service.consultationCategory || ''
   const showApprovalControls = isPendingReview(service.status, isConsultation)
   const escalateDisabled =
-    !isPendingReview(service.status, isConsultation) ||
+    isApprovedListingStatus(service.status) ||
     escalateService.isPending ||
     escalateConsultation.isPending
   const escalation = escalationData?.data
@@ -1106,12 +1113,7 @@ export const ServiceViewPage = () => {
         {isConsultation ? renderConsultationDetails() : renderServiceDetails()}
       </div>
 
-      <div
-        className={cn(
-          'grid grid-cols-1 gap-5',
-          showApprovalControls ? 'lg:grid-cols-2' : 'max-w-2xl',
-        )}
-      >
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl bg-[#141414] p-5">
           <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
@@ -1129,19 +1131,27 @@ export const ServiceViewPage = () => {
           </div>
         </div>
 
-        {showApprovalControls && (
-          <div className="rounded-xl bg-[#141414] p-5">
-            <DecisionControlsHeader className="mb-4" />
-            <DecisionControlButtons
-              onApprove={() => openDecisionModal('approve')}
-              onRequestChanges={() => openDecisionModal('requestChanges')}
-              onEscalate={() => openDecisionModal('escalate')}
-              onReject={() => openDecisionModal('reject')}
-              showEscalate
-              escalateDisabled={escalateDisabled}
-            />
-          </div>
-        )}
+        <div className="rounded-xl bg-[#141414] p-5">
+          <DecisionControlsHeader className="mb-4" />
+          {!showApprovalControls ? (
+            <p className="text-body-sm text-muted mb-4 rounded-md bg-black px-3 py-2 font-medium">
+              This listing is currently{' '}
+              <span className="font-bold text-white">{service.status || '—'}</span>. Approve and
+              reject are available only while review is pending.
+            </p>
+          ) : null}
+          <DecisionControlButtons
+            onApprove={() => openDecisionModal('approve')}
+            onRequestChanges={() => openDecisionModal('requestChanges')}
+            onEscalate={() => openDecisionModal('escalate')}
+            onReject={() => openDecisionModal('reject')}
+            showEscalate
+            approveDisabled={!showApprovalControls || isUpdatingStatus}
+            requestChangesDisabled={!showApprovalControls || isUpdatingStatus}
+            escalateDisabled={escalateDisabled}
+            rejectDisabled={!showApprovalControls || isUpdatingStatus}
+          />
+        </div>
       </div>
     </div>
   )

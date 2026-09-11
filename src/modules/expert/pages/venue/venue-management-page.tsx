@@ -87,6 +87,8 @@ import {
   escalatePartnerApplication,
   escalateVenueSpaceApplication,
 } from '@/modules/my-tasks/api/escalation-api'
+import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
+import { getVenueKycApplicationPath } from '../../utils/expert-application-navigation'
 
 type ManagementMetric = {
   id: string
@@ -568,10 +570,15 @@ export const VenueManagementPage = () => {
             return Promise.reject(new Error(`No partner found for ${venue.venueName || venueId}`))
           }
 
-          return escalatePartnerApplication(partnerId, {
-            ...payload,
-            escalationTarget: 'application',
-            applicationUrl: `/experts/management/application/${partnerId}?source=venue_kyc`,
+          return fetchVenueKycByPartnerId(partnerId).then((response) => {
+            const kycId = String(response?.data?._id || '').trim()
+            return escalatePartnerApplication(partnerId, {
+              ...payload,
+              escalationTarget: 'application',
+              applicationUrl: kycId
+                ? getVenueKycApplicationPath(kycId)
+                : getVenueKycApplicationPath(partnerId),
+            })
           })
         }),
       )
