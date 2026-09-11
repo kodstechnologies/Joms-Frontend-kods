@@ -48,6 +48,21 @@ function attachAuthInterceptor(client: AxiosInstance) {
       if (error?.isOffline || (error?.code === 'ERR_NETWORK' && isBrowserOffline())) {
         notifyOffline()
       }
+
+      const status = error?.response?.status
+      const message = String(error?.response?.data?.message || '').toLowerCase()
+      const authState = useAuthStore.getState()
+      if (
+        authState.isAuthenticated &&
+        (status === 401 || status === 403) &&
+        /suspend|inactive|disabled/.test(message)
+      ) {
+        authState.clearSession()
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
+          window.location.assign('/auth/login')
+        }
+      }
+
       return Promise.reject(error)
     },
   )

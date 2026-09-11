@@ -996,7 +996,7 @@ export function VenueKycApplicationViewPage() {
             onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
-            showEscalate={isSuperAdmin}
+            showEscalate
             approveDisabled={decisionDisabled}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}

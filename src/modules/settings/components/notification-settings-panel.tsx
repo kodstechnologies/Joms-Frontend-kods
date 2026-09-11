@@ -56,16 +56,6 @@ const FALLBACK_CATALOG: NotificationCatalogGroup[] = [
         description: 'Send SMS text messages (requires SMS provider)',
       },
       {
-        key: 'event',
-        label: 'Event Notifications',
-        description: 'Updates about event creation, approvals, changes, and live status',
-      },
-      {
-        key: 'networking',
-        label: 'Networking Notifications',
-        description: 'Connection requests, messages, and profile interaction alerts',
-      },
-      {
         key: 'membershipSubscription',
         label: 'Membership & Subscription Notifications',
         description: 'Alerts related to plan activation, renewals, expiry, and suspension',
@@ -102,11 +92,6 @@ const FALLBACK_CATALOG: NotificationCatalogGroup[] = [
         key: 'reportsAbuseModeration',
         label: 'Reports, Abuse & Moderation Notifications',
         description: 'Notifications triggered by user reports and moderation actions',
-      },
-      {
-        key: 'userAccountSuspension',
-        label: 'User Account Suspension',
-        description: 'Temporarily disable user account',
       },
       {
         key: 'rolePermissionModification',

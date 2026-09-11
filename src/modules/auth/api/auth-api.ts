@@ -25,7 +25,7 @@ export type AdminSessionUser = {
 export type LoginResponse = {
   email: string
   mfaRequired: boolean
-  mfaMethod?: 'emailOtp'
+  mfaMethod?: 'emailOtp' | 'authenticator'
   token?: string
   admin?: AdminSessionUser
 }
@@ -65,11 +65,21 @@ export async function verifyPartnerPhoneOtp(phone: string, otp: string) {
 }
 
 export async function sendPartnerEmailOtp(email: string) {
-  const response = await authApiClient.post('/auth/otp/email/send', { email })
+  const response = await authApiClient.post('/auth/otp/email/send', { email, type: 'register' })
   return response.data
 }
 
 export async function verifyPartnerEmailOtp(email: string, otp: string) {
   const response = await authApiClient.post('/auth/otp/email/verify', { email, otp })
+  return response.data
+}
+
+export async function sendAdminPhoneOtp(phone: string) {
+  const response = await authApiClient.post('/auth/admin/phone/otp/send', { phone })
+  return response.data
+}
+
+export async function verifyAdminPhoneOtp(phone: string, otp: string) {
+  const response = await authApiClient.post('/auth/admin/phone/otp/verify', { phone, otp })
   return response.data
 }

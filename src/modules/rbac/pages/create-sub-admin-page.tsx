@@ -15,9 +15,11 @@ import type { CreateSubAdminPayload, PermissionCatalog, Role } from '../types/rb
 import { requiredLabel } from '@/shared/components/form/required-label'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
 import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
+import { grantsToMap } from '@/shared/lib/permissions'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
@@ -51,10 +53,11 @@ const getModuleAccess = (
   catalog: PermissionCatalog,
 ): ModuleAccess => {
   const mod = catalog[moduleKey]
-  if (!mod?.permissions.length) return 'none'
+  if (!mod?.permissions?.length) return 'none'
 
+  const roleGrants = grantsToMap(role.permissions || [])
   const keys = mod.permissions.map((p) => p.key)
-  const granted = keys.filter((k) => role.permissions.includes(k))
+  const granted = keys.filter((k) => Boolean(roleGrants[k]))
   if (!granted.length) return 'none'
   if (granted.length === keys.length) return 'full'
   return 'limited'
@@ -184,10 +187,25 @@ export function CreateSubAdminPage() {
   }
 
   const validateForm = () => {
-    if (!form.firstName || !form.lastName || !form.email) {
-      toast.error('First name, last name and email are required')
-      return false
+    const requiredTextFields: Array<[keyof CreateSubAdminPayload, string]> = [
+      ['firstName', 'First name'],
+      ['lastName', 'Last name'],
+      ['email', 'Email'],
+      ['department', 'Department'],
+      ['jobTitle', 'Job title'],
+      ['employeeId', 'Employee ID'],
+      ['employmentType', 'Employment type'],
+      ['workplaceFlexibility', 'Workplace flexibility'],
+      ['location', 'Location'],
+    ]
+
+    for (const [key, label] of requiredTextFields) {
+      if (!String(form[key] ?? '').trim()) {
+        toast.error(`${label} is required`)
+        return false
+      }
     }
+
     if (!form.roleIds.length) {
       toast.error('Select at least one role')
       return false
@@ -214,8 +232,8 @@ export function CreateSubAdminPage() {
           : 'User created successfully.',
       )
       navigate('/settings/access')
-    } catch {
-      toast.error('Failed to create sub-admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to create sub-admin'))
     }
   }
 
@@ -252,8 +270,8 @@ export function CreateSubAdminPage() {
       setConfirmOpen(false)
       toast.success('User updated successfully. Role and permissions are now in effect.')
       navigate('/settings/access')
-    } catch {
-      toast.error('Failed to update user')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to update user'))
     }
   }
 
@@ -324,7 +342,7 @@ export function CreateSubAdminPage() {
               ))}
 
               <div className="create-user-field">
-                <label className="create-user-field-label">Employee ID</label>
+                <label className="create-user-field-label">{requiredLabel('Employee ID *')}</label>
                 <Input
                   className="create-user-field-control"
                   value={form.employeeId}
@@ -711,9 +729,8 @@ export function CreateSubAdminPage() {
             <div className="mt-4 max-h-72 space-y-3 overflow-auto">
               {permissionViewRole.permissions.length ? (
                 Object.entries(catalog).map(([moduleKey, mod]) => {
-                  const rolePerms = mod.permissions.filter((p) =>
-                    permissionViewRole.permissions.includes(p.key),
-                  )
+                  const roleGrants = grantsToMap(permissionViewRole.permissions || [])
+                  const rolePerms = mod.permissions.filter((p) => Boolean(roleGrants[p.key]))
                   if (!rolePerms.length) return null
                   return (
                     <div

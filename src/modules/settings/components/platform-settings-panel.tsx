@@ -238,7 +238,11 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           <SettingsSelectField
             id="display-language"
             label="Language Settings"
-            value={value.displayPreferences.language || 'English'}
+            value={
+              languageOptions.includes(value.displayPreferences.language)
+                ? value.displayPreferences.language
+                : 'English'
+            }
             onChange={(event) => updateDisplay({ language: event.target.value })}
           >
             {languageOptions.map((option) => (
@@ -363,16 +367,6 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         <div className="settings-policy-section">
           <p className="settings-field-label">Policy Management</p>
           <div className="settings-policy-grid">
-            <div className="settings-policy-block">
-              <span className="settings-policy-label">User Application Policy</span>
-              <Button
-                variant="primary"
-                className="settings-policy-view-btn"
-                onClick={() => navigate('/settings/policies?application=user')}
-              >
-                View
-              </Button>
-            </div>
             <div className="settings-policy-block">
               <span className="settings-policy-label">Expert Application Policy</span>
               <Button

@@ -41,6 +41,22 @@ export const completeContactSetup = async (payload: CompleteContactSetupPayload)
   return response.data
 }
 
+export const checkSubAdminPhone = async (phone: string) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: { available: boolean }
+  }>('/admin/rbac/check-phone', { params: { phone } })
+  return response.data
+}
+
+export const verifySubAdminMfa = async (code: string) => {
+  const response = await adminApiClient.post<{ success: boolean; message: string }>(
+    '/admin/rbac/me/verify-mfa',
+    { code },
+  )
+  return response.data
+}
+
 export const fetchPermissionCatalog = async () => {
   const response = await adminApiClient.get<{ success: boolean; data: PermissionCatalog }>(
     '/admin/rbac/permissions',

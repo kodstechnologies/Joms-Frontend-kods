@@ -151,7 +151,11 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
       },
     },
     promoted: badgeCol('promoted', 'Promoted', (s) => s.promoted),
-    'pricing-model': badgeCol('pricing-model', 'Pricing Model', (s) => s.pricingModel),
+    'pricing-model': badgeCol(
+      'pricing-model',
+      'Pricing Model',
+      (s) => s.pricingModel ?? s.pricingType,
+    ),
     'tier-name': textCol('tier-name', 'Tier Name', (s) => s.tierName),
     pricing: moneyCol('pricing', 'Base Price', (s) => s.pricing),
     'platform-discount-percent': percentCol(

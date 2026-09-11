@@ -195,8 +195,6 @@ export const notificationsDefaults: NotificationSettings = {
   },
   timeSensitive: {
     sms: true,
-    event: true,
-    networking: true,
     membershipSubscription: true,
     bulkEmail: true,
     dataExport: true,
@@ -205,7 +203,6 @@ export const notificationsDefaults: NotificationSettings = {
     accountSecurity: true,
     paymentsTransaction: true,
     reportsAbuseModeration: true,
-    userAccountSuspension: true,
     rolePermissionModification: true,
     paymentGatewayConfiguration: true,
   },

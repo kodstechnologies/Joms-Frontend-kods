@@ -895,7 +895,7 @@ export function SpaceDetailsPage() {
             onRequestChanges={() => openDecisionModal('requestChanges')}
             onEscalate={() => openDecisionModal('escalate')}
             onReject={() => openDecisionModal('reject')}
-            showEscalate={isSuperAdmin}
+            showEscalate
             approveDisabled={decisionDisabled || !allowApproveVenues}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}

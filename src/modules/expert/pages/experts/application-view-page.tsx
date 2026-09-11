@@ -328,6 +328,7 @@ export function ExpertApplicationViewPage() {
     payload: DocumentStatusPayload,
   ) => {
     if (!viewerDocument) return
+    if (viewerDocument.key === 'digilockerDocumentUrl') return
 
     const mutationFn =
       viewerDocument.target === 'banking' ? updateBankingDocument : updateKycDocument
@@ -770,7 +771,7 @@ export function ExpertApplicationViewPage() {
                           label: 'Digilocker Verified Document',
                           url: digilockerDocUrl,
                           target: 'kyc',
-                          reviewStatus: getKycReviewStatus('digilockerDocumentUrl'),
+                          reviewStatus: null,
                         })
                       }
                       className="text-body-sm cursor-pointer font-medium text-white/80 transition-colors hover:text-white"
@@ -963,7 +964,7 @@ export function ExpertApplicationViewPage() {
             onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
-            showEscalate={isSuperAdmin}
+            showEscalate
             approveDisabled={decisionDisabled}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
@@ -1032,10 +1033,12 @@ export function ExpertApplicationViewPage() {
         requestChangesReasonOptions={requestChangesReasonOptions}
         actionsDisabled={
           !viewerDocument ||
+          viewerDocument.key === 'digilockerDocumentUrl' ||
           (viewerDocument.target === 'banking'
             ? !isBankingSubmitted || application?.banking?.status !== 'PENDING'
             : !isKycSubmitted || displayKycStatus !== 'PENDING')
         }
+        hideActions={viewerDocument?.key === 'digilockerDocumentUrl'}
         isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
         onClose={() => setViewerDocument(null)}
         onSubmitDecision={handleDocumentDecision}

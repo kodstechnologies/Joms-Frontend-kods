@@ -44,9 +44,11 @@ export const useVenueStepMutations = () => {
       venueData,
     }: {
       venueId: string
-      venueData: Pick<VenueFormData, 'venueCategory' | 'aboutVenue'>
+      venueData: Pick<VenueFormData, 'venueName' | 'venueType' | 'venueCategory' | 'aboutVenue'>
     }) =>
       updateAdminVenueDetails(venueId, {
+        name: venueData.venueName,
+        venueType: venueData.venueType,
         venueCategoryId: venueData.venueCategory ? [venueData.venueCategory] : undefined,
         aboutVenue: venueData.aboutVenue,
       }),
@@ -84,9 +86,7 @@ export const useVenueStepMutations = () => {
     }) => {
       const payload = buildSpacePayload(venueData)
       if (spaceId) {
-        const updatePayload = { ...payload }
-        delete updatePayload.location
-        return updateAdminSpace(spaceId, updatePayload)
+        return updateAdminSpace(spaceId, payload)
       }
       return createAdminSpace(venueId, payload)
     },

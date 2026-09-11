@@ -68,6 +68,11 @@ import {
   SERVICE_PERFORMANCE_METRICS_CATALOG,
   SERVICE_PERFORMANCE_MODULE_KEY,
 } from '@/modules/expert/config/service-performance-metrics.config'
+import {
+  SERVICE_DASHBOARD_MAX_ACTIVE_METRICS,
+  SERVICE_DASHBOARD_METRICS_CATALOG,
+  SERVICE_DASHBOARD_MODULE_KEY,
+} from '@/modules/expert/config/service-dashboard-metrics.config'
 import { SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/service-performance-table-columns.config'
 import {
   CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS,
@@ -157,11 +162,11 @@ export const EXPERT_ECOSYSTEM_MODULE_METRICS: Record<string, ModuleMetricsDefini
     columns: mapColumnsCatalog(CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG),
   },
   'service-dashboard': {
-    moduleKey: 'service-dashboard',
+    moduleKey: SERVICE_DASHBOARD_MODULE_KEY,
     moduleName: 'Service Marketplace',
     returnTo: '/services/dashboard',
-    maxActiveMetrics: 100,
-    metrics: mapMetricsCatalog([]),
+    maxActiveMetrics: SERVICE_DASHBOARD_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(SERVICE_DASHBOARD_METRICS_CATALOG),
   },
   'venue-management': {
     moduleKey: VENUE_MANAGEMENT_MODULE_KEY,

@@ -581,7 +581,7 @@ export function ApplicationDetailsPage() {
             onRequestChanges={() => openModal('requestChanges')}
             onEscalate={() => openModal('escalate')}
             onReject={() => openModal('reject')}
-            showEscalate={isSuperAdmin}
+            showEscalate
             approveDisabled={spaceStatusMutation.isPending || !space?._id || !allowApproveVenues}
             requestChangesDisabled={spaceStatusMutation.isPending || !space?._id}
             escalateDisabled={escalateDisabled}

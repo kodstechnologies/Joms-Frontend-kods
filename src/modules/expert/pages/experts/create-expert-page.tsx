@@ -64,11 +64,21 @@ const validateStep = (
     }
   }
   if (step === 3) {
-    const hasEntry = form.workExperience.some((entry) => entry.jobTitle.trim())
-    if (!hasEntry) return 'At least one work experience entry is required.'
+    const validEntries = form.workExperience.filter(
+      (entry) => entry.jobTitle.trim() || entry.companyName.trim(),
+    )
+    if (validEntries.length === 0) return 'At least one work experience entry is required.'
+    for (let i = 0; i < validEntries.length; i++) {
+      if (!validEntries[i].jobTitle.trim()) {
+        return `Job title is required for work experience entry #${i + 1}.`
+      }
+      if (!validEntries[i].companyName.trim()) {
+        return `Company name is required for work experience entry #${i + 1}.`
+      }
+    }
   }
   if (step === 4) {
-    if (form.galleryImages.length > 5) return 'A maximum of 5 images are allowed.'
+    if (form.galleryPreviews.length > 5) return 'A maximum of 5 images are allowed.'
     if (!isEdit && form.galleryImages.length === 0 && form.galleryPreviews.length === 0) {
       return null
     }
@@ -91,7 +101,7 @@ export const CreateExpertPage = () => {
     ...createEmptyExpertOnboardingForm(),
     serviceType: 'concierge',
   }))
-  const [hasPrefill, setHasPrefill] = useState(false)
+  const [lastSyncedProfileId, setLastSyncedProfileId] = useState<string | null>(null)
 
   const {
     data: profileResponse,
@@ -108,10 +118,10 @@ export const CreateExpertPage = () => {
     submitApplication,
   } = useExpertOnboardingMutations()
 
-  if (isEditMode && !hasPrefill && profileResponse?.data) {
+  if (isEditMode && profileResponse?.data && profileResponse.data._id !== lastSyncedProfileId) {
+    setLastSyncedProfileId(profileResponse.data._id)
     setFormData(mapExpertProfileToOnboardingForm(profileResponse.data))
     setExpertId(profileResponse.data._id)
-    setHasPrefill(true)
   }
 
   const updateExpertIdInUrl = (id: string) => {
@@ -169,7 +179,7 @@ export const CreateExpertPage = () => {
       }
 
       if (currentStep === 4) {
-        if (formData.galleryImages.length > 0) {
+        if (isEditMode || formData.galleryImages.length > 0) {
           await saveGallery.mutateAsync({
             id: expertId,
             payload: buildGalleryFormData(formData),

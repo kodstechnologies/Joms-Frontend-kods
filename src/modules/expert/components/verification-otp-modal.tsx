@@ -14,7 +14,12 @@ type VerificationOtpModalProps = {
   targetValue: string
   onClose: () => void
   onVerified: () => void
+  length?: number
+  sendOtp?: (target: string) => Promise<void>
+  verifyOtp?: (target: string, code: string) => Promise<void>
 }
+
+const emptyDigits = (length: number) => Array.from({ length }, () => '')
 
 export function VerificationOtpModal({
   open,
@@ -22,18 +27,22 @@ export function VerificationOtpModal({
   targetValue,
   onClose,
   onVerified,
+  length = 4,
+  sendOtp,
+  verifyOtp,
 }: VerificationOtpModalProps) {
-  const [otp, setOtp] = useState(['', '', '', ''])
+  const [otp, setOtp] = useState(() => emptyDigits(length))
   const [timer, setTimer] = useState(30)
   const [prevOpen, setPrevOpen] = useState(open)
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const lastSlot = Math.max(length - 1, 0)
 
   if (open !== prevOpen) {
     setPrevOpen(open)
     if (open) {
-      setOtp(['', '', '', ''])
+      setOtp(emptyDigits(length))
       setTimer(30)
     }
   }
@@ -41,7 +50,9 @@ export function VerificationOtpModal({
   const requestOtp = useCallback(async () => {
     if (!targetValue?.trim()) return
     try {
-      if (type === 'phone') {
+      if (sendOtp) {
+        await sendOtp(targetValue.trim())
+      } else if (type === 'phone') {
         await sendPartnerPhoneOtp(targetValue.trim())
       } else {
         await sendPartnerEmailOtp(targetValue.trim())
@@ -53,7 +64,7 @@ export function VerificationOtpModal({
         error?.response?.data?.message || 'Failed to send OTP. Please check the backend service.'
       toast.error(msg)
     }
-  }, [targetValue, type])
+  }, [sendOtp, targetValue, type])
 
   useEffect(() => {
     if (!open) return
@@ -91,14 +102,14 @@ export function VerificationOtpModal({
 
     const nextOtp = [...otp]
     if (clean.length > 1) {
-      const digits = clean.slice(0, 4).split('')
+      const digits = clean.slice(0, length).split('')
       digits.forEach((digit, dIdx) => {
-        if (index + dIdx < 4) {
+        if (index + dIdx < length) {
           nextOtp[index + dIdx] = digit
         }
       })
       setOtp(nextOtp)
-      const nextFocusIdx = Math.min(index + digits.length, 3)
+      const nextFocusIdx = Math.min(index + digits.length, lastSlot)
       inputRefs.current[nextFocusIdx]?.focus()
       return
     }
@@ -106,7 +117,7 @@ export function VerificationOtpModal({
     nextOtp[index] = clean.slice(-1)
     setOtp(nextOtp)
 
-    if (index < 3) {
+    if (index < lastSlot) {
       inputRefs.current[index + 1]?.focus()
     }
   }
@@ -122,7 +133,7 @@ export function VerificationOtpModal({
     setIsSending(true)
     try {
       setTimer(30)
-      setOtp(['', '', '', ''])
+      setOtp(emptyDigits(length))
       inputRefs.current[0]?.focus()
       await requestOtp()
     } finally {
@@ -132,14 +143,16 @@ export function VerificationOtpModal({
 
   const handleVerify = async () => {
     const fullOtp = otp.join('')
-    if (fullOtp.length < 4) {
-      toast.error('Please enter the complete 4-digit OTP.')
+    if (fullOtp.length < length) {
+      toast.error(`Please enter the complete ${length}-digit OTP.`)
       return
     }
 
     try {
       setIsVerifying(true)
-      if (type === 'phone') {
+      if (verifyOtp) {
+        await verifyOtp(targetValue.trim(), fullOtp)
+      } else if (type === 'phone') {
         await verifyPartnerPhoneOtp(targetValue.trim(), fullOtp)
       } else {
         await verifyPartnerEmailOtp(targetValue.trim(), fullOtp)
@@ -160,7 +173,7 @@ export function VerificationOtpModal({
   }
 
   const title = type === 'email' ? 'Verify Email ID' : 'Verify Phone Number'
-  const subtitle = `Enter the 4-digit OTP sent to ${targetValue || (type === 'email' ? 'your email' : 'your phone number')}`
+  const subtitle = `Enter the ${length}-digit OTP sent to ${targetValue || (type === 'email' ? 'your email' : 'your phone number')}`
 
   return (
     <div
@@ -186,14 +199,14 @@ export function VerificationOtpModal({
             type="button"
             aria-label="Close modal"
             onClick={onClose}
-            className="flex size-6 items-center justify-center text-white/70 transition-colors hover:text-white"
+            className="flex size-10 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X className="size-5" />
           </button>
         </div>
 
         <div className="my-8">
-          <div className="flex items-center justify-center gap-5">
+          <div className="flex items-center justify-center gap-3 sm:gap-5">
             {otp.map((digit, index) => (
               <div
                 key={index}
@@ -210,10 +223,10 @@ export function VerificationOtpModal({
                   value={digit}
                   onChange={(e) => handleInputChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="h-10 w-[50px] bg-transparent text-center text-2xl font-bold text-white caret-white focus:outline-none"
+                  className="h-10 w-[42px] bg-transparent text-center text-2xl font-bold text-white caret-white focus:outline-none sm:w-[50px]"
                 />
                 <svg
-                  className={`mt-1 h-[10px] w-[50px] transition-colors ${
+                  className={`mt-1 h-[10px] w-[42px] transition-colors sm:w-[50px] ${
                     digit ? 'text-white' : 'text-white/40'
                   }`}
                   viewBox="0 0 50 10"

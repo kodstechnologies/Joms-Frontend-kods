@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, X } from 'lucide-react'
 
 import {
@@ -7,6 +8,7 @@ import {
   useUnreadNotificationCount,
   type InAppNotification,
 } from '@/modules/notifications'
+import { resolveAdminInboxNavigation } from '@/modules/notifications/utils/admin-inbox-navigation'
 import {
   getInboxRowIcon,
   getNotificationCategoryLabel,
@@ -132,6 +134,7 @@ type NotificationPanelProps = {
 }
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
+  const navigate = useNavigate()
   const notificationsQuery = useMyNotifications(open, 'notification')
   const markReadMutation = useMarkNotificationRead()
   const notifications = useMemo(
@@ -167,6 +170,9 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
     if (!item.isRead) {
       markReadMutation.mutate(item.id)
     }
+    const target = resolveAdminInboxNavigation(item)
+    onClose()
+    navigate(target.path, target.state ? { state: target.state } : undefined)
   }
 
   if (!open) return null

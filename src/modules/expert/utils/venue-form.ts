@@ -107,6 +107,14 @@ export type VenueFormData = {
   guestCount: string
   seatingType: string
   locationType: string
+  spaceAddress: string
+  spaceLandmark: string
+  spaceCity: string
+  spacePincode?: string
+  spaceState?: string
+  spaceCountry?: string
+  spaceLatitude: number | null
+  spaceLongitude: number | null
   capacityType: string
   seatedCapacity: string
   standingCapacity: string
@@ -162,6 +170,14 @@ export const createEmptyVenueFormData = (): VenueFormData => ({
   guestCount: '',
   seatingType: '',
   locationType: 'same',
+  spaceAddress: '',
+  spaceLandmark: '',
+  spaceCity: '',
+  spacePincode: '',
+  spaceState: '',
+  spaceCountry: '',
+  spaceLatitude: null,
+  spaceLongitude: null,
   capacityType: 'seated',
   seatedCapacity: '',
   standingCapacity: '',
@@ -264,6 +280,8 @@ export const mapDraftToVenueFormData = (
     (profile?.amenities as Array<Record<string, unknown>> | Record<string, unknown> | undefined)
 
   const amenityLabels = mapVenueAmenitySelections(amenitiesDoc)
+  const spaceLocation = (space?.location || {}) as Record<string, unknown>
+  const useSpaceLocation = space?.isSameAsVenueLocation === false
 
   return {
     ...base,
@@ -288,7 +306,21 @@ export const mapDraftToVenueFormData = (
       space?.capacityMode === 'seated' && space?.capacityRange ? String(space.capacityRange) : '',
     standingCapacity:
       space?.capacityMode === 'standing' && space?.capacityRange ? String(space.capacityRange) : '',
-    locationType: space?.isSameAsVenueLocation === false ? 'different' : 'same',
+    locationType: useSpaceLocation ? 'different' : 'same',
+    spaceAddress: useSpaceLocation ? String(spaceLocation.address || '') : '',
+    spaceLandmark: useSpaceLocation ? String(spaceLocation.landmark || '') : '',
+    spaceCity: useSpaceLocation ? String(spaceLocation.city || '') : '',
+    spacePincode: useSpaceLocation ? String(spaceLocation.pincode || '') : '',
+    spaceState: useSpaceLocation ? String(spaceLocation.state || '') : '',
+    spaceCountry: useSpaceLocation ? String(spaceLocation.country || '') : '',
+    spaceLatitude:
+      useSpaceLocation && typeof spaceLocation.latitude === 'number'
+        ? spaceLocation.latitude
+        : null,
+    spaceLongitude:
+      useSpaceLocation && typeof spaceLocation.longitude === 'number'
+        ? spaceLocation.longitude
+        : null,
     inHouseCatering: Boolean(space?.inHouseCatering ?? false),
     decorationAvailable: Boolean(space?.decorationAvailable ?? false),
     amenities: amenityLabels,
@@ -303,8 +335,7 @@ export const mapDraftToVenueFormData = (
       : String(terms?.terms || ''),
     cancellationPolicy: mapHoursToCancellationPolicy(
       (terms?.cancellation as Record<string, unknown> | undefined)?.freeCancellationHours as
-        | number
-        | undefined,
+        number | undefined,
     ),
     refundPercentage: String(
       (terms?.cancellation as Record<string, unknown> | undefined)?.refundPercentage ?? '',

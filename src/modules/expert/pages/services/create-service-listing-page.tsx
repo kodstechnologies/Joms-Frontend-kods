@@ -9,6 +9,7 @@ import {
   Loader2,
   X,
   Sparkles,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -233,8 +234,7 @@ export const CreateServiceListingPage = () => {
     if (allowSinglePriceListing) allowed.push('fixed')
     if (allowCustomPriceListing) allowed.push('custom')
     if (allowTierPriceListing) allowed.push('tiered')
-    // Grandfathering: preserve existing listing pricing type if already set/loaded
-    if (pricingTypePreference && !allowed.includes(pricingTypePreference)) {
+    if (isEditMode && pricingTypePreference && !allowed.includes(pricingTypePreference)) {
       allowed.push(pricingTypePreference)
     }
     return allowed
@@ -242,6 +242,7 @@ export const CreateServiceListingPage = () => {
     allowSinglePriceListing,
     allowCustomPriceListing,
     allowTierPriceListing,
+    isEditMode,
     pricingTypePreference,
   ])
 
@@ -590,10 +591,15 @@ export const CreateServiceListingPage = () => {
 
   const addTopicById = (topicId: string) => {
     if (!topicId) return
-    const topic = topicOptions.find((option) => option._id === topicId)
+    const topic = topicOptions.find((option) => option._id === topicId || option.id === topicId)
     if (!topic) return
-    if (topics.some((selected) => selected._id === topic._id)) return
-    setTopics((current) => [...current, topic])
+    const normalized = {
+      _id: String(topic._id || topic.id || ''),
+      name: String(topic.name || ''),
+    }
+    if (!normalized._id || !normalized.name) return
+    if (topics.some((selected) => selected._id === normalized._id)) return
+    setTopics((current) => [...current, normalized])
   }
 
   const removeTopic = (topicId: string) => {
@@ -656,7 +662,7 @@ export const CreateServiceListingPage = () => {
     try {
       if (selectedType === 'service') {
         if (currentStep === 2) {
-          if (!allowNewServiceListings) {
+          if (!listingId && !allowNewServiceListings) {
             toast.error('Creating new service listings is disabled by admin settings.')
             return
           }
@@ -668,25 +674,16 @@ export const CreateServiceListingPage = () => {
             toast.error('Service category is required.')
             return
           }
+          if (!description.trim()) {
+            toast.error('Description is required.')
+            return
+          }
+          if (!deliverables.trim()) {
+            toast.error('Deliverables are required.')
+            return
+          }
 
-          // Do not stamp pricingType here — step 3 sets it via /pricing so a
-          // default "fixed" cannot stick on a listing the user configures as tiered.
-          const response = await createServiceMutation.mutateAsync({
-            partnerId,
-            title: serviceTitle.trim(),
-            category: selectedCategoryId,
-            subCategory: selectedSubCategoryIds,
-            description: description.trim() || undefined,
-            deliverables: deliverables.trim() || undefined,
-          })
-          setListingId(response.data._id)
-          toast.success('Service created successfully')
           handleNext()
-          return
-        }
-
-        if (!listingId) {
-          toast.error('Service ID is missing. Go back and complete service details.')
           return
         }
 
@@ -708,12 +705,40 @@ export const CreateServiceListingPage = () => {
             }
           }
 
+          let serviceId = listingId
+          if (!serviceId) {
+            if (!allowNewServiceListings) {
+              toast.error('Creating new service listings is disabled by admin settings.')
+              return
+            }
+            const response = await createServiceMutation.mutateAsync({
+              partnerId,
+              title: serviceTitle.trim(),
+              category: selectedCategoryId,
+              subCategory: selectedSubCategoryIds,
+              description: description.trim() || undefined,
+              deliverables: deliverables.trim() || undefined,
+            })
+            serviceId = response.data._id
+            setListingId(serviceId)
+          }
+
+          if (!serviceId) {
+            toast.error('Service ID is missing. Go back and complete service details.')
+            return
+          }
+
           await updateServicePricingMutation.mutateAsync({
-            id: listingId,
+            id: serviceId,
             payload: buildServicePricingPayload(),
           })
-          toast.success('Pricing updated successfully')
+          toast.success(listingId ? 'Pricing updated successfully' : 'Service created successfully')
           handleNext()
+          return
+        }
+
+        if (!listingId) {
+          toast.error('Service ID is missing. Go back and complete service details.')
           return
         }
 
@@ -765,12 +790,17 @@ export const CreateServiceListingPage = () => {
             }
           }
 
+          const topicPayload = topics.map((topic) => ({
+            _id: topic._id,
+            name: topic.name,
+          }))
+
           const response = listingId
             ? await updateConsultationBasicMutation.mutateAsync({
                 id: listingId,
                 payload: {
                   title: consultationTitle.trim(),
-                  topics,
+                  topics: topicPayload,
                   sessionOutline: sessionOutline.trim(),
                   whoItsFor: whoItsFor.trim(),
                 },
@@ -778,7 +808,7 @@ export const CreateServiceListingPage = () => {
             : await createConsultationMutation.mutateAsync({
                 partnerId,
                 title: consultationTitle.trim(),
-                topics,
+                topics: topicPayload,
                 sessionOutline: sessionOutline.trim(),
                 whoItsFor: whoItsFor.trim(),
               })
@@ -914,12 +944,18 @@ export const CreateServiceListingPage = () => {
                         : 'Select a topic'}
                   </option>
                   {topicOptions
-                    .filter((option) => !topics.some((selected) => selected._id === option._id))
-                    .map((option) => (
-                      <option key={option._id} value={option._id}>
-                        {option.name}
-                      </option>
-                    ))}
+                    .filter((option) => {
+                      const optionId = String(option._id || option.id || '')
+                      return optionId && !topics.some((selected) => selected._id === optionId)
+                    })
+                    .map((option) => {
+                      const optionId = String(option._id || option.id || '')
+                      return (
+                        <option key={optionId} value={optionId}>
+                          {option.name}
+                        </option>
+                      )
+                    })}
                 </select>
               </div>
               {topics.length > 0 && (
@@ -1564,7 +1600,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Description
+                Description <RequiredMark />
               </label>
               <textarea
                 placeholder="Describe your service offering..."
@@ -1576,7 +1612,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Describe Deliverables
+                Describe Deliverables <RequiredMark />
               </label>
               <textarea
                 placeholder="Describe what you will deliver to your client. Be specific about outputs, formats, and any revisions included..."
@@ -1598,7 +1634,7 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {(allowSinglePriceListing || pricingTypePreference === 'fixed') && (
+              {(allowSinglePriceListing || (isEditMode && pricingTypePreference === 'fixed')) && (
                 <button
                   onClick={() => setPricingType('fixed')}
                   className={cn(
@@ -1625,7 +1661,7 @@ export const CreateServiceListingPage = () => {
                 </button>
               )}
 
-              {(allowCustomPriceListing || pricingTypePreference === 'custom') && (
+              {(allowCustomPriceListing || (isEditMode && pricingTypePreference === 'custom')) && (
                 <button
                   onClick={() => setPricingType('custom')}
                   className={cn(
@@ -1652,7 +1688,7 @@ export const CreateServiceListingPage = () => {
                 </button>
               )}
 
-              {(allowTierPriceListing || pricingTypePreference === 'tiered') && (
+              {(allowTierPriceListing || (isEditMode && pricingTypePreference === 'tiered')) && (
                 <button
                   onClick={() => setPricingType('tiered')}
                   className={cn(
@@ -2157,16 +2193,19 @@ export const CreateServiceListingPage = () => {
 
           <div className="flex flex-col items-start gap-7 md:flex-row">
             <div className="flex w-full shrink-0 flex-col gap-5 md:w-[360px]">
-              <div className="relative h-[210px] w-full overflow-hidden rounded-lg border border-white/5">
-                <img
-                  src={
-                    uploadedImages.length > 0
-                      ? uploadedImages[0].url
-                      : 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1000'
-                  }
-                  alt="cover"
-                  className="h-full w-full object-cover"
-                />
+              <div className="relative h-[210px] w-full overflow-hidden rounded-lg border border-white/5 bg-black">
+                {uploadedImages.length > 0 ? (
+                  <img
+                    src={uploadedImages[0].url}
+                    alt="cover"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
+                    <ImageIcon className="size-8" aria-hidden="true" />
+                    <span className="text-[10px]">No images uploaded</span>
+                  </div>
+                )}
                 <div className="text-body-sm absolute right-3 bottom-3 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2.5 py-1 font-bold text-white shadow-md backdrop-blur-sm">
                   <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
@@ -2176,7 +2215,7 @@ export const CreateServiceListingPage = () => {
                       d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <span>1/{uploadedImages.length || 12}</span>
+                  <span>{uploadedImages.length > 0 ? `1/${uploadedImages.length}` : '0/0'}</span>
                 </div>
               </div>
 
