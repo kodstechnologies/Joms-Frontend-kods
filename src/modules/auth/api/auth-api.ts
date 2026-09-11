@@ -56,6 +56,22 @@ export async function sendPartnerPhoneOtp(phone: string) {
   return response.data
 }
 
+export async function checkPartnerAvailability(payload: {
+  phone?: string
+  email?: string
+  excludePartnerId?: string
+}) {
+  const response = await authApiClient.post<{
+    success: boolean
+    message: string
+    data?: {
+      phone?: { value: string; available: boolean; message: string | null } | null
+      email?: { value: string; available: boolean; message: string | null } | null
+    }
+  }>('/auth/partners/check-availability', payload)
+  return response.data
+}
+
 export async function verifyPartnerPhoneOtp(phone: string, otp: string) {
   const response = await authApiClient.post('/auth/otp/verify', {
     phone,

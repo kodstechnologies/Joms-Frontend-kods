@@ -1,4 +1,4 @@
-import { venueApiClient, adminApiClient } from '@/shared/lib/axios'
+import { venueApiClient, adminApiClient, kycApiClient } from '@/shared/lib/axios'
 import type {
   VenueResponse,
   VenueDetailResponse,
@@ -635,7 +635,7 @@ export const bulkDeleteVenues = async (venueIdsOrPayload: string[] | BulkVenueAc
   const payload = Array.isArray(venueIdsOrPayload)
     ? { venueIds: venueIdsOrPayload }
     : venueIdsOrPayload
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-delete', payload)
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-delete', payload)
   return response.data
 }
 
@@ -643,57 +643,60 @@ export const bulkPauseVenues = async (venueIdsOrPayload: string[] | BulkVenueAct
   const payload = Array.isArray(venueIdsOrPayload)
     ? { venueIds: venueIdsOrPayload }
     : venueIdsOrPayload
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-pause', payload)
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-pause', payload)
   return response.data
 }
 
 export const bulkHideVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-hide', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-hide', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkDisableVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-disable', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-disable', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkExportVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-export', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-export', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkNotifyVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-notify', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-notify', {
     venueIds,
   })
   return response.data
 }
 
 export const bulkMessageVenues = async (venueIds: string[]) => {
-  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-message', {
+  const response = await kycApiClient.post('/venue-kyc/internal/admin/venues/bulk-message', {
     venueIds,
   })
   return response.data
 }
 
 export const fetchVenueReports = async (params?: Record<string, unknown>) => {
-  const response = await venueApiClient.get('/kyc/internal/admin/reports/venues', { params })
+  const response = await kycApiClient.get('/venue-kyc/internal/admin/reports/venues', { params })
   return response.data
 }
 
 export const fetchVenueReportDetail = async (id: string) => {
-  const response = await venueApiClient.get(`/kyc/internal/admin/reports/venues/${id}`)
+  const response = await kycApiClient.get(`/venue-kyc/internal/admin/reports/venues/${id}`)
   return response.data
 }
 
 export const updateVenueReport = async (id: string, payload: Record<string, unknown>) => {
-  const response = await venueApiClient.patch(`/kyc/internal/admin/reports/venues/${id}`, payload)
+  const response = await kycApiClient.patch(
+    `/venue-kyc/internal/admin/reports/venues/${id}`,
+    payload,
+  )
   return response.data
 }
 

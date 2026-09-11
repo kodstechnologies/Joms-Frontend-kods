@@ -42,11 +42,32 @@ const validateStep = (
 ): string | null => {
   if (step === 1) {
     if (!form.fullname.trim()) return 'Full name is required.'
+    if (form.fullname.trim().length < 3) return 'Full name must be at least 3 characters.'
+    if (!form.location.trim()) return 'Location is required.'
+    if (!form.bio.trim()) return 'Profile bio is required.'
+    if (!form.sampleWorkLink.trim()) return 'Sample work link is required.'
+    const sampleLink = form.sampleWorkLink.trim()
+    const normalizedLink =
+      sampleLink && !/^https?:\/\//i.test(sampleLink) ? `https://${sampleLink}` : sampleLink
+    try {
+      // eslint-disable-next-line no-new
+      new URL(normalizedLink)
+    } catch {
+      return 'Sample work link must be a valid URL.'
+    }
+    if (!form.sampleWorkFile && !form.sampleWorkFileName) {
+      return 'Sample work file is required.'
+    }
     const phoneError = validateMobileNumber(form.phoneNumber)
     if (phoneError) return phoneError
     if (!form.email.trim()) return 'Email is required.'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      return 'Please enter a valid email address.'
+    }
     if (!form.serviceType) return 'Service type is required.'
     if (form.serviceCategory.length === 0) return 'At least one service category is required.'
+    if (!form.isPhoneVerified) return 'Please verify the phone number before continuing.'
+    if (!form.isEmailVerified) return 'Please verify the email ID before continuing.'
   }
   if (step === 2) {
     if (!form.idType) return 'ID type is required.'
@@ -294,6 +315,7 @@ export const CreateExpertPage = () => {
           formData={formData}
           setFormData={setFormData}
           lockedServiceType="concierge"
+          excludePartnerId={expertId}
         />
       )}
       {currentStep === 2 && (

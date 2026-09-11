@@ -6114,11 +6114,13 @@ select.settings-control,
 
 .rbac-stats-card {
   box-sizing: border-box;
-  min-height: 88px;
+  min-height: 110px;
   border-radius: 10px;
   border: none;
   background: #141414;
   padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
 }
 
 .rbac-stats-card-label {
@@ -6147,6 +6149,50 @@ select.settings-control,
   border-radius: 6px;
   background: rgb(255 255 255 / 10%);
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+.rbac-stats-card-trend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.rbac-stats-card-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.rbac-stats-card-trend-badge.is-up {
+  background: color-mix(in srgb, var(--brand-positive, #22c55e) 15%, transparent);
+  color: var(--brand-positive, #22c55e);
+}
+
+.rbac-stats-card-trend-badge.is-down {
+  background: color-mix(in srgb, var(--brand-danger, #ef4444) 12%, transparent);
+  color: var(--brand-danger, #ef4444);
+}
+
+.rbac-stats-card-trend-badge.is-flat {
+  background: rgb(255 255 255 / 10%);
+  color: rgb(203 213 225);
+}
+
+.rbac-stats-card-trend-note {
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  color: rgb(255 255 255 / 45%);
 }
 
 .rbac-hub-tabs {

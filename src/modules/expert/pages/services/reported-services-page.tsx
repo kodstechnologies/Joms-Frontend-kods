@@ -13,6 +13,7 @@ import {
   type ServiceReportItem,
 } from '../../components/service-report-detail-modal'
 import { ExpertListHeader } from '../experts/expert-list-shared'
+import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import {
   buildServiceReportDataColumnsById,
   pickServicePreferenceColumns,
@@ -132,7 +133,12 @@ export function ServiceReportedServicesPage() {
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveDropdownId(null)
-                    navigate(`/services/management/full-view/${reportItem.serviceId}`)
+                    navigate(
+                      getServiceManagementViewPath({
+                        _id: reportItem.serviceId,
+                        partnerId: reportItem.partnerId,
+                      }),
+                    )
                   }}
                 >
                   View Service

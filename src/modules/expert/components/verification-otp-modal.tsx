@@ -49,6 +49,7 @@ export function VerificationOtpModal({
 
   const requestOtp = useCallback(async () => {
     if (!targetValue?.trim()) return
+    setIsSending(true)
     try {
       if (sendOtp) {
         await sendOtp(targetValue.trim())
@@ -59,12 +60,20 @@ export function VerificationOtpModal({
       }
       toast.success(`OTP sent to ${targetValue}`)
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
+      const error = err as { response?: { data?: { message?: string }; status?: number } }
       const msg =
         error?.response?.data?.message || 'Failed to send OTP. Please check the backend service.'
       toast.error(msg)
+      if (
+        error?.response?.status === 409 ||
+        /already using|already registered|already exists/i.test(msg)
+      ) {
+        onClose()
+      }
+    } finally {
+      setIsSending(false)
     }
-  }, [sendOtp, targetValue, type])
+  }, [onClose, sendOtp, targetValue, type])
 
   useEffect(() => {
     if (!open) return

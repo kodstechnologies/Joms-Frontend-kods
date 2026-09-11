@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Calendar, Check, Copy, ImageIcon, X } from 'lucide-react'
+import { ArrowLeft, Check, ImageIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -16,6 +16,80 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 type ModuleAccess = 'full' | 'limited' | 'none'
+
+const FIELD_INPUT_CLASS =
+  'h-10 w-full rounded-xl border border-white/10 bg-[#050505] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white/40 focus:outline-none'
+
+const VERIFY_BTN_CLASS =
+  'h-10 shrink-0 rounded-xl bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-5 text-xs font-semibold text-[#050505] transition-all hover:brightness-95 disabled:opacity-50'
+
+const VERIFY_DONE_BTN_CLASS =
+  'h-10 shrink-0 rounded-xl border border-[#1E563D]/50 bg-[#143D2B] px-5 text-xs font-semibold text-[#00E065]'
+
+/** Figma calendar: rounded square, header bar, two top rings, date block */
+function ContactCalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M6.25 2.5V4.25M13.75 2.5V4.25"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <rect
+        x="2.75"
+        y="3.75"
+        width="14.5"
+        height="13.5"
+        rx="2.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path d="M2.75 8H17.25" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="7.75" y="11" width="4.5" height="3.5" rx="0.75" fill="currentColor" />
+    </svg>
+  )
+}
+
+/** Figma copy: two overlapping rounded squares */
+function ContactCopyIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect
+        x="7.25"
+        y="7.25"
+        width="9.5"
+        height="9.5"
+        rx="2.25"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M12.75 7.25V5.5C12.75 4.257 11.743 3.25 10.5 3.25H5.5C4.257 3.25 3.25 4.257 3.25 5.5V10.5C3.25 11.743 4.257 12.75 5.5 12.75H7.25"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 const LEVEL_SHORT_LABEL: Partial<Record<PermissionLevel, string>> = {
   full: 'Full',
@@ -310,8 +384,8 @@ export function UpdateContactInformationPage() {
     : ''
 
   return (
-    <div className="min-h-screen bg-black px-4 py-8 text-white md:px-12">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    <div className="min-h-screen bg-[#050505] px-4 py-8 text-white md:px-12">
+      <div className="mx-auto flex w-full max-w-[999px] flex-col gap-6">
         {/* Page Header */}
         <div className="flex flex-col gap-1.5">
           <button
@@ -329,8 +403,8 @@ export function UpdateContactInformationPage() {
           </div>
         </div>
 
-        {/* Contact Details Card */}
-        <div className="rounded-2xl border border-white/5 bg-[#121212] p-6 md:p-8">
+        {/* Contact Details Card — Figma: #141414, ~999×532 */}
+        <div className="rounded-2xl bg-[#141414] p-6 md:px-8 md:py-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-base font-bold text-white">Contact Details</h2>
@@ -346,7 +420,7 @@ export function UpdateContactInformationPage() {
                 className="hidden"
                 onChange={handleProfileImageChange}
               />
-              <div className="flex size-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#1c1c1c] transition-all group-hover:border-[#F6CB86]/50">
+              <div className="flex size-[70px] items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#050505] transition-all group-hover:border-[#F6CB86]/50">
                 {profileImageUrl ? (
                   <img src={profileImageUrl} alt="Profile" className="size-full object-cover" />
                 ) : (
@@ -359,11 +433,11 @@ export function UpdateContactInformationPage() {
             </label>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-            {/* Phone Number (Row 1, Col 1) */}
+          <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
+            {/* Phone Number */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Phone Number <span className="text-red-500">*</span>
+                Phone Number <span className="text-white">*</span>
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -374,53 +448,48 @@ export function UpdateContactInformationPage() {
                     setIsPhoneVerified(false)
                   }}
                   placeholder="Enter Phone Number here"
-                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
+                  className={cn(FIELD_INPUT_CLASS, 'flex-1')}
                 />
                 <button
                   type="button"
                   onClick={handleOpenPhoneVerify}
                   disabled={isCheckingPhone}
-                  className={cn(
-                    'h-11 shrink-0 rounded-xl px-5 text-xs font-semibold transition-all',
-                    isPhoneVerified
-                      ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
-                      : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95 disabled:opacity-50',
-                  )}
+                  className={cn(isPhoneVerified ? VERIFY_DONE_BTN_CLASS : VERIFY_BTN_CLASS)}
                 >
                   {isCheckingPhone ? 'Checking…' : isPhoneVerified ? 'Verified ✓' : 'Verify'}
                 </button>
               </div>
             </div>
 
-            {/* Emergency Contact (Row 1, Col 2) */}
+            {/* Emergency Contact */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Emergency contact <span className="text-red-500">*</span>
+                Emergency contact <span className="text-white">*</span>
               </label>
               <input
                 type="tel"
                 value={emergencyContact}
                 onChange={(event) => setEmergencyContact(event.target.value)}
                 placeholder="Enter number here"
-                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
+                className={FIELD_INPUT_CLASS}
               />
             </div>
 
-            {/* Emergency Contact Name (Row 2, Col 1) */}
+            {/* Emergency Contact Name */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Emergency contact name <span className="text-red-500">*</span>
+                Emergency contact name <span className="text-white">*</span>
               </label>
               <input
                 type="text"
                 value={emergencyContactName}
                 onChange={(event) => setEmergencyContactName(event.target.value)}
                 placeholder="Enter name"
-                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
+                className={FIELD_INPUT_CLASS}
               />
             </div>
 
-            {/* Date of Birth (Row 2, Col 2) */}
+            {/* Date of Birth */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Date of Birth</label>
               <div className="relative">
@@ -437,7 +506,11 @@ export function UpdateContactInformationPage() {
                     }
                   }}
                   placeholder="dd-mm-yyyy"
-                  className="h-11 w-full cursor-pointer rounded-xl border border-white/10 bg-[#181818] px-4 pr-12 text-xs text-white [color-scheme:dark] transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none [&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  className={cn(
+                    FIELD_INPUT_CLASS,
+                    'cursor-pointer pr-11 [color-scheme:dark]',
+                    '[&::-webkit-calendar-picker-indicator]:pointer-events-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:opacity-0',
+                  )}
                 />
                 <button
                   type="button"
@@ -448,15 +521,15 @@ export function UpdateContactInformationPage() {
                       dateInputRef.current?.focus()
                     }
                   }}
-                  className="absolute top-1/2 right-2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                  className="absolute top-1/2 right-3 z-10 flex size-5 -translate-y-1/2 items-center justify-center text-white transition-opacity hover:opacity-80"
                   aria-label="Select date of birth"
                 >
-                  <Calendar className="size-5" />
+                  <ContactCalendarIcon />
                 </button>
               </div>
             </div>
 
-            {/* Blood Group (Row 3, Col 1) */}
+            {/* Blood Group */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Blood Group</label>
               <input
@@ -464,22 +537,22 @@ export function UpdateContactInformationPage() {
                 value={bloodGroup}
                 onChange={(event) => setBloodGroup(event.target.value)}
                 placeholder="Enter text"
-                className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] px-4 text-xs text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
+                className={FIELD_INPUT_CLASS}
               />
             </div>
 
-            {/* Assigned Role (Row 3, Col 2) */}
+            {/* Assigned Role */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Assigned role</label>
               <input
                 type="text"
                 value={assignedRolesLabel}
                 readOnly
-                className="h-11 w-full cursor-not-allowed rounded-xl border border-white/5 bg-[#141414] px-4 text-xs text-white/70 select-none"
+                className={cn(FIELD_INPUT_CLASS, 'cursor-not-allowed text-white/70 select-none')}
               />
             </div>
 
-            {/* Authenticator app code (Row 4, Col 1 - side-by-side with Enter 6 digit code) */}
+            {/* Authenticator app code — copy icon inside field */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
                 Authenticator app code
@@ -490,23 +563,27 @@ export function UpdateContactInformationPage() {
                   value={mfaSecretDisplay}
                   placeholder="Loading authenticator secret..."
                   readOnly
-                  className="h-11 w-full rounded-xl border border-white/10 bg-[#181818] pr-11 pl-4 font-mono text-xs tracking-widest text-white/90 select-all placeholder:text-white/30"
+                  className={cn(
+                    FIELD_INPUT_CLASS,
+                    'pr-11 font-mono tracking-widest text-white/90 select-all',
+                  )}
                 />
                 <button
                   type="button"
                   onClick={handleCopySecret}
                   title="Copy code"
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-white/60 transition-colors hover:text-white"
+                  className="absolute top-1/2 right-3 z-10 -translate-y-1/2 text-white transition-opacity hover:opacity-80"
+                  aria-label="Copy authenticator app code"
                 >
-                  <Copy className="size-4" />
+                  <ContactCopyIcon />
                 </button>
               </div>
             </div>
 
-            {/* Enter 6 digit code here (Row 4, Col 2 - side-by-side with Authenticator app code) */}
+            {/* Enter 6 digit code */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Enter 6 digit code here <span className="text-red-500">*</span>
+                Enter 6 digit code here <span className="text-white">*</span>
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -519,18 +596,13 @@ export function UpdateContactInformationPage() {
                     setIsMfaVerified(false)
                   }}
                   placeholder="Enter number here"
-                  className="h-11 w-full flex-1 rounded-xl border border-white/10 bg-[#181818] px-4 font-mono text-xs tracking-wider text-white transition-all placeholder:text-white/30 focus:border-white focus:ring-1 focus:ring-white focus:outline-none"
+                  className={cn(FIELD_INPUT_CLASS, 'flex-1 font-mono tracking-wider')}
                 />
                 <button
                   type="button"
                   onClick={handleVerifyMfaCode}
                   disabled={isVerifyingMfa}
-                  className={cn(
-                    'h-11 shrink-0 rounded-xl px-5 text-xs font-semibold transition-all',
-                    isMfaVerified
-                      ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
-                      : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95 disabled:opacity-50',
-                  )}
+                  className={cn(isMfaVerified ? VERIFY_DONE_BTN_CLASS : VERIFY_BTN_CLASS)}
                 >
                   {isVerifyingMfa ? 'Verifying…' : isMfaVerified ? 'Verified ✓' : 'Verify'}
                 </button>
@@ -547,7 +619,7 @@ export function UpdateContactInformationPage() {
               roles.map((role) => {
                 const rows = roleModuleMap.get(role.id) ?? []
                 return (
-                  <div key={role.id} className="create-user-permission-card">
+                  <div key={role.id} className="create-user-permission-card !bg-[#141414]">
                     <p className="create-user-permission-role">{role.name}</p>
                     <p className="create-user-permission-heading">Key Permissions</p>
 
@@ -587,7 +659,7 @@ export function UpdateContactInformationPage() {
                 )
               })
             ) : (
-              <div className="create-user-permission-card">
+              <div className="create-user-permission-card !bg-[#141414]">
                 <p className="text-brand-muted text-sm text-white/50">
                   No roles assigned to this account.
                 </p>
@@ -601,7 +673,7 @@ export function UpdateContactInformationPage() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/auth/login')}
-            className="h-11 rounded-xl border border-white/20 bg-transparent px-8 text-xs font-medium text-white transition-colors hover:bg-white/5"
+            className="h-10 rounded-xl border border-white/20 bg-transparent px-8 text-xs font-medium text-white transition-colors hover:bg-white/5"
           >
             Previous
           </button>
@@ -609,7 +681,7 @@ export function UpdateContactInformationPage() {
             type="button"
             onClick={handleSubmit}
             disabled={completeMutation.isPending}
-            className="h-11 rounded-xl bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-8 text-xs font-bold text-[#050505] transition-all hover:brightness-95 disabled:opacity-50"
+            className="h-10 rounded-xl bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-8 text-xs font-bold text-[#050505] transition-all hover:brightness-95 disabled:opacity-50"
           >
             {completeMutation.isPending ? 'Updating...' : 'Update Contact'}
           </button>

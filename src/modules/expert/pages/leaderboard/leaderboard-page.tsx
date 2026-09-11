@@ -87,27 +87,21 @@ function ShimmerBlock({ className }: { className?: string }) {
 
 function PodiumShimmer() {
   return (
-    <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
+    <div className="mx-auto flex max-w-[980px] items-end justify-center gap-6">
       {[0, 1, 2].map((index) => {
         const isFirst = index === 1
         return (
           <div
             key={`podium-shimmer-${index}`}
-            className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}
+            className={cn('flex w-[298px] flex-col items-center', isFirst ? 'pb-8' : 'pt-10')}
           >
-            <ShimmerBlock
-              className={cn(isFirst ? 'h-24 w-24 rounded-full' : 'h-16 w-16 rounded-full')}
-            />
-            <ShimmerBlock className="mt-3 h-4 w-28" />
-            <ShimmerBlock className="mt-2 h-3 w-24 bg-white/5" />
-            <div
-              className={cn(
-                'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border border-white/[0.06] px-4 py-5',
-              )}
-            >
-              <ShimmerBlock className="size-12 rounded-full" />
-              <ShimmerBlock className="h-2 w-12 bg-white/5" />
-              <ShimmerBlock className="h-7 w-16" />
+            <ShimmerBlock className="size-[50px] rounded-full" />
+            <ShimmerBlock className="mt-3 h-4 w-32" />
+            <ShimmerBlock className="mt-2 h-3 w-28 bg-white/5" />
+            <div className="mt-6 flex h-[231px] w-full flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#141414] px-4">
+              <ShimmerBlock className={cn(isFirst ? 'size-[100px]' : 'size-20', 'rounded-full')} />
+              <ShimmerBlock className="h-3 w-12 bg-white/5" />
+              <ShimmerBlock className="h-8 w-16" />
             </div>
           </div>
         )
@@ -337,7 +331,17 @@ function RankBadge({ rank }: { rank: number }) {
   )
 }
 
-function SafeAvatar({ src, name }: { src?: string | null; name: string }) {
+function SafeAvatar({
+  src,
+  name,
+  sizeClassName = 'size-12',
+  iconClassName = 'size-6',
+}: {
+  src?: string | null
+  name: string
+  sizeClassName?: string
+  iconClassName?: string
+}) {
   const [failed, setFailed] = useState(false)
   const showImage = Boolean(src) && !failed
 
@@ -346,16 +350,31 @@ function SafeAvatar({ src, name }: { src?: string | null; name: string }) {
       <img
         src={src as string}
         alt={name}
-        className="size-12 rounded-full object-cover ring-2 ring-white/10"
+        className={cn(sizeClassName, 'rounded-full object-cover ring-2 ring-white/10')}
         onError={() => setFailed(true)}
       />
     )
   }
   return (
-    <div className="grid size-12 place-items-center rounded-full bg-black/40 ring-2 ring-white/10">
-      <UserRound className="text-brand-accent size-6" />
+    <div
+      className={cn(
+        sizeClassName,
+        'grid place-items-center rounded-full bg-black/40 ring-2 ring-white/10',
+      )}
+    >
+      <UserRound className={cn('text-brand-accent', iconClassName)} />
     </div>
   )
+}
+
+function podiumSubtitle(expert: {
+  category?: string | null
+  city?: string | null
+  profession?: string | null
+}) {
+  const parts = [expert.category, expert.city].map((value) => value?.trim()).filter(Boolean)
+  if (parts.length) return parts.join(' • ')
+  return expert.profession?.trim() || '—'
 }
 
 function Stars({ rating }: { rating: number | null | undefined }) {
@@ -989,17 +1008,11 @@ export const LeaderboardPage = () => {
           <h1 className="text-2xl font-bold tracking-tight text-white">
             {isVenueLeaderboard ? 'Venue Leaderboard' : 'Expert Leaderboard'}
           </h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="mt-1 text-[14px] leading-[14px] font-normal tracking-normal text-white/50">
             {isVenueLeaderboard
               ? 'Top ranked venues based on platform performance'
               : 'Top ranked experts based on platform performance'}
           </p>
-          {leaderboard?.meta?.lastRefreshedAt && (
-            <p className="text-muted mt-1 text-[11px]">
-              Last refreshed: {new Date(leaderboard.meta.lastRefreshedAt).toLocaleString('en-IN')}
-              {isFetching ? ' · Updating…' : ''}
-            </p>
-          )}
         </div>
         <Button
           className="ui-manage-metrics ui-cta ui-cta-primary"
@@ -1010,7 +1023,7 @@ export const LeaderboardPage = () => {
         </Button>
       </div>
 
-      <div className="bg-brand-bg rounded-2xl border border-white/[0.06] px-6 py-8">
+      <div className="rounded-2xl bg-[#050505] px-6 py-10">
         {showShimmer ? (
           <PodiumShimmer />
         ) : podiumOrdered.length === 0 ? (
@@ -1018,7 +1031,7 @@ export const LeaderboardPage = () => {
             {isVenueLeaderboard ? 'No ranked venues yet.' : 'No ranked experts yet.'}
           </p>
         ) : (
-          <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
+          <div className="mx-auto flex max-w-[980px] items-end justify-center gap-6">
             {podiumOrdered.map((expert, index) => {
               const isFirst = index === 1
               const calculatedRank = expert.rank
@@ -1032,31 +1045,34 @@ export const LeaderboardPage = () => {
                   type="button"
                   onClick={() => openProfile(expert)}
                   className={cn(
-                    'flex flex-col items-center text-center transition hover:opacity-95',
-                    isFirst ? 'pt-0' : 'pt-10',
+                    'flex w-[298px] flex-col items-center text-center transition hover:opacity-95',
+                    isFirst ? 'pb-8' : 'pt-10',
                   )}
                 >
-                  <div className="relative grid place-items-center">
+                  <SafeAvatar
+                    src={expert.profileImage}
+                    name={expert.name}
+                    sizeClassName="size-[50px]"
+                    iconClassName="size-6"
+                  />
+                  <p className="mt-3 text-base font-semibold text-white">{expert.name}</p>
+                  <p className="mt-1 text-xs text-white/50">{podiumSubtitle(expert)}</p>
+
+                  <div className="mt-6 flex h-[231px] w-full flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#141414] px-4">
                     <img
                       src={iconSrc}
                       alt={`Rank ${calculatedRank}`}
-                      className={cn('object-contain drop-shadow-xl', isFirst ? 'h-24' : 'h-16')}
+                      className={cn(
+                        'object-contain drop-shadow-xl',
+                        isFirst ? 'size-[100px]' : 'size-20',
+                      )}
                     />
-                  </div>
-                  <p className="text-body-md mt-3 font-bold text-white">{expert.name}</p>
-                  <p className="text-body-sm text-muted">{expert.profession}</p>
-
-                  <div
-                    className={cn(
-                      'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border px-4 py-5',
-                      isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
-                    )}
-                  >
-                    <SafeAvatar src={expert.profileImage} name={expert.name} />
-                    <span className="text-muted text-[10px] font-medium tracking-wide uppercase">
+                    <span className="mt-4 text-xs font-medium tracking-wide text-white/45">
                       Score
                     </span>
-                    <span className="text-h3 font-bold text-white">{expert.score}</span>
+                    <span className="mt-1 text-3xl font-bold tracking-tight text-white">
+                      {expert.score}
+                    </span>
                   </div>
                 </button>
               )

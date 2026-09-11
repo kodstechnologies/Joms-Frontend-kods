@@ -75,7 +75,7 @@ export function VenueReportedVenuesPage() {
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
-                    navigate(`/venues/management/full-view/${reportItem.venueId}`)
+                    navigate(`/venues/management/profile/${reportItem.venueId}`)
                   }}
                 >
                   View Venue

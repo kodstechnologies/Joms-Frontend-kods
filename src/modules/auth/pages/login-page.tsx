@@ -407,16 +407,36 @@ export function LoginPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 text-black">
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/disclaimer"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Disclaimer
             </a>
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/terms-of-service"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Terms of Service
             </a>
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/privacy"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Privacy
             </a>
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/cookies-policy"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Cookies
             </a>
           </div>
