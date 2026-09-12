@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowDown,
   ArrowUp,
-  ArrowUpDown,
   CalendarDays,
   ExternalLink,
   Search,
@@ -17,6 +16,7 @@ import {
   AdvanceFilterIcon,
   ExportDataIcon,
   ManageMetricsIcon,
+  SortOutlineIcon,
 } from '@/shared/components/icons/action-button-icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 
@@ -923,12 +923,12 @@ export const LeaderboardPage = () => {
     (columnId: string) => {
       const active = serverSort.sorting[0]
       if (!active || active.id !== columnId) {
-        return <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
+        return <SortOutlineIcon className="text-white" />
       }
       return active.desc ? (
-        <ArrowDown className="text-brand-primary size-[18px]" aria-hidden="true" />
+        <ArrowDown className="text-brand-primary size-4" aria-hidden="true" />
       ) : (
-        <ArrowUp className="text-brand-primary size-[18px]" aria-hidden="true" />
+        <ArrowUp className="text-brand-primary size-4" aria-hidden="true" />
       )
     },
     [serverSort.sorting],
@@ -1008,7 +1008,7 @@ export const LeaderboardPage = () => {
           <h1 className="text-2xl font-bold tracking-tight text-white">
             {isVenueLeaderboard ? 'Venue Leaderboard' : 'Expert Leaderboard'}
           </h1>
-          <p className="mt-1 text-[14px] leading-[14px] font-normal tracking-normal text-white/50">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             {isVenueLeaderboard
               ? 'Top ranked venues based on platform performance'
               : 'Top ranked experts based on platform performance'}
@@ -1018,7 +1018,7 @@ export const LeaderboardPage = () => {
           className="ui-manage-metrics ui-cta ui-cta-primary"
           onClick={() => navigate(metricsPath)}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
@@ -1157,7 +1157,7 @@ export const LeaderboardPage = () => {
                         setSelectedIds([])
                       }
                     }}
-                    className="rounded border-slate-700 bg-transparent"
+                    className="ui-table-checkbox"
                   />
                 </th>
                 {visibleColumns.map((column) => {
@@ -1201,7 +1201,7 @@ export const LeaderboardPage = () => {
                                 : current.filter((id) => id !== row.partnerId),
                             )
                           }}
-                          className="rounded border-slate-700 bg-transparent"
+                          className="ui-table-checkbox"
                         />
                       </td>
                       {visibleColumns.map((column) => (

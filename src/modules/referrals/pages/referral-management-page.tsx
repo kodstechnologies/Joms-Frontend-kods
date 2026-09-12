@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, Mail, Trash2 } from 'lucide-react'
+import { ClipboardList, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
@@ -84,6 +84,48 @@ const DEFAULT_METRIC_IDS =
   DEFAULT_REFERRALS_ACTIVE_METRIC_IDS.length > 0
     ? DEFAULT_REFERRALS_ACTIVE_METRIC_IDS
     : REFERRAL_METRIC_DEFINITIONS.map((metric) => metric.id)
+
+/** Figma resend: envelope with circular refresh arrow */
+function ResendInvitationIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M4 7.5C4 6.119 5.119 5 6.5 5H17.5C18.881 5 20 6.119 20 7.5V14.5C20 15.881 18.881 17 17.5 17H6.5C5.119 17 4 15.881 4 14.5V7.5Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.5 7L12 12L18.5 7"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17.5 19.5C19.433 19.5 21 17.933 21 16"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M19.25 14.75L21 16L19.25 17.25"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 const dash = (value: unknown) => {
   if (value === null || value === undefined || value === '') return '—'
@@ -572,10 +614,10 @@ export function ReferralManagementPage() {
           label="Open expert referral actions"
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? id : null)}
-          menuWidth={210}
+          menuWidth={178}
         >
           <TableActionsItem
-            icon={<Eye className="size-3.5" />}
+            icon={<ClipboardList className="size-3.5" strokeWidth={1.75} />}
             onClick={() => {
               setActiveDropdownId(null)
               setDetailsExpert(record)
@@ -583,14 +625,18 @@ export function ReferralManagementPage() {
           >
             View Details
           </TableActionsItem>
-          <TableActionsItem icon={<Mail className="size-3.5" />} onClick={() => handleResend(id)}>
+          <TableActionsItem
+            icon={<ResendInvitationIcon className="size-3.5" />}
+            onClick={() => handleResend(id)}
+          >
             Resend Invitation
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="size-3.5 text-rose-300" />}
+            className="ui-table-actions-item-danger"
+            icon={<Trash2 className="size-3.5" strokeWidth={1.75} />}
             onClick={() => openDeleteModal(record)}
           >
-            <span className="text-rose-300">Delete Referral</span>
+            Delete Referral
           </TableActionsItem>
         </TableActionsDropdown>
       )
@@ -621,7 +667,7 @@ export function ReferralManagementPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="referral-page-title">Referral Management</h1>
-          <p className="referral-page-subtitle mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track and manage user-driven and platform-driven referrals
           </p>
         </div>
@@ -632,7 +678,7 @@ export function ReferralManagementPage() {
               navigate('/metrics/referrals?returnTo=/referrals/management&section=dashboard')
             }
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 

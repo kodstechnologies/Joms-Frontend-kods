@@ -511,7 +511,9 @@ export function AssignRefundAuthorityPage() {
         <section className={cn(cardClass, 'px-5 py-5')}>
           <div>
             <h1 className="text-h4 text-brand-text">{heading}</h1>
-            <p className="text-body-sm text-muted mt-1">{subtitle}</p>
+            <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+              {subtitle}
+            </p>
           </div>
 
           <div className="my-5 border-b border-white/[0.06]" />

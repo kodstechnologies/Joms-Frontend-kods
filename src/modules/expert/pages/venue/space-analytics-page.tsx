@@ -105,7 +105,7 @@ export function SpaceAnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button className="ui-manage-metrics h-9" onClick={() => navigate(manageMetricsPath)}>
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button

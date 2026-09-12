@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
@@ -154,10 +154,17 @@ function InfoField({ label, value }: { label: string; value?: string | number | 
 export function ExpertApplicationViewPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
 
-  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const tabFromQuery = searchParams.get('tab')
+  const initialTab: TabKey =
+    tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview'
+      ? tabFromQuery
+      : 'overview'
+
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalVariant, setModalVariant] = useState<DecisionVariant>('approve')
   const [modalTarget, setModalTarget] = useState<DecisionTarget>('kyc')
@@ -167,6 +174,12 @@ export function ExpertApplicationViewPage() {
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
+
+  useEffect(() => {
+    if (tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview') {
+      setActiveTab(tabFromQuery)
+    }
+  }, [tabFromQuery, id])
 
   const { data, isLoading, isError, error } = useExpertApplicationView(id)
   const { data: assigneesData } = useEscalationAssignees()

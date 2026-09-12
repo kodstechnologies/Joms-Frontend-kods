@@ -68,7 +68,7 @@ export function SupportDashboardPage() {
           <h1 className="text-h2 text-brand-text font-semibold tracking-tight">
             Support Management
           </h1>
-          <p className="text-body-sm text-muted mt-1 leading-5">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight
           </p>
@@ -78,9 +78,9 @@ export function SupportDashboardPage() {
             type="button"
             onClick={handleExport}
             disabled={exportMutation.isPending}
-            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+            className="ui-export-data ui-cta ui-cta-primary"
           >
-            <ExportDataIcon className="size-5 shrink-0" />
+            <ExportDataIcon />
             Export Data
           </button>
           <button
@@ -88,7 +88,7 @@ export function SupportDashboardPage() {
             onClick={() => navigate('/metrics/support-dashboard')}
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </button>
         </div>

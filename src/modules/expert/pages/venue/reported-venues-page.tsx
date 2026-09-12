@@ -114,7 +114,7 @@ export function VenueReportedVenuesPage() {
           className="ui-manage-metrics h-9 w-full md:w-auto"
           onClick={() => navigate('/metrics/venue-reported?returnTo=/venues/management/reported')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

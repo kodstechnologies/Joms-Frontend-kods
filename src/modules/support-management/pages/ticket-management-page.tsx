@@ -10,8 +10,6 @@ import {
   SlidersHorizontal,
   Tag,
   Trash2,
-  TrendingDown,
-  TrendingUp,
 } from 'lucide-react'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
@@ -77,6 +75,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -209,29 +208,13 @@ function TicketMetricCard({
   percentage: number
   direction: 'up' | 'down'
 }) {
-  const isUp = direction === 'up'
-
   return (
     <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-center border border-white/[0.06] p-5">
       <p className="text-body-sm-medium text-muted">{title}</p>
       <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
-      <div className="mt-3">
-        <span
-          className={cn(
-            'text-body-sm-semibold inline-flex items-center gap-1 rounded-md px-2 py-0.5',
-            isUp
-              ? 'bg-brand-positive/15 text-brand-positive'
-              : 'bg-brand-danger/15 text-brand-danger',
-          )}
-        >
-          {isUp ? (
-            <TrendingUp className="size-3" strokeWidth={2} />
-          ) : (
-            <TrendingDown className="size-3" strokeWidth={2} />
-          )}
-          {isUp ? '+' : ''}
-          {percentage}% vs last month
-        </span>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <TrendBadge direction={direction}>{formatTrendPercent(percentage, direction)}</TrendBadge>
+        <span className="text-muted text-[11px]">vs last month</span>
       </div>
     </div>
   )
@@ -392,7 +375,7 @@ export function TicketManagementPage() {
       const rows = stats.map((stat) => [
         stat.title,
         stat.value,
-        `${stat.direction === 'up' ? '+' : ''}${stat.percentage}%`,
+        formatTrendPercent(stat.percentage, stat.direction),
       ])
       const date = new Date().toISOString().slice(0, 10)
       await exportDataToFile(headers, rows, 'excel', `ticket_management_metrics_${date}`)
@@ -540,7 +523,7 @@ export function TicketManagementPage() {
         <input
           type="checkbox"
           aria-label="Select all"
-          className="rounded border-white/20"
+          className="ui-table-checkbox"
           checked={tickets.length > 0 && selectedIds.length === tickets.length}
           onChange={toggleSelectAll}
         />
@@ -549,7 +532,7 @@ export function TicketManagementPage() {
         <input
           type="checkbox"
           aria-label={`Select ${row.original.id}`}
-          className="rounded border-white/20"
+          className="ui-table-checkbox"
           checked={selectedIds.includes(row.original.id)}
           onChange={() => toggleSelect(row.original.id)}
         />
@@ -765,7 +748,7 @@ export function TicketManagementPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h1 text-brand-text tracking-tight">Ticket Management</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight
           </p>
@@ -786,7 +769,7 @@ export function TicketManagementPage() {
             onClick={() => navigate('/metrics/ticket-management?section=table')}
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <ManageMetricsIcon className="size-4 shrink-0" aria-hidden="true" />
+            <ManageMetricsIcon />
             Manage Metrics
           </button>
         </div>

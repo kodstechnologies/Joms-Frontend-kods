@@ -707,7 +707,7 @@ export const ServiceManagementPage = () => {
               input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
           }}
           onChange={toggleVisibleServices}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -717,7 +717,7 @@ export const ServiceManagementPage = () => {
           checked={selectedServiceIds.includes(row.original._id)}
           onChange={() => toggleServiceSelection(row.original._id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -938,7 +938,7 @@ export const ServiceManagementPage = () => {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold text-white md:text-3xl">Service Management</h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Comprehensive service data and admin controls
           </p>
         </div>
@@ -949,7 +949,7 @@ export const ServiceManagementPage = () => {
               navigate('/metrics/service-management?returnTo=/services/management&section=table')
             }
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
         </div>
@@ -1150,9 +1150,9 @@ export const ServiceManagementPage = () => {
         heading={
           selectedServiceIds.length > 1
             ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
-            : 'Are you sure you want  Pause this Service.'
+            : undefined
         }
-        description="This will result in hiding this service from users."
+        description="Pausing this service will temporarily stop all new requests."
         submitLabel="Pause Service"
         reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
         onClose={() => setIsBulkPauseModalOpen(false)}

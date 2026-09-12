@@ -1,13 +1,7 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { MoreVertical } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
-
-type MenuPosition = {
-  top: number
-  left: number
-}
 
 type TableActionsDropdownProps = {
   label: string
@@ -19,6 +13,10 @@ type TableActionsDropdownProps = {
   tone?: 'dark' | 'light'
 }
 
+/**
+ * Opens the actions menu directly under the ⋮ (Figma).
+ * Inline top/right so placement cannot be overridden by other CSS.
+ */
 export function TableActionsDropdown({
   label,
   isOpen,
@@ -28,49 +26,35 @@ export function TableActionsDropdown({
   menuWidth = 192,
   tone = 'light',
 }: TableActionsDropdownProps) {
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const [position, setPosition] = useState<MenuPosition>({ top: 0, left: 0 })
+  const rootRef = useRef<HTMLDivElement>(null)
 
-  const updatePosition = useCallback(() => {
-    const trigger = triggerRef.current
-    if (!trigger) return
-
-    const rect = trigger.getBoundingClientRect()
-    const menuHeight = menuRef.current?.offsetHeight ?? 0
-    const width = menuRef.current?.offsetWidth ?? menuWidth
-    const gap = 4
-
-    const spaceBelow = window.innerHeight - rect.bottom
-    const openUpward =
-      menuHeight > 0 && spaceBelow < menuHeight + gap && rect.top > menuHeight + gap
-
-    const top = openUpward ? rect.top - menuHeight - gap : rect.bottom + gap
-    const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8)
-
-    setPosition({ top, left })
-  }, [menuWidth])
-
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!isOpen) return
 
-    updatePosition()
-    const frame = requestAnimationFrame(updatePosition)
-
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
+    const onPointerDown = (event: MouseEvent) => {
+      if (rootRef.current?.contains(event.target as Node)) return
+      onOpenChange(false)
     }
-  }, [isOpen, updatePosition, children])
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onOpenChange(false)
+    }
+
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isOpen, onOpenChange])
 
   return (
-    <>
+    <div
+      ref={rootRef}
+      className="relative inline-flex shrink-0"
+      style={{ position: 'relative', width: 24, height: 24 }}
+    >
       <button
-        ref={triggerRef}
         type="button"
         aria-label={label}
         aria-expanded={isOpen}
@@ -79,7 +63,7 @@ export function TableActionsDropdown({
           onOpenChange(!isOpen)
         }}
         className={cn(
-          'rounded p-1 transition-colors',
+          'flex size-full items-center justify-center rounded transition-colors',
           tone === 'light'
             ? 'text-muted hover:text-brand-text hover:bg-white/10'
             : 'text-brand-muted hover:text-brand-text hover:bg-white/10',
@@ -88,29 +72,34 @@ export function TableActionsDropdown({
         <MoreVertical className="icon-sm" aria-hidden="true" />
       </button>
 
-      {isOpen &&
-        createPortal(
-          <>
-            <div
-              className="fixed inset-0 z-[100]"
-              onClick={() => onOpenChange(false)}
-              aria-hidden="true"
-            />
-            <div
-              ref={menuRef}
-              style={{ top: position.top, left: position.left, minWidth: menuWidth }}
-              className={cn(
-                'ui-table-actions-menu fixed z-[101]',
-                tone === 'dark' && 'ui-table-actions-menu-dark',
-                menuClassName,
-              )}
-            >
-              {children}
-            </div>
-          </>,
-          document.body,
-        )}
-    </>
+      {isOpen ? (
+        <div
+          role="menu"
+          className={cn(
+            'ui-table-actions-menu absolute top-full right-0 z-[101] mt-2',
+            tone === 'dark' && 'ui-table-actions-menu-dark',
+            menuClassName,
+          )}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            left: 'auto',
+            width: menuWidth,
+            minWidth: menuWidth,
+            maxWidth: menuWidth,
+            zIndex: 101,
+            marginTop: 8,
+            marginRight: 0,
+            marginBottom: 0,
+            marginLeft: 0,
+            transform: 'none',
+          }}
+        >
+          {children}
+        </div>
+      ) : null}
+    </div>
   )
 }
 

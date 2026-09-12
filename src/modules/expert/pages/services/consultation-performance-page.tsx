@@ -549,9 +549,9 @@ export function ConsultationPerformancePage() {
         <Button
           type="button"
           onClick={() => navigate(manageMetricsPath)}
-          className="ui-manage-metrics h-10 rounded-xl px-5 text-sm font-semibold sm:w-auto"
+          className="ui-manage-metrics"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

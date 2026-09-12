@@ -74,8 +74,8 @@ export function buildSupportDashboardMetricCardsFromApi(
       title: labelById.get(id) ?? card.title,
       value: displayValue(id, card.value),
       trend: {
-        direction: (card.changeDirection ?? 'up') as 'up' | 'down',
-        percentage: card.changePercent ?? 0,
+        direction: card.changeDirection ?? ((card.changePercent ?? 0) < 0 ? 'down' : 'up'),
+        percentage: Math.abs(card.changePercent ?? 0),
         label: 'vs last month',
       },
     })

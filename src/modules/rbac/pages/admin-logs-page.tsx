@@ -5,8 +5,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
-import { useFlagAuditLog, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac'
-import { fetchRoleLogs, fetchSubAdminLogs } from '../api/rbac-api'
+import { useFlagAuditLog, useMySubAdminLogs, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac'
+import { fetchMySubAdminLogs, fetchRoleLogs, fetchSubAdminLogs } from '../api/rbac-api'
 import type { AdminLogSubject, AuditLog } from '../types/rbac'
 import { AdminNoteModal } from '../components/admin-note-modal'
 import { FlagActionModal } from '../components/flag-action-modal'
@@ -163,7 +163,7 @@ function UserOverviewCard({
   subject?: AdminLogSubject
   onOpenUser: (userId: string) => void
 }) {
-  if (!subject || subject.type !== 'subAdmin') {
+  if (!subject || (subject.type !== 'subAdmin' && subject.type !== 'superadmin')) {
     return (
       <div className="admin-info-card admin-info-card-loading">
         <RbacLoader label="Loading overview..." className="min-h-[120px]" />
@@ -171,8 +171,12 @@ function UserOverviewCard({
     )
   }
 
-  const roleLabel = subject.roles.map((r) => r.name).join(', ') || '—'
-  const createdBy = subject.createdBy || 'Super Admin'
+  const isSuperAdmin = subject.type === 'superadmin'
+  const roleLabel = isSuperAdmin
+    ? subject.roleLabel || 'Super Admin'
+    : subject.roles.map((r) => r.name).join(', ') || '—'
+  const createdBy = isSuperAdmin ? 'System' : subject.createdBy || 'Super Admin'
+  const displayName = subject.fullname || '—'
 
   return (
     <AdminInfoCard createdAt={subject.createdAt} createdBy={createdBy}>
@@ -183,7 +187,7 @@ function UserOverviewCard({
             onClick={() => onOpenUser(subject.id)}
             className="admin-info-name-link"
           >
-            {subject.fullname}
+            {displayName}
           </button>
         </OverviewField>
         <OverviewField label="Role">
@@ -252,6 +256,7 @@ export function AdminLogsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const isRole = location.pathname.includes('/roles/')
+  const isSelfProfile = location.pathname.includes('/my-profile/logs')
 
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
@@ -279,21 +284,31 @@ export function AdminLogsPage() {
   )
   const historyParams = { page: 1, limit: 50 }
 
+  const myLogsQuery = useMySubAdminLogs(logParams, {
+    enabled: isSelfProfile,
+  })
   const subAdminLogsQuery = useSubAdminLogs(id, logParams, {
-    enabled: Boolean(id) && !isRole,
+    enabled: Boolean(id) && !isRole && !isSelfProfile,
   })
   const roleLogsQuery = useRoleLogs(id, logParams, {
     enabled: Boolean(id) && isRole,
   })
-  const logsQuery = isRole ? roleLogsQuery : subAdminLogsQuery
+  const logsQuery = isSelfProfile ? myLogsQuery : isRole ? roleLogsQuery : subAdminLogsQuery
 
+  const historyMyQuery = useMySubAdminLogs(historyParams, {
+    enabled: isSelfProfile && historyOpen,
+  })
   const historySubAdminQuery = useSubAdminLogs(id, historyParams, {
-    enabled: Boolean(id) && historyOpen && !isRole,
+    enabled: Boolean(id) && historyOpen && !isRole && !isSelfProfile,
   })
   const historyRoleQuery = useRoleLogs(id, historyParams, {
     enabled: Boolean(id) && historyOpen && isRole,
   })
-  const historyQuery = isRole ? historyRoleQuery : historySubAdminQuery
+  const historyQuery = isSelfProfile
+    ? historyMyQuery
+    : isRole
+      ? historyRoleQuery
+      : historySubAdminQuery
 
   const flagMutation = useFlagAuditLog()
 
@@ -309,7 +324,11 @@ export function AdminLogsPage() {
 
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
-      const result = isRole ? await fetchRoleLogs(id, params) : await fetchSubAdminLogs(id, params)
+      const result = isSelfProfile
+        ? await fetchMySubAdminLogs(params)
+        : isRole
+          ? await fetchRoleLogs(id, params)
+          : await fetchSubAdminLogs(id, params)
       return { data: result.data?.logs ?? [] }
     }
     return createPrefixedListExportHandler(
@@ -318,7 +337,7 @@ export function AdminLogsPage() {
       'rbac_admin_logs_export',
       { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [enhancedSearch.globalSearch, id, isRole])
+  }, [enhancedSearch.globalSearch, id, isRole, isSelfProfile])
 
   const {
     onAdvancedFilter,
@@ -331,14 +350,19 @@ export function AdminLogsPage() {
   })
 
   const pageTitle = isRole ? 'Admin Logs' : 'User Logs'
+  const profileFallback = isSelfProfile ? '/settings/access/my-profile' : '/settings/access'
   const breadcrumbName =
     subject?.type === 'role'
       ? subject.name
       : subject?.type === 'subAdmin'
         ? subject.fullname
-        : isRole
-          ? 'Admin'
-          : 'User'
+        : subject?.type === 'superadmin'
+          ? subject.fullname
+          : isRole
+            ? 'Admin'
+            : isSelfProfile
+              ? 'My Profile'
+              : 'User'
 
   const handleViewRoleUsers = useCallback((roleId: string) => {
     setRoleUsersModalId(roleId)
@@ -346,9 +370,13 @@ export function AdminLogsPage() {
 
   const handleOpenUser = useCallback(
     (userId: string) => {
+      if (isSelfProfile || subject?.type === 'superadmin') {
+        navigate('/settings/access/my-profile')
+        return
+      }
       navigate(`/settings/access/users/${userId}`)
     },
-    [navigate],
+    [isSelfProfile, navigate, subject?.type],
   )
 
   const openHistory = useCallback(() => {
@@ -548,7 +576,7 @@ export function AdminLogsPage() {
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
+            onClick={() => navigateBackOrFallback(navigate, profileFallback)}
             className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -569,7 +597,7 @@ export function AdminLogsPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/admin-logs')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

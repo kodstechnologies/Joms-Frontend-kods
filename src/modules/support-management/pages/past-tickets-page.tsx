@@ -180,14 +180,12 @@ export function PastTicketsPage() {
 
     const selectColumn: ColumnDef<SupportTicket> = {
       id: 'select',
-      header: () => (
-        <input type="checkbox" aria-label="Select all" className="rounded border-white/20" />
-      ),
+      header: () => <input type="checkbox" aria-label="Select all" className="ui-table-checkbox" />,
       cell: ({ row }) => (
         <input
           type="checkbox"
           aria-label={`Select ${row.original.id}`}
-          className="rounded border-white/20"
+          className="ui-table-checkbox"
         />
       ),
       meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
@@ -384,7 +382,7 @@ export function PastTicketsPage() {
           </button>
           <div>
             <h1 className="text-h2 text-brand-text tracking-tight">Past Tickets</h1>
-            <p className="text-body-md text-muted mt-1 leading-5">
+            <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
               {tickets[0]?.reporter ?? userId ?? 'Reporter'}
             </p>
           </div>
@@ -394,7 +392,7 @@ export function PastTicketsPage() {
           onClick={() => navigate('/metrics/past-tickets?section=table')}
           className="ui-manage-metrics ui-cta ui-cta-primary shrink-0"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </button>
       </div>

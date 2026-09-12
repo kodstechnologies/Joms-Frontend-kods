@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Bell, Download, Eye, TrendingUp } from 'lucide-react'
+import { Bell, Download, Eye } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 
 import { useBranding } from '@/app/providers/use-branding'
 import type { InvoiceRow } from '@/modules/payments/types/finance-table-rows'
@@ -70,15 +71,14 @@ function SummaryCard({
   change: string
   changeNote: string
 }) {
+  const isDown = change.trim().startsWith('-')
+  const direction = isDown ? 'down' : 'up'
   return (
     <div className="bg-brand-surface rounded-xl border border-white/[0.06] p-5">
       <p className="text-body-sm-medium text-muted">{label}</p>
       <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
-          <TrendingUp className="size-3" />
-          {change}
-        </span>
+        <TrendBadge direction={direction}>{ensureTrendChangeSign(change, direction)}</TrendBadge>
         <span className="text-body-sm text-muted">{changeNote}</span>
       </div>
     </div>
@@ -248,7 +248,7 @@ export function InvoicesBillingPage() {
                   if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
                 }}
                 onChange={toggleVisibleRows}
-                className="rounded border-slate-700 bg-transparent"
+                className="ui-table-checkbox"
               />
             ),
             cell: ({ row }) => (
@@ -258,7 +258,7 @@ export function InvoicesBillingPage() {
                 checked={selectedRowIds.includes(row.original.id)}
                 onChange={() => toggleRowSelection(row.original.id)}
                 onClick={(event) => event.stopPropagation()}
-                className="rounded border-slate-700 bg-transparent"
+                className="ui-table-checkbox"
               />
             ),
             meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
@@ -336,7 +336,7 @@ export function InvoicesBillingPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Invoices & Billing</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track revenue, payouts, and financial performance
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
@@ -348,7 +348,7 @@ export function InvoicesBillingPage() {
           </p>
         </div>
         <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-invoices')}>
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

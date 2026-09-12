@@ -90,18 +90,29 @@ export type CommunicationMetricCard = {
 
 export type CommunicationMetrics = {
   cards: CommunicationMetricCard[]
+  trends?: Record<string, { direction: 'up' | 'down'; percentage: number; label: string }>
   totalMessagesSent: number
   activeCampaigns: number
   channelsUsed: number
   scheduledMessages: number
   failedUndelivered: number
+  draftMessages?: number
+  withdrawnCommunications?: number
+  totalCommunications?: number
+  totalClicks?: number
   sent?: number
   delivered?: number
   failed?: number
+  opened?: number
+  clicked?: number
+  bounced?: number
   openRate?: number
   clickThroughRate?: number
   deliveryRate?: number
   bounceRate?: number
+  mostUsedChannel?: string
+  mostEngagedAudience?: string
+  topPerformingCampaign?: string
 }
 
 export type CommunicationOption = {

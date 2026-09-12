@@ -86,7 +86,7 @@ export function createExpertSelectColumn({
           }
         }}
         onChange={toggleVisible}
-        className="rounded border-slate-700 bg-transparent"
+        className="ui-table-checkbox"
       />
     ),
     cell: ({ row }) => (
@@ -96,7 +96,7 @@ export function createExpertSelectColumn({
         checked={selectedExpertIds.includes(row.original.expertId)}
         onChange={() => toggleOne(row.original.expertId)}
         onClick={(event) => event.stopPropagation()}
-        className="rounded border-slate-700 bg-transparent"
+        className="ui-table-checkbox"
       />
     ),
     meta: {

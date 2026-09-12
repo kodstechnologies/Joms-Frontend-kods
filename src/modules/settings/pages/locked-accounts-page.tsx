@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpDown, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, X } from 'lucide-react'
+import { SortOutlineIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -148,12 +149,12 @@ export function LockedAccountsPage() {
   const renderSortIcon = (columnId: string) => {
     const active = serverSort.sorting[0]
     if (!active || active.id !== columnId) {
-      return <ArrowUpDown className="text-muted/50 size-[14px]" aria-hidden="true" />
+      return <SortOutlineIcon className="text-white" />
     }
     return active.desc ? (
-      <ArrowDown className="text-brand-primary size-[14px]" aria-hidden="true" />
+      <ArrowDown className="text-brand-primary size-4" aria-hidden="true" />
     ) : (
-      <ArrowUp className="text-brand-primary size-[14px]" aria-hidden="true" />
+      <ArrowUp className="text-brand-primary size-4" aria-hidden="true" />
     )
   }
 

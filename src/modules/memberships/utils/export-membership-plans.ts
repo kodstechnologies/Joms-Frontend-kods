@@ -81,8 +81,10 @@ export function buildMembershipPlanExportTable(plans: MembershipPlan[]) {
 export async function fetchAllMembershipPlansForExport(params: {
   search?: string
   status?: MembershipPlan['status']
+  type?: MembershipPlan['type']
 }) {
   const firstPage = await fetchMemberships({
+    type: params.type ?? 'expert',
     search: params.search,
     status: params.status,
     page: 1,
@@ -94,6 +96,7 @@ export async function fetchAllMembershipPlansForExport(params: {
 
   for (let page = 2; page <= totalPages; page += 1) {
     const nextPage = await fetchMemberships({
+      type: params.type ?? 'expert',
       search: params.search,
       status: params.status,
       page,

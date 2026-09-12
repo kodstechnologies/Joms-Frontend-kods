@@ -21,7 +21,6 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { COMMUNICATION_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
@@ -40,6 +39,7 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { fetchCommunications } from '../../api/communication-api'
+import { buildCommunicationMetricCards } from '../../utils/communication-metrics'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
@@ -92,12 +92,34 @@ const EXPORT_COLUMN_MAP: Record<
   'last-updated': { header: 'Last Updated', accessor: (c) => exportDisplayValue(c.updatedAtLabel) },
 }
 
-const COMMUNICATION_SORT_FIELD_MAP = buildDefaultTableSortFieldMap(Object.keys(EXPORT_COLUMN_MAP))
+const COMMUNICATION_SORT_FIELD_MAP: Record<string, string | null> = {
+  'message-id': 'messageId',
+  'campaign-id': 'campaignId',
+  title: 'title',
+  channel: 'channel',
+  type: 'type',
+  audience: 'audience',
+  'audience-size': 'audienceSize',
+  'content-preview': 'messageContent',
+  status: 'status',
+  priority: 'priority',
+  'created-by': 'createdBy',
+  'created-on': 'createdAt',
+  'created-at': 'createdAt',
+  'scheduled-at': 'scheduledAt',
+  'sent-at': 'sentAt',
+  'delivered-count': 'deliveredCount',
+  'failed-count': 'failedCount',
+  'open-rate': 'openRate',
+  'click-rate': 'clickRate',
+  'last-updated': 'updatedAt',
+}
 
 export function CommunicationListPage() {
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: COMMUNICATION_SORT_FIELD_MAP,
+    defaultSortBy: 'created-on',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
@@ -182,11 +204,12 @@ export function CommunicationListPage() {
   })
 
   const stats = useMemo(() => {
-    const cards = metricsQuery.data?.cards ?? []
-    if (!cards.length) return []
-    const catalogCards = cards.filter((card) => COMMUNICATION_METRIC_ID_SET.has(card.id))
+    if (!metricsQuery.data) return []
+    const catalogCards = buildCommunicationMetricCards(metricsQuery.data).filter((card) =>
+      COMMUNICATION_METRIC_ID_SET.has(card.id),
+    )
     return orderByActiveMetricIds(catalogCards, filteredActiveMetricIds)
-  }, [filteredActiveMetricIds, metricsQuery.data?.cards])
+  }, [filteredActiveMetricIds, metricsQuery.data])
 
   const columns = useMemo(() => {
     const dataColumnsById: Record<string, ColumnDef<Communication>> = {
@@ -296,8 +319,8 @@ export function CommunicationListPage() {
 
     const selectColumn: ColumnDef<Communication> = {
       id: 'select',
-      header: () => <input type="checkbox" className="rounded border-white/20 bg-transparent" />,
-      cell: () => <input type="checkbox" className="rounded border-white/20 bg-transparent" />,
+      header: () => <input type="checkbox" className="ui-table-checkbox" />,
+      cell: () => <input type="checkbox" className="ui-table-checkbox" />,
       meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
       enableSorting: false,
     }
@@ -321,7 +344,7 @@ export function CommunicationListPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Communication Management</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Create and manage announcements across partner audiences.
           </p>
         </div>
@@ -331,7 +354,7 @@ export function CommunicationListPage() {
             onClick={() => navigate('/metrics/communication')}
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </button>
           <button

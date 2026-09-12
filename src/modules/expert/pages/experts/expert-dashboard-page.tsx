@@ -12,16 +12,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { RefreshCw, Star } from 'lucide-react'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 
 import { fetchExpertDashboardAnalytics } from '../../api/expert-api'
 import { EXPERT_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
-import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
 
 type Metric = {
   id: string
@@ -85,21 +86,9 @@ function MetricCard({ metric }: { metric: Metric }) {
       <div className="mt-auto flex items-center gap-2 pt-3">
         {metric.change ? (
           <>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                metric.changeType === 'down'
-                  ? 'bg-brand-danger/10 text-brand-danger'
-                  : 'bg-brand-positive/15 text-brand-positive',
-              )}
-            >
-              {metric.changeType === 'down' ? (
-                <TrendingDown className="size-3" />
-              ) : (
-                <TrendingUp className="size-3" />
-              )}
-              {metric.change}
-            </span>
+            <TrendBadge direction={metric.changeType === 'down' ? 'down' : 'up'}>
+              {ensureTrendChangeSign(metric.change, metric.changeType === 'down' ? 'down' : 'up')}
+            </TrendBadge>
             {metric.changeNote && (
               <span className="text-muted text-[10px]">{metric.changeNote}</span>
             )}
@@ -127,11 +116,11 @@ function MetricCardSkeleton() {
 
 function ChartCardSkeleton({ title }: { title: string }) {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
+    <div className="flex h-[543px] w-full flex-col rounded-[16px] bg-[#141414] px-5 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-body-md font-bold text-white">{title}</h2>
       </div>
-      <div className="h-[260px] w-full animate-pulse rounded-lg bg-white/5" />
+      <div className="min-h-0 flex-1 animate-pulse rounded-lg bg-white/5" />
     </div>
   )
 }
@@ -148,8 +137,8 @@ function ChartCard({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="flex h-[543px] w-full flex-col rounded-[16px] bg-[#141414] px-5 py-6">
+      <div className="mb-4 flex shrink-0 items-center justify-between">
         <h2 className="text-body-md font-bold text-white">{title}</h2>
         {onRefresh ? (
           <button
@@ -157,22 +146,25 @@ function ChartCard({
             aria-label={`Refresh ${title}`}
             onClick={onRefresh}
             disabled={isLoading}
-            className="text-muted grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
+            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-white transition-colors hover:bg-white/5 disabled:opacity-50"
           >
             <RefreshCw
-              className={cn('size-3.5 transition-transform', isLoading && 'animate-spin')}
+              className={cn('size-5 transition-transform', isLoading && 'animate-spin')}
+              strokeWidth={1.75}
             />
           </button>
         ) : null}
       </div>
-      {children}
+      <div className="min-h-0 flex-1">{children}</div>
     </div>
   )
 }
 
 function EmptyChartState({ message }: { message: string }) {
   return (
-    <div className="text-muted flex h-[260px] items-center justify-center text-sm">{message}</div>
+    <div className="text-muted flex h-full min-h-[260px] items-center justify-center text-sm">
+      {message}
+    </div>
   )
 }
 
@@ -190,9 +182,24 @@ function RevenueGrowthTooltip({
   const value = payload[0]?.value ?? 0
 
   return (
-    <div style={tooltipStyle}>
-      <p className="text-body-sm font-semibold text-slate-900">
-        {label} - Revenue: ₹{value.toLocaleString('en-IN')}
+    <div
+      className="box-border flex min-h-[69px] min-w-[127px] flex-col justify-center gap-[15px] rounded-[8px] bg-white px-[9px] py-[9px]"
+      style={{
+        fontFamily: "'Figtree', ui-sans-serif, system-ui, sans-serif",
+        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+      }}
+    >
+      <p
+        className="m-0 text-[12px] leading-[14px] font-medium tracking-normal text-black"
+        style={{ fontFamily: 'inherit' }}
+      >
+        {label}
+      </p>
+      <p
+        className="m-0 text-[12px] leading-[14px] font-semibold tracking-normal"
+        style={{ fontFamily: 'inherit', color: '#E0A263' }}
+      >
+        Revenue(₹):{Number(value).toLocaleString('en-IN')}
       </p>
     </div>
   )
@@ -260,26 +267,29 @@ export const ExpertDashboardPage = () => {
           <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
             Expert Management
           </h1>
-          <p className="text-body-md text-muted md:text-body-lg mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Comprehensive member analytics and engagement metrics
           </p>
         </div>
         <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
           <Button
             type="button"
-            className="ui-manage-metrics h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
+            className="ui-manage-metrics"
             onClick={() => navigate('/experts/dashboard/metrics')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 
-          <Button
-            type="button"
-            className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
-            onClick={() => navigate('/experts/management/create')}
-          >
-            <img src={createIcon} alt="create" className="size-4" />
+          <Button type="button" onClick={() => navigate('/experts/management/create')}>
+            <img
+              src={createAccountIcon}
+              alt=""
+              width={20}
+              height={20}
+              className="size-5 shrink-0"
+              aria-hidden="true"
+            />
             Create Expert Account
           </Button>
         </div>
@@ -305,7 +315,7 @@ export const ExpertDashboardPage = () => {
               {expertsCatData.length === 0 ? (
                 <EmptyChartState message="No category data available." />
               ) : (
-                <div className="h-[260px] w-full">
+                <div className="h-full min-h-0 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={expertsCatData}
@@ -365,7 +375,7 @@ export const ExpertDashboardPage = () => {
         )}
       </div>
 
-      <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
+      <div className="rounded-[16px] bg-[#141414] px-5 py-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-body-md font-bold text-white">Revenue Growth Over Time</h2>
           <div className="flex items-center gap-2">
@@ -384,9 +394,9 @@ export const ExpertDashboardPage = () => {
               type="button"
               aria-label="Refresh revenue chart"
               onClick={loadDashboard}
-              className="text-muted grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+              className="grid h-8 w-8 place-items-center rounded-lg text-white transition-colors hover:bg-white/5"
             >
-              <RefreshCw className="size-3.5" />
+              <RefreshCw className="size-5" strokeWidth={1.75} />
             </button>
           </div>
         </div>
@@ -429,7 +439,9 @@ export const ExpertDashboardPage = () => {
 
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
         <div className="mb-4">
-          <h2 className="text-body-md font-bold text-white">Top Performing Hosts</h2>
+          <h2 className="text-[16px] leading-5 font-semibold tracking-normal text-white">
+            Top Performing Hosts
+          </h2>
         </div>
 
         {isLoading ? (
@@ -443,21 +455,24 @@ export const ExpertDashboardPage = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse text-left">
+            <table className="w-full min-w-[760px] border-collapse">
               <thead>
-                <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
-                  <th className="px-3 py-2.5">Expert Name</th>
-                  <th className="px-3 py-2.5">Category</th>
-                  <th className="px-3 py-2.5">No. Of Order</th>
-                  <th className="px-3 py-2.5">Ratings</th>
-                  <th className="px-3 py-2.5">Total Attendees</th>
-                  <th className="px-3 py-2.5">Revenue</th>
+                <tr className="text-[16px] leading-5 font-semibold tracking-normal text-white">
+                  <th className="px-3 py-2.5 text-left">Expert Name</th>
+                  <th className="px-3 py-2.5 text-center">Category</th>
+                  <th className="px-3 py-2.5 text-center">No. Of Order</th>
+                  <th className="px-3 py-2.5 text-center">Ratings</th>
+                  <th className="px-3 py-2.5 text-center">Total Attendees</th>
+                  <th className="px-3 py-2.5 text-right">Revenue</th>
                 </tr>
               </thead>
               <tbody>
                 {topHostsList.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-muted px-3 py-8 text-center text-sm">
+                    <td
+                      colSpan={6}
+                      className="px-3 py-2.5 text-center text-[14px] leading-5 font-semibold tracking-normal text-white"
+                    >
                       No top performing hosts yet.
                     </td>
                   </tr>
@@ -465,19 +480,29 @@ export const ExpertDashboardPage = () => {
                   topHostsList.map((host) => (
                     <tr
                       key={host.name}
-                      className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
+                      className="border-b border-white/5 transition-colors hover:bg-white/[0.02]"
                     >
-                      <td className="px-3 py-3 font-semibold text-white">{host.name}</td>
-                      <td className="text-muted px-3 py-3">{host.category}</td>
-                      <td className="px-3 py-3">{host.orders}</td>
-                      <td className="px-3 py-3">
-                        <span className="inline-flex items-center gap-1">
-                          <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                          <span className="font-semibold text-white">{host.rating || 0}</span>
+                      <td className="px-3 py-2.5 text-left text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {host.name}
+                      </td>
+                      <td className="px-3 py-2.5 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {host.category}
+                      </td>
+                      <td className="px-3 py-2.5 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {host.orders}
+                      </td>
+                      <td className="px-3 py-2.5 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        <span className="inline-flex items-center justify-center gap-1">
+                          <Star className="fill-brand-accent text-brand-accent size-3.5 shrink-0" />
+                          <span>{host.rating || 0}</span>
                         </span>
                       </td>
-                      <td className="px-3 py-3">{(host.attendees || 0).toLocaleString('en-IN')}</td>
-                      <td className="px-3 py-3 font-semibold text-white">{host.revenue || '₹0'}</td>
+                      <td className="px-3 py-2.5 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {(host.attendees || 0).toLocaleString('en-IN')}
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {host.revenue || '₹0'}
+                      </td>
                     </tr>
                   ))
                 )}

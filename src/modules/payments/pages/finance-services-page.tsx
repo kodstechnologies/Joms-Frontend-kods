@@ -285,7 +285,7 @@ export function FinanceServicesPage() {
             if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
           }}
           onChange={toggleVisibleRows}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -295,7 +295,7 @@ export function FinanceServicesPage() {
           checked={selectedRowIds.includes(row.original.id)}
           onChange={() => toggleRowSelection(row.original.id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -507,7 +507,7 @@ export function FinanceServicesPage() {
           <h1 className="text-h2 text-brand-text tracking-tight">
             {isEscrowTab ? 'Escrow Management' : 'Services'}
           </h1>
-          <p className="text-body-sm text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             {isEscrowTab
               ? 'Track revenue, payouts, and financial performance'
               : 'Manage service bookings, expert commissions, and payouts'}
@@ -524,7 +524,7 @@ export function FinanceServicesPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-services?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

@@ -385,17 +385,17 @@ export function SettingsLogsPage() {
             type="button"
             onClick={() => void handleHeaderExport()}
             disabled={isExporting}
-            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4 disabled:opacity-60"
+            className="ui-export-data ui-cta ui-cta-primary disabled:opacity-60"
           >
-            <ExportDataIcon className="size-5 shrink-0" />
+            <ExportDataIcon />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/metrics/settings-logs?returnTo=/settings/logs&section=all')}
-            className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+            className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </button>
         </div>

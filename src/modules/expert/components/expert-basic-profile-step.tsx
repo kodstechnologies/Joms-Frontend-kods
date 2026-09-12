@@ -271,16 +271,33 @@ export const ExpertBasicProfileStep = ({
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
-                className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black transition-colors"
+                className="relative flex h-[133px] w-full max-w-[437px] items-center justify-center overflow-hidden rounded-[10px] bg-[#050505] transition-colors"
               >
+                <svg
+                  className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="0.5"
+                    y="0.5"
+                    width="99.7%"
+                    height="99%"
+                    rx="10"
+                    ry="10"
+                    fill="none"
+                    stroke="#FFFFFF80"
+                    strokeWidth="1"
+                    strokeDasharray="10 10"
+                  />
+                </svg>
                 {formData.coverImageUrl ? (
                   <img
                     src={formData.coverImageUrl}
                     alt="Cover"
-                    className="h-full w-full rounded-md object-cover"
+                    className="relative h-full w-full rounded-[10px] object-cover"
                   />
                 ) : (
-                  <div className="text-center">
+                  <div className="relative text-center">
                     <p className="text-muted mb-2 text-xs">Upload Cover Image</p>
                     <ImageIcon className="text-muted mx-auto size-5" />
                   </div>
@@ -297,7 +314,7 @@ export const ExpertBasicProfileStep = ({
               <button
                 type="button"
                 onClick={() => profileInputRef.current?.click()}
-                className="border-brand-surface absolute -bottom-8 left-6 size-16 overflow-hidden rounded-full border-4 bg-slate-600"
+                className="absolute -bottom-[50px] left-[17px] size-[100px] overflow-hidden rounded-full bg-[#050505]"
               >
                 {formData.profileImageUrl ? (
                   <img
@@ -320,7 +337,7 @@ export const ExpertBasicProfileStep = ({
               />
             </div>
 
-            <div className="pt-8">
+            <div className="pt-[50px]">
               <h3 className="mb-4 text-sm font-bold text-white">Identity Details</h3>
 
               <div className="space-y-4">
@@ -332,7 +349,7 @@ export const ExpertBasicProfileStep = ({
                     value={formData.fullname}
                     onChange={(e) => setFormData((prev) => ({ ...prev, fullname: e.target.value }))}
                     placeholder="Enter full name"
-                    className={fieldClass}
+                    className="box-border h-[42px] w-full max-w-[437px] rounded-[10px] bg-[#050505] px-3.5 text-[14px] text-white outline-none placeholder:text-white/40"
                   />
                 </div>
 
@@ -344,20 +361,19 @@ export const ExpertBasicProfileStep = ({
                     value={formData.location}
                     onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
                     placeholder="Enter location"
-                    className={fieldClass}
+                    className="box-border h-[42px] w-full max-w-[437px] rounded-[10px] bg-[#050505] px-3.5 text-[14px] text-white outline-none placeholder:text-white/40"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">
-                    Profile Bio <RequiredMark />
+                  <label className="mb-2 block text-[14px] leading-5 font-semibold tracking-normal text-white">
+                    Bio
                   </label>
                   <textarea
                     value={formData.bio}
                     onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                     placeholder="Write a brief bio..."
-                    rows={4}
-                    className={fieldClass}
+                    className="box-border h-[173px] w-full max-w-[439px] resize-none rounded-[10px] bg-[#050505] px-3.5 py-3 text-[14px] leading-5 text-white outline-none placeholder:text-white/40"
                   />
                 </div>
 

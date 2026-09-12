@@ -18,7 +18,7 @@ import type {
 
 type ListParams = Record<string, unknown>
 
-export const fetchRbacMe = async () => {
+export const fetchRbacMe = async (): Promise<{ success: boolean; data: AdminProfile }> => {
   const response = await adminApiClient.get<{ success: boolean; data: AdminProfile }>(
     '/admin/rbac/me',
   )

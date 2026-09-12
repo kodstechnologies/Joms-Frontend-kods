@@ -819,6 +819,9 @@ type CommunicationListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  [key: string]: unknown
 }
 
 const COMMUNICATION_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
@@ -830,9 +833,10 @@ export function buildCommunicationListQueryParams(
   filterValues: FilterValues,
   options: CommunicationListQueryOptions = {},
 ): Record<string, unknown> {
+  const { page, limit, search, sortBy, sortOrder, ...rest } = options
   const params: Record<string, unknown> = {
-    page: options.page ?? 1,
-    limit: options.limit ?? 10,
+    page: page ?? 1,
+    limit: limit ?? 10,
   }
 
   const assignParam = (key: string, value: string) => {
@@ -875,9 +879,19 @@ export function buildCommunicationListQueryParams(
     }
   })
 
-  if (options.search?.trim()) {
-    params.search = options.search.trim()
+  if (search?.trim()) {
+    params.search = search.trim()
   }
+
+  if (sortBy) params.sortBy = sortBy
+  if (sortOrder) params.sortOrder = sortOrder
+
+  // Preserve any extra query params (e.g. column search keys) from callers.
+  Object.entries(rest).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+    if (params[key] !== undefined) return
+    params[key] = value
+  })
 
   return params
 }

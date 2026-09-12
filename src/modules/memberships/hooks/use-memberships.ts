@@ -38,7 +38,7 @@ export const useMemberships = (params?: {
   })
 }
 
-export const useMembershipStats = (type?: MembershipType) => {
+export const useMembershipStats = (type: MembershipType = 'expert') => {
   return useQuery({
     queryKey: ['membership-stats', type],
     queryFn: () => fetchMembershipStats(type),

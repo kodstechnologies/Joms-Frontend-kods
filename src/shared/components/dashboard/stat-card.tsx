@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
-import { TrendingDown, TrendingUp } from 'lucide-react'
 
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
+import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { cn } from '@/shared/lib/cn'
 
 type StatTrend = {
@@ -20,7 +20,6 @@ export type StatCardProps = {
 }
 
 export function StatCard({ title, value, icon: Icon, trend, hint, className }: StatCardProps) {
-  const isUp = trend?.direction === 'up'
   const hasFooter = Boolean(trend || hint)
 
   return (
@@ -49,22 +48,9 @@ export function StatCard({ title, value, icon: Icon, trend, hint, className }: S
         <div className="flex min-w-0 flex-col gap-1.5">
           {trend ? (
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span
-                className={cn(
-                  'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold',
-                  isUp
-                    ? 'bg-brand-positive/15 text-brand-positive'
-                    : 'bg-brand-danger/15 text-brand-danger',
-                )}
-              >
-                {isUp ? (
-                  <TrendingUp className="size-3 shrink-0" strokeWidth={2.5} />
-                ) : (
-                  <TrendingDown className="size-3 shrink-0" strokeWidth={2.5} />
-                )}
-                {isUp ? '+' : ''}
-                {trend.percentage}%
-              </span>
+              <TrendBadge direction={trend.direction}>
+                {formatTrendPercent(trend.percentage, trend.direction)}
+              </TrendBadge>
               <span className="min-w-0 truncate text-[11px] text-white/50">{trend.label}</span>
             </div>
           ) : null}

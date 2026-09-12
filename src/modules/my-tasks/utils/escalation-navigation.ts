@@ -6,6 +6,24 @@ export type EscalationNavigationTarget = {
   venueId?: string
   serviceType?: string
   applicationUrl?: string
+  escalationTarget?: string
+}
+
+const partnerReviewTab = (escalationTarget?: string) => {
+  if (escalationTarget === 'banking') return 'banking'
+  if (escalationTarget === 'kyc') return 'kyc'
+  return null
+}
+
+const withPartnerReviewTab = (url: string, escalationTarget?: string) => {
+  const tab = partnerReviewTab(escalationTarget)
+  if (!tab || !url.includes('/experts/management/application/')) return url
+
+  const [path, query = ''] = url.split('?')
+  const params = new URLSearchParams(query)
+  if (!params.get('tab')) params.set('tab', tab)
+  const nextQuery = params.toString()
+  return nextQuery ? `${path}?${nextQuery}` : path
 }
 
 const APPLICATION_ID_FROM_URL = /\/application\/([^/?#]+)/
@@ -20,14 +38,18 @@ const buildFallbackUrl = ({
   entityId,
   venueId,
   serviceType,
+  escalationTarget,
 }: EscalationNavigationTarget) => {
   if (!entityId) return null
 
   switch (entityType) {
-    case 'partner':
-      return serviceType === 'venue'
-        ? `/experts/management/application/${entityId}?source=venue_kyc`
-        : `/experts/management/application/${entityId}`
+    case 'partner': {
+      const base =
+        serviceType === 'venue'
+          ? `/experts/management/application/${entityId}?source=venue_kyc`
+          : `/experts/management/application/${entityId}`
+      return withPartnerReviewTab(base, escalationTarget)
+    }
     case 'service':
       return `/services/management/view/${entityId}`
     case 'consultation':
@@ -48,21 +70,22 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
   const stored = target.applicationUrl?.trim()
   const storedOrEmpty = stored && stored !== '/' ? stored : ''
 
+  let resolved: string | null = null
+
   if (target.entityType === 'venue_space') {
-    if (canonical) return canonical
-    if (storedOrEmpty.includes('/space/')) return storedOrEmpty
-    return null
-  }
-
-  if (target.entityType === 'consultation' || target.entityType === 'service') {
-    return canonical || storedOrEmpty || null
-  }
-
-  if (target.entityType === 'partner' && target.serviceType === 'venue') {
+    if (canonical) resolved = canonical
+    else if (storedOrEmpty.includes('/space/')) resolved = storedOrEmpty
+    else return null
+  } else if (target.entityType === 'consultation' || target.entityType === 'service') {
+    resolved = canonical || storedOrEmpty || null
+  } else if (target.entityType === 'partner' && target.serviceType === 'venue') {
     const storedKycId = getVenueKycIdFromUrl(storedOrEmpty)
-    if (storedKycId && storedKycId !== target.entityId) return storedOrEmpty
-    return canonical
+    if (storedKycId && storedKycId !== target.entityId) resolved = storedOrEmpty
+    else resolved = canonical
+  } else {
+    resolved = canonical || storedOrEmpty || null
   }
 
-  return canonical || storedOrEmpty || null
+  if (!resolved) return null
+  return withPartnerReviewTab(resolved, target.escalationTarget)
 }

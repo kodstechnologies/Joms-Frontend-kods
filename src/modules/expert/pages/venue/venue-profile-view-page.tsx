@@ -1041,7 +1041,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           type="checkbox"
           checked={allVisibleSelected}
           onChange={toggleSelectAll}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
         Select All
       </label>
@@ -1144,7 +1144,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
                   checked={selected}
                   onClick={(e) => e.stopPropagation()}
                   onChange={() => toggleSpaceSelection(space.spaceId)}
-                  className="h-6 w-6 rounded border-white/30 accent-white"
+                  className="ui-table-checkbox"
                 />
 
                 <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
@@ -1344,9 +1344,9 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
         <button
           type="button"
           onClick={() => navigate(manageMetricsPath)}
-          className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+          className="ui-manage-metrics ui-cta ui-cta-primary"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </button>
       </div>

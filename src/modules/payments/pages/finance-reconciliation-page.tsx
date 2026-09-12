@@ -168,7 +168,7 @@ export function FinanceReconciliationPage() {
             if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
           }}
           onChange={toggleVisibleRows}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -178,7 +178,7 @@ export function FinanceReconciliationPage() {
           checked={selectedRowIds.includes(row.original.id)}
           onChange={() => toggleRowSelection(row.original.id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -297,7 +297,7 @@ export function FinanceReconciliationPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Financial Reconciliation</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Manage tax records. GST, TDS, and compliance filing
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
@@ -310,7 +310,7 @@ export function FinanceReconciliationPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-reconciliation?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

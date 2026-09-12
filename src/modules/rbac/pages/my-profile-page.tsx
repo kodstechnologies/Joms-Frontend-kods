@@ -1,23 +1,23 @@
-import { useMemo, useRef, useState, useCallback } from 'react'
+import { useMemo, useRef, useState, useCallback, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Clock, UserRound } from 'lucide-react'
+import { ArrowLeft, Clock, Upload, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
   useContactSetupProfile,
   useMySubAdminLogs,
+  useRbacMe,
   useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
 import { fetchMySubAdminLogs } from '../api/rbac-api'
 import { RbacLoader } from '../components/rbac-loader'
 import { UpdatePasswordModal } from '../components/update-password-modal'
-import type { AuditLog, UpdateSubAdminPasswordPayload } from '../types/rbac'
+import type { AuditLog, SuperAdminSelfProfile, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
@@ -25,7 +25,6 @@ import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
 
@@ -50,28 +49,28 @@ const ROLE_HISTORY_EXPORT_COLUMN_MAP: Record<
 }
 
 const HISTORY_SORT_FIELD_MAP = {
-  ...buildDefaultTableSortFieldMap([
-    'previousRole',
-    'changedTo',
-    'changedOn',
-    'changedBy',
-    'adminNote',
-  ]),
+  previousRole: 'previousRole',
+  changedTo: 'changedTo',
   changedOn: 'createdAt',
+  changedBy: 'changedBy',
+  adminNote: 'adminNote',
 }
 
-const formatDateTime = (value?: string | null) => {
+const formatOverviewDate = (value?: string | null) => {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('en-GB', {
+  const day = date.toLocaleString('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+  })
+  const time = date.toLocaleString('en-IN', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   })
+  return `${day}, ${time}`
 }
 
 const formatDateOnly = (value?: string | null) => {
@@ -98,13 +97,139 @@ const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
     id: log.id || log._id || log.action,
     previousRole,
     changedTo,
-    changedOn: formatDateTime(log.createdAt),
+    changedOn: formatOverviewDate(log.createdAt),
     changedBy: log.performedBy || '—',
     adminNote: log.adminNote || '—',
   }
 }
 
-export function MyProfilePage() {
+function DetailField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="ad-field">
+      <p className="ad-field-label">{label}</p>
+      <div className="ad-field-value">{children}</div>
+    </div>
+  )
+}
+
+function RolePill({ label }: { label: string }) {
+  if (!label || label === '—') return <span>—</span>
+  return <span className="rbac-role-name-pill">{label}</span>
+}
+
+function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) {
+  const navigate = useNavigate()
+  const isActive = profile.status === 'active'
+  const displayName = profile.fullname || `${profile.firstName} ${profile.lastName}`.trim() || '—'
+
+  return (
+    <div className="ad-page">
+      <div className="ad-header">
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
+          className="ad-back"
+        >
+          <ArrowLeft className="size-5" aria-hidden="true" />
+          <span>My Profile</span>
+        </button>
+        <p className="ad-breadcrumb">
+          Role Based Access / <span>{displayName}</span>
+        </p>
+      </div>
+
+      <div className="ad-toolbar">
+        <h2 className="ad-overview-tab">Admin Overview</h2>
+        <div className="ad-actions">
+          <button
+            type="button"
+            className="ad-btn ad-btn-peach"
+            onClick={() => navigate('/settings/access/my-profile/logs')}
+          >
+            <Clock className="size-4" aria-hidden="true" />
+            View Activity Logs
+          </button>
+          <button
+            type="button"
+            className="ad-btn ad-btn-peach"
+            onClick={() => navigate('/my-tasks')}
+          >
+            <Clock className="size-4" aria-hidden="true" />
+            View Assigned Tasks
+          </button>
+        </div>
+      </div>
+
+      <section className="ad-card">
+        <div className="ad-card-heading">
+          <div className="ad-card-title-wrap">
+            <span className="ad-card-icon" aria-hidden="true">
+              <UserRound className="size-4" />
+            </span>
+            <h3 className="ad-card-title">Admin Info</h3>
+          </div>
+          <span className={cn('ad-status-pill', isActive ? 'is-active' : 'is-inactive')}>
+            {isActive ? 'Active' : profile.status}
+          </span>
+        </div>
+
+        <div className="ad-info-layout">
+          <div className="ad-avatar">
+            <UserRound className="size-8" strokeWidth={1.5} aria-hidden="true" />
+          </div>
+
+          <div className="ad-info-main">
+            <div className="ad-info-row ad-info-row-top">
+              <DetailField label="First Name">{profile.firstName || '—'}</DetailField>
+              <DetailField label="Last Name">{profile.lastName || '—'}</DetailField>
+              <DetailField label="Role">
+                <RolePill label={profile.roleLabel || 'Super Admin'} />
+              </DetailField>
+              <DetailField label="Last Active">
+                {formatOverviewDate(profile.lastActionAt || profile.updatedAt)}
+              </DetailField>
+            </div>
+            <div className="ad-info-row">
+              <DetailField label="Employee ID">—</DetailField>
+              <DetailField label="Department">—</DetailField>
+              <DetailField label="2FA Status">
+                {profile.mfaEnabled ? 'Enabled' : 'Disabled'}
+              </DetailField>
+              <DetailField label="Workplace">—</DetailField>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="ad-card">
+        <div className="ad-card-heading">
+          <div className="ad-card-title-wrap">
+            <span className="ad-card-icon" aria-hidden="true">
+              <UserRound className="size-4" />
+            </span>
+            <h3 className="ad-card-title">More Details</h3>
+          </div>
+        </div>
+
+        <div className="ad-more-grid">
+          <DetailField label="Date Of Birth">—</DetailField>
+          <DetailField label="Email ID">{profile.email || '—'}</DetailField>
+          <DetailField label="Phone number">—</DetailField>
+          <DetailField label="Blood Group">—</DetailField>
+          <DetailField label="Created By">System</DetailField>
+          <DetailField label="Location">—</DetailField>
+          <DetailField label="Previous Role">—</DetailField>
+          <DetailField label="Created At">{formatOverviewDate(profile.createdAt)}</DetailField>
+          <DetailField label="Password Updated">—</DetailField>
+          <DetailField label="Emergency contact name">—</DetailField>
+          <DetailField label="Contact details">—</DetailField>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function SubAdminProfileView() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [historyPage, setHistoryPage] = useState(1)
@@ -130,6 +255,7 @@ export function MyProfilePage() {
   const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
   const logsMeta = logsData?.meta
   const roleLabel = subAdmin?.roles.map((role) => role.name).join(', ') || '—'
+  const isActive = subAdmin?.status === 'active'
 
   const passwordUpdatedAt = useMemo(() => {
     const passwordLog = logs.find((log) => /password/i.test(log.action))
@@ -167,11 +293,7 @@ export function MyProfilePage() {
           {
             accessorKey: 'changedTo',
             header: 'Changed To',
-            cell: ({ row }) => (
-              <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
-                {row.original.changedTo}
-              </span>
-            ),
+            cell: ({ row }) => <RolePill label={row.original.changedTo} />,
           },
           { accessorKey: 'changedOn', header: 'Changed On' },
           { accessorKey: 'changedBy', header: 'Changed BY' },
@@ -179,7 +301,7 @@ export function MyProfilePage() {
             accessorKey: 'adminNote',
             header: 'Admin Note',
             cell: ({ row }) => (
-              <span className="text-brand-text line-clamp-2 max-w-[340px] text-xs">
+              <span className="ad-note-cell" title={row.original.adminNote}>
                 {row.original.adminNote}
               </span>
             ),
@@ -207,202 +329,178 @@ export function MyProfilePage() {
     [subAdmin, updatePasswordMutation],
   )
 
-  if (user?.isSuperAdmin) {
-    return (
-      <div className="text-brand-muted flex min-h-[40vh] items-center justify-center">
-        This page is available for sub-admin accounts only.
-      </div>
-    )
-  }
-
   if (profileLoading || !subAdmin) {
     return <RbacLoader label="Loading profile..." />
   }
 
+  const displayName = subAdmin.fullname || `${subAdmin.firstName} ${subAdmin.lastName}`.trim()
+
   return (
-    <div className="flex flex-col gap-4 md:gap-6">
-      <div className="flex flex-col gap-2">
+    <div className="ad-page">
+      <div className="ad-header">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-          className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
+          className="ad-back"
         >
-          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <ArrowLeft className="size-5" aria-hidden="true" />
           <span>My Profile</span>
         </button>
-        <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-          <span>Role Based Access</span>
-          <span className="text-brand-text/30">/</span>
-          <span className="text-brand-text font-bold">My Profile</span>
-        </div>
+        <p className="ad-breadcrumb">
+          Role Based Access / <span>{displayName}</span>
+        </p>
       </div>
 
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h2 className="text-brand-text text-sm font-semibold">Admin Overview</h2>
-        <div className="flex flex-wrap gap-2">
+      <div className="ad-toolbar">
+        <h2 className="ad-overview-tab">Admin Overview</h2>
+        <div className="ad-actions">
           <button
             type="button"
-            onClick={() => navigate('/my-tasks')}
-            className="ui-cta ui-cta-primary rounded-brand-md inline-flex items-center gap-2 px-4"
-          >
-            <Clock className="size-4" />
-            All Tasks
-          </button>
-          <button
-            type="button"
+            className="ad-btn ad-btn-peach"
             onClick={() =>
               historySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
-            className="ui-cta ui-cta-outline rounded-brand-md border-brand-accent text-brand-accent hover:bg-brand-accent/10 inline-flex items-center gap-2 px-4"
           >
-            <Clock className="size-4" />
+            <Clock className="size-4" aria-hidden="true" />
             View Activity Logs
+          </button>
+          <button
+            type="button"
+            className="ad-btn ad-btn-peach"
+            onClick={() => navigate('/my-tasks')}
+          >
+            <Clock className="size-4" aria-hidden="true" />
+            View Assigned Tasks
           </button>
         </div>
       </div>
 
-      <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <div className="mb-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
+      <section className="ad-card">
+        <div className="ad-card-heading">
+          <div className="ad-card-title-wrap">
+            <span className="ad-card-icon" aria-hidden="true">
               <UserRound className="size-4" />
-            </div>
-            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
+            </span>
+            <h3 className="ad-card-title">Admin Info</h3>
           </div>
-          <span
-            className={cn(
-              'text-body-sm-semibold rounded-full border px-2.5 py-0.5 capitalize',
-              subAdmin.status === 'active'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                : 'border-rose-500/30 bg-rose-500/10 text-rose-400',
-            )}
-          >
-            {subAdmin.status}
+          <span className={cn('ad-status-pill', isActive ? 'is-active' : 'is-inactive')}>
+            {isActive ? 'Active' : subAdmin.status}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          <div>
-            <p className="text-brand-muted text-xs">First Name</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.firstName || '—'}</p>
+        <div className="ad-info-layout">
+          <div className="ad-avatar">
+            {subAdmin.profileImageUrl ? (
+              <img src={subAdmin.profileImageUrl} alt="" className="ad-avatar-img" />
+            ) : (
+              <UserRound className="size-8" strokeWidth={1.5} aria-hidden="true" />
+            )}
           </div>
-          <div>
-            <p className="text-brand-muted text-xs">Last Name</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.lastName || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Email ID</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.email || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Phone number</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.phone || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Role</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{roleLabel}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Employee ID</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.employeeId || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Department</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.department || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Date Of Birth</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatDateOnly(subAdmin.dateOfBirth)}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Blood Group</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.bloodGroup || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Location</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.location || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Workplace</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.workplaceFlexibility || '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">2FA Status</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Last Active</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatDateTime(subAdmin.lastActionAt || subAdmin.updatedAt)}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Created By</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.createdBy || 'Super Admin'}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Created At</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatDateTime(subAdmin.createdAt)}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Password Updated</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatDateTime(passwordUpdatedAt)}
-            </p>
-            <button
-              type="button"
-              onClick={() => setPasswordModalOpen(true)}
-              className="text-brand-accent decoration-brand-accent/40 text-body-sm-semibold mt-1 underline underline-offset-2"
-            >
-              Change Password
-            </button>
+
+          <div className="ad-info-main">
+            <div className="ad-info-row ad-info-row-top">
+              <DetailField label="First Name">{subAdmin.firstName || '—'}</DetailField>
+              <DetailField label="Last Name">{subAdmin.lastName || '—'}</DetailField>
+              <DetailField label="Role">
+                <RolePill label={roleLabel} />
+              </DetailField>
+              <DetailField label="Last Active">
+                {formatOverviewDate(subAdmin.lastActionAt || subAdmin.updatedAt)}
+              </DetailField>
+            </div>
+            <div className="ad-info-row">
+              <DetailField label="Employee ID">{subAdmin.employeeId || '—'}</DetailField>
+              <DetailField label="Department">{subAdmin.department || '—'}</DetailField>
+              <DetailField label="2FA Status">
+                {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
+              </DetailField>
+              <DetailField label="Workplace">{subAdmin.workplaceFlexibility || '—'}</DetailField>
+            </div>
           </div>
         </div>
       </section>
 
-      <section ref={historySectionRef}>
-        <div className="mb-3">
-          <h3 className="text-brand-text text-lg font-semibold">Role History &amp; Change Log</h3>
-          <p className="text-brand-muted mt-1 text-sm">
-            Complete history of actions performed on this admin
-          </p>
+      <section className="ad-card">
+        <div className="ad-card-heading">
+          <div className="ad-card-title-wrap">
+            <span className="ad-card-icon" aria-hidden="true">
+              <UserRound className="size-4" />
+            </span>
+            <h3 className="ad-card-title">More Details</h3>
+          </div>
         </div>
-        <DataTable
-          columns={historyColumns}
-          data={historyRows}
-          getRowId={(row) => row.id}
-          {...serverSort.dataTableSortProps}
-          isLoading={logsLoading}
-          searchValue={enhancedSearch.globalSearch}
-          onSearchChange={enhancedSearch.setGlobalSearch}
-          searchableColumns={RBAC_ADMIN_LOGS_SEARCH_COLUMNS}
-          columnSearches={enhancedSearch.columnSearches}
-          onColumnSearchChange={enhancedSearch.setColumnSearch}
-          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
-          onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by action, note, or module"
-          showAdvancedFilter={false}
-          onExport={onExport}
-          pagination={{
-            page: historyPage,
-            pageSize: PAGE_SIZE,
-            totalItems: logsMeta?.total ?? 0,
-            totalPages: logsMeta?.totalPages ?? 1,
-            onPageChange: setHistoryPage,
-          }}
-          resourceLabel="profile logs"
-          emptyMessage="No role history found."
-        />
+
+        <div className="ad-more-grid">
+          <DetailField label="Date Of Birth">{formatDateOnly(subAdmin.dateOfBirth)}</DetailField>
+          <DetailField label="Email ID">{subAdmin.email || '—'}</DetailField>
+          <DetailField label="Phone number">{subAdmin.phone || '—'}</DetailField>
+          <DetailField label="Blood Group">{subAdmin.bloodGroup || '—'}</DetailField>
+          <DetailField label="Created By">{subAdmin.createdBy || 'Super Admin'}</DetailField>
+          <DetailField label="Location">{subAdmin.location || '—'}</DetailField>
+          <DetailField label="Previous Role">—</DetailField>
+          <DetailField label="Created At">{formatOverviewDate(subAdmin.createdAt)}</DetailField>
+          <DetailField label="Password Updated">
+            <div className="ad-password-wrap">
+              <span>{formatDateOnly(passwordUpdatedAt)}</span>
+              <button
+                type="button"
+                onClick={() => setPasswordModalOpen(true)}
+                className="ad-change-password"
+              >
+                Change Password
+              </button>
+            </div>
+          </DetailField>
+          <DetailField label="Emergency contact name">
+            {subAdmin.emergencyContactName || '—'}
+          </DetailField>
+          <DetailField label="Contact details">{subAdmin.emergencyContact || '—'}</DetailField>
+        </div>
+      </section>
+
+      <section className="ad-history" ref={historySectionRef}>
+        <div className="ad-history-header">
+          <div className="ad-history-heading">
+            <h3 className="ad-history-title">Role History &amp; Change Log</h3>
+            <p className="ad-history-subtitle">
+              Complete history of actions performed on this admin
+            </p>
+          </div>
+          <button type="button" className="ad-export-btn" onClick={onExport}>
+            Export Data
+          </button>
+        </div>
+
+        <div className="ad-history-table">
+          <DataTable
+            columns={historyColumns}
+            data={historyRows}
+            getRowId={(row) => row.id}
+            {...serverSort.dataTableSortProps}
+            isLoading={logsLoading}
+            searchValue={enhancedSearch.globalSearch}
+            onSearchChange={enhancedSearch.setGlobalSearch}
+            searchableColumns={RBAC_ADMIN_LOGS_SEARCH_COLUMNS}
+            columnSearches={enhancedSearch.columnSearches}
+            onColumnSearchChange={enhancedSearch.setColumnSearch}
+            onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+            onClearAllSearches={enhancedSearch.clearAll}
+            searchPlaceholder="Search by action, note, or module"
+            showSearch
+            showAdvancedFilter={false}
+            showExport={false}
+            showRecordCount={false}
+            pagination={{
+              page: historyPage,
+              pageSize: PAGE_SIZE,
+              totalItems: logsMeta?.total ?? 0,
+              totalPages: logsMeta?.totalPages ?? 1,
+              onPageChange: setHistoryPage,
+            }}
+            resourceLabel="records"
+            emptyMessage="No role history found."
+          />
+        </div>
       </section>
 
       <UpdatePasswordModal
@@ -416,4 +514,41 @@ export function MyProfilePage() {
       {exportFilterModals}
     </div>
   )
+}
+
+export function MyProfilePage() {
+  const user = useAuthStore((state) => state.user)
+  const { data: meData, isLoading: meLoading } = useRbacMe()
+  const meProfile = meData?.data?.profile
+
+  if (user?.isSuperAdmin) {
+    if (meLoading && !meProfile) {
+      return <RbacLoader label="Loading profile..." />
+    }
+
+    if (!meProfile) {
+      const fallbackName = user.fullname || ''
+      const [firstName = '', ...rest] = fallbackName.trim().split(/\s+/).filter(Boolean)
+      return (
+        <SuperAdminProfileView
+          profile={{
+            id: user.id,
+            firstName,
+            lastName: rest.join(' '),
+            fullname: fallbackName,
+            email: user.email || '',
+            roleLabel: 'Super Admin',
+            status: user.status || 'active',
+            mfaEnabled: Boolean(user.mfaEnabled),
+            kind: 'superadmin',
+            isSuperAdmin: true,
+          }}
+        />
+      )
+    }
+
+    return <SuperAdminProfileView profile={meProfile} />
+  }
+
+  return <SubAdminProfileView />
 }

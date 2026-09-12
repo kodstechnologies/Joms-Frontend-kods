@@ -75,7 +75,26 @@ export type SubAdmin = {
   notificationSent?: boolean
 }
 
-export type AdminLogSubject = ({ type: 'subAdmin' } & SubAdmin) | ({ type: 'role' } & Role)
+export type SuperAdminSelfProfile = {
+  id: string
+  firstName: string
+  lastName: string
+  fullname: string
+  email: string
+  roleLabel: string
+  status: string
+  mfaEnabled: boolean
+  createdAt?: string
+  updatedAt?: string
+  lastActionAt?: string
+  kind: 'superadmin'
+  isSuperAdmin: true
+}
+
+export type AdminLogSubject =
+  | ({ type: 'subAdmin' } & SubAdmin)
+  | ({ type: 'role' } & Role)
+  | ({ type: 'superadmin' } & SuperAdminSelfProfile)
 
 export type AuditLog = {
   id: string
@@ -153,12 +172,14 @@ export type UpdateSubAdminPasswordPayload = {
 export type AdminProfile = {
   id: string
   name: string
+  email?: string
   kind: 'superadmin' | 'subadmin'
   isSuperAdmin: boolean
   permissions: string[]
   subAdminId?: string
   requiresContactSetup?: boolean
   contactSetupCompleted?: boolean
+  profile?: SuperAdminSelfProfile
 }
 
 export type ContactSetupProfileResponse = {

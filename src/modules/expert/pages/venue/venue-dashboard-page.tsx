@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { RefreshCw, Star } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -22,6 +22,7 @@ import {
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueDashboard } from '../../hooks/use-venue-dashboard'
 import { exportVenueDashboardToExcel } from '../../utils/export-venue-dashboard'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -112,21 +113,9 @@ function MetricCard({ metric }: { metric: Metric }) {
       <div className="mt-auto flex items-center gap-2 pt-3">
         {metric.change ? (
           <>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                metric.changeType === 'down'
-                  ? 'bg-brand-danger/10 text-brand-danger'
-                  : 'bg-brand-positive/15 text-brand-positive',
-              )}
-            >
-              {metric.changeType === 'down' ? (
-                <TrendingDown className="size-3" />
-              ) : (
-                <TrendingUp className="size-3" />
-              )}
-              {metric.change}
-            </span>
+            <TrendBadge direction={metric.changeType === 'down' ? 'down' : 'up'}>
+              {ensureTrendChangeSign(metric.change, metric.changeType === 'down' ? 'down' : 'up')}
+            </TrendBadge>
             {metric.changeNote && (
               <span className="text-muted text-[10px]">{metric.changeNote}</span>
             )}
@@ -378,7 +367,7 @@ export const VenueDashboardPage = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Venues</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Venue performance, utilization analytics, and revenue metrics
           </p>
         </div>
@@ -387,7 +376,7 @@ export const VenueDashboardPage = () => {
             className="ui-manage-metrics h-9"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 

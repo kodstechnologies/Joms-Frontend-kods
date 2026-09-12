@@ -59,7 +59,7 @@ export function Topbar({
   const roleLabel = user?.isSuperAdmin ? 'Super Admin' : profileRoleLabel
   const profileImageUrl = isSubAdmin ? profileQuery.data?.data.profile.profileImageUrl : undefined
   const userInitial = displayName.charAt(0).toUpperCase()
-  const canOpenProfile = isSubAdmin
+  const canOpenProfile = Boolean(user)
   const { applicationName, timezone, dateTimeFormat } = useBranding()
   const { status: maintenanceStatus } = useMaintenance()
   const now = useLiveClock()

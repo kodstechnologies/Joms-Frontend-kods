@@ -158,14 +158,26 @@ const TABS: { key: TabKey; label: string }[] = [
 const PROFILE_BTN_PRIMARY =
   'inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-1.5 text-[12px] font-semibold text-[#050505] transition-[filter] hover:brightness-95'
 
+/** Figma Profile & Account — View (48×25 · radius 8 · solid #F6CB86) */
+const PROFILE_BTN_VIEW =
+  'inline-flex h-[25px] min-w-[48px] items-center justify-center rounded-[8px] bg-[#F6CB86] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-black transition-[filter] hover:brightness-95'
+
+/** Figma Profile & Account — Check Timelines (110×30 · radius 10 · gold gradient) */
+const PROFILE_BTN_CHECK_TIMELINES =
+  'inline-flex h-[30px] min-w-[110px] items-center justify-center gap-2.5 rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-[#050505] transition-[filter] hover:brightness-95'
+
 const PROFILE_HEADER_BTN =
   'inline-flex h-[25px] items-center justify-center gap-1.5 rounded-[12px] bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 text-[11px] leading-none font-semibold whitespace-nowrap text-[#050505] transition-[filter] hover:brightness-95'
 
-const PROFILE_CARD = 'rounded-xl bg-[#141414]'
+const PROFILE_CARD = 'rounded-[10px] bg-[#141414]'
 
 const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505]'
 
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
+
+/** Figma Profile Health — type/status chips (height 25 · radius 10 · padding 10) */
+const PROFILE_HEALTH_CHIP =
+  'inline-flex h-[25px] items-center justify-center rounded-[10px] px-[10px] text-[12px] leading-[12px] font-semibold tracking-normal whitespace-nowrap text-white'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
@@ -404,12 +416,14 @@ const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: stri
   if (finalReview?.approvalStatus === 'approved') {
     return {
       label: 'KYC Verified',
-      className: 'bg-[#143D2B] text-white border border-[#1E563D]/50',
+      className:
+        'inline-flex h-[25px] items-center justify-center rounded-[10px] bg-[#00A63E4D] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-white',
     }
   }
   return {
     label: 'Review Pending',
-    className: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+    className:
+      'inline-flex h-[25px] items-center justify-center rounded-[10px] border border-amber-500/30 bg-amber-500/15 px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-amber-300',
   }
 }
 
@@ -434,11 +448,26 @@ const formatPricing = (option: { durationMinutes: number; pricingType: string; p
   return `${mins} (₹${option.price.toLocaleString('en-IN')})`
 }
 
-function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
+function SidebarRow({
+  label,
+  children,
+  emphasizeLabel = false,
+}: {
+  label: string
+  children: ReactNode
+  emphasizeLabel?: boolean
+}) {
   return (
-    <div className="flex items-center justify-between gap-2 py-3">
-      <span className="text-body-sm text-muted shrink-0">{label}</span>
-      <span className="max-w-[65%] min-w-0 truncate text-right text-[13px] font-semibold text-white">
+    <div className="flex items-start justify-between gap-2 py-3 sm:items-center">
+      <span
+        className={cn(
+          'max-w-[45%] shrink-0 text-[14px] leading-[14px] tracking-normal sm:text-[16px]',
+          emphasizeLabel ? 'font-semibold text-white' : 'font-normal text-white/50',
+        )}
+      >
+        {label}
+      </span>
+      <span className="max-w-[55%] min-w-0 truncate text-right text-[14px] leading-5 font-semibold tracking-normal text-white sm:max-w-[65%] sm:text-[16px]">
         {children}
       </span>
     </div>
@@ -513,12 +542,17 @@ function ProfileSidebar({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={cn(PROFILE_CARD, 'p-5')}>
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-[13px] font-semibold text-white">Profile &amp; Account</h3>
-          <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycBadge.className)}>
-            {kycBadge.label}
-          </span>
+      <div
+        className={cn(
+          PROFILE_CARD,
+          'box-border flex min-h-[596px] w-full min-w-0 flex-col overflow-x-hidden p-4 sm:p-5',
+        )}
+      >
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-[16px] leading-5 font-semibold tracking-normal text-white">
+            Profile &amp; Account
+          </h3>
+          <span className={kycBadge.className}>{kycBadge.label}</span>
         </div>
 
         <SidebarRow label="Expert ID">{formatExpertId(partnerId)}</SidebarRow>
@@ -532,7 +566,7 @@ function ProfileSidebar({
                 type="button"
                 title={deepLink ? `Custom URL: ${customUrl}\nDeep Link: ${deepLink}` : customUrl}
                 onClick={() => onOpenCustomUrl?.()}
-                className="block max-w-full truncate font-medium text-white underline transition-colors hover:text-[#E0A263]"
+                className="block max-w-full truncate text-right text-[16px] leading-5 font-semibold tracking-normal text-white underline decoration-solid underline-offset-auto transition-colors hover:text-[#E0A263]"
               >
                 {customUrl}
               </button>
@@ -540,7 +574,7 @@ function ProfileSidebar({
               <button
                 type="button"
                 onClick={() => onOpenCustomUrl?.()}
-                className="font-medium text-white/50 underline transition-colors hover:text-[#E0A263]"
+                className="text-right text-[16px] leading-5 font-semibold tracking-normal text-white/50 underline decoration-solid transition-colors hover:text-[#E0A263]"
               >
                 Hidden
               </button>
@@ -550,12 +584,12 @@ function ProfileSidebar({
           )}
         </SidebarRow>
         <SidebarRow label="Ratings">
-          <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
+          <span className="inline-flex items-center justify-end gap-1 text-[16px] leading-5 font-semibold tracking-normal text-white">
+            <Star className="size-3.5 shrink-0 fill-[#E0A263] text-[#E0A263]" />
             {ratingsAvailable && ratingAverage !== undefined && ratingAverage !== null
               ? Number(ratingAverage).toFixed(1)
               : '—'}
-            <span className="text-body-sm text-muted font-normal">
+            <span className="font-semibold text-white">
               ({ratingsAvailable && ratingCount != null ? ratingCount : 0})
             </span>
           </span>
@@ -575,7 +609,7 @@ function ProfileSidebar({
         <SidebarRow label="Last Active">
           {formatLastActive(profile.lastActiveAt || profile.updatedAt)}
         </SidebarRow>
-        <SidebarRow label="KYC">
+        <SidebarRow label="KYC" emphasizeLabel>
           <button
             type="button"
             onClick={() =>
@@ -585,13 +619,13 @@ function ProfileSidebar({
                 navigate,
               )
             }
-            className={PROFILE_BTN_PRIMARY}
+            className={PROFILE_BTN_VIEW}
           >
             View
           </button>
         </SidebarRow>
-        <SidebarRow label="Timelines">
-          <button type="button" onClick={onCheckTimelines} className={PROFILE_BTN_PRIMARY}>
+        <SidebarRow label="Timelines" emphasizeLabel>
+          <button type="button" onClick={onCheckTimelines} className={PROFILE_BTN_CHECK_TIMELINES}>
             Check Timelines
           </button>
         </SidebarRow>
@@ -633,7 +667,7 @@ function ProfileSidebar({
 }
 
 function ProfileGallery({ images }: { images: string[] }) {
-  const visibleCount = 4
+  const visibleCount = 5
   const maxOffset = Math.max(0, images.length - visibleCount)
   const [offset, setOffset] = useState(0)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
@@ -689,7 +723,7 @@ function ProfileGallery({ images }: { images: string[] }) {
           </button>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="flex flex-wrap gap-[23px]">
           {visibleImages.map((image, index) => {
             const actualIndex = clampedOffset + index
             return (
@@ -697,7 +731,7 @@ function ProfileGallery({ images }: { images: string[] }) {
                 key={`${image}-${actualIndex}`}
                 type="button"
                 onClick={() => setActiveIndex(actualIndex)}
-                className="aspect-square overflow-hidden rounded-xl bg-[#050505]"
+                className="size-[100px] shrink-0 overflow-hidden rounded-[10px] bg-[#050505]"
               >
                 <SafeImage
                   src={image}
@@ -812,10 +846,10 @@ function OverviewTab({
   const reviews: PartnerInsightReview[] = insightsRes?.data?.reviews ?? []
 
   return (
-    <div className={cn(PROFILE_CARD, 'p-6')}>
-      <section>
-        <h3 className="text-[15px] font-semibold text-white">About</h3>
-        <p className="mt-3 text-[13px] leading-relaxed text-white/70">
+    <div className={cn(PROFILE_CARD, 'min-w-0 overflow-x-hidden p-4 sm:p-6')}>
+      <section className="min-w-0">
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">About</h3>
+        <p className="mt-3 text-[16px] leading-7 font-normal tracking-normal break-words text-white/50">
           {profile.bio || basic?.bio || 'No bio provided.'}
         </p>
         {tags.length > 0 ? (
@@ -833,45 +867,58 @@ function OverviewTab({
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Core Offerings</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+          Core Offerings
+        </h3>
         {offerings.length > 0 ? (
-          <ul className="mt-4 space-y-2.5">
+          <ul className="mt-4 space-y-3">
             {offerings.map((item) => (
-              <li key={item} className="flex items-center gap-2.5 text-[13px] text-white/70">
+              <li
+                key={item}
+                className="flex items-center gap-2.5 text-[16px] leading-[14px] font-normal tracking-normal text-white/50"
+              >
                 <Check className="size-4 shrink-0 text-white" strokeWidth={2.5} />
                 {item}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-[13px] text-white/40">No core offerings added yet.</p>
+          <p className="mt-3 text-[16px] leading-[14px] font-normal text-white/40">
+            No core offerings added yet.
+          </p>
         )}
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Gallery</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">Gallery</h3>
         {galleryImages.length > 0 ? (
           <ProfileGallery images={galleryImages} />
         ) : (
-          <p className="mt-3 text-[13px] text-white/40">No gallery images yet.</p>
+          <p className="mt-3 text-[16px] leading-[14px] font-normal text-white/40">
+            No gallery images yet.
+          </p>
         )}
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Work Experience</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+          Work Experience
+        </h3>
         {workExperience.length > 0 ? (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-4">
             {workExperience.map((entry) => (
               <div
                 key={entry._id || `${entry.jobTitle}-${entry.companyName}`}
-                className="flex items-start gap-3"
+                className="flex items-center gap-4"
               >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#050505]">
+                <div className="flex h-[55px] w-[65px] shrink-0 items-center justify-center rounded-[10px] bg-black">
                   <img src={bagSolidIcon} alt="" className="size-6 brightness-0 invert" />
                 </div>
-                <div className="min-w-0 pt-0.5">
-                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
-                  <p className="mt-0.5 text-[12px] text-white/45">
+                <div className="min-w-0">
+                  <p className="text-[16px] leading-none font-semibold tracking-[-0.01em] text-white">
+                    {entry.jobTitle || '—'}
+                  </p>
+                  <p className="mt-2 text-[14px] leading-none font-normal tracking-[-0.01em] text-white/50">
                     {entry.companyName || 'Company name'} | {formatWorkPeriod(entry)}
                   </p>
                 </div>
@@ -879,12 +926,16 @@ function OverviewTab({
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-[13px] text-white/40">No work experience added yet.</p>
+          <p className="mt-3 text-[16px] leading-[14px] font-normal text-white/40">
+            No work experience added yet.
+          </p>
         )}
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Reviews &amp; Ratings</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+          Reviews &amp; Ratings
+        </h3>
         <div className="mt-4 mb-4 flex flex-wrap gap-2">
           {[
             { key: 'all', label: 'All Reviews' },
@@ -1020,13 +1071,13 @@ function ConsultationDetailCard({
   const statusLabel = isSuspended ? 'Suspended' : isPaused ? 'Paused' : null
 
   return (
-    <div className="rounded-xl bg-[#141414] p-6">
+    <div className="min-w-0 overflow-x-hidden rounded-xl bg-[#141414] p-4 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-stretch gap-3">
             <span className="bg-brand-accent w-[3px] shrink-0 rounded-full" aria-hidden="true" />
             <div className="min-w-0">
-              <h3 className="text-[18px] leading-tight font-bold text-white">
+              <h3 className="text-[18px] leading-tight font-bold break-words text-white">
                 <button
                   type="button"
                   className="text-left hover:underline"
@@ -1053,7 +1104,7 @@ function ConsultationDetailCard({
               {(consultation.topics ?? []).map((topic) => (
                 <span
                   key={topic._id}
-                  className="rounded-md bg-[#8E8E93] px-3.5 py-1 text-xs font-semibold text-black"
+                  className="inline-flex items-center justify-center rounded-[6px] border border-[#FFFFFF1A] bg-[#FFFFFF80] p-[10px] text-[12px] leading-none font-semibold tracking-normal text-[#050505]"
                 >
                   {topic.name}
                 </span>
@@ -1065,7 +1116,7 @@ function ConsultationDetailCard({
           label={`Open actions for ${consultation.title || 'consultation'}`}
           isOpen={menuOpen}
           onOpenChange={onMenuOpenChange}
-          menuWidth={220}
+          menuWidth={200}
           tone="light"
         >
           <TableActionsItem
@@ -1123,15 +1174,15 @@ function ConsultationDetailCard({
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {consultation.whoItsFor && (
-            <div>
+            <div className="min-w-0">
               <p className="text-body-sm mb-1.5 font-semibold text-white">Who is it for?</p>
-              <p className="text-body-sm text-white/50">{consultation.whoItsFor}</p>
+              <p className="text-body-sm break-words text-white/50">{consultation.whoItsFor}</p>
             </div>
           )}
 
-          <div>
+          <div className="min-w-0">
             <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex flex-col items-center gap-1.5">
@@ -1146,7 +1197,7 @@ function ConsultationDetailCard({
                 <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
                   <Languages className="size-5 text-white" />
                 </div>
-                <span className="text-[11px] font-medium text-white/60">
+                <span className="max-w-[100px] truncate text-[11px] font-medium text-white/60">
                   {(consultation.languages ?? [])[0] || 'English'}
                 </span>
               </div>
@@ -1164,17 +1215,17 @@ function ConsultationDetailCard({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="min-w-0">
             <p className="text-body-sm mb-1 font-semibold text-white">Pre-session requirement</p>
-            <p className="text-body-sm text-white/50">
+            <p className="text-body-sm break-words text-white/50">
               {consultation.preSessionRequirement || 'Keep your requirements and questions ready.'}
             </p>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <p className="text-body-sm mb-1 font-semibold text-white">Post Session Requirement</p>
-            <p className="text-body-sm text-white/50">
+            <p className="text-body-sm break-words text-white/50">
               {consultation.postSessionMessage || 'Keep your requirements and questions ready.'}
             </p>
           </div>
@@ -1577,14 +1628,14 @@ function ServicesSubTab({
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-[50px] min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[#FFFFFF33] bg-[#141414] px-3">
+        <div className="flex h-[50px] w-full min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#FFFFFF33] bg-[#141414] px-3 sm:min-w-[220px]">
           <Search className="text-muted size-4 shrink-0" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by service title"
-            className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
+            className="text-body-sm placeholder:text-muted w-full min-w-0 bg-transparent text-white outline-none"
           />
         </div>
 
@@ -1603,7 +1654,7 @@ function ServicesSubTab({
           type="checkbox"
           checked={allVisibleSelected}
           onChange={toggleSelectAll}
-          className="size-4 rounded border-white/30 bg-transparent"
+          className="ui-table-checkbox"
         />
         Select All
       </label>
@@ -1769,9 +1820,9 @@ function ServicesSubTab({
         heading={
           selectedServiceIds.length > 1
             ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
-            : 'Are you sure you want  Pause this Service.'
+            : undefined
         }
-        description="This will result in hiding this service from users."
+        description="Pausing this service will temporarily stop all new requests."
         submitLabel="Pause Service"
         reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
         onClose={() => setIsBulkPauseModalOpen(false)}
@@ -1847,20 +1898,20 @@ function ServiceListCard({
     <div
       onClick={() => viewExpertService(service, expertId, navigate)}
       className={cn(
-        'flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]',
+        'flex h-auto min-h-[110px] w-full min-w-0 cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[10px] bg-black px-3 py-3 text-left transition-colors hover:bg-[#111] sm:h-[110px] sm:px-4 sm:py-0',
         selected && 'border border-blue-500 bg-blue-950/20',
       )}
     >
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <input
           type="checkbox"
           checked={selected}
           onClick={(event) => event.stopPropagation()}
           onChange={onToggleSelect}
-          className="size-5 shrink-0 rounded border-white/30 bg-transparent"
+          className="ui-table-checkbox"
         />
 
-        <div className="relative ml-1 h-28 w-32 shrink-0 overflow-hidden rounded-xl bg-black">
+        <div className="relative ml-0 h-[72px] w-[96px] shrink-0 overflow-hidden rounded-[10px] bg-[#D9D9D9] sm:ml-1 sm:h-[93px] sm:w-[125px]">
           <SafeImage
             src={coverImage}
             alt={service.title || 'Service'}
@@ -1883,14 +1934,18 @@ function ServiceListCard({
           )}
         </div>
 
-        <div className="ml-1 min-w-0 flex-1">
-          <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
-          <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
-          <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
+        <div className="ml-0 min-w-0 flex-1 sm:ml-1">
+          <p className="truncate text-[16px] leading-5 font-semibold tracking-normal text-white">
+            {service.title || 'Untitled Service'}
+          </p>
+          <p className="text-body-sm text-muted mt-0.5 truncate">{service.category?.name || '—'}</p>
+          <p className="text-body-sm text-muted mt-0.5 truncate">
+            {formatPricingType(service.pricingType)}
+          </p>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
         {service.priceStarts != null && service.priceStarts > 0 && (
           <div className="text-right">
             <p className="text-[13px] font-bold text-white">
@@ -1927,6 +1982,7 @@ function ConsultationsSubTab({
 
   const [pauseReasons, setPauseReasons] = useState<string[]>([])
   const [pauseAdminNotes, setPauseAdminNotes] = useState('')
+  const [pauseConfirmed, setPauseConfirmed] = useState(false)
 
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
@@ -1955,6 +2011,7 @@ function ConsultationsSubTab({
     setPauseTarget(null)
     setPauseReasons([])
     setPauseAdminNotes('')
+    setPauseConfirmed(false)
   }, [])
 
   const closeDeleteModal = useCallback(() => {
@@ -2021,6 +2078,10 @@ function ConsultationsSubTab({
       toast.error('Please select at least one reason.')
       return
     }
+    if (!pauseConfirmed) {
+      toast.error('Please confirm the pause reasons before continuing.')
+      return
+    }
     if (!pauseAdminNotes.trim()) {
       toast.error('Admin notes are required.')
       return
@@ -2054,6 +2115,7 @@ function ConsultationsSubTab({
     buildPauseReasonPayload,
     closePauseModal,
     pauseAdminNotes,
+    pauseConfirmed,
     pauseReasons,
     pauseTarget,
     recordReasonUsage,
@@ -2163,7 +2225,7 @@ function ConsultationsSubTab({
         }
         reason={requestReasonText}
         onReasonChange={setRequestReasonText}
-        reasonLabel="Request Changes"
+        reasonLabel="Request Change"
         adminNotes={requestAdminNotes}
         onAdminNotesChange={setRequestAdminNotes}
         onClose={closeRequestChangesModal}
@@ -2175,7 +2237,7 @@ function ConsultationsSubTab({
         open={Boolean(pauseTarget)}
         variant="pause"
         title="Pause Consultation"
-        description="Are you sure you want to pause this consultation? It will be hidden from clients until reactivated."
+        description="Pausing this consultation will temporarily stop all new requests."
         submitLabel="Pause Consultation"
         reasonOptions={pauseReasonOptions}
         selectedReasons={pauseReasons}
@@ -2186,6 +2248,10 @@ function ConsultationsSubTab({
               : [...current, value],
           )
         }
+        showReasonsLabel
+        confirmationChecked={pauseConfirmed}
+        onConfirmationChange={setPauseConfirmed}
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
         adminNotes={pauseAdminNotes}
         onAdminNotesChange={setPauseAdminNotes}
         onClose={closePauseModal}
@@ -2197,7 +2263,7 @@ function ConsultationsSubTab({
         open={Boolean(deleteTarget)}
         variant="delete"
         title="Delete Consultation"
-        description="Are you sure you want to delete this consultation? This will result in removal of the listing."
+        description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete Consultation"
         reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
@@ -2208,8 +2274,10 @@ function ConsultationsSubTab({
               : [...current, value],
           )
         }
+        showReasonsLabel
         confirmationChecked={deleteConfirmed}
         onConfirmationChange={setDeleteConfirmed}
+        confirmationLabel="I confirm the Consultation is not approved due to above reasons."
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}
@@ -2235,9 +2303,9 @@ function ServiceListingsTab({
 }) {
   const navigate = useNavigate()
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2">
           {(['services', 'consultations'] as const).map((tab) => (
             <button
               key={tab}
@@ -2255,7 +2323,7 @@ function ServiceListingsTab({
         <button
           type="button"
           onClick={() => navigate(`/experts/management/profile/${expertId}/clientele`)}
-          className={PROFILE_BTN_PRIMARY}
+          className={cn(PROFILE_BTN_PRIMARY, 'shrink-0')}
         >
           <Users className="size-3.5" />
           View Clientele
@@ -2401,9 +2469,9 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
         <button
           type="button"
           onClick={() => navigate(manageMetricsPath)}
-          className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+          className="ui-manage-metrics ui-cta ui-cta-primary"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </button>
       </div>
@@ -2455,15 +2523,13 @@ function HealthTab({
       const isUnderReview =
         statusRaw === 'under review' || statusRaw === 'in review' || statusRaw === 'waiting'
 
-      const typeClass = isViolation
-        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
-        : 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+      const typeClass = isViolation ? 'bg-[#3D1414]' : 'bg-[#3D2814]'
 
-      const statusClass = isOpen
-        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
-        : isUnderReview
-          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
-          : 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
+      const statusClass = isUnderReview
+        ? 'bg-[#3D2814]'
+        : isOpen
+          ? 'bg-[#A619004D]'
+          : 'bg-[#143D2B] text-[#00E065]'
 
       return {
         id: report.id || report.reportId,
@@ -2490,17 +2556,20 @@ function HealthTab({
         ACTIVE_TICKET_STATUSES.has(statusRaw) || statusRaw === 'open' || statusRaw === 'in_progress'
       const isResolved = statusRaw === 'resolved' || statusRaw === 'closed'
 
+      const isOpenStatus = statusRaw === 'open'
       const statusClass = isResolved
-        ? 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
-        : isActive
-          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
-          : 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+        ? 'bg-[#143D2B] text-[#00E065]'
+        : isOpenStatus
+          ? 'bg-[#A619004D]'
+          : isActive
+            ? 'bg-[#3D2814]'
+            : 'bg-[#3D1414]'
 
       return {
         id: ticket.id,
         kind: 'reported-by',
         type: 'Reported By',
-        typeClass: 'bg-[#14243D] border border-[#1D365C]/50 text-white',
+        typeClass: 'bg-[#1447E64D]',
         status: ticket.status || 'Resolved',
         statusClass,
         title: ticket.subject || 'Spam Content Detected',
@@ -2550,10 +2619,8 @@ function HealthTab({
         </div>
         <span
           className={cn(
-            'rounded-full px-3.5 py-1 text-xs font-semibold text-white',
-            atRisk
-              ? 'border border-[#5C1D1D]/50 bg-[#3D1414]'
-              : 'border border-[#1E563D]/50 bg-[#143D2B]',
+            'inline-flex h-[33px] items-center justify-center rounded-[10px] px-1.5 text-[14px] leading-[17px] font-medium tracking-normal whitespace-nowrap text-white',
+            atRisk ? 'bg-[#D3191C33]' : 'bg-[#143D2B]',
           )}
         >
           Profile Health: {atRisk ? 'At Risk' : 'Healthy'}
@@ -2567,20 +2634,8 @@ function HealthTab({
           visible.map((incident) => (
             <div key={`${incident.kind}-${incident.id}`} className="rounded-xl bg-[#050505] p-5">
               <div className="flex items-center justify-between">
-                <span
-                  className={cn(
-                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
-                    incident.typeClass,
-                  )}
-                >
-                  {incident.type}
-                </span>
-                <span
-                  className={cn(
-                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
-                    incident.statusClass,
-                  )}
-                >
+                <span className={cn(PROFILE_HEALTH_CHIP, incident.typeClass)}>{incident.type}</span>
+                <span className={cn(PROFILE_HEALTH_CHIP, incident.statusClass)}>
                   {incident.status}
                 </span>
               </div>
@@ -3073,16 +3128,16 @@ export function ExpertProfileViewPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex items-start justify-between">
-        <div className="flex flex-col gap-2">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-5 overflow-x-hidden">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="group font-heading text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors hover:text-[#E0A263]"
+            className="group font-heading text-h3 flex w-fit max-w-full items-center gap-2 font-bold tracking-tight text-white transition-colors hover:text-[#E0A263]"
           >
-            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-            <span>Expert Profile View</span>
+            <ArrowLeft className="size-5 shrink-0 transition-transform group-hover:-translate-x-1" />
+            <span className="truncate">Expert Profile View</span>
           </button>
           <div className="pl-7">
             <PageBreadcrumb
@@ -3094,107 +3149,109 @@ export function ExpertProfileViewPage() {
             />
           </div>
         </div>
-        <TableActionsDropdown
-          label="Open expert profile actions"
-          isOpen={profileMenuOpen}
-          onOpenChange={setProfileMenuOpen}
-          menuWidth={220}
-          tone="light"
-        >
-          <TableActionsItem
+        <div className="shrink-0">
+          <TableActionsDropdown
+            label="Open expert profile actions"
+            isOpen={profileMenuOpen}
+            onOpenChange={setProfileMenuOpen}
+            menuWidth={220}
             tone="light"
-            icon={<img src={editIcon} alt="edit" className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              navigate(`/experts/management/create?expertId=${id}&mode=edit`)
-            }}
           >
-            Edit Profile
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Users className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              navigate(`/experts/management/profile/${id}/clientele`)
-            }}
-          >
-            View Clientele
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Eye className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              setPasswordModalOpen(true)
-            }}
-          >
-            Reset Password
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<AlertOctagon className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              if (!id) return
-              forceLogoutExpertMutation.mutate(id, {
-                onSuccess: (res) => {
-                  toast.success(
-                    res?.message ||
-                      'Expert sessions revoked. They will be logged out on the next app request.',
-                  )
-                },
-                onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to logout expert')
-                },
-              })
-            }}
-          >
-            Logout User
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Ban className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              setSuspendModalOpen(true)
-            }}
-          >
-            Suspend User
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<CircleMinus className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              if (!id) return
-              blockExpertMutation.mutate(id, {
-                onSuccess: (res) => {
-                  toast.success(res?.message || 'Expert blocked successfully')
-                },
-                onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to block expert')
-                },
-              })
-            }}
-          >
-            Block User
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
-            className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
-            onClick={() => {
-              setProfileMenuOpen(false)
-              setDeleteModalOpen(true)
-            }}
-          >
-            Delete User
-          </TableActionsItem>
-        </TableActionsDropdown>
+            <TableActionsItem
+              tone="light"
+              icon={<img src={editIcon} alt="edit" className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                navigate(`/experts/management/create?expertId=${id}&mode=edit`)
+              }}
+            >
+              Edit Profile
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Users className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                navigate(`/experts/management/profile/${id}/clientele`)
+              }}
+            >
+              View Clientele
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Eye className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                setPasswordModalOpen(true)
+              }}
+            >
+              Reset Password
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<AlertOctagon className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                if (!id) return
+                forceLogoutExpertMutation.mutate(id, {
+                  onSuccess: (res) => {
+                    toast.success(
+                      res?.message ||
+                        'Expert sessions revoked. They will be logged out on the next app request.',
+                    )
+                  },
+                  onError: (err: unknown) => {
+                    toast.error(getApiErrorMessage(err) || 'Failed to logout expert')
+                  },
+                })
+              }}
+            >
+              Logout User
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Ban className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                setSuspendModalOpen(true)
+              }}
+            >
+              Suspend User
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<CircleMinus className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                if (!id) return
+                blockExpertMutation.mutate(id, {
+                  onSuccess: (res) => {
+                    toast.success(res?.message || 'Expert blocked successfully')
+                  },
+                  onError: (err: unknown) => {
+                    toast.error(getApiErrorMessage(err) || 'Failed to block expert')
+                  },
+                })
+              }}
+            >
+              Block User
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
+              className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
+              onClick={() => {
+                setProfileMenuOpen(false)
+                setDeleteModalOpen(true)
+              }}
+            >
+              Delete User
+            </TableActionsItem>
+          </TableActionsDropdown>
+        </div>
       </header>
 
-      <div className="relative overflow-hidden rounded-xl bg-[#141414]">
+      <div className="relative min-w-0 overflow-hidden rounded-xl bg-[#141414]">
         <div className="h-40 w-full bg-[#050505]">
           <SafeImage
             src={coverImage}
@@ -3205,8 +3262,8 @@ export function ExpertProfileViewPage() {
             }
           />
         </div>
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="-mt-12 size-20 shrink-0 self-end overflow-hidden rounded-full border-2 border-[#E0A263] bg-[#141414]">
               <SafeImage
                 src={avatarImage}
@@ -3221,8 +3278,8 @@ export function ExpertProfileViewPage() {
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold text-white">{displayName}</h2>
-                <span className="rounded-full border border-[#1E563D]/50 bg-[#143D2B] px-2.5 py-0.5 text-[10px] font-bold text-white">
+                <h2 className="truncate text-lg font-bold text-white">{displayName}</h2>
+                <span className="inline-flex h-[25px] items-center justify-center rounded-[10px] border border-[#1E563D]/50 bg-[#143D2B] px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-white">
                   {rankingBadgeText}
                 </span>
               </div>
@@ -3249,26 +3306,28 @@ export function ExpertProfileViewPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
-        <ProfileSidebar
-          profile={profile}
-          partnerId={id}
-          analytics={analyticsRes?.data}
-          tickets={activeTickets}
-          ticketsLoading={ticketsLoading}
-          onCheckTimelines={handleCheckTimelines}
-          onOpenCustomUrl={() => setCustomUrlModalOpen(true)}
-        />
+      <div className="grid w-full min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,438px)_minmax(0,1fr)]">
+        <div className="min-w-0">
+          <ProfileSidebar
+            profile={profile}
+            partnerId={id}
+            analytics={analyticsRes?.data}
+            tickets={activeTickets}
+            ticketsLoading={ticketsLoading}
+            onCheckTimelines={handleCheckTimelines}
+            onOpenCustomUrl={() => setCustomUrlModalOpen(true)}
+          />
+        </div>
 
-        <div className="flex flex-col gap-5">
-          <div className="flex h-[50px] items-stretch gap-1 overflow-x-auto rounded-xl bg-[#141414] px-2">
+        <div className="flex min-w-0 flex-col gap-5">
+          <div className="flex h-[50px] min-w-0 items-stretch gap-1 overflow-x-auto rounded-xl bg-[#141414] px-2">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'relative flex-1 px-4 text-[13px] font-semibold whitespace-nowrap transition-colors',
+                  'relative shrink-0 px-3 text-[13px] font-semibold whitespace-nowrap transition-colors sm:flex-1 sm:px-4',
                   activeTab === tab.key
                     ? 'text-white after:absolute after:right-4 after:bottom-0 after:left-4 after:h-0.5 after:rounded-full after:bg-[#E0A263]'
                     : 'text-white/50 hover:text-white',

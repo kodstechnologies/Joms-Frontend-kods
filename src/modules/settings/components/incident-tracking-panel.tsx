@@ -328,14 +328,16 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
       <div className="incident-header">
         <div>
           <h2 className="referral-page-title">Error Reporting &amp; Incident Tracking</h2>
-          <p className="referral-page-subtitle mt-1">Track errors &amp; incident in the platform</p>
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+            Track errors &amp; incident in the platform
+          </p>
         </div>
         <Button
           variant="secondary"
           className="ui-manage-metrics inline-flex items-center gap-2"
           onClick={() => navigate('/metrics/incident-tracking?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

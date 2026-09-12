@@ -1,18 +1,10 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  CircleArrowDown,
-  CircleArrowUp,
-  CircleX,
-  ClipboardList,
-  Flag,
-  Waypoints,
-} from 'lucide-react'
+import { CircleArrowDown, CircleArrowUp, CircleX, ClipboardList, Waypoints } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
-import { EscalateMembershipUpgradeModal } from '../components/escalate-membership-upgrade-modal'
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
@@ -32,7 +24,6 @@ import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
 import { buildMembershipDataColumnsById } from '../utils/membership-preference-columns'
 import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
-import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -153,7 +144,6 @@ const EXPORT_COLUMN_MAP: Record<
 
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
-  const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
     null,
@@ -161,7 +151,6 @@ export function ExpertMembershipsPage() {
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
-  const [escalateOpen, setEscalateOpen] = useState(false)
 
   const { currentPage, setCurrentPage } = useExpertMembershipStore()
   const serverSort = useServerTableSort({
@@ -259,18 +248,6 @@ export function ExpertMembershipsPage() {
         >
           Upgrade plan
         </TableActionsItem>
-        {isSuperAdmin ? (
-          <TableActionsItem
-            icon={<Flag className="size-4" strokeWidth={1.85} />}
-            onClick={() => {
-              setActiveDropdownId(null)
-              setSelectedSubscription(subscription)
-              setEscalateOpen(true)
-            }}
-          >
-            Escalate Upgrade
-          </TableActionsItem>
-        ) : null}
         <TableActionsItem
           icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
           onClick={() => openAction(subscription, 'downgrade')}
@@ -292,7 +269,7 @@ export function ExpertMembershipsPage() {
         </TableActionsItem>
       </TableActionsDropdown>
     ),
-    [activeDropdownId, isSuperAdmin, navigate, openAction],
+    [activeDropdownId, navigate, openAction],
   )
 
   const columns = useMemo<ColumnDef<MembershipSubscription>[]>(() => {
@@ -327,12 +304,12 @@ export function ExpertMembershipsPage() {
             )
           }
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
 
-      <MembershipStatsBar />
+      <MembershipStatsBar type="expert" />
 
       <div className="flex justify-center">
         <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
@@ -371,15 +348,6 @@ export function ExpertMembershipsPage() {
       />
 
       {exportFilterModals}
-
-      <EscalateMembershipUpgradeModal
-        open={escalateOpen}
-        subscription={selectedSubscription}
-        onClose={() => {
-          setEscalateOpen(false)
-          setSelectedSubscription(null)
-        }}
-      />
 
       <MembershipActionModals
         subscription={selectedSubscription}

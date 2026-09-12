@@ -41,7 +41,7 @@ export function createVenueSelectColumn({
           if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
         }}
         onChange={toggleVisible}
-        className="rounded border-slate-700 bg-transparent"
+        className="ui-table-checkbox"
       />
     ),
     cell: ({ row }) => (
@@ -51,7 +51,7 @@ export function createVenueSelectColumn({
         checked={selectedVenueIds.includes(row.original._id)}
         onChange={() => toggleOne(row.original._id)}
         onClick={(event) => event.stopPropagation()}
-        className="rounded border-slate-700 bg-transparent"
+        className="ui-table-checkbox"
       />
     ),
     meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },

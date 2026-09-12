@@ -83,6 +83,7 @@ export function MembershipPlansPage({
   const statusFilter = fixedStatus ?? activeStatus
 
   const { data, isLoading } = useMemberships({
+    type: 'expert',
     search: searchQuery || undefined,
     status: statusFilter,
     limit: 50,
@@ -161,10 +162,7 @@ export function MembershipPlansPage({
   const limit = meta?.limit ?? 50
   const rangeStart = totalItems === 0 ? 0 : (page - 1) * limit + 1
   const rangeEnd = Math.min(page * limit, totalItems)
-  const expertPlans = useMemo(
-    () => memberships.filter((plan) => plan.type === 'expert'),
-    [memberships],
-  )
+  const expertPlans = memberships
 
   const openModal = (plan: MembershipPlan, type: NonNullable<typeof modalType>) => {
     setSelectedPlan(plan)
@@ -319,7 +317,9 @@ export function MembershipPlansPage({
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="max-w-3xl">
           <h1 className="text-h1 text-brand-text tracking-tight">{title}</h1>
-          <p className="text-body-md text-muted mt-2 leading-relaxed">{subtitle}</p>
+          <p className="ui-page-subtitle mt-2 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+            {subtitle}
+          </p>
         </div>
         <Button
           className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
@@ -327,12 +327,12 @@ export function MembershipPlansPage({
             navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
           }
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
 
-      <MembershipStatsBar />
+      <MembershipStatsBar type="expert" />
 
       <div className="flex justify-center">
         <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">

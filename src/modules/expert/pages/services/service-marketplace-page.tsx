@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { RefreshCw, Star } from 'lucide-react'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -20,8 +20,8 @@ import type {
   ServiceConsultationTrendPoint,
 } from '@/modules/expert/config/service-marketplace.config'
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
+import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
 import { SERVICE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
   DEFAULT_SERVICE_DASHBOARD_METRIC_IDS,
@@ -82,7 +82,6 @@ const ZERO_CONSULTATION_METRICS: MarketplaceMetric[] =
   }))
 
 function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
-  const isFlat = !trend || trend.percentage === 0
   const isUp = trend?.direction === 'up'
 
   return (
@@ -92,20 +91,9 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
       <div className="mt-auto flex items-center gap-2 pt-3">
         {trend ? (
           <>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                isFlat
-                  ? 'bg-white/10 text-slate-300'
-                  : isUp
-                    ? 'bg-brand-positive/15 text-brand-positive'
-                    : 'bg-brand-danger/10 text-brand-danger',
-              )}
-            >
-              {!isFlat &&
-                (isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />)}
-              {trend.percentage}%
-            </span>
+            <TrendBadge direction={isUp ? 'up' : 'down'}>
+              {formatTrendPercent(trend.percentage, isUp ? 'up' : 'down')}
+            </TrendBadge>
             <span className="text-muted text-[10px]">{trend.label ?? 'vs last month'}</span>
           </>
         ) : (
@@ -637,7 +625,7 @@ export function ServiceMarketplacePage() {
           <h1 className="text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">
             Service Marketplace
           </h1>
-          <p className="text-sm leading-relaxed text-slate-300 sm:text-base">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Service delivery analytics and marketplace performance metrics
           </p>
         </div>
@@ -647,7 +635,7 @@ export function ServiceMarketplacePage() {
             className="ui-manage-metrics h-9"
             onClick={() => navigate('/services/dashboard/metrics')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 

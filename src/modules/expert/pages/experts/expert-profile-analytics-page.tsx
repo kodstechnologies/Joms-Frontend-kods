@@ -419,7 +419,7 @@ export function ExpertProfileAnalyticsPage() {
             className="ui-manage-metrics ui-cta ui-cta-primary h-9"
             onClick={() => navigate(manageMetricsPath)}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button className="ui-export-data h-9" onClick={handleExport}>

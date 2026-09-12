@@ -10,7 +10,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AdminNoteModal } from '../components/admin-note-modal'
@@ -30,11 +30,11 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
@@ -62,14 +62,11 @@ const ROLE_HISTORY_EXPORT_COLUMN_MAP: Record<
 }
 
 const HISTORY_SORT_FIELD_MAP = {
-  ...buildDefaultTableSortFieldMap([
-    'previousRole',
-    'changedTo',
-    'changedOn',
-    'changedBy',
-    'adminNote',
-  ]),
+  previousRole: 'previousRole',
+  changedTo: 'changedTo',
   changedOn: 'createdAt',
+  changedBy: 'changedBy',
+  adminNote: 'adminNote',
 }
 
 const formatOverviewDate = (value?: string) => {
@@ -141,6 +138,7 @@ function RolePill({ label }: { label: string }) {
 export function AdminDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const authUser = useAuthStore((state) => state.user)
 
   const [historyPage, setHistoryPage] = useState(1)
   const serverSort = useServerTableSort({
@@ -152,13 +150,18 @@ export function AdminDetailPage() {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
 
-  const { data: subAdminData, isLoading } = useSubAdmin(id)
-  const { data: logsData, isLoading: logsLoading } = useSubAdminLogs(id, {
-    page: historyPage,
-    limit: PAGE_SIZE,
-    ...enhancedSearch.buildSearchParams(),
-    ...serverSort.sortParams,
-  })
+  const isOwnSuperAdminProfile = Boolean(authUser?.isSuperAdmin && id && id === authUser.id)
+
+  const { data: subAdminData, isLoading } = useSubAdmin(isOwnSuperAdminProfile ? '' : id)
+  const { data: logsData, isLoading: logsLoading } = useSubAdminLogs(
+    isOwnSuperAdminProfile ? '' : id,
+    {
+      page: historyPage,
+      limit: PAGE_SIZE,
+      ...enhancedSearch.buildSearchParams(),
+      ...serverSort.sortParams,
+    },
+  )
 
   const suspendMutation = useSuspendSubAdmin()
   const reactivateMutation = useReactivateSubAdmin()
@@ -199,6 +202,10 @@ export function AdminDetailPage() {
     moduleKey: 'rbac-admin-logs',
     onExportData: handleExportData,
   })
+
+  if (isOwnSuperAdminProfile) {
+    return <Navigate to="/settings/access/my-profile" replace />
+  }
 
   const historyColumns = useMemo<ColumnDef<RoleHistoryRow>[]>(
     () =>
@@ -479,7 +486,7 @@ export function AdminDetailPage() {
             onColumnSearchRemove={enhancedSearch.removeColumnSearch}
             onClearAllSearches={enhancedSearch.clearAll}
             searchPlaceholder="Search by role, note or action"
-            showSearch={false}
+            showSearch
             showAdvancedFilter={false}
             showExport={false}
             showRecordCount={false}

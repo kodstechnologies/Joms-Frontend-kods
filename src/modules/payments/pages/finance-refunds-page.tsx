@@ -9,9 +9,9 @@ import {
   SquarePen,
   Tag,
   Trash2,
-  TrendingUp,
 } from 'lucide-react'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -107,15 +107,14 @@ function SummaryCard({
   change: string
   changeNote: string
 }) {
+  const isDown = change.trim().startsWith('-')
+  const direction = isDown ? 'down' : 'up'
   return (
     <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
       <p className="text-body-sm-medium text-muted">{label}</p>
       <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
-          <TrendingUp className="size-3" />
-          {change}
-        </span>
+        <TrendBadge direction={direction}>{ensureTrendChangeSign(change, direction)}</TrendBadge>
         <span className="text-body-sm text-muted">{changeNote}</span>
       </div>
     </div>
@@ -430,7 +429,7 @@ export function FinanceRefundsPage() {
             if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
           }}
           onChange={toggleVisibleRows}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -440,7 +439,7 @@ export function FinanceRefundsPage() {
           checked={selectedRowIds.includes(row.original.id)}
           onChange={() => toggleRowSelection(row.original.id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
@@ -567,7 +566,7 @@ export function FinanceRefundsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Refunds & Chargebacks</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track revenue, payouts, and financial performance
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
@@ -579,7 +578,7 @@ export function FinanceRefundsPage() {
           </p>
         </div>
         <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-refunds')}>
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
