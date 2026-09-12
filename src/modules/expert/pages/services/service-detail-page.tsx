@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Info,
   Play,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -83,6 +84,7 @@ export const ServiceDetailPage = () => {
   const tickets = ticketsResponse?.data ?? []
 
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [imageViewerOpen, setImageViewerOpen] = useState(false)
   const [activeTierIndex, setActiveTierIndex] = useState(0)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [activeAction, setActiveAction] = useState<DetailAction>(null)
@@ -112,6 +114,29 @@ export const ServiceDetailPage = () => {
   const imageCount = images.length
   const activeImage =
     imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
+
+  const handlePrevImage = useCallback(() => {
+    if (imageCount <= 0) return
+    setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
+  }, [imageCount])
+
+  const handleNextImage = useCallback(() => {
+    if (imageCount <= 0) return
+    setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
+  }, [imageCount])
+
+  const closeImageViewer = useCallback(() => setImageViewerOpen(false), [])
+
+  useEffect(() => {
+    if (!imageViewerOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeImageViewer()
+      if (event.key === 'ArrowLeft') handlePrevImage()
+      if (event.key === 'ArrowRight') handleNextImage()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [imageViewerOpen, closeImageViewer, handleNextImage, handlePrevImage])
 
   const tierDetails = useMemo(() => {
     const tiers = service?.pricing?.tiers ?? []
@@ -366,17 +391,16 @@ export const ServiceDetailPage = () => {
   const headerActionClass =
     'h-10 shrink-0 gap-1.5 rounded-lg border-white px-3.5 text-[13px] font-medium'
 
-  const ticketStatusClass = (status?: string) => {
+  const ticketStatusClass = 'bg-[#3D2A1F] text-[#E0A263]'
+
+  const formatTicketStatus = (status?: string) => {
     const normalized = String(status || '')
+      .trim()
       .toLowerCase()
       .replace(/[_-]+/g, ' ')
-    if (normalized.includes('progress') || normalized === 'open' || normalized === 'pending') {
-      return 'bg-[#E0A263] text-black'
-    }
-    if (normalized.includes('resolv') || normalized.includes('close')) {
-      return 'bg-[#6B4A3A] text-white'
-    }
-    return 'bg-white/15 text-white'
+    if (normalized.includes('progress')) return 'In - Progress'
+    if (normalized.includes('resolv')) return 'Resolved'
+    return titleCase(status)
   }
 
   return (
@@ -498,14 +522,14 @@ export const ServiceDetailPage = () => {
         <div className="flex flex-col gap-5">
           <div className="relative h-[320px] w-full overflow-hidden rounded-xl bg-black">
             {activeImage ? (
-              <a
-                href={activeImage}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                aria-label="Open image viewer"
+                onClick={() => setImageViewerOpen(true)}
                 className="block h-full w-full cursor-zoom-in"
               >
                 <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
-              </a>
+              </button>
             ) : (
               <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                 <ImageIcon className="size-8" aria-hidden="true" />
@@ -518,9 +542,10 @@ export const ServiceDetailPage = () => {
                 <button
                   type="button"
                   aria-label="Previous image"
-                  onClick={() =>
-                    setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
-                  }
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
                   className="absolute top-1/2 left-3 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronLeft className="size-4" />
@@ -528,9 +553,10 @@ export const ServiceDetailPage = () => {
                 <button
                   type="button"
                   aria-label="Next image"
-                  onClick={() =>
-                    setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
-                  }
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
                   className="absolute top-1/2 right-3 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronRight className="size-4" />
@@ -544,50 +570,107 @@ export const ServiceDetailPage = () => {
             </div>
           </div>
 
+          {imageViewerOpen && activeImage ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={closeImageViewer}
+            >
+              <button
+                type="button"
+                aria-label="Close image viewer"
+                onClick={closeImageViewer}
+                className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+              >
+                <X className="size-5" />
+              </button>
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
+                  className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronLeft className="size-6" />
+                </button>
+              ) : null}
+              <div
+                className="flex max-h-[85vh] max-w-[min(900px,90vw)] flex-col items-center"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <img
+                  src={activeImage}
+                  alt={service.title}
+                  className="max-h-[80vh] max-w-full rounded-lg object-contain"
+                />
+                <p className="mt-3 text-[13px] text-white/70">
+                  {activeImageIndex + 1} / {imageCount}
+                </p>
+              </div>
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
+                  className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronRight className="size-6" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
           <section className="rounded-xl bg-[#141414] p-5">
             <h3 className="text-body-md font-semibold text-white">Support &amp; Admin</h3>
 
-            <p className="text-muted mt-4 text-[12px] font-medium">All Tickets</p>
-            {isTicketsLoading ? (
-              <div className="mt-3 space-y-2">
-                <ShimmerBlock className="h-16 w-full" />
-                <ShimmerBlock className="h-16 w-full" />
-              </div>
-            ) : tickets.length === 0 ? (
-              <EmptyState message="No support tickets raised by this expert." />
-            ) : (
-              <ul className="mt-3 space-y-3">
-                {tickets.map((ticket) => (
-                  <li key={ticket._id}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/support/tickets/${ticket._id}`)}
-                      className="flex w-full items-start justify-between gap-3 text-left"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-body-sm truncate font-medium text-white">
-                          # {ticket.ticketNumber} – {ticket.subject}
-                        </p>
-                        <p className="text-muted mt-1 text-[11px]">
-                          Updated: {formatRelativeTime(ticket.updatedAt || ticket.createdAt)}
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
-                          ticketStatusClass(ticket.status),
-                        )}
+            <div className="mt-4 rounded-xl bg-[#050505] p-4">
+              <p className="text-muted text-[12px] font-medium italic">All Tickets</p>
+              {isTicketsLoading ? (
+                <div className="mt-3 space-y-2">
+                  <ShimmerBlock className="h-16 w-full" />
+                  <ShimmerBlock className="h-16 w-full" />
+                </div>
+              ) : tickets.length === 0 ? (
+                <EmptyState message="No support tickets raised by this expert." />
+              ) : (
+                <ul className="mt-3 space-y-4">
+                  {tickets.map((ticket) => (
+                    <li key={ticket._id}>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/support/tickets/${ticket._id}`)}
+                        className="flex w-full items-start justify-between gap-3 text-left"
                       >
-                        {titleCase(ticket.status)}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+                        <p className="text-body-sm min-w-0 flex-1 truncate font-medium text-white underline underline-offset-2">
+                          # {ticket.ticketNumber} - {ticket.subject}
+                        </p>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          <span
+                            className={cn(
+                              'rounded-full px-3 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
+                              ticketStatusClass,
+                            )}
+                          >
+                            {formatTicketStatus(ticket.status)}
+                          </span>
+                          <p className="text-muted text-[11px]">
+                            Updated: {formatRelativeTime(ticket.updatedAt || ticket.createdAt)}
+                          </p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <p className="text-muted mt-5 text-[12px] font-medium">Admin notes</p>
-            <div className="text-body-sm mt-2 min-h-[72px] rounded-lg bg-black/60 p-4 text-white">
+            <div className="text-body-sm mt-2 min-h-[72px] rounded-lg bg-[#050505] p-4 text-white">
               {service.adminNote?.trim() || 'None.'}
               {service.flagDetails?.reason ? (
                 <p className="mt-3 text-[#E0A263]">
