@@ -22,8 +22,6 @@ import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { COMMUNICATION_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
-import { StatCard } from '@/shared/components/dashboard/stat-card'
-import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   orderByActiveMetricIds,
@@ -39,6 +37,7 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { fetchCommunications } from '../../api/communication-api'
+import { CommunicationStatsBar } from '../../components/communication-stats-bar'
 import { buildCommunicationMetricCards } from '../../utils/communication-metrics'
 import type { FilterValues } from '@/shared/types/data-filter'
 
@@ -368,19 +367,11 @@ export function CommunicationListPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {metricsQuery.isLoading
-          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
-          : stats.map((stat) => (
-              <StatCard
-                key={stat.id}
-                title={stat.title}
-                value={stat.value}
-                trend={stat.trend}
-                hint={stat.hint}
-              />
-            ))}
-      </div>
+      <CommunicationStatsBar
+        metrics={stats}
+        isLoading={metricsQuery.isLoading}
+        skeletonIds={filteredActiveMetricIds}
+      />
 
       <DataTable
         columns={columns}

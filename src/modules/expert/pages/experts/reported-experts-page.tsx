@@ -110,7 +110,12 @@ export function ExpertReportedExpertsPage() {
       ],
       EXPERT_COLUMN_SORT_FIELDS,
     )
-  }, [list, navigate])
+  }, [
+    list.activeDropdownId,
+    list.setActiveDropdownId,
+    list.tableColumnPreferencesQuery.data?.visibleColumnIds,
+    navigate,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

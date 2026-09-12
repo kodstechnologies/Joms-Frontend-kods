@@ -34,9 +34,7 @@ export function SupportStatCard({
   return (
     <div className="flex min-h-[118px] flex-col justify-center rounded-xl border border-white/[0.08] bg-[#111112] p-4">
       <p className="text-body-xs text-muted">{title}</p>
-      <p className="text-brand-text mt-2 text-[28px] leading-[34px] font-semibold tracking-tight">
-        {value}
-      </p>
+      <p className="mt-2 text-[20px] leading-5 font-semibold tracking-normal text-white">{value}</p>
       <div className="mt-2 flex items-center gap-2">
         <TrendBadge direction={direction}>{formatTrendPercent(percentage, direction)}</TrendBadge>
         <span className={cn('text-muted text-[10px]')}>{label}</span>

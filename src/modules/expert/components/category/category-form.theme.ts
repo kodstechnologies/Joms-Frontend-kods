@@ -1,19 +1,21 @@
 export const categoryFormTheme = {
-  pageBg: 'var(--brand-bg)',
-  surface: 'var(--brand-surface)',
-  inputBg: 'var(--brand-bg)',
+  pageBg: '#050505',
+  surface: '#141414',
+  inputBg: '#050505',
   inputBorder: 'rgb(255 255 255 / 10%)',
-  uploadBg: 'var(--brand-bg)',
+  uploadBg: '#050505',
   uploadBorder: 'rgb(255 255 255 / 20%)',
-  textPrimary: 'var(--brand-text)',
-  textSecondary: 'var(--brand-muted)',
-  textMuted: 'var(--brand-muted)',
+  textPrimary: '#FFFFFF',
+  textSecondary: 'rgb(255 255 255 / 30%)',
+  textMuted: 'rgb(255 255 255 / 30%)',
   accentGradient: 'bg-[image:var(--brand-gold-gradient)]',
   accentGradientHover: 'hover:brightness-[0.96]',
-  inputClass: 'ui-input',
-  textareaClass: 'ui-textarea',
-  sectionTitleClass: 'text-h4 text-brand-text',
-  sectionSubtitleClass: 'text-body-md text-muted',
+  inputClass:
+    'ui-input !bg-[#050505] placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-60',
+  textareaClass:
+    'ui-textarea !bg-[#050505] placeholder:text-white/30 disabled:cursor-not-allowed disabled:opacity-60',
+  sectionTitleClass: 'text-h4 font-semibold text-white',
+  sectionSubtitleClass: 'text-body-md text-white/30',
   tooltipClass:
-    'text-body-sm radius-md box-border flex w-[126px] min-h-[34px] items-center bg-brand-bg px-2 text-brand-text shadow-lg',
+    'box-border flex items-center rounded-md bg-white px-2 py-1.5 text-left text-[12px] leading-[16px] font-normal text-black shadow-lg',
 } as const

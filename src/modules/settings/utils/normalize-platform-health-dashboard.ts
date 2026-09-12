@@ -60,14 +60,13 @@ const normalizeMetric = (metric: PlatformHealthMetric): PlatformHealthMetric => 
   }
 }
 
-export function normalizePlatformHealthDashboard(
-  data: PlatformHealthDashboard,
-): PlatformHealthDashboard {
-  const apiTrafficByDate = new Map(
-    (data.charts.apiTraffic || []).map((row) => [row.date, row.requests]),
-  )
+const buildPlatformTrends = (
+  healthTrend: PlatformHealthDashboard['charts']['healthTrend'] = [],
+  apiTraffic: PlatformHealthDashboard['charts']['apiTraffic'] = [],
+) => {
+  const apiTrafficByDate = new Map((apiTraffic || []).map((row) => [row.date, row.requests]))
 
-  const platformTrends = (data.charts.healthTrend || []).map((row) => {
+  return (healthTrend || []).map((row) => {
     const requests = apiTrafficByDate.get(row.date) || 0
     const errorRequests = Math.round((requests * (row.errorRate || 0)) / 100)
 
@@ -78,8 +77,12 @@ export function normalizePlatformHealthDashboard(
       supportTickets: errorRequests,
     }
   })
+}
 
-  const systemPerformance24h = (data.charts.performance || []).map((row) => ({
+const buildSystemPerformance24h = (
+  performance: PlatformHealthDashboard['charts']['performance'] = [],
+) =>
+  (performance || []).map((row) => ({
     time: row.time,
     apiResponseMs: row.apiResponseMs,
     errorRate: row.errorRate,
@@ -89,16 +92,87 @@ export function normalizePlatformHealthDashboard(
     requestsPerMin: row.requestsPerMin ?? 0,
   }))
 
-  const securityCompliance = (data.charts.securityCompliance || []).map((row) => ({
+const buildSecurityCompliance = (
+  securityCompliance: PlatformHealthDashboard['charts']['securityCompliance'] = [],
+) =>
+  (securityCompliance || []).map((row) => ({
     month: row.month,
     compliance: row.compliance ?? 0,
     security: row.security ?? 0,
     issuesResolved: row.issuesResolved ?? 0,
   }))
 
+export function normalizePlatformHealthMetrics(data: {
+  metrics: PlatformHealthMetric[]
+  summary: PlatformHealthDashboard['summary']
+  filters: PlatformHealthDashboard['filters']
+}) {
   return {
     ...data,
-    metrics: data.metrics.map(normalizeMetric),
+    metrics: (data.metrics || []).map(normalizeMetric),
+  }
+}
+
+export function normalizePlatformHealthPlatformTrends(data: {
+  healthTrend: PlatformHealthDashboard['charts']['healthTrend']
+  apiTraffic: PlatformHealthDashboard['charts']['apiTraffic']
+}) {
+  return {
+    healthTrend: data.healthTrend || [],
+    apiTraffic: data.apiTraffic || [],
+    platformTrends: buildPlatformTrends(data.healthTrend, data.apiTraffic),
+  }
+}
+
+export function normalizePlatformHealthSystemPerformance(data: {
+  performance: PlatformHealthDashboard['charts']['performance']
+}) {
+  return {
+    performance: data.performance || [],
+    systemPerformance24h: buildSystemPerformance24h(data.performance),
+  }
+}
+
+export function normalizePlatformHealthSecurityCompliance(data: {
+  securityCompliance: PlatformHealthDashboard['charts']['securityCompliance']
+}) {
+  return {
+    securityCompliance: buildSecurityCompliance(data.securityCompliance),
+  }
+}
+
+export function normalizePlatformHealthInfrastructure(data: {
+  infrastructure: PlatformHealthDashboard['infrastructure']
+}) {
+  return {
+    infrastructure: data.infrastructure || [],
+  }
+}
+
+export function normalizePlatformHealthOperations(data: {
+  backupTrend: PlatformHealthDashboard['charts']['backupTrend']
+  incidentTimeline: PlatformHealthDashboard['charts']['incidentTimeline']
+  errorDistribution: PlatformHealthDashboard['charts']['errorDistribution']
+  infrastructureUtilization: PlatformHealthDashboard['charts']['infrastructureUtilization']
+}) {
+  return {
+    backupTrend: data.backupTrend || [],
+    incidentTimeline: data.incidentTimeline || [],
+    errorDistribution: data.errorDistribution || [],
+    infrastructureUtilization: data.infrastructureUtilization || [],
+  }
+}
+
+export function normalizePlatformHealthDashboard(
+  data: PlatformHealthDashboard,
+): PlatformHealthDashboard {
+  const platformTrends = buildPlatformTrends(data.charts?.healthTrend, data.charts?.apiTraffic)
+  const systemPerformance24h = buildSystemPerformance24h(data.charts?.performance)
+  const securityCompliance = buildSecurityCompliance(data.charts?.securityCompliance)
+
+  return {
+    ...data,
+    metrics: (data.metrics || []).map(normalizeMetric),
     charts: {
       ...data.charts,
       platformTrends,

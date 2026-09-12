@@ -28,7 +28,7 @@ import {
 import { fetchVenueCategoryList } from '../../api/venue-category-api'
 import { mapVenueCategoryToUi } from '../../utils/category-mapper'
 
-import { StatCard } from '../../components/stat-card'
+import { CategoryStatsBar } from '../../components/category/category-stats-bar'
 import {
   type VenueCategory,
   venueCategoryColumns,
@@ -97,7 +97,7 @@ export function VenueCategoryManagementPage() {
   )
 
   const { data, isLoading, isError } = useVenueCategoryManagementList(categoryQueryParams)
-  const { data: metrics } = useVenueCategoryMetrics()
+  const { data: metrics, isLoading: isMetricsLoading } = useVenueCategoryMetrics()
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = data?.pagination?.total ?? categories.length
@@ -230,11 +230,11 @@ export function VenueCategoryManagementPage() {
         createPath="/venues/categories/management/create"
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metricCards.map((card) => (
-          <StatCard key={card.id} title={card.title} value={card.value} />
-        ))}
-      </div>
+      <CategoryStatsBar
+        metrics={metricCards}
+        isLoading={isMetricsLoading}
+        skeletonIds={activeMetricIds}
+      />
 
       <CategoryQuickLinks
         pausedCount={pausedCount}

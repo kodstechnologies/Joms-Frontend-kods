@@ -1,11 +1,14 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ExternalLink, Siren, X } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import {
+  clearSeededAdminInboxAlerts,
   useMarkNotificationRead,
   useMyNotifications,
   useUnreadNotificationCount,
+  notificationKeys,
   type InAppNotification,
 } from '@/modules/notifications'
 import { resolveAdminInboxNavigation } from '@/modules/notifications/utils/admin-inbox-navigation'
@@ -80,11 +83,27 @@ type AlertsPanelProps = {
 
 export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const clearedSeededRef = useRef(false)
   const alertsQuery = useMyNotifications(open, 'alert')
   const markReadMutation = useMarkNotificationRead()
   const alerts = useMemo(() => alertsQuery.data?.data ?? [], [alertsQuery.data?.data])
   const totalCount = alertsQuery.data?.meta?.total ?? alerts.length
   const { todayItems, olderItems } = useMemo(() => splitInboxByDay(alerts), [alerts])
+
+  useEffect(() => {
+    if (!open || clearedSeededRef.current) return
+    clearedSeededRef.current = true
+
+    clearSeededAdminInboxAlerts()
+      .then(() => {
+        void queryClient.invalidateQueries({ queryKey: notificationKeys.list('alert') })
+        void queryClient.invalidateQueries({ queryKey: notificationKeys.unread('alert') })
+      })
+      .catch(() => {
+        clearedSeededRef.current = false
+      })
+  }, [open, queryClient])
 
   useEffect(() => {
     if (!open) return
@@ -198,8 +217,23 @@ type AlertsTriggerProps = {
 }
 
 export function AlertsTrigger({ open, onOpen }: AlertsTriggerProps) {
+  const queryClient = useQueryClient()
   const unreadQuery = useUnreadNotificationCount('alert')
   const count = unreadQuery.data ?? 0
+
+  useEffect(() => {
+    let cancelled = false
+    clearSeededAdminInboxAlerts()
+      .then(() => {
+        if (cancelled) return
+        void queryClient.invalidateQueries({ queryKey: notificationKeys.list('alert') })
+        void queryClient.invalidateQueries({ queryKey: notificationKeys.unread('alert') })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [queryClient])
 
   return (
     <button

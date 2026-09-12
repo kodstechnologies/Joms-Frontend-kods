@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { UploadCloud, X } from 'lucide-react'
 
-import { guardUploadFile, MAX_UPLOAD_FILE_SIZE_MB } from '@/shared/lib/upload-file'
+import { guardUploadFile } from '@/shared/lib/upload-file'
 
 import InfoTooltip from './InfoTooltip'
 import { categoryFormTheme } from './category-form.theme'
@@ -11,6 +11,8 @@ interface UploadBoxProps {
   onChange: (file: File | null) => void
   label?: string
   helperText?: string
+  tooltipWidth?: number
+  tooltipMinHeight?: number
   placeholderText?: string
   variant?: 'default' | 'compact'
   disabled?: boolean
@@ -19,6 +21,8 @@ interface UploadBoxProps {
 const UploadBox = ({
   label,
   helperText,
+  tooltipWidth,
+  tooltipMinHeight,
   placeholderText = 'Upload here',
   preview,
   onChange,
@@ -52,7 +56,9 @@ const UploadBox = ({
       {label ? (
         <div className="flex items-center gap-1.5">
           <label className="text-body-sm-medium text-brand-text">{label}</label>
-          {helperText ? <InfoTooltip text={helperText} /> : null}
+          {helperText ? (
+            <InfoTooltip text={helperText} width={tooltipWidth} minHeight={tooltipMinHeight} />
+          ) : null}
         </div>
       ) : null}
 
@@ -71,11 +77,9 @@ const UploadBox = ({
             inputRef.current?.click()
           }
         }}
-        className={`relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-dashed transition-colors ${
-          isCompact ? 'h-11' : 'h-[72px]'
-        } ${
+        className={`relative flex h-10 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed transition-colors ${
           disabled ? 'cursor-not-allowed opacity-60' : 'hover:border-brand-accent cursor-pointer'
-        } ${preview ? 'border-brand-accent/60' : 'border-white/10'}`}
+        } ${preview ? 'border-brand-accent/60' : 'border-white/20'}`}
         style={{ backgroundColor: categoryFormTheme.uploadBg }}
       >
         {preview ? (
@@ -94,16 +98,13 @@ const UploadBox = ({
           </>
         ) : (
           <div
-            className={`text-muted flex items-center justify-center gap-2 ${
-              isCompact ? 'px-2' : 'flex-col gap-1'
+            className={`flex items-center justify-center gap-2 text-white/30 ${
+              isCompact ? 'px-2' : 'px-3'
             }`}
           >
-            <UploadCloud size={isCompact ? 16 : 18} className="shrink-0" aria-hidden="true" />
+            <UploadCloud size={16} className="shrink-0" aria-hidden="true" />
             {!isCompact ? (
-              <>
-                <span className="text-body-sm">{placeholderText}</span>
-                <span className="text-[10px] text-white/40">Max {MAX_UPLOAD_FILE_SIZE_MB}MB</span>
-              </>
+              <span className="text-body-sm text-white/30">{placeholderText}</span>
             ) : null}
           </div>
         )}

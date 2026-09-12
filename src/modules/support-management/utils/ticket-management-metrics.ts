@@ -16,15 +16,20 @@ export type TicketManagementMetricCard = {
 export { TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP }
 
 const defaultById: Record<string, { value: string; changePercent: number }> = {
-  'assigned-to-me': { value: '0', changePercent: 0 },
+  'total-tickets': { value: '0', changePercent: 0 },
+  'open-tickets': { value: '0', changePercent: 0 },
   'tickets-in-progress': { value: '0', changePercent: 0 },
+  'assigned-to-me': { value: '0', changePercent: 0 },
+  'escalated-by-me': { value: '0', changePercent: 0 },
   'average-first-response-time': { value: '00:00:00', changePercent: 0 },
   'average-resolution-time': { value: '00:00:00', changePercent: 0 },
-  'escalated-by-me': { value: '0', changePercent: 0 },
+  'tickets-resolved-today': { value: '0', changePercent: 0 },
   // legacy keys fallback
   'my-open-tickets': { value: '0', changePercent: 0 },
   'avg-response-time': { value: '00:00:00', changePercent: 0 },
   'avg-resolution-time': { value: '00:00:00', changePercent: 0 },
+  'resolved-today': { value: '0', changePercent: 0 },
+  'total-open-tickets': { value: '0', changePercent: 0 },
 }
 
 const labelById = new Map(
@@ -57,7 +62,8 @@ function buildFromApi(cards: SupportStatCard[]): TicketManagementMetricCard[] {
       value: displayValue(id, card.value),
       percentage: Math.abs(card.changePercent ?? 0),
       direction: (card.changeDirection ?? ((card.changePercent ?? 0) < 0 ? 'down' : 'up')) as
-        'up' | 'down',
+        | 'up'
+        | 'down',
     })
   }
 
