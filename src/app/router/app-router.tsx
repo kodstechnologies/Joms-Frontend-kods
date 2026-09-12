@@ -792,6 +792,7 @@ export function AppRouter() {
               <Route element={<PermissionRoute module="memberships" />}>
                 <Route path="/memberships/plans" element={<MembershipPlansPage />} />
                 <Route path="/memberships/plans/create" element={<MembershipPlanFormPage />} />
+                <Route path="/memberships/plans/:id/view" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/:id/edit" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/paused" element={<MembershipPausedPlansPage />} />
                 <Route

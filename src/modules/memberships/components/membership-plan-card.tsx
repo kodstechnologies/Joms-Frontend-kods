@@ -52,6 +52,7 @@ function VRule() {
 
 type MembershipPlanCardProps = {
   plan: MembershipPlan
+  onViewDetails?: (plan: MembershipPlan) => void
   onEdit?: (plan: MembershipPlan) => void
   onPause?: (plan: MembershipPlan) => void
   onResume?: (plan: MembershipPlan) => void
@@ -65,6 +66,7 @@ type MembershipPlanCardProps = {
 
 export function MembershipPlanCard({
   plan,
+  onViewDetails,
   onEdit,
   onPause,
   onResume,
@@ -148,7 +150,7 @@ export function MembershipPlanCard({
                 <MenuButton
                   label="View Details"
                   icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
-                  onClick={() => runAction(onEdit)}
+                  onClick={() => runAction(onViewDetails ?? onEdit)}
                 />
                 <MenuButton
                   label="View Version History"

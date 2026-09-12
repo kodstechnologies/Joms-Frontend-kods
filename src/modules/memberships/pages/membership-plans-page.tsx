@@ -427,6 +427,7 @@ export function MembershipPlansPage({
         <PlanSection
           title="Expert Membership Plans"
           plans={expertPlans}
+          onViewDetails={(plan) => navigate(`/memberships/plans/${plan._id}/view`)}
           onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
           onPause={(plan) => openModal(plan, 'pause')}
           onResume={(plan) => openModal(plan, 'resume')}
