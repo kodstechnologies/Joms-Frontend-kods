@@ -26,7 +26,6 @@ import {
   createCategoryFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchCategories } from '../../api/category-api'
-import { StatCard } from '../../components/stat-card'
 import { type Category, categoryColumns } from '../../components/category/category-table-columns'
 import {
   categoryPath,
@@ -36,6 +35,7 @@ import {
   CategoryManagementPageHeader,
   CategoryQuickLinks,
 } from '../../components/category/category-list-shared'
+import { CategoryStatsBar } from '../../components/category/category-stats-bar'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import {
   useServiceCategories,
@@ -97,7 +97,7 @@ export function CategoryManagementPage() {
   )
 
   const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
-  const { data: metrics } = useServiceCategoryMetrics()
+  const { data: metrics, isLoading: isMetricsLoading } = useServiceCategoryMetrics()
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
 
@@ -255,11 +255,11 @@ export function CategoryManagementPage() {
         createPath={categoryPath(scope, 'create')}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metricCards.map((card) => (
-          <StatCard key={card.id} title={card.title} value={card.value} />
-        ))}
-      </div>
+      <CategoryStatsBar
+        metrics={metricCards}
+        isLoading={isMetricsLoading}
+        skeletonIds={activeMetricIds}
+      />
 
       <CategoryQuickLinks
         pausedCount={pausedCount}

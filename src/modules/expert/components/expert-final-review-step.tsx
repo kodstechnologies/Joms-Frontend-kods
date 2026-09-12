@@ -260,6 +260,8 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
         url={previewItem?.url || ''}
         filename={previewItem?.fileName || previewItem?.title || ''}
         mimeType={previewItem?.mimeType}
+        partnerId={previewItem?.partnerId}
+        documentType={previewItem?.documentType}
         actionsDisabled={true}
         reasonOptions={[]}
         onClose={() => setPreviewItem(null)}

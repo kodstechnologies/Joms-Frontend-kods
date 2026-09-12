@@ -122,3 +122,10 @@ export const seedAdminInboxAlerts = async () => {
   >('/admin/inbox/seed-alerts')
   return response.data
 }
+
+export const clearSeededAdminInboxAlerts = async () => {
+  const response = await adminApiClient.post<ApiEnvelope<{ deletedCount: number }>>(
+    '/admin/inbox/clear-seeded-alerts',
+  )
+  return response.data
+}

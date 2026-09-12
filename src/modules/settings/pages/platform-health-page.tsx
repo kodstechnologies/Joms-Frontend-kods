@@ -33,8 +33,21 @@ import {
   PLATFORM_HEALTH_LEGACY_COLUMN_ID_MAP,
   PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG,
 } from '../config/platform-health-table-columns.config'
-import { usePlatformHealthDashboard } from '../hooks/use-platform-health'
-import type { PlatformHealthDateRange, PlatformHealthInfraRow } from '../types/platform-health'
+import {
+  fetchPlatformHealthDashboard,
+  fetchPlatformHealthInfrastructure,
+  fetchPlatformHealthMetrics,
+  fetchPlatformHealthOperations,
+  fetchPlatformHealthPlatformTrends,
+  fetchPlatformHealthSecurityCompliance,
+  fetchPlatformHealthSystemPerformance,
+} from '../api/platform-health.api'
+import { usePlatformHealthSections } from '../hooks/use-platform-health'
+import type {
+  PlatformHealthDashboard,
+  PlatformHealthDateRange,
+  PlatformHealthInfraRow,
+} from '../types/platform-health'
 import { buildPlatformHealthMetricCards } from '../utils/platform-health-metrics'
 import { exportPlatformHealthToExcel } from '../utils/export-platform-health'
 import {
@@ -567,12 +580,24 @@ export function PlatformHealthPage() {
   const [serviceStatus, setServiceStatus] = useState('')
 
   const dateRange = RANGE_MAP[selectedRange] || 'quarter'
-  const dashboardQuery = usePlatformHealthDashboard({
-    dateRange,
-    serviceStatus: serviceStatus || undefined,
-  })
-  const dashboardData = dashboardQuery.data
-  const isLoading = dashboardQuery.isLoading
+  const sharedFilters = useMemo(() => ({ dateRange }), [dateRange])
+  const infrastructureFilters = useMemo(
+    () => ({
+      dateRange,
+      serviceStatus: serviceStatus || undefined,
+    }),
+    [dateRange, serviceStatus],
+  )
+
+  const {
+    metricsQuery,
+    platformTrendsQuery,
+    systemPerformanceQuery,
+    securityComplianceQuery,
+    infrastructureQuery,
+    operationsQuery,
+    refetchAll,
+  } = usePlatformHealthSections(sharedFilters, infrastructureFilters)
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(PLATFORM_HEALTH_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(PLATFORM_HEALTH_MODULE_KEY, [
@@ -591,9 +616,9 @@ export function PlatformHealthPage() {
   )
 
   const visibleMetrics = useMemo(() => {
-    const allMetrics = buildPlatformHealthMetricCards(dashboardData?.metrics)
+    const allMetrics = buildPlatformHealthMetricCards(metricsQuery.data?.metrics)
     return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
-  }, [dashboardData?.metrics, filteredActiveMetricIds])
+  }, [metricsQuery.data?.metrics, filteredActiveMetricIds])
 
   const visibleInfraColumnIds = useMemo(() => {
     const catalogIds = PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG.map((column) => column.id)
@@ -611,68 +636,131 @@ export function PlatformHealthPage() {
 
   const infraColumnVisible = useMemo(() => new Set(visibleInfraColumnIds), [visibleInfraColumnIds])
 
-  const charts = dashboardData?.charts
+  const platformTrendData = platformTrendsQuery.data?.platformTrends || []
+  const systemPerformanceData = systemPerformanceQuery.data?.systemPerformance24h || []
+  const securityComplianceData = securityComplianceQuery.data?.securityCompliance || []
+
   const infrastructure = useMemo(
     () =>
-      (dashboardData?.infrastructure || []).filter((row) => row.id !== 'cache' && row.id !== 'cdn'),
-    [dashboardData?.infrastructure],
+      (infrastructureQuery.data?.infrastructure || []).filter(
+        (row) => row.id !== 'cache' && row.id !== 'cdn',
+      ),
+    [infrastructureQuery.data?.infrastructure],
   )
   const skeletonCount = filteredActiveMetricIds.length || DEFAULT_PLATFORM_HEALTH_METRIC_IDS.length
 
   const platformTrendAxis = useMemo(
-    () => resolvePlatformTrendLeftAxis(charts?.platformTrends || []),
-    [charts?.platformTrends],
+    () => resolvePlatformTrendLeftAxis(platformTrendData),
+    [platformTrendData],
   )
 
   const platformTrendUptimeAxis = useMemo(
-    () => resolvePlatformTrendUptimeAxis(charts?.platformTrends || []),
-    [charts?.platformTrends],
+    () => resolvePlatformTrendUptimeAxis(platformTrendData),
+    [platformTrendData],
   )
 
   const systemPerfRightAxis = useMemo(
-    () => resolveSystemPerfRightAxis(charts?.systemPerformance24h || []),
-    [charts?.systemPerformance24h],
+    () => resolveSystemPerfRightAxis(systemPerformanceData),
+    [systemPerformanceData],
   )
 
   const securityAxis = useMemo(
-    () => resolveSecurityAxis(charts?.securityCompliance || []),
-    [charts?.securityCompliance],
+    () => resolveSecurityAxis(securityComplianceData),
+    [securityComplianceData],
   )
 
-  const platformTrendData = charts?.platformTrends || []
   const platformTrendChartMinWidth = Math.max(
     720,
     platformTrendData.length * PLATFORM_TREND_CATEGORY_WIDTH + 80,
   )
-  const securityComplianceData = charts?.securityCompliance || []
 
   const refresh = () => {
-    dashboardQuery.refetch()
+    refetchAll()
   }
 
   const handleExportData = useCallback(async () => {
-    if (isLoading) {
+    const sectionsLoading =
+      metricsQuery.isLoading ||
+      platformTrendsQuery.isLoading ||
+      systemPerformanceQuery.isLoading ||
+      securityComplianceQuery.isLoading ||
+      infrastructureQuery.isLoading ||
+      operationsQuery.isLoading
+
+    if (sectionsLoading) {
       toast.message('Please wait for data to load')
       return
     }
 
-    if (!visibleMetrics.length && !dashboardData) {
-      toast.error('No data available to export')
-      return
-    }
-
     try {
+      let dashboard: PlatformHealthDashboard | null = null
+
+      try {
+        dashboard = await fetchPlatformHealthDashboard(infrastructureFilters)
+      } catch {
+        const [metrics, trends, performance, security, infrastructureSection, operations] =
+          await Promise.all([
+            fetchPlatformHealthMetrics(sharedFilters),
+            fetchPlatformHealthPlatformTrends(sharedFilters),
+            fetchPlatformHealthSystemPerformance(sharedFilters),
+            fetchPlatformHealthSecurityCompliance(sharedFilters),
+            fetchPlatformHealthInfrastructure(infrastructureFilters),
+            fetchPlatformHealthOperations(sharedFilters),
+          ])
+
+        dashboard = {
+          metrics: metrics.metrics,
+          summary: metrics.summary,
+          filters: metrics.filters,
+          infrastructure: infrastructureSection.infrastructure,
+          charts: {
+            platformTrends: trends.platformTrends,
+            systemPerformance24h: performance.systemPerformance24h,
+            healthTrend: trends.healthTrend,
+            performance: performance.performance,
+            apiTraffic: trends.apiTraffic,
+            errorDistribution: operations.errorDistribution,
+            securityCompliance: security.securityCompliance,
+            backupTrend: operations.backupTrend,
+            infrastructureUtilization: operations.infrastructureUtilization,
+            incidentTimeline: operations.incidentTimeline,
+          },
+        }
+      }
+
+      const exportMetrics =
+        visibleMetrics.length > 0
+          ? visibleMetrics
+          : buildPlatformHealthMetricCards(dashboard.metrics)
+
+      if (!exportMetrics.length && !dashboard) {
+        toast.error('No data available to export')
+        return
+      }
+
       await exportPlatformHealthToExcel({
         rangeLabel: selectedRange,
         serviceStatusFilter: serviceStatus || 'All statuses',
-        metrics: visibleMetrics,
-        dashboard: dashboardData,
+        metrics: exportMetrics,
+        dashboard,
       })
       toast.success('Exported as Excel')
     } catch {
       toast.error('Failed to export platform health data')
     }
-  }, [dashboardData, isLoading, selectedRange, serviceStatus, visibleMetrics])
+  }, [
+    infrastructureFilters,
+    infrastructureQuery.isLoading,
+    metricsQuery.isLoading,
+    operationsQuery.isLoading,
+    platformTrendsQuery.isLoading,
+    securityComplianceQuery.isLoading,
+    selectedRange,
+    serviceStatus,
+    sharedFilters,
+    systemPerformanceQuery.isLoading,
+    visibleMetrics,
+  ])
 
   return (
     <div className="space-y-6">
@@ -706,7 +794,7 @@ export function PlatformHealthPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:justify-items-start">
-        {isLoading
+        {metricsQuery.isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <PlatformHealthMetricCardSkeleton key={`health-metric-skel-${index}`} />
             ))
@@ -720,7 +808,7 @@ export function PlatformHealthPage() {
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
-        isLoading={isLoading}
+        isLoading={platformTrendsQuery.isLoading}
         trendTypography
       >
         <div className="platform-health-trends-chart w-full overflow-x-auto">
@@ -841,13 +929,13 @@ export function PlatformHealthPage() {
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
-        isLoading={isLoading}
+        isLoading={systemPerformanceQuery.isLoading}
         trendTypography
       >
         <div className="platform-health-trends-chart h-[420px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={charts?.systemPerformance24h || []}
+              data={systemPerformanceData}
               margin={{ left: 12, right: 28, top: 8, bottom: 4 }}
             >
               <defs>
@@ -976,7 +1064,7 @@ export function PlatformHealthPage() {
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
-        isLoading={isLoading}
+        isLoading={securityComplianceQuery.isLoading}
         trendTypography
       >
         <div className="platform-health-trends-chart h-[420px] w-full">
@@ -1086,13 +1174,15 @@ export function PlatformHealthPage() {
               className={REFRESH_BUTTON_CLASS}
               aria-label="Refresh infrastructure"
             >
-              <RefreshCw className={cn('size-4', dashboardQuery.isFetching && 'animate-spin')} />
+              <RefreshCw
+                className={cn('size-4', infrastructureQuery.isFetching && 'animate-spin')}
+              />
             </button>
           </div>
         </div>
 
         <div className="space-y-3">
-          {isLoading
+          {infrastructureQuery.isLoading
             ? Array.from({ length: 6 }).map((_, index) => (
                 <TableRowSkeleton key={`infra-row-${index}`} />
               ))

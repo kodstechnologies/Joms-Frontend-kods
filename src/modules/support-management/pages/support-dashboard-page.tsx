@@ -66,11 +66,10 @@ export function SupportDashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text font-semibold tracking-tight">
-            Support Management
+            Support Dashboard
           </h1>
           <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
-            Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
-            oversight
+            Real-time view of ticket volume, SLA health, agent workload, and resolution quality
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-3">

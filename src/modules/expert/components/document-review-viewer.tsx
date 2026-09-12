@@ -7,6 +7,7 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { fetchPartnerDocumentBlob } from '../api/expert-onboarding-api'
 import type { DocumentStatusPayload } from '../type/expert-application-view'
 import {
   resolveDocumentReviewStatus,
@@ -15,6 +16,8 @@ import {
 } from '../utils/document-review'
 
 export type { DocumentDecisionVariant, DocumentReviewStatus, DocumentStatusPayload }
+
+type PartnerDocumentType = 'pan-card' | 'certificate' | 'gst-certificate'
 
 type DocumentReviewViewerProps = {
   open: boolean
@@ -27,17 +30,34 @@ type DocumentReviewViewerProps = {
   hideActions?: boolean
   isSubmitting?: boolean
   mimeType?: string
+  /** When set, load via backend proxy (avoids Cloudinary browser CORS / attachment issues). */
+  partnerId?: string
+  documentType?: PartnerDocumentType
   onClose: () => void
   onSubmitDecision: (variant: DocumentDecisionVariant, payload: DocumentStatusPayload) => void
 }
+
+const isCloudinaryUrl = (url: string) => /res\.cloudinary\.com|api\.cloudinary\.com/i.test(url)
 
 const isPdfFile = (url: string, filename: string, mimeType?: string) => {
   if (mimeType === 'application/pdf') return true
   const cleanUrl = url.split('?')[0]?.toLowerCase() || ''
   const cleanName = filename.toLowerCase()
-  return (
-    cleanUrl.endsWith('.pdf') || cleanName.endsWith('.pdf') || cleanUrl.includes('application/pdf')
-  )
+  if (
+    cleanUrl.endsWith('.pdf') ||
+    cleanName.endsWith('.pdf') ||
+    cleanUrl.includes('application/pdf')
+  ) {
+    return true
+  }
+  // Cloudinary raw/image PDF delivery paths often keep `.pdf` in public_id;
+  // private download URLs use `format=pdf` instead.
+  if (isCloudinaryUrl(url)) {
+    const lower = url.toLowerCase()
+    if (lower.includes('format=pdf') || lower.includes('/raw/upload/')) return true
+    if (/\.pdf(?:$|[/?#])/i.test(cleanUrl)) return true
+  }
+  return false
 }
 
 const isImageFile = (url: string, filename: string, mimeType?: string) => {
@@ -80,6 +100,8 @@ function DocumentReviewViewerContent({
   hideActions = false,
   isSubmitting = false,
   mimeType,
+  partnerId,
+  documentType,
   onClose,
   onSubmitDecision,
 }: DocumentReviewViewerContentProps) {
@@ -90,7 +112,9 @@ function DocumentReviewViewerContent({
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
+  const [loadError, setLoadError] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const objectUrlRef = useRef<string | null>(null)
 
   const [blobData, setBlobData] = useState<{
     url: string | null
@@ -103,49 +127,93 @@ function DocumentReviewViewerContent({
   })
 
   useEffect(() => {
-    if (!open || !url) {
+    if (!open || (!url && !(partnerId && documentType))) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBlobData({ url: null, type: null, isLoading: false })
+      setLoadError(null)
       return
     }
 
     if (url.startsWith('blob:') || url.startsWith('data:')) {
       setBlobData({ url, type: mimeType || null, isLoading: false })
+      setLoadError(null)
       return
     }
 
     let isMounted = true
     setBlobData((prev) => ({ ...prev, isLoading: true }))
+    setLoadError(null)
 
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch document')
-        return res.blob()
+    const revokePrevious = () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+        objectUrlRef.current = null
+      }
+    }
+
+    const applyBlob = (blob: Blob) => {
+      if (!isMounted) return
+      revokePrevious()
+      let actualBlob = blob
+      if (
+        blob.type === 'application/pdf' ||
+        filename.toLowerCase().endsWith('.pdf') ||
+        isPdfFile(url, filename, mimeType)
+      ) {
+        actualBlob = new Blob([blob], { type: 'application/pdf' })
+      }
+      const objectUrl = URL.createObjectURL(actualBlob)
+      objectUrlRef.current = objectUrl
+      setBlobData({
+        url: objectUrl,
+        type: actualBlob.type,
+        isLoading: false,
       })
-      .then((blob) => {
-        if (!isMounted) return
+    }
 
-        let actualBlob = blob
-        if (blob.type === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
-          actualBlob = new Blob([blob], { type: 'application/pdf' })
+    const load = async () => {
+      try {
+        // Same-origin proxy avoids Cloudinary CORS + Content-Disposition: attachment.
+        if (partnerId && documentType) {
+          const blob = await fetchPartnerDocumentBlob(partnerId, documentType)
+          applyBlob(blob)
+          return
         }
 
+        // Browser fetch to Cloudinary usually fails CORS. Embed the delivery URL
+        // directly for PDFs/images instead of converting to a blob.
+        if (isCloudinaryUrl(url)) {
+          if (isMounted) {
+            setBlobData({
+              url: null,
+              type: isPdfFile(url, filename, mimeType) ? 'application/pdf' : mimeType || null,
+              isLoading: false,
+            })
+          }
+          return
+        }
+
+        const res = await fetch(url)
+        if (!res.ok) throw new Error('Failed to fetch document')
+        applyBlob(await res.blob())
+      } catch (error) {
+        if (!isMounted) return
+        setLoadError(error instanceof Error ? error.message : 'Failed to load document')
         setBlobData({
-          url: URL.createObjectURL(actualBlob),
-          type: actualBlob.type,
+          url: null,
+          type: mimeType || (isPdfFile(url, filename, mimeType) ? 'application/pdf' : null),
           isLoading: false,
         })
-      })
-      .catch(() => {
-        if (isMounted) {
-          setBlobData({ url, type: mimeType || null, isLoading: false })
-        }
-      })
+      }
+    }
+
+    void load()
 
     return () => {
       isMounted = false
+      revokePrevious()
     }
-  }, [open, url, filename, mimeType])
+  }, [open, url, filename, mimeType, partnerId, documentType])
 
   const actualUrl = blobData.url || url
   const actualMimeType = blobData.type || mimeType
@@ -241,8 +309,7 @@ function DocumentReviewViewerContent({
     [actualUrl, filename, actualMimeType],
   )
   const showImage = useMemo(
-    () =>
-      !showPdf && (isImageFile(actualUrl, filename, actualMimeType || '') || Boolean(actualUrl)),
+    () => !showPdf && isImageFile(actualUrl, filename, actualMimeType || ''),
     [actualUrl, filename, actualMimeType, showPdf],
   )
 
@@ -331,13 +398,23 @@ function DocumentReviewViewerContent({
             <div className="border-brand-accent size-10 animate-spin rounded-full border-4 border-t-transparent" />
             <p className="text-body-sm text-white/80">Loading document...</p>
           </div>
-        ) : showPdf ? (
-          <iframe
-            title={filename}
-            src={actualUrl}
-            className="h-full min-h-[70vh] w-full max-w-5xl rounded-md bg-white"
-          />
-        ) : showImage ? (
+        ) : showPdf && actualUrl ? (
+          <div className="flex h-full min-h-[70vh] w-full max-w-5xl flex-col gap-3">
+            <iframe
+              title={filename}
+              src={`${actualUrl}#toolbar=1&navpanes=0`}
+              className="h-full min-h-[70vh] w-full flex-1 rounded-md bg-white"
+            />
+            <a
+              href={url || actualUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-accent text-center text-sm font-semibold underline"
+            >
+              Open PDF in new tab
+            </a>
+          </div>
+        ) : showImage && actualUrl ? (
           <img
             src={actualUrl}
             alt={filename}
@@ -346,15 +423,19 @@ function DocumentReviewViewerContent({
           />
         ) : (
           <div className="rounded-lg border border-white/10 bg-white/5 px-6 py-8 text-center">
-            <p className="text-sm text-white/80">Preview unavailable for this file type.</p>
-            <a
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-brand-accent mt-3 inline-flex text-sm font-semibold underline"
-            >
-              Open in new tab
-            </a>
+            <p className="text-sm text-white/80">
+              {loadError || 'Preview unavailable for this file type.'}
+            </p>
+            {url ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-accent mt-3 inline-flex text-sm font-semibold underline"
+              >
+                Open in new tab
+              </a>
+            ) : null}
           </div>
         )}
       </div>

@@ -211,7 +211,7 @@ function TicketMetricCard({
   return (
     <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-center border border-white/[0.06] p-5">
       <p className="text-body-sm-medium text-muted">{title}</p>
-      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
+      <p className="mt-2 text-[20px] leading-5 font-semibold tracking-normal text-white">{value}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <TrendBadge direction={direction}>{formatTrendPercent(percentage, direction)}</TrendBadge>
         <span className="text-muted text-[11px]">vs last month</span>

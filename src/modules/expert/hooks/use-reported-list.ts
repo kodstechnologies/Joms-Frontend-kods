@@ -73,22 +73,27 @@ export function useReportedList<T>({
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
 
+  const resetPage = useCallback(() => setCurrentPage(1), [])
   const serverSort = useServerTableSort({
     sortFieldMap,
-    onPageReset: () => setCurrentPage(1),
+    onPageReset: resetPage,
   })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: resetPage })
   const tableColumnPreferencesQuery = useTableColumnPreferences(preferencesKey ?? moduleKey)
 
   const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
-  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
+  const searchParams = useMemo(
+    () => enhancedSearch.buildSearchParams(),
+    [enhancedSearch.buildSearchParams],
+  )
+  const sortParams = serverSort.sortParams
 
   const loadReports = useCallback(() => {
     setLoading(true)
     fetchReports({
       page: currentPage,
       limit: 10,
-      ...serverSort.sortParams,
+      ...sortParams,
       ...searchParams,
       ...apiFilterParams,
     })
@@ -104,14 +109,7 @@ export function useReportedList<T>({
         setTotalPages(1)
       })
       .finally(() => setLoading(false))
-  }, [
-    apiFilterParams,
-    currentPage,
-    fetchReports,
-    parseResponse,
-    searchParams,
-    serverSort.sortParams,
-  ])
+  }, [apiFilterParams, currentPage, fetchReports, parseResponse, searchParams, sortParams])
 
   useEffect(() => {
     loadReports()
