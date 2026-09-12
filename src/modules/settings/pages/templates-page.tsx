@@ -331,22 +331,22 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-        {embedded ? (
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/settings')}
-            className="text-muted hover:text-brand-text grid size-9 place-items-center rounded-lg border border-white/10 transition-colors hover:bg-white/5"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="size-4" />
-          </button>
-        ) : null}
+      <div className="flex items-start gap-3 border-b border-white/10 pb-4">
+        <button
+          type="button"
+          onClick={() =>
+            navigateBackOrFallback(navigate, embedded ? '/settings' : '/communication/management')
+          }
+          className="text-brand-text mt-1 rounded-md p-1.5 transition-colors hover:bg-white/5"
+          aria-label="Go back to Communication"
+        >
+          <ArrowLeft className="size-5" strokeWidth={1.75} />
+        </button>
         <div>
           <h1
             className={cn(
               'text-brand-text tracking-tight',
-              embedded ? 'text-h4 font-semibold' : 'text-h2',
+              embedded ? 'text-h4 font-semibold' : 'text-h2 font-semibold',
             )}
           >
             Moderation Reason Manager

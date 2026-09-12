@@ -8,7 +8,7 @@ import {
   MEMBERSHIPS_MODULE_KEY,
 } from '../config/membership-metrics.config'
 import { useMembershipStats } from '../hooks/use-memberships'
-import type { MembershipStatsResponse, MembershipTrend } from '../types/membership'
+import type { MembershipStatsResponse, MembershipTrend, MembershipType } from '../types/membership'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
@@ -174,8 +174,8 @@ function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
   )
 }
 
-export function MembershipStatsBar() {
-  const { data, isLoading } = useMembershipStats()
+export function MembershipStatsBar({ type = 'expert' }: { type?: MembershipType }) {
+  const { data, isLoading } = useMembershipStats(type)
   const apiStats = data?.data
   const activeMetricIds = useActiveMetricIds(MEMBERSHIPS_MODULE_KEY, [
     ...DEFAULT_MEMBERSHIP_METRIC_IDS,
@@ -204,8 +204,8 @@ export function MembershipStatsBar() {
   )
 }
 
-export function MembershipPlanStatsBar() {
-  const { data, isLoading } = useMembershipStats()
+export function MembershipPlanStatsBar({ type = 'expert' }: { type?: MembershipType }) {
+  const { data, isLoading } = useMembershipStats(type)
   const counts = data?.data?.counts
 
   if (isLoading) {

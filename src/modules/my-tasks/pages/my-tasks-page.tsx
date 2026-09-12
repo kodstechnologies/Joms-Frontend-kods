@@ -200,6 +200,7 @@ export function MyTasksPage() {
       venueId: task.venueId,
       serviceType: task.serviceType,
       applicationUrl: task.applicationUrl,
+      escalationTarget: task.escalationTarget,
     })
   }
 

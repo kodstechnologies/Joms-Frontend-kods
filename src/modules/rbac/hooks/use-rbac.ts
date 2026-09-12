@@ -39,6 +39,7 @@ import type {
   CreateSubAdminPayload,
   InviteActionPayload,
   UpdateSubAdminPasswordPayload,
+  AdminProfile,
 } from '../types/rbac'
 
 export const rbacKeys = {
@@ -61,7 +62,7 @@ export const rbacKeys = {
 }
 
 export function useRbacMe() {
-  return useQuery({
+  return useQuery<{ success: boolean; data: AdminProfile }>({
     queryKey: rbacKeys.me,
     queryFn: fetchRbacMe,
     retry: false,
@@ -201,10 +202,14 @@ export function useSubAdminLogs(
   })
 }
 
-export function useMySubAdminLogs(params?: { page?: number; limit?: number; search?: string }) {
+export function useMySubAdminLogs(
+  params?: Record<string, unknown>,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: rbacKeys.myLogs(params),
     queryFn: () => fetchMySubAdminLogs(params),
+    enabled: options?.enabled ?? true,
   })
 }
 

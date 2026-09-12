@@ -775,6 +775,7 @@ export function AppRouter() {
               <Route path="/dashboard" element={<HomeRedirect />} />
               <Route path="/metrics/:moduleKey" element={<SharedModuleMetricsPage />} />
               <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
+              <Route path="/settings/access/my-profile/logs" element={<AdminLogsPage />} />
               <Route path="/my-tasks" element={<MyTasksPage />} />
 
               <Route element={<SuperAdminRoute />}>

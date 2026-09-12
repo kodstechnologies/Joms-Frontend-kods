@@ -67,6 +67,7 @@ export type EscalationListItem = {
   escalationId: string
   roleId: string
   roleName: string
+  entityTitle?: string
   escalationType: string
   priority: 'Low' | 'Medium' | 'High' | 'Critical'
   status: 'Open' | 'In Review' | 'Resolved'

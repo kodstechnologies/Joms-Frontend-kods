@@ -83,6 +83,7 @@ export function MembershipPlansPage({
   const statusFilter = fixedStatus ?? activeStatus
 
   const { data, isLoading } = useMemberships({
+    type: 'expert',
     search: searchQuery || undefined,
     status: statusFilter,
     limit: 50,
@@ -161,10 +162,7 @@ export function MembershipPlansPage({
   const limit = meta?.limit ?? 50
   const rangeStart = totalItems === 0 ? 0 : (page - 1) * limit + 1
   const rangeEnd = Math.min(page * limit, totalItems)
-  const expertPlans = useMemo(
-    () => memberships.filter((plan) => plan.type === 'expert'),
-    [memberships],
-  )
+  const expertPlans = memberships
 
   const openModal = (plan: MembershipPlan, type: NonNullable<typeof modalType>) => {
     setSelectedPlan(plan)
@@ -334,7 +332,7 @@ export function MembershipPlansPage({
         </Button>
       </div>
 
-      <MembershipStatsBar />
+      <MembershipStatsBar type="expert" />
 
       <div className="flex justify-center">
         <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">

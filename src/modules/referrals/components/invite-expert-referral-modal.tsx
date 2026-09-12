@@ -6,6 +6,7 @@ import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/refe
 import { requiredLabel } from '@/shared/components/form/required-label'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
+import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
 
 type InviteExpertReferralModalProps = {
   open: boolean
@@ -16,6 +17,19 @@ type InviteExpertReferralModalProps = {
 }
 
 type BulkRecipient = { name: string; email?: string; phone?: string }
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const MOBILE_PATTERN = /^[0-9]{10}$/
+
+const isValidEmail = (value: string) => EMAIL_PATTERN.test(value.trim())
+const isValidMobile = (phone: string) => MOBILE_PATTERN.test(phone)
+
+const validateEmailValue = (value: string): string | null => {
+  const email = value.trim()
+  if (!email) return 'Email ID is required'
+  if (!isValidEmail(email)) return 'Enter a valid email ID'
+  return null
+}
 
 const parseCsvLine = (line: string, delimiter: string): string[] => {
   const cols: string[] = []
@@ -95,14 +109,19 @@ const parseCsvRecipients = (text: string): BulkRecipient[] => {
       const cols = parseCsvLine(line, delimiter)
       const name = (cols[nameIdx] ?? '').trim()
       const email = emailIdx >= 0 ? (cols[emailIdx] ?? '').trim().toLowerCase() : ''
-      const phone = phoneIdx >= 0 ? (cols[phoneIdx] ?? '').trim() : ''
+      const phone = phoneIdx >= 0 ? sanitizeMobileNumber((cols[phoneIdx] ?? '').trim()) : ''
       return {
         name,
         email: email || undefined,
         phone: phone || undefined,
       }
     })
-    .filter((item) => item.name && (item.email || item.phone))
+    .filter((item) => {
+      if (!item.name) return false
+      if (!item.email || !isValidEmail(item.email)) return false
+      if (!item.phone || !isValidMobile(item.phone)) return false
+      return true
+    })
     .filter((item) => {
       const key = `${item.email || ''}|${item.phone || ''}|${item.name.toLowerCase()}`
       if (seen.has(key)) return false
@@ -167,7 +186,7 @@ export function InviteExpertReferralModal({
       setFileName(null)
       setRecipients([])
       setParseError(
-        'No valid rows found. CSV needs a header row and columns: name, email, phone. Each row needs a name plus email or phone.',
+        'No valid rows found. CSV needs name, email, and phone. Email must be valid and phone must be 10 digits.',
       )
       toast.error('No valid recipients found in CSV')
       return
@@ -189,14 +208,23 @@ export function InviteExpertReferralModal({
         toast.error('Name is required')
         return
       }
-      if (!email.trim() && !phone.trim()) {
-        toast.error('Email or phone number is required')
+
+      const emailError = validateEmailValue(email)
+      if (emailError) {
+        toast.error(emailError)
         return
       }
+
+      const phoneError = validateMobileNumber(phone)
+      if (phoneError) {
+        toast.error(phoneError)
+        return
+      }
+
       await onSubmitManual({
         name: name.trim(),
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
+        email: email.trim().toLowerCase(),
+        phone: sanitizeMobileNumber(phone),
         message: message.trim(),
         referrerName: 'Admin',
       })
@@ -268,19 +296,22 @@ export function InviteExpertReferralModal({
               </Field>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <Field label="Email ID">
+                <Field label="Email ID*">
                   <Input
+                    type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter email ID"
                     className={fieldInputClass}
                   />
                 </Field>
-                <Field label="Phone number">
+                <Field label="Phone number*">
                   <Input
+                    type="tel"
+                    inputMode="numeric"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Enter Phone Number"
+                    onChange={(e) => setPhone(sanitizeMobileNumber(e.target.value))}
+                    placeholder="Enter 10-digit phone number"
                     className={fieldInputClass}
                   />
                 </Field>
@@ -325,7 +356,7 @@ export function InviteExpertReferralModal({
                   <>
                     <CloudUpload className="text-muted mb-2 size-8" />
                     <p className="text-muted text-body-md">
-                      Upload CSV with name, email, phone columns
+                      Upload CSV with name, email, and 10-digit phone
                     </p>
                   </>
                 )}
