@@ -56,8 +56,6 @@ import {
   FINANCE_DATA_TABLE_CLASS,
   FINANCE_TABLE_CELL_CLASS,
 } from '@/modules/payments/constants/finance-table-styles'
-import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
-
 const PAGE_SIZE = 10
 
 const SORT_FIELD_MAP = buildCatalogSortFieldMap(
@@ -351,7 +349,7 @@ export function FinanceTaxCompliancePage() {
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-              Finance Management
+              Payment &amp; Finance
             </Link>
             <span> / </span>
             <span className="text-brand-text font-semibold">Tax & Compliance</span>

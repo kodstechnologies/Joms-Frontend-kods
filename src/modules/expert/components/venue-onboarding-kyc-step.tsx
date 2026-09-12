@@ -196,8 +196,10 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                 </label>
                 <input
                   value={formData.gstNumber}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))}
-                  placeholder="23AAACC1206D2ZN"
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, gstNumber: e.target.value.toUpperCase() }))
+                  }
+                  placeholder="22AAAAA0000A1Z5"
                   className={fieldClass}
                 />
                 <p className="text-muted mt-1 text-[10px]">Format: 29ABCDE1234F1Z5</p>
@@ -211,6 +213,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                   onChange={(e) => setFormData((prev) => ({ ...prev, kycState: e.target.value }))}
                   className={selectClass}
                 >
+                  <option value="">Select state</option>
                   {INDIAN_STATES.map((state) => (
                     <option key={state} value={state}>
                       {state}
@@ -283,7 +286,9 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </label>
             <input
               value={formData.panNumber}
-              onChange={(e) => setFormData((prev) => ({ ...prev, panNumber: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, panNumber: e.target.value.toUpperCase() }))
+              }
               placeholder="ABCDE1234F"
               className={fieldClass}
             />
@@ -343,9 +348,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
       </div>
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <h3 className="mb-4 text-sm font-bold text-white">
-          Other Documents <RequiredMark />
-        </h3>
+        <h3 className="mb-4 text-sm font-bold text-white">Other Documents</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {formData.otherCertificates.map((file, index) => (
             <div

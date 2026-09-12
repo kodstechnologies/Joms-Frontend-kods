@@ -22,6 +22,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 
 import { useExpertProfile } from '../../hooks/use-expert-profile'
 import { useConsultation, useUpdateConsultationStatus } from '../../hooks/use-services'
@@ -112,7 +113,7 @@ export const ConsultationViewPage = () => {
     useUpdateConsultationStatus()
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectConsultation)
   const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
 
@@ -424,42 +425,25 @@ export const ConsultationViewPage = () => {
           <span>Consultation View</span>
         </button>
 
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          {fromExpert ? (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                All Experts
-              </button>
-              <span className="text-muted">/</span>
-              <button
-                type="button"
-                onClick={() => expertId && navigate(`/experts/management/profile/${expertId}`)}
-                className="hover:text-brand-text transition-colors"
-              >
-                {expertName}
-              </button>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">Consultation View</span>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                Service management
-              </button>
-              <span className="text-muted">/</span>
-              <span>Service View</span>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">{expertName}</span>
-            </>
-          )}
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={
+              fromExpert
+                ? [
+                    { label: 'Expert Management', to: '/experts/management' },
+                    {
+                      label: expertName,
+                      to: expertId ? `/experts/management/profile/${expertId}` : undefined,
+                    },
+                    { label: 'Consultation View', isActive: true },
+                  ]
+                : [
+                    { label: 'Service Management', to: '/services/management' },
+                    { label: 'Manage Services', to: '/services/management' },
+                    { label: expertName, isActive: true },
+                  ]
+            }
+          />
         </div>
       </header>
 

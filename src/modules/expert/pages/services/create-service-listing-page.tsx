@@ -30,7 +30,6 @@ import {
   useUpdateServicePricing,
 } from '@/modules/expert/hooks/use-create-listing'
 import { useConsultation, useService } from '@/modules/expert/hooks/use-services'
-import { useExpertProfile } from '@/modules/expert/hooks/use-expert-profile'
 import {
   fetchListingPricingConfig,
   fetchPricingRecommendation,
@@ -106,7 +105,6 @@ export const CreateServiceListingPage = () => {
   const isServiceEditMode = searchParams.get('mode') === 'edit' && Boolean(serviceIdParam)
   const isEditMode = isConsultationEditMode || isServiceEditMode
 
-  const { data: expertProfileResponse } = useExpertProfile(partnerId || undefined)
   const { data: consultationEditResponse, isLoading: isConsultationEditLoading } = useConsultation(
     consultationIdParam,
     isConsultationEditMode,
@@ -118,10 +116,6 @@ export const CreateServiceListingPage = () => {
   const isEditLoading =
     (isConsultationEditMode && isConsultationEditLoading) ||
     (isServiceEditMode && isServiceEditLoading)
-  const expertName =
-    expertProfileResponse?.data?.basicProfile?.fullname ||
-    expertProfileResponse?.data?.fullname ||
-    'Expert'
   const [currentStep, setCurrentStep] = useState(isEditMode ? 2 : 1)
   const [selectedType, setSelectedType] = useState<'service' | 'consultation' | null>(
     isConsultationEditMode ? 'consultation' : isServiceEditMode ? 'service' : 'service',
@@ -674,14 +668,6 @@ export const CreateServiceListingPage = () => {
             toast.error('Service category is required.')
             return
           }
-          if (!description.trim()) {
-            toast.error('Description is required.')
-            return
-          }
-          if (!deliverables.trim()) {
-            toast.error('Deliverables are required.')
-            return
-          }
 
           handleNext()
           return
@@ -772,8 +758,12 @@ export const CreateServiceListingPage = () => {
             toast.error('Add at least one topic.')
             return
           }
-          if (!sessionOutline.trim() || !whoItsFor.trim()) {
-            toast.error('Session outline and audience are required.')
+          if (!sessionOutline.trim()) {
+            toast.error('Session outline is required.')
+            return
+          }
+          if (!whoItsFor.trim()) {
+            toast.error("Audience description (Who it's for) is required.")
             return
           }
 
@@ -831,13 +821,38 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 3) {
+          const parsedLanguages = languages
+            .split(',')
+            .map((lang) => lang.trim())
+            .filter(Boolean)
+          if (parsedLanguages.length === 0) {
+            toast.error('At least one language is required.')
+            return
+          }
+          if (hasPreSessionRequirement && !preSessionRequirement.trim()) {
+            toast.error('Pre-session requirement description is required.')
+            return
+          }
+          if (hasPostSessionMessage && !postSessionMessage.trim()) {
+            toast.error('Post-session message is required.')
+            return
+          }
+          if (hasFollowUp) {
+            const days = Number.parseInt(followUpDays, 10) || 0
+            if (days < 1) {
+              toast.error('Follow-up days must be at least 1.')
+              return
+            }
+            if (days > maxConsultationFollowUpDays) {
+              toast.error(`Follow-up period cannot exceed ${maxConsultationFollowUpDays} day(s).`)
+              return
+            }
+          }
+
           await updateConsultationAdditionalInfoMutation.mutateAsync({
             id: listingId,
             payload: {
-              languages: languages
-                .split(',')
-                .map((lang) => lang.trim())
-                .filter(Boolean),
+              languages: parsedLanguages,
               hasPreSessionRequirement,
               preSessionRequirement: hasPreSessionRequirement ? preSessionRequirement.trim() : '',
               hasPostSessionMessage,
@@ -852,9 +867,16 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 4) {
-          if (consultationPricingType === 'paid' && !consultationPrice.trim()) {
-            toast.error('Consultation fee is required for paid sessions.')
+          if (!consultationMode) {
+            toast.error('Mode is required.')
             return
+          }
+          if (consultationPricingType === 'paid') {
+            const price = parsePrice(consultationPrice)
+            if (!consultationPrice.trim() || price < 1) {
+              toast.error('Price must be greater than 0 for paid sessions.')
+              return
+            }
           }
 
           await updateConsultationPricingMutation.mutateAsync({
@@ -916,7 +938,7 @@ export const CreateServiceListingPage = () => {
           <div className="space-y-5">
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Consultation Title
+                Consultation Title <RequiredMark />
               </label>
               <input
                 type="text"
@@ -928,7 +950,9 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold tracking-tight text-white">Add Topics</label>
+              <label className="text-body-sm font-bold tracking-tight text-white">
+                Add Topics <RequiredMark />
+              </label>
               <div className="relative">
                 <select
                   value=""
@@ -982,7 +1006,7 @@ export const CreateServiceListingPage = () => {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2.5">
                 <label className="text-body-sm font-bold tracking-tight text-white">
-                  Session Outline
+                  Session Outline <RequiredMark />
                 </label>
                 <textarea
                   placeholder="Describe what you will deliver..."
@@ -993,7 +1017,7 @@ export const CreateServiceListingPage = () => {
               </div>
               <div className="space-y-2.5">
                 <label className="text-body-sm font-bold tracking-tight text-white">
-                  Who it is for?
+                  Who it is for? <RequiredMark />
                 </label>
                 <textarea
                   placeholder="Describe your target audience..."
@@ -1020,7 +1044,9 @@ export const CreateServiceListingPage = () => {
 
           <div className="space-y-5">
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold tracking-tight text-white">Languages</label>
+              <label className="text-body-sm font-bold tracking-tight text-white">
+                Languages <RequiredMark />
+              </label>
               <input
                 type="text"
                 placeholder="English, Hindi"
@@ -1057,12 +1083,17 @@ export const CreateServiceListingPage = () => {
                   </button>
                 </div>
                 {hasPreSessionRequirement && (
-                  <textarea
-                    placeholder="Describe pre-session requirements"
-                    value={preSessionRequirement}
-                    onChange={(e) => setPreSessionRequirement(e.target.value)}
-                    className={consultationTextareaClass}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-body-sm font-bold tracking-tight text-white">
+                      Pre-session requirement <RequiredMark />
+                    </label>
+                    <textarea
+                      placeholder="Describe pre-session requirements"
+                      value={preSessionRequirement}
+                      onChange={(e) => setPreSessionRequirement(e.target.value)}
+                      className={consultationTextareaClass}
+                    />
+                  </div>
                 )}
 
                 <div className="space-y-2.5">
@@ -1088,14 +1119,19 @@ export const CreateServiceListingPage = () => {
                     </button>
                   </div>
                   {hasFollowUp && (
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        value={followUpDays}
-                        onChange={(e) => setFollowUpDays(e.target.value)}
-                        className="text-body-sm h-9 w-20 rounded-md border border-white/5 bg-black px-3 text-white outline-none"
-                      />
-                      <span className="text-body-sm text-muted flex h-9 items-center">Days</span>
+                    <div className="space-y-2">
+                      <label className="text-body-sm font-bold tracking-tight text-white">
+                        Follow-up days <RequiredMark />
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="text"
+                          value={followUpDays}
+                          onChange={(e) => setFollowUpDays(e.target.value)}
+                          className="text-body-sm h-9 w-20 rounded-md border border-white/5 bg-black px-3 text-white outline-none"
+                        />
+                        <span className="text-body-sm text-muted flex h-9 items-center">Days</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1127,12 +1163,17 @@ export const CreateServiceListingPage = () => {
                   </button>
                 </div>
                 {hasPostSessionMessage && (
-                  <textarea
-                    placeholder="Describe requirement"
-                    value={postSessionMessage}
-                    onChange={(e) => setPostSessionMessage(e.target.value)}
-                    className={consultationTextareaClass}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-body-sm font-bold tracking-tight text-white">
+                      Post-session message <RequiredMark />
+                    </label>
+                    <textarea
+                      placeholder="Describe requirement"
+                      value={postSessionMessage}
+                      onChange={(e) => setPostSessionMessage(e.target.value)}
+                      className={consultationTextareaClass}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -1153,7 +1194,9 @@ export const CreateServiceListingPage = () => {
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Mode Of Consultation</label>
+              <label className="text-body-sm font-bold text-white">
+                Mode Of Consultation <RequiredMark />
+              </label>
               <div className="relative">
                 <select
                   value={consultationMode}
@@ -1172,7 +1215,9 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Duration</label>
+              <label className="text-body-sm font-bold text-white">
+                Duration <RequiredMark />
+              </label>
               <div className="relative">
                 <select
                   value={consultationDuration}
@@ -1189,7 +1234,9 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Pricing Option</label>
+              <label className="text-body-sm font-bold text-white">
+                Pricing Option <RequiredMark />
+              </label>
               <div className="overflow-hidden rounded-md border border-white/5 bg-black">
                 {(['paid', 'free'] as const).map((option) => (
                   <button
@@ -1215,7 +1262,15 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Consultation Fees</label>
+              <label className="text-body-sm font-bold text-white">
+                Consultation Fees
+                {consultationPricingType === 'paid' ? (
+                  <>
+                    {' '}
+                    <RequiredMark />
+                  </>
+                ) : null}
+              </label>
               <input
                 type="text"
                 placeholder="₹0.00"
@@ -1353,12 +1408,18 @@ export const CreateServiceListingPage = () => {
 
   const breadcrumbs = useMemo(
     () => [
-      { label: 'Expert management' },
-      { label: 'Manage Experts' },
-      { label: expertName },
-      { label: isEditMode ? 'Edit Consultation' : 'Create Listing', isActive: true },
+      { label: 'Service Management', to: '/services/management' },
+      { label: 'Manage Services', to: '/services/management' },
+      {
+        label: isEditMode
+          ? selectedType === 'consultation'
+            ? 'Edit Consultation'
+            : 'Edit Service'
+          : 'Create Listing',
+        isActive: true,
+      },
     ],
-    [expertName, isEditMode],
+    [isEditMode, selectedType],
   )
 
   const primaryActionLabel =
@@ -1600,7 +1661,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Description <RequiredMark />
+                Description
               </label>
               <textarea
                 placeholder="Describe your service offering..."
@@ -1612,7 +1673,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Describe Deliverables <RequiredMark />
+                Describe Deliverables
               </label>
               <textarea
                 placeholder="Describe what you will deliver to your client. Be specific about outputs, formats, and any revisions included..."

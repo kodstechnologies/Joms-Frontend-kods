@@ -116,7 +116,10 @@ export function VenueSuspendedPage() {
         <div className="min-w-0 flex-1">
           <ExpertListHeader
             title="Suspended Venues"
-            breadcrumb="Venue Management / Suspended Venues"
+            breadcrumbItems={[
+              { label: 'Venue Management', to: '/venues/management' },
+              { label: 'Suspended Venues', isActive: true },
+            ]}
             backTo="/venues/management"
             metricsPath="/metrics/venue-suspended?returnTo=/venues/management/suspended"
           />

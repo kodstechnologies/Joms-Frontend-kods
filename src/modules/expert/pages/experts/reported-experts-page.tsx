@@ -116,7 +116,10 @@ export function ExpertReportedExpertsPage() {
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Reported Experts"
-        breadcrumb="User Management / Reported Users"
+        breadcrumbItems={[
+          { label: 'Expert Management', to: '/experts/management' },
+          { label: 'Reported Experts', isActive: true },
+        ]}
         metricsPath="/metrics/expert-reported?returnTo=/experts/reported"
       />
 

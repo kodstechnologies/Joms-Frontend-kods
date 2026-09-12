@@ -150,7 +150,10 @@ export function VenueDeletedPage() {
         <div className="min-w-0 flex-1">
           <ExpertListHeader
             title="Deleted Venues"
-            breadcrumb="Venue Management / Deleted Venues"
+            breadcrumbItems={[
+              { label: 'Venue Management', to: '/venues/management' },
+              { label: 'Deleted Venues', isActive: true },
+            ]}
             backTo="/venues/management"
             metricsPath="/metrics/venue-deleted?returnTo=/venues/management/deleted"
           />

@@ -40,7 +40,7 @@ export function ConsultationBookingPage() {
           navigateBackOrFallback(navigate, consultationPerformancePath(expertId, consultationId))
         }
         crumbs={[
-          { label: 'All Experts', onClick: () => navigate('/experts/management') },
+          { label: 'Expert Management', onClick: () => navigate('/experts/management') },
           { label: expertName, onClick: () => navigate(`/experts/management/profile/${expertId}`) },
           {
             label: 'Consultation Performance',

@@ -261,7 +261,7 @@ export function PaymentDetailViewPage() {
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
+            Payment &amp; Finance
           </Link>
           <span> / </span>
           <Link to="/finance/revenue" className="hover:text-brand-text transition-colors">

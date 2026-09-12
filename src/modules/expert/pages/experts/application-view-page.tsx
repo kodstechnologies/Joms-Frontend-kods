@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -599,7 +600,8 @@ export function ExpertApplicationViewPage() {
     { uploaded: cancelledChequeUrl, status: getBankingReviewStatus('cancelledChequeUrl') },
   ])
 
-  const sectionDocsApproved = decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
+  const sectionDocsApproved =
+    decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
 
   const openDocumentViewer = (document: ViewerDocument) => {
     setViewerDocument(document)
@@ -616,16 +618,14 @@ export function ExpertApplicationViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Application View</span>
         </button>
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="hover:text-brand-text transition-colors"
-          >
-            Expert management
-          </button>
-          <span className="text-muted">/</span>
-          <span className="font-bold text-white">{displayValue(application.expert?.fullname)}</span>
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={[
+              { label: 'Expert Management', to: '/experts/management' },
+              { label: 'Manage Experts', to: '/experts/management' },
+              { label: displayValue(application.expert?.fullname), isActive: true },
+            ]}
+          />
         </div>
       </header>
 

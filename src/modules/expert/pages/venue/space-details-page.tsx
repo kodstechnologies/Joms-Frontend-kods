@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
 import {
@@ -580,16 +581,17 @@ export function SpaceDetailsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Space Details</span>
           </button>
-          <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={backToProfile}
-              className="transition-colors hover:text-white"
-            >
-              {venue.name}
-            </button>
-            <span className="text-muted/40">/</span>
-            <span className="font-bold text-white">{spaceName}</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                {
+                  label: venue.name,
+                  to: venueId ? `/venues/management/profile/${venueId}` : undefined,
+                },
+                { label: spaceName, isActive: true },
+              ]}
+            />
           </div>
         </div>
 

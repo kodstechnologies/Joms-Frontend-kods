@@ -8,6 +8,7 @@ interface LocationDetailsStepProps {
     | 'address'
     | 'landmark'
     | 'city'
+    | 'pincode'
     | 'parkingAvailable'
     | 'accessibility'
     | 'latitude'
@@ -98,6 +99,23 @@ export const LocationDetailsStep = ({
               className="ui-input"
             />
           </div>
+        </div>
+
+        <div className="space-y-2.5">
+          <label className="text-body-sm font-bold tracking-tight text-white">
+            Pin code <RequiredMark />
+          </label>
+          <input
+            type="text"
+            value={venueData.pincode || ''}
+            onChange={(e) =>
+              setVenueData((prev) => ({
+                ...prev,
+                pincode: e.target.value,
+              }))
+            }
+            className="ui-input"
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">

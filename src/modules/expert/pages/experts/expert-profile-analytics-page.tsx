@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import {
   Area,
   AreaChart,
@@ -403,24 +404,14 @@ export function ExpertProfileAnalyticsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile Analytics</span>
           </button>
-          <div className="text-body-sm text-muted mt-2 flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-              className="transition-colors hover:text-white"
-            >
-              Back
-            </button>
-            <span className="text-muted/40">/</span>
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, `/experts/management/profile/${id}`)}
-              className="transition-colors hover:text-white"
-            >
-              {profile.name}
-            </button>
-            <span className="text-muted/40">/</span>
-            <span className="font-bold text-white">Profile Analytics</span>
+          <div className="mt-2 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Expert Management', to: '/experts/management' },
+                { label: profile.name, to: `/experts/management/profile/${id}` },
+                { label: 'Profile Analytics', isActive: true },
+              ]}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">

@@ -24,6 +24,7 @@ type Props = {
   setFormData: React.Dispatch<React.SetStateAction<ExpertOnboardingFormData>>
   lockedServiceType?: 'concierge' | 'venue'
   excludePartnerId?: string | null
+  requireSampleWorkFile?: boolean
 }
 
 export const ExpertBasicProfileStep = ({
@@ -31,6 +32,7 @@ export const ExpertBasicProfileStep = ({
   setFormData,
   lockedServiceType,
   excludePartnerId,
+  requireSampleWorkFile = false,
 }: Props) => {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const profileInputRef = useRef<HTMLInputElement>(null)
@@ -375,7 +377,7 @@ export const ExpertBasicProfileStep = ({
 
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
-                    Upload Sample Work File <RequiredMark />
+                    Upload Sample Work File {requireSampleWorkFile ? <RequiredMark /> : null}
                   </label>
                   <button
                     type="button"

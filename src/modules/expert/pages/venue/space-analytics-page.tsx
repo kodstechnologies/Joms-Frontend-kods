@@ -14,6 +14,7 @@ import { ArrowLeft, RefreshCw, Star } from 'lucide-react'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { Button } from '@/shared/components/ui/button'
 import { useSpaceAnalytics } from '../../hooks/use-venue-analytics'
 import {
@@ -89,12 +90,17 @@ export function SpaceAnalyticsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>View Analytics</span>
           </button>
-          <div className="text-body-sm text-muted mt-2 flex items-center gap-1.5 pl-7 font-medium">
-            <span>Venue Management</span>
-            <span className="text-muted/40">/</span>
-            <span>Venue Details</span>
-            <span className="text-muted/40">/</span>
-            <span className="font-bold text-white">View Analytics</span>
+          <div className="mt-2 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                {
+                  label: 'Venue Details',
+                  to: venueId ? `/venues/management/profile/${venueId}` : undefined,
+                },
+                { label: 'View Analytics', isActive: true },
+              ]}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">

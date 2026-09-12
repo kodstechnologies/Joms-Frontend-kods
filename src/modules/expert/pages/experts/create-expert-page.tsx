@@ -26,6 +26,11 @@ import {
 } from '../../utils/expert-onboarding-form'
 import { validateMobileNumber } from '@/shared/lib/phone'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  isValidHttpUrl,
+  validateGstNumber,
+  validatePanNumber,
+} from '@/shared/lib/partner-field-validation'
 
 const STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -46,16 +51,8 @@ const validateStep = (
     if (!form.location.trim()) return 'Location is required.'
     if (!form.bio.trim()) return 'Profile bio is required.'
     if (!form.sampleWorkLink.trim()) return 'Sample work link is required.'
-    const sampleLink = form.sampleWorkLink.trim()
-    const normalizedLink =
-      sampleLink && !/^https?:\/\//i.test(sampleLink) ? `https://${sampleLink}` : sampleLink
-    try {
-      // eslint-disable-next-line no-new
-      new URL(normalizedLink)
-    } catch {
-      return 'Sample work link must be a valid URL.'
-    }
-    if (!form.sampleWorkFile && !form.sampleWorkFileName) {
+    if (!isValidHttpUrl(form.sampleWorkLink)) return 'Sample work link must be a valid URL.'
+    if (!isEdit && !form.sampleWorkFile && !form.sampleWorkFileName) {
       return 'Sample work file is required.'
     }
     const phoneError = validateMobileNumber(form.phoneNumber)
@@ -72,8 +69,12 @@ const validateStep = (
   if (step === 2) {
     if (!form.idType) return 'ID type is required.'
     if (!form.idNumber.trim()) return 'ID number is required.'
-    if (!form.panNumber.trim()) return 'PAN number is required.'
-    if (form.gstAvailable && !form.gstNumber.trim()) return 'GST number is required.'
+    const panError = validatePanNumber(form.panNumber)
+    if (panError) return panError
+    if (form.gstAvailable) {
+      const gstError = validateGstNumber(form.gstNumber)
+      if (gstError) return gstError
+    }
     if (!form.panCardFile && !form.panCardFileName) {
       return 'PAN card document is required.'
     }
@@ -297,8 +298,8 @@ export const CreateExpertPage = () => {
     <CreateListingWizard
       title={isEditMode ? 'Edit Expert Profile' : 'Expert Profile Creation'}
       breadcrumbs={[
-        { label: 'Expert management' },
-        { label: 'Manage Experts' },
+        { label: 'Expert Management', to: '/experts/management' },
+        { label: 'Manage Experts', to: '/experts/management' },
         { label: isEditMode ? 'Edit Profile' : 'Create Account', isActive: true },
       ]}
       steps={STEPS}
@@ -316,6 +317,7 @@ export const CreateExpertPage = () => {
           setFormData={setFormData}
           lockedServiceType="concierge"
           excludePartnerId={expertId}
+          requireSampleWorkFile={!isEditMode}
         />
       )}
       {currentStep === 2 && (

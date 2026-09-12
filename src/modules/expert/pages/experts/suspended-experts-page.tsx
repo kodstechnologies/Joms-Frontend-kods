@@ -125,7 +125,10 @@ export function ExpertSuspendedExpertsPage() {
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Suspended Experts"
-        breadcrumb="User Management / Suspended Users"
+        breadcrumbItems={[
+          { label: 'Expert Management', to: '/experts/management' },
+          { label: 'Suspended Experts', isActive: true },
+        ]}
         metricsPath="/metrics/expert-suspended?returnTo=/experts/suspended"
       />
 

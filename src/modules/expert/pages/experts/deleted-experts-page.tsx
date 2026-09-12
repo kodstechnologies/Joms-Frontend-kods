@@ -147,7 +147,10 @@ export function ExpertDeletedExpertsPage() {
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Deleted Experts"
-        breadcrumb="User Management / Deleted Experts"
+        breadcrumbItems={[
+          { label: 'Expert Management', to: '/experts/management' },
+          { label: 'Deleted Experts', isActive: true },
+        ]}
         metricsPath="/metrics/expert-deleted?returnTo=/experts/deleted"
       />
 

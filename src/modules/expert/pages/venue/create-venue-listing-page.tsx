@@ -181,7 +181,7 @@ const toImageUrl = (img: unknown): string => {
   return ''
 }
 
-const resolveGalleryUrls = (space?: DraftVenueSpace, _venue?: DraftVenue) => {
+const resolveGalleryUrls = (space?: DraftVenueSpace) => {
   // Only use this space's gallery — never fall back to venue-level / other-space images.
   const venueCoverImageUrl = toImageUrl(space?.venueCoverImages?.[0]) || ''
   const venueImageUrl = toImageUrl(space?.spaceCoverImages?.[0]) || ''
@@ -270,7 +270,7 @@ export const CreateVenueListingPage = () => {
         const venue = response?.data as DraftVenue | undefined
         const spaces = venue?.spaces || []
         const space = spaces[0]
-        const galleryUrls = resolveGalleryUrls(space, venue)
+        const galleryUrls = resolveGalleryUrls(space)
         const pricing = isEditMode ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
         const terms = venue?.terms
 
@@ -426,7 +426,46 @@ export const CreateVenueListingPage = () => {
     loadVenue()
   }, [venueId, isEditMode])
 
+  const validateListingStep = (step: number): string | null => {
+    if (step === 1) {
+      if (!venueData.venueName.trim()) return 'Venue name is required.'
+      if (!venueData.venueType.trim()) return 'Venue type is required.'
+      if (!venueData.venueCategory?.trim()) return 'Venue category is required.'
+      if (!venueData.aboutVenue.trim()) return 'About venue is required.'
+      if (venueData.aboutVenue.trim().length > 350) {
+        return 'About venue description cannot exceed 350 characters.'
+      }
+    }
+    if (step === 2) {
+      if (!venueData.address.trim()) return 'Address is required.'
+      if (!venueData.city.trim()) return 'City is required.'
+      if (!venueData.pincode?.trim()) return 'Pin code is required.'
+    }
+    if (step === 3) {
+      if (!venueData.spaceName.trim()) return 'Space name is required.'
+      if (!venueData.spaceType) return 'Space type is required.'
+      if (venueData.spaceType === 'restaurant') {
+        if (!venueData.guestCount.trim()) return 'Guest limit is required for restaurant spaces.'
+      } else if (venueData.spaceType === 'auditorium') {
+        if (!venueData.areaSqFt.trim()) return 'Area in sq feet is required for auditorium spaces.'
+        if ((venueData.capacityType || 'seated') === 'seated' && !venueData.seatingType.trim()) {
+          return 'Seating type is required for seated auditorium spaces.'
+        }
+      }
+      if (venueData.locationType === 'different' && !venueData.spaceAddress.trim()) {
+        return 'Space address is required when location is different from the venue.'
+      }
+    }
+    return null
+  }
+
   const handleNextStep = async () => {
+    const validationError = validateListingStep(currentStep)
+    if (validationError) {
+      toast.error(validationError)
+      return
+    }
+
     try {
       if (currentStep === 1 && venueId) {
         await saveVenueDetails.mutateAsync({ venueId, venueData })
@@ -478,7 +517,7 @@ export const CreateVenueListingPage = () => {
           const refreshedSpace =
             refreshedVenue?.spaces?.find((s) => String(s._id) === String(spaceId)) ||
             refreshedVenue?.spaces?.[0]
-          const refreshedGalleryUrls = resolveGalleryUrls(refreshedSpace, refreshedVenue)
+          const refreshedGalleryUrls = resolveGalleryUrls(refreshedSpace)
 
           setVenueData((prev) => ({
             ...prev,
@@ -564,8 +603,8 @@ export const CreateVenueListingPage = () => {
   }
 
   const breadcrumbs = [
-    { label: 'Expert Management' },
-    { label: 'Venue Management' },
+    { label: 'Venue Management', to: '/venues/management' },
+    { label: 'Manage Venues', to: '/venues/management' },
     {
       label: isViewMode ? 'View Venue' : isEditMode ? 'Edit Venue' : 'Create Venue',
       isActive: true,

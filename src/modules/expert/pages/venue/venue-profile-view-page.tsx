@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
@@ -2027,16 +2028,14 @@ export function VenueProfileViewPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Venue Profile View</span>
           </button>
-          <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-              className="hover:text-brand-text transition-colors"
-            >
-              Venue management
-            </button>
-            <span className="text-muted">/</span>
-            <span className="font-bold text-white">{venue.name}</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                { label: 'Manage Venues', to: '/venues/management' },
+                { label: venue.name, isActive: true },
+              ]}
+            />
           </div>
         </div>
         <TableActionsDropdown

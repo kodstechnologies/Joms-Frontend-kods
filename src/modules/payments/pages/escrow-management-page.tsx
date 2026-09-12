@@ -501,7 +501,7 @@ export function EscrowManagementPage() {
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-              Finance Management
+              Payment &amp; Finance
             </Link>
             <span> / </span>
             <Link to="/finance/services" className="hover:text-brand-text transition-colors">

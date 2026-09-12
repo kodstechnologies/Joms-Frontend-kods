@@ -7,6 +7,7 @@ import { useLockedAccounts, useUnlockAccount } from '../hooks/use-security'
 import type { LockedAccountRow } from '../types/settings'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { cn } from '@/shared/lib/cn'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
@@ -184,7 +185,19 @@ export function LockedAccountsPage() {
 
       <div className="locked-accounts-heading">
         <h1 className="locked-accounts-title">Locked Accounts</h1>
-        <p className="locked-accounts-breadcrumb">Settings / Platform Controls / Locked Account</p>
+        <div className="locked-accounts-breadcrumb">
+          <PageBreadcrumb
+            items={[
+              { label: 'Settings', to: '/settings/main' },
+              {
+                label: 'Platform Controls',
+                to: '/settings/main',
+                state: { settingsTab: 'platform' },
+              },
+              { label: 'Locked Account', isActive: true },
+            ]}
+          />
+        </div>
       </div>
 
       <section className="locked-accounts-card">

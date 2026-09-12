@@ -88,7 +88,7 @@ export function MembershipDetailViewPage() {
           </button>
           <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-              Finance Management
+              Payment &amp; Finance
             </Link>
             <span> / </span>
             <span className="text-brand-text font-semibold">PaymentView Details</span>

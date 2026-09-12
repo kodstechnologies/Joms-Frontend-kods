@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -123,10 +124,14 @@ export function VenueProfileAnalyticsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Profile Analytics</span>
           </button>
-          <div className="text-body-sm-medium text-muted mt-2 flex items-center gap-1.5 pl-7">
-            <span>{venueName}</span>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Profile Analytics</span>
+          <div className="mt-2 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                { label: venueName, to: `/venues/management/profile/${venueId}` },
+                { label: 'Profile Analytics', isActive: true },
+              ]}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">

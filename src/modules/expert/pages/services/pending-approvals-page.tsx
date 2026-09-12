@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { SERVICE_PENDING_APPROVALS_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
@@ -236,16 +237,13 @@ export function PendingApprovalsPage() {
             <span>Pending Approvals</span>
           </button>
 
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-              className="transition-colors hover:text-white"
-            >
-              Service Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Pending Approvals</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Service Management', to: '/services/management' },
+                { label: 'Pending Approvals', isActive: true },
+              ]}
+            />
           </div>
         </header>
         <Button

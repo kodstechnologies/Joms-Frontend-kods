@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner'
 
 import { Button } from '@/shared/components/ui/button'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -431,24 +432,14 @@ export const ServiceDetailPage = () => {
             <span>Service Details</span>
           </button>
 
-          <div className="text-body-sm text-muted mt-1 flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigate('/experts/management')}
-              className="hover:text-brand-text transition-colors"
-            >
-              All Experts
-            </button>
-            <span>/</span>
-            <button
-              type="button"
-              onClick={() => navigate(`/experts/management/profile/${expertId}`)}
-              className="hover:text-brand-text transition-colors"
-            >
-              {expertName}
-            </button>
-            <span>/</span>
-            <span className="font-bold text-white">Service Details</span>
+          <div className="mt-1 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Expert Management', to: '/experts/management' },
+                { label: expertName, to: `/experts/management/profile/${expertId}` },
+                { label: 'Service Details', isActive: true },
+              ]}
+            />
           </div>
         </div>
 

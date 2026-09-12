@@ -6,6 +6,7 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
@@ -262,16 +263,13 @@ export function RejectedVenuesPage() {
             <span>rejected venues</span>
           </button>
 
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-              className="transition-colors hover:text-white"
-            >
-              Venue Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">rejected venues</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                { label: 'Rejected Venues', isActive: true },
+              ]}
+            />
           </div>
         </header>
 

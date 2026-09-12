@@ -16,6 +16,7 @@ import {
 import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { useBranding } from '@/app/providers/use-branding'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
   downloadInvoiceDocument,
@@ -71,9 +72,14 @@ export function MembershipDetailsPage() {
         </button>
         <div>
           <h1 className="text-h2 text-brand-text font-semibold">Membership Details</h1>
-          <p className="text-body-md text-muted mt-1">
-            Membership Management / <span className="text-brand-text">View Details</span>
-          </p>
+          <PageBreadcrumb
+            className="mt-1"
+            items={[
+              { label: 'Membership', to: '/memberships/plans' },
+              { label: 'Expert Memberships', to: '/memberships/experts' },
+              { label: 'View Details', isActive: true },
+            ]}
+          />
         </div>
       </div>
 

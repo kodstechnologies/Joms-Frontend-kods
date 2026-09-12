@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useLogoutMutation } from '@/modules/auth/hooks/use-logout-mutation'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
+import { getLastSessionActivity, markSessionActivity } from '@/shared/lib/session-activity'
 
 const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'mousemove',
@@ -12,40 +13,41 @@ const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'scroll',
   'touchstart',
   'click',
+  'focus',
 ]
 
 export function SessionTimeoutProvider({ children }: PropsWithChildren) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const token = useAuthStore((state) => state.token)
   const clearSession = useAuthStore((state) => state.clearSession)
-  const { sessionTimeoutMinutes } = useSecurityPolicy()
+  const { sessionTimeoutMinutes, isLoading: isPolicyLoading } = useSecurityPolicy()
   const logoutMutation = useLogoutMutation()
 
-  const lastActivityRef = useRef(0)
+  const logoutRef = useRef(logoutMutation)
   const loggingOutRef = useRef(false)
 
   useEffect(() => {
-    if (!isAuthenticated || !token) return
+    logoutRef.current = logoutMutation
+  })
 
-    lastActivityRef.current = Date.now()
+  useEffect(() => {
+    if (!isAuthenticated || !token) return
+    if (isPolicyLoading) return
+
+    markSessionActivity()
     loggingOutRef.current = false
 
-    const markActivity = () => {
-      lastActivityRef.current = Date.now()
-    }
-
     for (const eventName of ACTIVITY_EVENTS) {
-      window.addEventListener(eventName, markActivity, { passive: true })
+      window.addEventListener(eventName, markSessionActivity, { passive: true })
     }
 
-    const timeoutMs = Math.max(1, sessionTimeoutMinutes) * 60_000
+    const timeoutMs = Math.max(15, Number(sessionTimeoutMinutes) || 30) * 60_000
     const intervalId = window.setInterval(() => {
       if (loggingOutRef.current) return
-      const idleFor = Date.now() - lastActivityRef.current
-      if (idleFor < timeoutMs) return
+      if (Date.now() - getLastSessionActivity() < timeoutMs) return
 
       loggingOutRef.current = true
-      logoutMutation.mutate(undefined, {
+      logoutRef.current.mutate(undefined, {
         onSettled: () => {
           clearSession()
           toast.message('You were logged out due to inactivity')
@@ -56,11 +58,11 @@ export function SessionTimeoutProvider({ children }: PropsWithChildren) {
 
     return () => {
       for (const eventName of ACTIVITY_EVENTS) {
-        window.removeEventListener(eventName, markActivity)
+        window.removeEventListener(eventName, markSessionActivity)
       }
       window.clearInterval(intervalId)
     }
-  }, [clearSession, isAuthenticated, logoutMutation, sessionTimeoutMinutes, token])
+  }, [clearSession, isAuthenticated, isPolicyLoading, sessionTimeoutMinutes, token])
 
   return children
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -217,7 +218,7 @@ export function VenueKycApplicationViewPage() {
   const { id } = useParams<{ id: string }>()
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
-  const [isResolvingPartnerKyc, setIsResolvingPartnerKyc] = useState(false)
+  const [partnerKycLookupDone, setPartnerKycLookupDone] = useState(false)
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [modalOpen, setModalOpen] = useState(false)
@@ -235,13 +236,16 @@ export function VenueKycApplicationViewPage() {
   const application = data?.data
   const partnerId = application?.header?.partnerId ?? undefined
 
+  const applicationNotFound =
+    Boolean(id) &&
+    isError &&
+    (error as { response?: { status?: number } })?.response?.status === 404
+  const isResolvingPartnerKyc = applicationNotFound && !partnerKycLookupDone
+
   useEffect(() => {
-    if (!id || !isError) return
-    const status = (error as { response?: { status?: number } })?.response?.status
-    if (status !== 404) return
+    if (!applicationNotFound || !id || partnerKycLookupDone) return
 
     let cancelled = false
-    setIsResolvingPartnerKyc(true)
 
     fetchVenueKycByPartnerId(id)
       .then((response) => {
@@ -251,16 +255,16 @@ export function VenueKycApplicationViewPage() {
           navigate(getVenueKycApplicationPath(kycId), { replace: true })
           return
         }
-        setIsResolvingPartnerKyc(false)
+        setPartnerKycLookupDone(true)
       })
       .catch(() => {
-        if (!cancelled) setIsResolvingPartnerKyc(false)
+        if (!cancelled) setPartnerKycLookupDone(true)
       })
 
     return () => {
       cancelled = true
     }
-  }, [error, id, isError, navigate])
+  }, [applicationNotFound, id, navigate, partnerKycLookupDone])
 
   const updateKyc = useUpdateVenueKycStatus(id)
   const updateBanking = useUpdateVenueBankingStatus(id)
@@ -326,14 +330,14 @@ export function VenueKycApplicationViewPage() {
       const selectedAssignee = assigneesData?.data.find(
         (item) => item.id === selectedEscalationOption,
       )
-          escalateApplication.mutate(
-            {
-              assigneeSubAdminId: selectedEscalationOption,
-              assigneeName: selectedAssignee?.fullname || '',
-              adminNote: adminNotes.trim(),
-              escalationTarget: modalTarget,
-              applicationUrl: `/experts/management/application/${id}?source=venue_kyc`,
-            },
+      escalateApplication.mutate(
+        {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: adminNotes.trim(),
+          escalationTarget: modalTarget,
+          applicationUrl: `/experts/management/application/${id}?source=venue_kyc`,
+        },
         {
           onSuccess: () => {
             toast.success('Application assigned successfully')
@@ -564,7 +568,7 @@ export function VenueKycApplicationViewPage() {
       <div className="space-y-4">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
+          onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
           className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
@@ -721,18 +725,14 @@ export function VenueKycApplicationViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
         </button>
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="hover:text-brand-text transition-colors"
-          >
-            Expert management
-          </button>
-          <span className="text-muted">/</span>
-          <span>Manage Expert</span>
-          <span className="text-muted">/</span>
-          <span className="font-bold text-white">{applicantName}</span>
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={[
+              { label: 'Venue Management', to: '/venues/management' },
+              { label: 'Manage Venues', to: '/venues/management' },
+              { label: applicantName, isActive: true },
+            ]}
+          />
         </div>
       </header>
 

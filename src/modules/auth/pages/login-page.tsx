@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -83,8 +83,6 @@ export function LoginPage() {
   const { mutateAsync: login, isPending: isLoginPending } = useLoginMutation()
   const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
-  const loginSubmitLockRef = useRef(false)
-  const otpSubmitLockRef = useRef(false)
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [mfaMethod, setMfaMethod] = useState<'emailOtp' | 'authenticator'>('emailOtp')
   const [showPassword, setShowPassword] = useState(false)
@@ -154,8 +152,7 @@ export function LoginPage() {
   }
 
   const onSubmitCredentials = async (values: LoginSchema) => {
-    if (loginSubmitLockRef.current || isLoginPending) return
-    loginSubmitLockRef.current = true
+    if (isLoginPending) return
     try {
       if (!values.email) {
         toast.error('Email is required')
@@ -175,22 +172,21 @@ export function LoginPage() {
       }
 
       setPendingEmail(values.email)
-      setMfaMethod(session?.mfaMethod === 'authenticator' ? 'authenticator' : 'emailOtp')
+      const nextMfaMethod = session?.mfaMethod === 'authenticator' ? 'authenticator' : 'emailOtp'
+      setMfaMethod(nextMfaMethod)
       setStep('otp')
-      toast.success(
-        session?.mfaMethod === 'authenticator'
-          ? 'Enter the code from your authenticator app'
-          : 'OTP sent to your email',
-      )
+      if (nextMfaMethod === 'authenticator') {
+        toast.success('Enter the code from your authenticator app')
+      } else {
+        toast.success('OTP sent to your email')
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Invalid credentials'))
-    } finally {
-      loginSubmitLockRef.current = false
     }
   }
 
   const onSubmitOtp = async (values: OtpSchema) => {
-    if (otpSubmitLockRef.current || isVerifyPending) return
+    if (isVerifyPending) return
     if (!pendingEmail) {
       setStep('credentials')
       return
@@ -201,7 +197,6 @@ export function LoginPage() {
       return
     }
 
-    otpSubmitLockRef.current = true
     try {
       const response = await verifyOtp({ email: pendingEmail, otp: values.code })
       const session = response?.data
@@ -214,9 +209,9 @@ export function LoginPage() {
 
       await finalizeLogin(token, session?.admin, pendingEmail)
     } catch {
-      toast.error('Invalid or expired OTP')
-    } finally {
-      otpSubmitLockRef.current = false
+      toast.error(
+        mfaMethod === 'authenticator' ? 'Invalid authenticator code' : 'Invalid or expired OTP',
+      )
     }
   }
 

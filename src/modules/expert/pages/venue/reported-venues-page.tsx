@@ -102,7 +102,14 @@ export function VenueReportedVenuesPage() {
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <ExpertListHeader title="Reported Venues" breadcrumb="Venue Management / Reported Venues" />
+        <ExpertListHeader
+          title="Reported Venues"
+          breadcrumbItems={[
+            { label: 'Venue Management', to: '/venues/management' },
+            { label: 'Reported Venues', isActive: true },
+          ]}
+          backTo="/venues/management"
+        />
         <Button
           className="ui-manage-metrics h-9 w-full md:w-auto"
           onClick={() => navigate('/metrics/venue-reported?returnTo=/venues/management/reported')}

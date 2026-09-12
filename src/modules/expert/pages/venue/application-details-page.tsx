@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
 import { ArrowLeft, CheckCircle2, MapPin } from 'lucide-react'
 
@@ -384,16 +385,14 @@ export function ApplicationDetailsPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
         </button>
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-            className="transition-colors hover:text-white"
-          >
-            Event Management
-          </button>
-          <span className="text-muted/40">/</span>
-          <span className="font-bold text-white">{venue.venueType || venue.name}</span>
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={[
+              { label: 'Venue Management', to: '/venues/management' },
+              { label: 'Manage Venues', to: '/venues/management' },
+              { label: venue.venueType || venue.name, isActive: true },
+            ]}
+          />
         </div>
       </header>
 

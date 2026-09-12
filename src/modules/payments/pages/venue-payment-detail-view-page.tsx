@@ -240,7 +240,7 @@ export function VenuePaymentDetailViewPage() {
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
+            Payment &amp; Finance
           </Link>
           <span> / </span>
           <Link to="/finance/venues" className="hover:text-brand-text transition-colors">

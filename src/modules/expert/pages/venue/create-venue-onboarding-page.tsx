@@ -28,6 +28,7 @@ import {
 } from '@/modules/expert/utils/venue-onboarding-form'
 import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { validateGstNumber, validatePanNumber } from '@/shared/lib/partner-field-validation'
 
 const ONBOARDING_STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -150,6 +151,9 @@ export function CreateVenueOnboardingPage() {
       const phoneError = validateMobileNumber(formData.phone)
       if (phoneError) return phoneError
       if (!formData.email.trim()) return 'Email is required.'
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        return 'Please enter a valid email address.'
+      }
       if (!formData.venueCategoryId) return 'Category is required.'
     }
     if (step === 2) {
@@ -163,9 +167,14 @@ export function CreateVenueOnboardingPage() {
     if (step === 3) {
       if (!formData.idType) return 'ID type is required.'
       if (!formData.idNumber.trim()) return 'ID number is required.'
-      if (!formData.panNumber.trim()) return 'PAN number is required.'
+      const panError = validatePanNumber(formData.panNumber)
+      if (panError) return panError
       if (!formData.typeOfVenue) return 'Type of venue is required.'
-      if (formData.hasGST && !formData.gstNumber.trim()) return 'GST number is required.'
+      if (formData.hasGST) {
+        const gstError = validateGstNumber(formData.gstNumber)
+        if (gstError) return gstError
+        if (!formData.kycState.trim()) return 'State is required when GST is available.'
+      }
     }
     if (step === 4) {
       if (!formData.isVerified) return 'Please confirm verification before creating account.'
@@ -268,8 +277,8 @@ export function CreateVenueOnboardingPage() {
     <CreateListingWizard
       title="Venue Profile Creation"
       breadcrumbs={[
-        { label: 'Venue management' },
-        { label: 'Manage Venues' },
+        { label: 'Venue Management', to: '/venues/management' },
+        { label: 'Manage Venues', to: '/venues/management' },
         { label: 'Create Profile', isActive: true },
       ]}
       steps={ONBOARDING_STEPS}

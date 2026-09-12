@@ -185,7 +185,10 @@ export function SuspendedServicesPage() {
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Suspended Services"
-        breadcrumb="Service Management / Suspended Services"
+        breadcrumbItems={[
+          { label: 'Service Management', to: '/services/management' },
+          { label: 'Suspended Services', isActive: true },
+        ]}
         backTo="/services/management"
         metricsPath="/metrics/service-suspended?returnTo=/services/management/suspended&section=table"
       />

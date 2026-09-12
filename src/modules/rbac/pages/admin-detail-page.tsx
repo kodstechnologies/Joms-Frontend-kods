@@ -37,6 +37,7 @@ import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-ut
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 
 const PAGE_SIZE = 10
 
@@ -309,9 +310,14 @@ export function AdminDetailPage() {
           <ArrowLeft className="size-5" aria-hidden="true" />
           <span>Admin Details</span>
         </button>
-        <p className="ad-breadcrumb">
-          Role Based Access / <span>{subAdmin.fullname}</span>
-        </p>
+        <div className="ad-breadcrumb">
+          <PageBreadcrumb
+            items={[
+              { label: 'Role Based Access Control', to: '/settings/access' },
+              { label: subAdmin.fullname, isActive: true },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="ad-toolbar">

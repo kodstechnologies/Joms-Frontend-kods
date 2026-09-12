@@ -77,7 +77,9 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Select ID type</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Select ID type <RequiredMark />
+            </label>
             <select
               value={formData.idType}
               onChange={(e) => setFormData((prev) => ({ ...prev, idType: e.target.value }))}
@@ -138,11 +140,13 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
               </label>
               <input
                 value={formData.gstNumber}
-                onChange={(e) => setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))}
-                placeholder="23AAACC1206032ZN"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, gstNumber: e.target.value.toUpperCase() }))
+                }
+                placeholder="22AAAAA0000A1Z5"
                 className={fieldClass}
               />
-              <p className="text-muted mt-1 text-[10px]">Format: ABC0E1234F</p>
+              <p className="text-muted mt-1 text-[10px]">Format: 22AAAAA0000A1Z5</p>
             </div>
           )}
 
@@ -152,11 +156,13 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
             </label>
             <input
               value={formData.panNumber}
-              onChange={(e) => setFormData((prev) => ({ ...prev, panNumber: e.target.value }))}
-              placeholder="AAACC1206Q"
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, panNumber: e.target.value.toUpperCase() }))
+              }
+              placeholder="ABCDE1234F"
               className={fieldClass}
             />
-            <p className="text-muted mt-1 text-[10px]">Format: ABC0E1234F</p>
+            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
           </div>
         </div>
 

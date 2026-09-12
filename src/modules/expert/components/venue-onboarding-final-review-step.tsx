@@ -8,8 +8,6 @@ import {
   maskSensitiveValue,
   type VenueOnboardingFormData,
 } from '../utils/venue-onboarding-form'
-import { RequiredMark } from '@/shared/components/form/required-mark'
-
 type Props = {
   formData: VenueOnboardingFormData
   setFormData: React.Dispatch<React.SetStateAction<VenueOnboardingFormData>>
@@ -305,9 +303,7 @@ export const VenueOnboardingFinalReviewStep = ({
       )}
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <label className="mb-2 block text-xs font-medium text-white">
-          Internal notes <RequiredMark />
-        </label>
+        <label className="mb-2 block text-xs font-medium text-white">Internal notes</label>
         <textarea
           rows={4}
           value={formData.internalNotes}

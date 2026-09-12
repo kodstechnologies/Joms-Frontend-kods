@@ -6,6 +6,7 @@ import {
   markAllInAppNotificationsRead,
   markInAppNotificationRead,
   type InboxKind,
+  type InAppNotification,
 } from '../api/notifications-api'
 
 export const notificationKeys = {
@@ -17,8 +18,15 @@ export const notificationKeys = {
 export const useMyNotifications = (enabled = true, kind?: InboxKind) =>
   useQuery({
     queryKey: notificationKeys.list(kind),
-    queryFn: () => fetchMyInAppNotifications({ page: 1, limit: 50, kind }),
+    queryFn: async () => {
+      try {
+        return await fetchMyInAppNotifications({ page: 1, limit: 50, kind })
+      } catch {
+        return { success: false, data: [] as InAppNotification[], message: 'unavailable' }
+      }
+    },
     enabled,
+    retry: 1,
     refetchInterval: 60_000,
   })
 

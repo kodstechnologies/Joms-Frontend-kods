@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useBranding } from '@/app/providers/use-branding'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadInvoiceDocument, invoiceFromPayout } from '@/shared/utils/invoice-document'
@@ -126,9 +127,25 @@ export function ExpertPayoutDetailPage() {
               {serviceTitle} | {displayId}
             </span>
           </button>
-          <p className="mt-1 text-xs text-slate-400">
-            Expert Management / Payout Details / Payout History / {serviceTitle}
-          </p>
+          <PageBreadcrumb
+            className="mt-1"
+            items={[
+              { label: 'Expert Management', to: '/experts/management' },
+              {
+                label: 'Payout Details',
+                to: resolvedExpertId
+                  ? `/experts/management/profile/${resolvedExpertId}`
+                  : '/experts/management',
+              },
+              {
+                label: 'Payout History',
+                to: resolvedExpertId
+                  ? `/experts/management/profile/${resolvedExpertId}`
+                  : '/experts/management',
+              },
+              { label: serviceTitle, isActive: true },
+            ]}
+          />
         </div>
       </div>
 

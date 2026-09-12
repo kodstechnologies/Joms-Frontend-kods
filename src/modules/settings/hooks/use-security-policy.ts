@@ -87,9 +87,12 @@ export function useSecurityPolicy() {
     ...(config && 'passwordPolicy' in config ? config.passwordPolicy : {}),
   }
 
-  const sessionTimeoutMinutes =
-    (config && 'sessionTimeout' in config ? config.sessionTimeout?.durationMinutes : undefined) ??
-    DEFAULT_SESSION_TIMEOUT_MINUTES
+  const ALLOWED_SESSION_TIMEOUTS = [15, 30, 45, 60, 120]
+  const rawTimeout =
+    config && 'sessionTimeout' in config ? Number(config.sessionTimeout?.durationMinutes) : NaN
+  const sessionTimeoutMinutes = ALLOWED_SESSION_TIMEOUTS.includes(rawTimeout)
+    ? rawTimeout
+    : DEFAULT_SESSION_TIMEOUT_MINUTES
 
   const mfa = normalizeMfaPolicy(
     config && 'mfa' in config ? (config.mfa as SecuritySettings['mfa']) : undefined,

@@ -102,7 +102,7 @@ const parseCsvRecipients = (text: string): BulkRecipient[] => {
         phone: phone || undefined,
       }
     })
-    .filter((item) => item.name && (item.email || item.phone))
+    .filter((item) => item.name && item.email && item.phone)
     .filter((item) => {
       const key = `${item.email || ''}|${item.phone || ''}|${item.name.toLowerCase()}`
       if (seen.has(key)) return false
@@ -167,7 +167,7 @@ export function InviteExpertReferralModal({
       setFileName(null)
       setRecipients([])
       setParseError(
-        'No valid rows found. CSV needs a header row and columns: name, email, phone. Each row needs a name plus email or phone.',
+        'No valid rows found. CSV needs a header row and columns: name, email, phone. Each row needs all three.',
       )
       toast.error('No valid recipients found in CSV')
       return
@@ -189,8 +189,12 @@ export function InviteExpertReferralModal({
         toast.error('Name is required')
         return
       }
-      if (!email.trim() && !phone.trim()) {
-        toast.error('Email or phone number is required')
+      if (!email.trim()) {
+        toast.error('Email ID is required')
+        return
+      }
+      if (!phone.trim()) {
+        toast.error('Phone number is required')
         return
       }
       await onSubmitManual({

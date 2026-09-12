@@ -1,16 +1,44 @@
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+
+import {
+  PageBreadcrumb,
+  type PageBreadcrumbItem,
+} from '@/shared/components/navigation/page-breadcrumb'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 interface CategoryHeaderProps {
   title: string
   breadcrumb?: string
   breadcrumbItems?: string[]
+  items?: PageBreadcrumbItem[]
   backPath?: string
+  listPath?: string
 }
 
-const CategoryHeader = ({ title, breadcrumb, breadcrumbItems, backPath }: CategoryHeaderProps) => {
+const CategoryHeader = ({
+  title,
+  breadcrumb,
+  breadcrumbItems,
+  items,
+  backPath,
+  listPath,
+}: CategoryHeaderProps) => {
   const navigate = useNavigate()
+  const categoryListPath = listPath || backPath
+  const crumbs: PageBreadcrumbItem[] = items
+    ? items
+    : [
+        { label: 'Category Management', to: categoryListPath },
+        ...(breadcrumbItems && breadcrumbItems.length > 0
+          ? breadcrumbItems.map((item, index) => ({
+              label: item,
+              isActive: index === breadcrumbItems.length - 1,
+            }))
+          : breadcrumb
+            ? [{ label: breadcrumb, isActive: true }]
+            : []),
+      ]
 
   return (
     <header className="flex flex-col gap-2">
@@ -29,28 +57,9 @@ const CategoryHeader = ({ title, breadcrumb, breadcrumbItems, backPath }: Catego
         <span>{title}</span>
       </button>
 
-      <p className="text-body-sm-medium text-muted pl-7">
-        Category Management
-        {breadcrumbItems && breadcrumbItems.length > 0
-          ? breadcrumbItems.map((item, index) => (
-              <span key={item}>
-                <span className="text-muted/50 mx-1">/</span>
-                <span
-                  className={
-                    index === breadcrumbItems.length - 1 ? 'text-brand-text' : 'text-muted'
-                  }
-                >
-                  {item}
-                </span>
-              </span>
-            ))
-          : breadcrumb && (
-              <>
-                <span className="text-muted/50 mx-1">/</span>
-                <span className="text-brand-text">{breadcrumb}</span>
-              </>
-            )}
-      </p>
+      <div className="pl-7">
+        <PageBreadcrumb items={crumbs} />
+      </div>
     </header>
   )
 }

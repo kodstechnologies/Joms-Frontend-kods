@@ -4,10 +4,33 @@ import { toast } from 'sonner'
 
 import { env } from '@/config/env'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { markSessionActivity } from '@/shared/lib/session-activity'
 
 const defaultConfigs = {
   timeout: 30000,
   withCredentials: true,
+}
+
+const SESSION_TERMINATED_MESSAGES = [
+  'account is suspended',
+  'account suspended',
+  'account is inactive',
+  'account is disabled',
+  'session expired',
+]
+
+function isSessionTerminated(error: {
+  response?: { status?: number; data?: { message?: string; data?: { code?: string } } }
+}) {
+  const status = error?.response?.status
+  if (status !== 401 && status !== 403) return false
+
+  if (error?.response?.data?.data?.code === 'SESSION_TERMINATED') return true
+
+  const message = String(error?.response?.data?.message || '')
+    .trim()
+    .toLowerCase()
+  return SESSION_TERMINATED_MESSAGES.some((phrase) => message.startsWith(phrase))
 }
 
 let lastOfflineToastAt = 0
@@ -43,20 +66,19 @@ function attachAuthInterceptor(client: AxiosInstance) {
   })
 
   client.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      markSessionActivity()
+      return response
+    },
     (error) => {
       if (error?.isOffline || (error?.code === 'ERR_NETWORK' && isBrowserOffline())) {
         notifyOffline()
+      } else if (error?.response) {
+        markSessionActivity()
       }
 
-      const status = error?.response?.status
-      const message = String(error?.response?.data?.message || '').toLowerCase()
       const authState = useAuthStore.getState()
-      if (
-        authState.isAuthenticated &&
-        (status === 401 || status === 403) &&
-        /suspend|inactive|disabled/.test(message)
-      ) {
+      if (authState.isAuthenticated && isSessionTerminated(error)) {
         authState.clearSession()
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
           window.location.assign('/auth/login')

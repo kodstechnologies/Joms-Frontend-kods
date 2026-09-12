@@ -17,6 +17,7 @@ import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { Input } from '@/shared/components/ui/input'
 import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
 import { grantsToMap } from '@/shared/lib/permissions'
@@ -292,9 +293,6 @@ export function CreateSubAdminPage() {
   }
 
   const pageTitle = isEditMode ? 'Edit User' : 'Create New User'
-  const pageSubtitle = isEditMode
-    ? 'Role Based Access / Edit User'
-    : 'Role Based Access / Create New User'
 
   return (
     <div className="flex flex-col gap-6">
@@ -307,7 +305,14 @@ export function CreateSubAdminPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{pageTitle}</span>
         </button>
-        <p className="text-brand-muted pl-7 text-sm">{pageSubtitle}</p>
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={[
+              { label: 'Role Based Access Control', to: '/settings/access' },
+              { label: pageTitle, isActive: true },
+            ]}
+          />
+        </div>
       </div>
 
       {step === 'form' ? (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import axios from 'axios'
 import {
   ArrowLeft,
@@ -217,8 +218,10 @@ export const ServiceViewPage = () => {
     useUpdateConsultationStatus()
   const suspendServiceMutation = useSuspendService()
   const recordReasonUsage = useRecordModerationReasonUsage()
-  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+  const serviceRejectReasons = useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+  const consultationRejectReasons = useModerationReasonOptions(
+    MODERATION_CATEGORY_SLUGS.rejectConsultation,
+  )
   const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
@@ -243,6 +246,8 @@ export const ServiceViewPage = () => {
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
   const isConsultationListing =
     shouldFetchConsultation || (serviceLookupFailed && Boolean(consultationResponse?.data))
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    isConsultationListing ? consultationRejectReasons : serviceRejectReasons
   const escalationEntityType = isConsultationListing ? 'consultation' : 'service'
   const { data: assigneesData } = useEscalationAssignees('services.*')
   const { data: escalationData } = useAdminEscalation(escalationEntityType, resolvedServiceId)
@@ -1030,42 +1035,25 @@ export const ServiceViewPage = () => {
           <span>{pageTitle}</span>
         </button>
 
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          {fromExpert ? (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                All Experts
-              </button>
-              <span className="text-muted">/</span>
-              <button
-                type="button"
-                onClick={() => expertId && navigate(`/experts/management/profile/${expertId}`)}
-                className="hover:text-brand-text transition-colors"
-              >
-                {expertName}
-              </button>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">{pageTitle}</span>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                Service management
-              </button>
-              <span className="text-muted">/</span>
-              <span>{pageTitle}</span>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">{expertName}</span>
-            </>
-          )}
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={
+              fromExpert
+                ? [
+                    { label: 'Expert Management', to: '/experts/management' },
+                    {
+                      label: expertName,
+                      to: expertId ? `/experts/management/profile/${expertId}` : undefined,
+                    },
+                    { label: pageTitle, isActive: true },
+                  ]
+                : [
+                    { label: 'Service Management', to: '/services/management' },
+                    { label: 'Manage Services', to: '/services/management' },
+                    { label: expertName, isActive: true },
+                  ]
+            }
+          />
         </div>
       </header>
 

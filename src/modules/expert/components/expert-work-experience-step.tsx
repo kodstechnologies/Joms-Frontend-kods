@@ -5,6 +5,7 @@ import {
   type ExpertOnboardingFormData,
   type ExpertWorkExperienceEntry,
 } from '../utils/expert-onboarding-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 const fieldClass = 'ui-input'
 
@@ -65,7 +66,9 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">Job Title</label>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Job Title <RequiredMark />
+                  </label>
                   <input
                     value={entry.jobTitle}
                     onChange={(e) => updateEntry(index, { jobTitle: e.target.value })}
@@ -75,7 +78,9 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">Company name</label>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Company name <RequiredMark />
+                  </label>
                   <input
                     value={entry.companyName}
                     onChange={(e) => updateEntry(index, { companyName: e.target.value })}

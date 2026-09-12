@@ -172,7 +172,10 @@ export function DeletedServicesPage() {
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Deleted Services"
-        breadcrumb="Service Management / Deleted Services"
+        breadcrumbItems={[
+          { label: 'Service Management', to: '/services/management' },
+          { label: 'Deleted Services', isActive: true },
+        ]}
         backTo="/services/management"
         metricsPath="/metrics/service-deleted?returnTo=/services/management/deleted&section=table"
       />

@@ -27,6 +27,7 @@ import { Button } from '@/shared/components/ui/button'
 import { LogStatusBadge } from '@/shared/components/ui/log-status-badge'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -356,7 +357,8 @@ export function AdminLogsPage() {
   }, [])
 
   const handleFlag = useCallback(
-    async (_payload: { reasons: string[]; note: string }) => {
+    async (payload: { reasons: string[]; note: string }) => {
+      void payload
       if (!flagLogId) return
       try {
         await flagMutation.mutateAsync(flagLogId)
@@ -552,16 +554,13 @@ export function AdminLogsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>{pageTitle}</span>
           </button>
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-              className="hover:text-brand-text transition-colors"
-            >
-              Role Based Access
-            </button>
-            <span className="text-brand-text/30">/</span>
-            <span className="text-brand-text font-bold">{breadcrumbName}</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Role Based Access Control', to: '/settings/access' },
+                { label: breadcrumbName, isActive: true },
+              ]}
+            />
           </div>
         </div>
 

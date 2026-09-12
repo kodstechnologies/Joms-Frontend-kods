@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -11,6 +11,7 @@ import { useSettingsModule, useUpdateSettings } from '../hooks/use-settings'
 import { securityDefaults } from '../config/settings.config'
 import type { LoginTrailRow, SecuritySettings } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
@@ -69,15 +70,20 @@ function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
 export function LoginTrailsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const resetSelection = useCallback(() => setSelectedIds(new Set()), [])
+  const handlePageReset = useCallback(() => {
+    resetSelection()
+    setPage(1)
+  }, [resetSelection])
   const serverSort = useServerTableSort({
     sortFieldMap: SORT_FIELD_MAP,
     defaultSortBy: 'createdAt',
-    onPageReset: () => setPage(1),
+    onPageReset: handlePageReset,
   })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: handlePageReset })
   const { buildSearchParams, globalSearch } = enhancedSearch
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const securityQuery = useSettingsModule('security')
   const updateSecurity = useUpdateSettings('security')
@@ -102,15 +108,32 @@ export function LoginTrailsPage() {
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
 
-  useEffect(() => {
-    setSelectedIds(new Set())
-  }, [appliedFilters, globalSearch, page])
+  const handlePageChange = useCallback(
+    (nextPage: number) => {
+      resetSelection()
+      setPage(nextPage)
+    },
+    [resetSelection],
+  )
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    toast.success('Filters applied')
-    setAppliedFilters(values)
-    setPage(1)
-  }, [])
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      resetSelection()
+      enhancedSearch.setGlobalSearch(value)
+      setPage(1)
+    },
+    [enhancedSearch, resetSelection],
+  )
+
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      toast.success('Filters applied')
+      resetSelection()
+      setAppliedFilters(values)
+      setPage(1)
+    },
+    [resetSelection],
+  )
 
   const exportBaseParams = useMemo(
     () =>
@@ -249,8 +272,6 @@ export function LoginTrailsPage() {
   const goBack = () =>
     navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
 
-  const goToSettings = () => navigate('/settings/main', { state: { settingsTab: 'security' } })
-
   return (
     <SettingsSubpageShell activeTab="security">
       <div className="login-trails-page">
@@ -261,16 +282,19 @@ export function LoginTrailsPage() {
             </button>
             <div className="min-w-0">
               <h1 className="login-trails-title">Admin Login Trails</h1>
-              <p className="login-trails-breadcrumb">
-                <button
-                  type="button"
-                  onClick={goToSettings}
-                  className="login-trails-breadcrumb-link"
-                >
-                  Settings
-                </button>
-                <span> / Security & Access / Admin Login Trails</span>
-              </p>
+              <div className="login-trails-breadcrumb">
+                <PageBreadcrumb
+                  items={[
+                    { label: 'Settings', to: '/settings/main' },
+                    {
+                      label: 'Security & Access',
+                      to: '/settings/main',
+                      state: { settingsTab: 'security' },
+                    },
+                    { label: 'Admin Login Trails', isActive: true },
+                  ]}
+                />
+              </div>
             </div>
           </div>
 
@@ -304,7 +328,7 @@ export function LoginTrailsPage() {
             stickyHeader
             emptyMessage="No login trails found."
             searchValue={globalSearch}
-            onSearchChange={enhancedSearch.setGlobalSearch}
+            onSearchChange={handleSearchChange}
             searchPlaceholder="Search by admin name, email or IP"
             onAdvancedFilter={onAdvancedFilter}
             advancedFilterLabel="Advance Filters"
@@ -316,7 +340,7 @@ export function LoginTrailsPage() {
               pageSize: PAGE_SIZE,
               totalItems,
               totalPages,
-              onPageChange: setPage,
+              onPageChange: handlePageChange,
             }}
             resourceLabel="users"
             toolbarContent={

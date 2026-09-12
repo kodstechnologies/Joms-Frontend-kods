@@ -305,7 +305,7 @@ function CommunicationFormFields({
             onClick={() => navigate('/communication/management')}
             className="hover:text-brand-text transition-colors"
           >
-            Communication management
+            Communication
           </button>
           <span> / </span>
           <span className="text-brand-text font-semibold">

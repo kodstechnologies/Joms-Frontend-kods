@@ -14,6 +14,7 @@ import type { PermissionCatalog, SubAdminRole } from '../types/rbac'
 import { grantsToMap, type PermissionLevel } from '@/shared/lib/permissions'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 
 type ModuleAccess = 'full' | 'limited' | 'none'
 
@@ -394,10 +395,13 @@ export function UpdateContactInformationPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Update Contact Information</span>
           </button>
-          <div className="flex items-center gap-1.5 pl-7 text-xs text-white/50">
-            <span>Log In</span>
-            <span>/</span>
-            <span className="font-semibold text-white">Contact Information</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Log In', to: '/auth/login' },
+                { label: 'Contact Information', isActive: true },
+              ]}
+            />
           </div>
         </div>
 

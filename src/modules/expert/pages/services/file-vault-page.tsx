@@ -104,7 +104,7 @@ export function FileVaultPage() {
         title={isConsultation ? 'Consultation Performance' : 'Service Details'}
         onBack={() => navigateBackOrFallback(navigate, backPath)}
         crumbs={[
-          { label: 'All Experts', onClick: () => navigate('/experts/management') },
+          { label: 'Expert Management', onClick: () => navigate('/experts/management') },
           { label: expertName, onClick: () => navigate(`/experts/management/profile/${expertId}`) },
           {
             label: isConsultation ? 'Consultation Performance' : 'Service listing',

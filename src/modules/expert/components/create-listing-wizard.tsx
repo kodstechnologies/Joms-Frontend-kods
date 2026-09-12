@@ -2,6 +2,10 @@ import type { ReactNode } from 'react'
 import { ChevronLeft } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
+import {
+  PageBreadcrumb,
+  type PageBreadcrumbItem,
+} from '@/shared/components/navigation/page-breadcrumb'
 import { cn } from '@/shared/lib/cn'
 
 export type CreateListingWizardStep = {
@@ -10,10 +14,7 @@ export type CreateListingWizardStep = {
   description: string
 }
 
-export type CreateListingBreadcrumb = {
-  label: string
-  isActive?: boolean
-}
+export type CreateListingBreadcrumb = PageBreadcrumbItem
 
 type WizardAction = {
   label: ReactNode
@@ -62,15 +63,8 @@ export function CreateListingWizard({
           <h1 className="text-h3 font-bold tracking-tight">{title}</h1>
         </button>
 
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          {breadcrumbs.map((breadcrumb, index) => (
-            <span key={`${breadcrumb.label}-${index}`} className="contents">
-              {index > 0 && <span className="text-[#333333]">/</span>}
-              <span className={cn(breadcrumb.isActive && 'font-bold text-white')}>
-                {breadcrumb.label}
-              </span>
-            </span>
-          ))}
+        <div className="pl-7">
+          <PageBreadcrumb items={breadcrumbs} />
         </div>
       </div>
 

@@ -14,7 +14,6 @@ import {
   type ServiceReportItem,
 } from '../../components/service-report-detail-modal'
 import { ExpertListHeader } from '../experts/expert-list-shared'
-import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import {
   buildServiceReportDataColumnsById,
   pickServicePreferenceColumns,
@@ -167,7 +166,11 @@ export function ServiceReportedServicesPage() {
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Reported Services"
-        breadcrumb="Service Management / Reported Services"
+        breadcrumbItems={[
+          { label: 'Service Management', to: '/services/management' },
+          { label: 'Reported Services', isActive: true },
+        ]}
+        backTo="/services/management"
         metricsPath="/metrics/service-reported?returnTo=/services/management/reported&section=table"
       />
 

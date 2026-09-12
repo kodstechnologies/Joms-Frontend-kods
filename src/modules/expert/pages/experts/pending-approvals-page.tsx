@@ -332,7 +332,10 @@ export function ExpertPendingApprovalsPage() {
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Pending Approvals"
-        breadcrumb="User Management / Pending Approvals"
+        breadcrumbItems={[
+          { label: 'Expert Management', to: '/experts/management' },
+          { label: 'Pending Approvals', isActive: true },
+        ]}
         metricsPath="/metrics/expert-pending-approvals?returnTo=/experts/pending-approvals"
       />
 

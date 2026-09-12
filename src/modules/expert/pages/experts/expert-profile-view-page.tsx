@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
@@ -32,7 +33,6 @@ import {
   RefreshCw,
   Search,
   Share2,
-  SlidersHorizontal,
   Star,
   Tag,
   Trash2,
@@ -41,7 +41,11 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { AdvanceFilterIcon, ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import {
+  AdvanceFilterIcon,
+  ExportDataIcon,
+  ManageMetricsIcon,
+} from '@/shared/components/icons/action-button-icons'
 
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
 import {
@@ -3080,18 +3084,14 @@ export function ExpertProfileViewPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile View</span>
           </button>
-          <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-              className="hover:text-brand-text transition-colors"
-            >
-              Expert management
-            </button>
-            <span className="text-muted">/</span>
-            <span>Manage Expert</span>
-            <span className="text-muted">/</span>
-            <span className="font-bold text-white">{displayName}</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Expert Management', to: '/experts/management' },
+                { label: 'Manage Expert', to: '/experts/management' },
+                { label: displayName, isActive: true },
+              ]}
+            />
           </div>
         </div>
         <TableActionsDropdown

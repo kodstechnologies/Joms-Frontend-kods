@@ -52,7 +52,9 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
 
         <div className="space-y-6">
           <div className="space-y-2.5">
-            <label className="font-bold text-white">Space Name</label>
+            <label className="font-bold text-white">
+              Space Name <RequiredMark />
+            </label>
 
             <input
               type="text"
@@ -70,7 +72,9 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">Space Type</label>
+              <label className="mb-2 block text-sm font-medium text-white">
+                Space Type <RequiredMark />
+              </label>
 
               <select
                 value={venueData.spaceType || ''}
@@ -93,7 +97,7 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
             {venueData.spaceType === 'restaurant' ? (
               <div>
                 <label className="mb-2 block text-sm font-medium text-white">
-                  No. Guests Allowed
+                  No. Guests Allowed <RequiredMark />
                 </label>
 
                 <input
@@ -157,7 +161,9 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
           >
             {venueData.spaceType !== 'restaurant' && (
               <div>
-                <label className="mb-2 block text-sm font-medium text-white">Area Sq Feet</label>
+                <label className="mb-2 block text-sm font-medium text-white">
+                  Area Sq Feet <RequiredMark />
+                </label>
 
                 <input
                   type="text"
@@ -194,7 +200,9 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white">Seating Type</label>
+                  <label className="mb-2 block text-sm font-medium text-white">
+                    Seating Type <RequiredMark />
+                  </label>
 
                   <input
                     type="text"

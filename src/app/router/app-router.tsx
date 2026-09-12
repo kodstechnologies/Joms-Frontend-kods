@@ -157,11 +157,6 @@ const ExpertReportedExpertsPage = lazy(() =>
     default: m.ExpertReportedExpertsPage,
   })),
 )
-const ServiceReportedServicesPage = lazy(() =>
-  import('@/modules/expert').then((m) => ({
-    default: m.ServiceReportedServicesPage,
-  })),
-)
 const VenueReportedVenuesPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueReportedVenuesPage,
@@ -992,10 +987,6 @@ export function AppRouter() {
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
                 <Route path="/services/management/reported" element={<ReportedServicesPage />} />
                 <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
-                <Route
-                  path="/services/management/reported"
-                  element={<ServiceReportedServicesPage />}
-                />
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
                 <Route
                   path="/services/management/view/:id"

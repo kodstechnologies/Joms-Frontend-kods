@@ -12,6 +12,7 @@ import {
 } from '../hooks/use-settings'
 import { backupDefaults } from '../config/settings.config'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 export function BackupConfigurationPage() {
@@ -45,17 +46,19 @@ export function BackupConfigurationPage() {
 
   return (
     <div className="backup-config-page">
-      <p className="backup-config-breadcrumb">
-        <button type="button" onClick={goBack} className="backup-config-breadcrumb-link">
-          Settings
-        </button>
-        <span> / </span>
-        <button type="button" onClick={goBack} className="backup-config-breadcrumb-link">
-          Backups &amp; Restore
-        </button>
-        <span> / </span>
-        <span className="backup-config-breadcrumb-current">Backup Configuration</span>
-      </p>
+      <div className="backup-config-breadcrumb">
+        <PageBreadcrumb
+          items={[
+            { label: 'Settings', to: '/settings/main' },
+            {
+              label: 'Backups & Restore',
+              to: '/settings/main',
+              state: { settingsTab: 'backup' },
+            },
+            { label: 'Backup Configuration', isActive: true },
+          ]}
+        />
+      </div>
 
       <button type="button" onClick={goBack} className="backup-config-back">
         <ArrowLeft className="size-5" aria-hidden="true" />
