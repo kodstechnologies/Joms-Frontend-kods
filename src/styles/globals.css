@@ -6872,7 +6872,6 @@ select::-ms-expand {
 .ui-table-actions-menu {
   box-sizing: border-box;
   max-width: min(280px, calc(100vw - 16px));
-  /* Flat top-right so the menu tucks flush under the ⋮ (Figma) */
   border-radius: 10px 0 10px 10px !important;
   border: 1px solid #e2e8f0;
   background: #ffffff;
@@ -6880,6 +6879,10 @@ select::-ms-expand {
   text-align: left;
   box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
   transform: none;
+}
+
+.ui-table-actions-menu-up {
+  border-radius: 10px 10px 0 10px !important;
 }
 
 .ui-table-actions-menu-dark {

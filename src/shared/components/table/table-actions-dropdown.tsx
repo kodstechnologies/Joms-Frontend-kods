@@ -1,4 +1,12 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
+import { createPortal } from 'react-dom'
 import { MoreVertical } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
@@ -13,10 +21,9 @@ type TableActionsDropdownProps = {
   tone?: 'dark' | 'light'
 }
 
-/**
- * Opens the actions menu directly under the ⋮ (Figma).
- * Inline top/right so placement cannot be overridden by other CSS.
- */
+const MENU_GAP = 8
+const VIEWPORT_PAD = 8
+
 export function TableActionsDropdown({
   label,
   isOpen,
@@ -27,12 +34,66 @@ export function TableActionsDropdown({
   tone = 'light',
 }: TableActionsDropdownProps) {
   const rootRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [placement, setPlacement] = useState<{
+    style: CSSProperties
+    openUp: boolean
+  } | null>(null)
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setPlacement(null)
+      return
+    }
+
+    const update = () => {
+      const button = buttonRef.current
+      const menu = menuRef.current
+      if (!button) return
+
+      const icon = button.querySelector('svg')
+      const rect = button.getBoundingClientRect()
+      const alignRect = icon?.getBoundingClientRect() ?? rect
+      const height = menu?.offsetHeight || 0
+      const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP
+      const openUp = height > 0 && spaceBelow < height && rect.top > height + MENU_GAP
+      const top = openUp
+        ? Math.max(VIEWPORT_PAD, rect.top - MENU_GAP - height)
+        : rect.bottom + MENU_GAP
+
+      setPlacement({
+        openUp,
+        style: {
+          position: 'fixed',
+          top,
+          right: window.innerWidth - (alignRect.left + alignRect.width / 2),
+          left: 'auto',
+          width: menuWidth,
+          minWidth: menuWidth,
+          maxWidth: menuWidth,
+          zIndex: 2000,
+          margin: 0,
+          transform: 'none',
+        },
+      })
+    }
+
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [isOpen, menuWidth, children])
 
   useEffect(() => {
     if (!isOpen) return
 
     const onPointerDown = (event: MouseEvent) => {
-      if (rootRef.current?.contains(event.target as Node)) return
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return
       onOpenChange(false)
     }
 
@@ -48,6 +109,34 @@ export function TableActionsDropdown({
     }
   }, [isOpen, onOpenChange])
 
+  const menu = isOpen ? (
+    <div
+      ref={menuRef}
+      role="menu"
+      className={cn(
+        'ui-table-actions-menu',
+        placement?.openUp && 'ui-table-actions-menu-up',
+        tone === 'dark' && 'ui-table-actions-menu-dark',
+        menuClassName,
+      )}
+      style={
+        placement?.style ?? {
+          position: 'fixed',
+          top: -9999,
+          left: -9999,
+          width: menuWidth,
+          minWidth: menuWidth,
+          maxWidth: menuWidth,
+          zIndex: 2000,
+          margin: 0,
+          visibility: 'hidden',
+        }
+      }
+    >
+      {children}
+    </div>
+  ) : null
+
   return (
     <div
       ref={rootRef}
@@ -55,6 +144,7 @@ export function TableActionsDropdown({
       style={{ position: 'relative', width: 24, height: 24 }}
     >
       <button
+        ref={buttonRef}
         type="button"
         aria-label={label}
         aria-expanded={isOpen}
@@ -72,33 +162,7 @@ export function TableActionsDropdown({
         <MoreVertical className="icon-sm" aria-hidden="true" />
       </button>
 
-      {isOpen ? (
-        <div
-          role="menu"
-          className={cn(
-            'ui-table-actions-menu absolute top-full right-0 z-[101] mt-2',
-            tone === 'dark' && 'ui-table-actions-menu-dark',
-            menuClassName,
-          )}
-          style={{
-            position: 'absolute',
-            top: '100%',
-            right: 0,
-            left: 'auto',
-            width: menuWidth,
-            minWidth: menuWidth,
-            maxWidth: menuWidth,
-            zIndex: 101,
-            marginTop: 8,
-            marginRight: 0,
-            marginBottom: 0,
-            marginLeft: 0,
-            transform: 'none',
-          }}
-        >
-          {children}
-        </div>
-      ) : null}
+      {menu && typeof document !== 'undefined' ? createPortal(menu, document.body) : null}
     </div>
   )
 }

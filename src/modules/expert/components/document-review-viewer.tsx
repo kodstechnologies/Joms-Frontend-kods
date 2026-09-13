@@ -220,11 +220,7 @@ function DocumentReviewViewerContent({
 
   const resolvedReviewStatus = hideActions ? null : resolveDocumentReviewStatus(url, reviewStatus)
   const decisionActionsDisabled =
-    hideActions ||
-    actionsDisabled ||
-    resolvedReviewStatus === 'APPROVED' ||
-    resolvedReviewStatus === 'REJECTED' ||
-    isSubmitting
+    hideActions || actionsDisabled || resolvedReviewStatus === 'APPROVED' || isSubmitting
 
   useEffect(() => {
     if (!menuOpen) return
@@ -329,7 +325,7 @@ function DocumentReviewViewerContent({
             <p className="text-body-md-semibold truncate text-white">{filename}</p>
             {hideActions ? null : resolvedReviewStatus === 'APPROVED' ? (
               <p className="text-body-sm text-brand-positive font-medium">Approved</p>
-            ) : resolvedReviewStatus === 'REJECTED' ? (
+            ) : resolvedReviewStatus === 'REJECTED' && decisionActionsDisabled ? (
               <p className="text-body-sm text-brand-danger font-medium">Rejected</p>
             ) : decisionActionsDisabled ? (
               <p className="text-body-sm text-muted font-medium">
