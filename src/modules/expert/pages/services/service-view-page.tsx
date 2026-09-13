@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -15,6 +15,7 @@ import {
   Languages,
   Loader2,
   Phone,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -230,6 +231,7 @@ export const ServiceViewPage = () => {
   const isUpdatingStatus = isUpdatingServiceStatus || isUpdatingConsultationStatus
 
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [imageViewerOpen, setImageViewerOpen] = useState(false)
   const [activeTierIndex, setActiveTierIndex] = useState(1)
   const [activeDecisionAction, setActiveDecisionAction] = useState<ServiceDecisionAction | null>(
     null,
@@ -268,6 +270,7 @@ export const ServiceViewPage = () => {
   if (resolvedServiceId !== imageCarouselServiceId) {
     setImageCarouselServiceId(resolvedServiceId)
     setActiveImageIndex(0)
+    setImageViewerOpen(false)
   }
 
   const apiResponse = isConsultationListing ? consultationResponse : serviceResponse
@@ -277,6 +280,34 @@ export const ServiceViewPage = () => {
     (serviceLookupFailed && isConsultationLoading)
   const error = isConsultationListing ? consultationError : serviceError
   const service = apiResponse?.data as ServiceViewDetail | undefined
+
+  const previewImages = service?.images || []
+  const imageCount = previewImages.length
+
+  const handlePrevImage = useCallback(() => {
+    if (imageCount > 0) {
+      setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
+    }
+  }, [imageCount])
+
+  const handleNextImage = useCallback(() => {
+    if (imageCount > 0) {
+      setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
+    }
+  }, [imageCount])
+
+  const closeImageViewer = useCallback(() => setImageViewerOpen(false), [])
+
+  useEffect(() => {
+    if (!imageViewerOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeImageViewer()
+      if (event.key === 'ArrowLeft') handlePrevImage()
+      if (event.key === 'ArrowRight') handleNextImage()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [imageViewerOpen, closeImageViewer, handleNextImage, handlePrevImage])
 
   const resolvedPartnerId = expertId || partnerIdParam || service?.partnerId || ''
   const { data: expertProfileResponse } = useExpertProfile(resolvedPartnerId || undefined)
@@ -581,8 +612,7 @@ export const ServiceViewPage = () => {
 
   const isConsultation =
     isConsultationListing || (service.serviceType || '').toLowerCase().includes('consultation')
-  const images = service.images || []
-  const imageCount = images.length
+  const images = previewImages
   const activeImage =
     imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
   const consultationTopics = service.topics || []
@@ -625,18 +655,6 @@ export const ServiceViewPage = () => {
       key: `${option.durationMinutes}-${option.price ?? 'free'}`,
       label: `${option.durationMinutes}mins (${formatConsultationPrice(option)})`,
     })) || []
-
-  const handlePrevImage = () => {
-    if (imageCount > 0) {
-      setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
-    }
-  }
-
-  const handleNextImage = () => {
-    if (imageCount > 0) {
-      setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
-    }
-  }
 
   const decisionModalConfig = activeDecisionAction
     ? {
@@ -914,14 +932,14 @@ export const ServiceViewPage = () => {
         <div className="space-y-6">
           <div className="relative h-[230px] w-full overflow-hidden rounded-lg bg-[#050505]">
             {activeImage ? (
-              <a
-                href={activeImage}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                aria-label="Open image viewer"
+                onClick={() => setImageViewerOpen(true)}
                 className="block h-full w-full cursor-zoom-in"
               >
                 <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
-              </a>
+              </button>
             ) : (
               <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                 <ImageIcon className="size-8" aria-hidden="true" />
@@ -934,7 +952,10 @@ export const ServiceViewPage = () => {
                 <button
                   type="button"
                   aria-label="Previous image"
-                  onClick={handlePrevImage}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
                   className="absolute top-1/2 left-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronLeft className="size-4" />
@@ -942,7 +963,10 @@ export const ServiceViewPage = () => {
                 <button
                   type="button"
                   aria-label="Next image"
-                  onClick={handleNextImage}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
                   className="absolute top-1/2 right-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronRight className="size-4" />
@@ -955,6 +979,61 @@ export const ServiceViewPage = () => {
               {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
             </div>
           </div>
+
+          {imageViewerOpen && activeImage ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={closeImageViewer}
+            >
+              <button
+                type="button"
+                aria-label="Close image viewer"
+                onClick={closeImageViewer}
+                className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+              >
+                <X className="size-5" />
+              </button>
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
+                  className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronLeft className="size-6" />
+                </button>
+              ) : null}
+              <div
+                className="flex max-h-[85vh] max-w-[min(900px,90vw)] flex-col items-center"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <img
+                  src={activeImage}
+                  alt={service.title}
+                  className="max-h-[80vh] max-w-full rounded-lg object-contain"
+                />
+                <p className="mt-3 text-[13px] text-white/70">
+                  {activeImageIndex + 1} / {imageCount}
+                </p>
+              </div>
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
+                  className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronRight className="size-6" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           {resolvedPricingType === 'tiered' && renderTieredPricing()}
         </div>

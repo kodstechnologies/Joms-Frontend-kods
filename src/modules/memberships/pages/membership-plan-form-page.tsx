@@ -1,5 +1,5 @@
 import { ArrowLeft, Pencil, Save, X } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
@@ -12,7 +12,9 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 export function MembershipPlanFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const isEditMode = Boolean(id)
+  const location = useLocation()
+  const isViewMode = Boolean(id) && location.pathname.endsWith('/view')
+  const isEditMode = Boolean(id) && !isViewMode
 
   const { data, isLoading } = useMembership(id ?? '')
   const plan = data?.data
@@ -25,6 +27,8 @@ export function MembershipPlanFormPage() {
   const handleClose = () => navigateBackOrFallback(navigate, '/memberships/plans')
 
   const handleSubmit = async (values: MembershipPlanFormValues) => {
+    if (isViewMode) return
+
     if (!values.planName) {
       toast.error('Plan name is required')
       return
@@ -79,13 +83,24 @@ export function MembershipPlanFormPage() {
     }
   }
 
-  if (isEditMode && isLoading) {
+  if ((isEditMode || isViewMode) && isLoading) {
     return <p className="text-body-md text-white/50">Loading plan details...</p>
   }
 
-  if (isEditMode && !plan) {
+  if ((isEditMode || isViewMode) && !plan) {
     return <p className="text-body-md text-brand-danger">Membership plan not found.</p>
   }
+
+  const title = isViewMode
+    ? 'View Membership'
+    : isEditMode
+      ? 'Edit Membership'
+      : 'Create Membership'
+  const subtitle = isViewMode
+    ? `Plan details for ${plan?.planName ?? 'plan'}`
+    : isEditMode
+      ? `Update configuration for ${plan?.planName ?? 'plan'}`
+      : 'Configure membership plan details and features'
 
   return (
     <div className="flex justify-center py-2">
@@ -107,14 +122,8 @@ export function MembershipPlanFormPage() {
               <ArrowLeft className="size-5" strokeWidth={1.75} />
             </button>
             <div>
-              <h1 className="create-membership-title">
-                {isEditMode ? 'Edit Membership' : 'Create Membership'}
-              </h1>
-              <p className="create-membership-subtitle mt-1">
-                {isEditMode
-                  ? `Update configuration for ${plan?.planName ?? 'plan'}`
-                  : 'Configure membership plan details and features'}
-              </p>
+              <h1 className="create-membership-title">{title}</h1>
+              <p className="create-membership-subtitle mt-1">{subtitle}</p>
             </div>
           </div>
           <button
@@ -131,6 +140,7 @@ export function MembershipPlanFormPage() {
           <MembershipPlanForm
             key={plan?._id ?? 'create'}
             initialPlan={plan ?? null}
+            readOnly={isViewMode}
             onSubmit={handleSubmit}
           />
         </div>
@@ -140,26 +150,37 @@ export function MembershipPlanFormPage() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
         >
           <button type="button" onClick={handleClose} className="create-membership-cancel-btn">
-            Cancel
+            {isViewMode ? 'Close' : 'Cancel'}
           </button>
-          <button
-            type="submit"
-            form="membership-plan-form"
-            disabled={isSubmitting}
-            className="ui-cta ui-cta-primary min-w-[120px]"
-          >
-            {isEditMode ? (
-              <>
-                <Pencil className="size-4" strokeWidth={1.75} />
-                {isSubmitting ? 'Saving...' : 'Save'}
-              </>
-            ) : (
-              <>
-                <Save className="size-4" strokeWidth={2} />
-                {isSubmitting ? 'Creating...' : 'Create'}
-              </>
-            )}
-          </button>
+          {isViewMode && id ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/memberships/plans/${id}/edit`)}
+              className="ui-cta ui-cta-primary min-w-[120px]"
+            >
+              <Pencil className="size-4" strokeWidth={1.75} />
+              Edit
+            </button>
+          ) : (
+            <button
+              type="submit"
+              form="membership-plan-form"
+              disabled={isSubmitting}
+              className="ui-cta ui-cta-primary min-w-[120px]"
+            >
+              {isEditMode ? (
+                <>
+                  <Pencil className="size-4" strokeWidth={1.75} />
+                  {isSubmitting ? 'Saving...' : 'Save'}
+                </>
+              ) : (
+                <>
+                  <Save className="size-4" strokeWidth={2} />
+                  {isSubmitting ? 'Creating...' : 'Create'}
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
