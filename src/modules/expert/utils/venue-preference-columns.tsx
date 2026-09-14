@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { VenueReportItem } from '../components/venue-report-detail-modal'
 import type { Venue } from '../type/venue'
 import { getVenueDisplayId, getVenueDisplaySpaceId } from './venue-list'
-import { getManagementStatusDisplay } from './management-status'
+import { getListingStatusDisplay } from './management-status'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 
 export function pickVenuePreferenceColumns<T>(
@@ -266,7 +266,7 @@ export function buildVenueDataColumnsById(): Record<string, ColumnDef<Venue>> {
       accessorKey: 'status',
       header: 'Venue Status',
       cell: ({ row }) => {
-        const { label, className } = getManagementStatusDisplay(row.original.status, {
+        const { label, className } = getListingStatusDisplay(row.original.status, {
           isSuspend: row.original.isSuspend,
         })
         return <span className={className}>{label}</span>
@@ -319,7 +319,7 @@ export function buildVenueDataColumnsById(): Record<string, ColumnDef<Venue>> {
       header: 'Space Status',
       cell: ({ row }) => {
         const status = row.original.spaceStatus || 'submitted'
-        const { label, className } = getManagementStatusDisplay(status, {})
+        const { label, className } = getListingStatusDisplay(status, {})
         return <span className={className}>{label}</span>
       },
     },

@@ -5,7 +5,10 @@ import { fetchExpertApplicationView } from '../api/expert-application-api'
 import { fetchVenueFullView, fetchVenues } from '../api/venue-api'
 import { fetchVenueKycByPartnerId } from '../api/venue-kyc-api'
 import { getVenueApiId } from './venue-list'
-import { isKycSubmittedForApplication } from '../utils/expert-application-helpers'
+import {
+  isKycSubmittedForApplication,
+  isSubmittedKycStatus,
+} from '../utils/expert-application-helpers'
 
 const isVenueServiceType = (serviceType?: string | null) => serviceType?.toLowerCase() === 'venue'
 
@@ -16,9 +19,10 @@ export const getExpertApplicationPath = (expert: {
   id: string
   serviceType?: string | null
   venueKycId?: string | null
+  venueKycStatus?: string | null
 }) => {
   if (isVenueServiceType(expert.serviceType)) {
-    if (!expert.venueKycId) {
+    if (!expert.venueKycId || !isSubmittedKycStatus(expert.venueKycStatus)) {
       return null
     }
 
@@ -33,12 +37,18 @@ export const openExpertApplicationView = async (
     id: string
     serviceType?: string | null
     venueKycId?: string | null
+    venueKycStatus?: string | null
   },
   navigate: NavigateFunction,
 ) => {
   if (isVenueServiceType(expert.serviceType)) {
-    if (expert.venueKycId) {
+    if (expert.venueKycId && isSubmittedKycStatus(expert.venueKycStatus)) {
       navigate(getVenueKycApplicationPath(expert.venueKycId))
+      return
+    }
+
+    if (expert.venueKycId && !isSubmittedKycStatus(expert.venueKycStatus)) {
+      toast.error('KYC is not submitted by partner')
       return
     }
 
@@ -82,7 +92,12 @@ export const openVenuePartnerProfile = async (partnerId: string, navigate: Navig
   try {
     const response = await fetchVenueKycByPartnerId(partnerId)
     const kycId = readKycId(response)
-    if (kycId) {
+    const kycStatus =
+      response && typeof response === 'object'
+        ? (response as { data?: { status?: string }; status?: string }).data?.status ||
+          (response as { status?: string }).status
+        : ''
+    if (kycId && isSubmittedKycStatus(kycStatus)) {
       navigate(getVenueKycApplicationPath(kycId))
       return
     }
@@ -102,9 +117,10 @@ export const openExpertKycFromProfile = async (
     try {
       const response = await fetchVenueKycByPartnerId(partnerId)
       const kycId = response?.data?._id
+      const kycStatus = response?.data?.status
 
-      if (!kycId) {
-        toast.error('No venue KYC found for this partner.')
+      if (!kycId || !isSubmittedKycStatus(kycStatus)) {
+        toast.error('KYC is not submitted by partner')
         return
       }
 

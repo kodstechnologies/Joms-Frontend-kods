@@ -55,6 +55,7 @@ import type {
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { isApprovedListingStatus } from '../../lib/service-navigation'
+import { isSubmittedListingStatus } from '../../utils/management-status'
 import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
@@ -606,6 +607,28 @@ export const ServiceViewPage = () => {
         >
           <ArrowLeft className="size-4" /> Go back
         </Button>
+      </div>
+    )
+  }
+
+  if (!isSubmittedListingStatus(service.status)) {
+    return (
+      <div className="relative mx-auto flex w-full max-w-[1200px] flex-col gap-5 pb-8 text-white">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
+        >
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>
+            {isConsultationListing || shouldFetchConsultation
+              ? 'Consultation View'
+              : 'Service View'}
+          </span>
+        </button>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          This listing is not submitted by partner
+        </div>
       </div>
     )
   }

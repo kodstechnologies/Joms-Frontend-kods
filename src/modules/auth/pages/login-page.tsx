@@ -299,8 +299,7 @@ export function LoginPage() {
                         length={6}
                         value={field.value}
                         onChange={field.onChange}
-                        className="gap-2.5 sm:gap-3"
-                        slotClassName="w-11 sm:w-13 h-12 sm:h-14 rounded-b-2xl border-0 border-b-2 border-[#717182]/50 bg-transparent text-center text-xl sm:text-2xl font-semibold text-white outline-none focus:border-b-2 focus:border-[#E0A263] focus:ring-0 transition-colors"
+                        autoFocus
                       />
                     )}
                   />

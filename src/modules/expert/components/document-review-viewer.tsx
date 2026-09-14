@@ -7,6 +7,10 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 import { fetchPartnerDocumentBlob } from '../api/expert-onboarding-api'
 import type { DocumentStatusPayload } from '../type/expert-application-view'
 import {
@@ -113,7 +117,6 @@ function DocumentReviewViewerContent({
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [loadError, setLoadError] = useState<string | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
   const objectUrlRef = useRef<string | null>(null)
 
   const [blobData, setBlobData] = useState<{
@@ -222,17 +225,6 @@ function DocumentReviewViewerContent({
   const decisionActionsDisabled =
     hideActions || actionsDisabled || resolvedReviewStatus === 'APPROVED' || isSubmitting
 
-  useEffect(() => {
-    if (!menuOpen) return
-    const onPointerDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onPointerDown)
-    return () => document.removeEventListener('mousedown', onPointerDown)
-  }, [menuOpen])
-
   const openDecisionModal = (variant: DocumentDecisionVariant) => {
     if (decisionActionsDisabled) return
     setMenuOpen(false)
@@ -336,55 +328,58 @@ function DocumentReviewViewerContent({
         </div>
 
         {!hideActions ? (
-          <div className="relative" ref={menuRef}>
+          decisionActionsDisabled ? (
             <button
               type="button"
               aria-label="Document actions"
-              disabled={decisionActionsDisabled}
-              onClick={() => {
-                if (decisionActionsDisabled) return
-                setMenuOpen((openMenu) => !openMenu)
-              }}
-              className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white/80"
+              disabled
+              className="flex size-6 items-center justify-center rounded text-white/40"
             >
-              <MoreVertical className="size-5" />
+              <MoreVertical className="icon-sm" aria-hidden="true" />
             </button>
-
-            {menuOpen && !decisionActionsDisabled ? (
-              <div className="ui-table-actions-menu absolute top-full right-0 z-10 mt-2">
-                <button
-                  type="button"
-                  onClick={() => openDecisionModal('approve')}
-                  className="ui-table-actions-item"
-                >
+          ) : (
+            <TableActionsDropdown
+              label="Document actions"
+              isOpen={menuOpen}
+              onOpenChange={setMenuOpen}
+              menuWidth={240}
+              buttonClassName="text-white/80 hover:text-white hover:bg-white/10"
+            >
+              <TableActionsItem
+                className="whitespace-nowrap"
+                onClick={() => openDecisionModal('approve')}
+                icon={
                   <span className="bg-brand-positive flex size-6 items-center justify-center rounded-full text-white">
                     <Check className="size-3.5" strokeWidth={3} />
                   </span>
-                  Approve Document
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openDecisionModal('reject')}
-                  className="ui-table-actions-item"
-                >
+                }
+              >
+                Approve Document
+              </TableActionsItem>
+              <TableActionsItem
+                className="whitespace-nowrap"
+                onClick={() => openDecisionModal('reject')}
+                icon={
                   <span className="bg-brand-danger flex size-6 items-center justify-center rounded-full text-white">
                     <X className="size-3.5" strokeWidth={3} />
                   </span>
-                  Reject Document
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openDecisionModal('requestChanges')}
-                  className="ui-table-actions-item"
-                >
+                }
+              >
+                Reject Document
+              </TableActionsItem>
+              <TableActionsItem
+                className="whitespace-nowrap"
+                onClick={() => openDecisionModal('requestChanges')}
+                icon={
                   <span className="bg-brand-teal flex size-6 items-center justify-center rounded-full text-white">
                     <RefreshCw className="size-3.5" strokeWidth={2.5} />
                   </span>
-                  Request Changes
-                </button>
-              </div>
-            ) : null}
-          </div>
+                }
+              >
+                Request Changes
+              </TableActionsItem>
+            </TableActionsDropdown>
+          )
         ) : null}
       </header>
 

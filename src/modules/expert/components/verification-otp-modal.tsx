@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -7,6 +7,7 @@ import {
   verifyPartnerEmailOtp,
   verifyPartnerPhoneOtp,
 } from '@/modules/auth/api/auth-api'
+import { OtpInput } from '@/shared/components/form/otp-input'
 
 type VerificationOtpModalProps = {
   open: boolean
@@ -19,8 +20,6 @@ type VerificationOtpModalProps = {
   verifyOtp?: (target: string, code: string) => Promise<void>
 }
 
-const emptyDigits = (length: number) => Array.from({ length }, () => '')
-
 export function VerificationOtpModal({
   open,
   type,
@@ -31,18 +30,16 @@ export function VerificationOtpModal({
   sendOtp,
   verifyOtp,
 }: VerificationOtpModalProps) {
-  const [otp, setOtp] = useState(() => emptyDigits(length))
+  const [otp, setOtp] = useState('')
   const [timer, setTimer] = useState(30)
   const [prevOpen, setPrevOpen] = useState(open)
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const lastSlot = Math.max(length - 1, 0)
 
   if (open !== prevOpen) {
     setPrevOpen(open)
     if (open) {
-      setOtp(emptyDigits(length))
+      setOtp('')
       setTimer(30)
     }
   }
@@ -78,72 +75,32 @@ export function VerificationOtpModal({
   useEffect(() => {
     if (!open) return
 
-    void requestOtp()
+    const sendId = window.setTimeout(() => {
+      void requestOtp()
+    }, 0)
 
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0))
     }, 1000)
 
-    const timerFocus = setTimeout(() => {
-      inputRefs.current[0]?.focus()
-    }, 100)
-
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
     return () => {
+      window.clearTimeout(sendId)
       clearInterval(interval)
-      clearTimeout(timerFocus)
       document.body.style.overflow = previousOverflow
     }
   }, [open, requestOtp])
 
   if (!open) return null
 
-  const handleInputChange = (index: number, value: string) => {
-    const clean = value.replace(/\D/g, '')
-    if (!clean) {
-      const nextOtp = [...otp]
-      nextOtp[index] = ''
-      setOtp(nextOtp)
-      return
-    }
-
-    const nextOtp = [...otp]
-    if (clean.length > 1) {
-      const digits = clean.slice(0, length).split('')
-      digits.forEach((digit, dIdx) => {
-        if (index + dIdx < length) {
-          nextOtp[index + dIdx] = digit
-        }
-      })
-      setOtp(nextOtp)
-      const nextFocusIdx = Math.min(index + digits.length, lastSlot)
-      inputRefs.current[nextFocusIdx]?.focus()
-      return
-    }
-
-    nextOtp[index] = clean.slice(-1)
-    setOtp(nextOtp)
-
-    if (index < lastSlot) {
-      inputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-  }
-
   const handleResend = async () => {
     if (isSending) return
     setIsSending(true)
     try {
       setTimer(30)
-      setOtp(emptyDigits(length))
-      inputRefs.current[0]?.focus()
+      setOtp('')
       await requestOtp()
     } finally {
       setIsSending(false)
@@ -151,8 +108,7 @@ export function VerificationOtpModal({
   }
 
   const handleVerify = async () => {
-    const fullOtp = otp.join('')
-    if (fullOtp.length < length) {
+    if (otp.length < length) {
       toast.error(`Please enter the complete ${length}-digit OTP.`)
       return
     }
@@ -160,11 +116,11 @@ export function VerificationOtpModal({
     try {
       setIsVerifying(true)
       if (verifyOtp) {
-        await verifyOtp(targetValue.trim(), fullOtp)
+        await verifyOtp(targetValue.trim(), otp)
       } else if (type === 'phone') {
-        await verifyPartnerPhoneOtp(targetValue.trim(), fullOtp)
+        await verifyPartnerPhoneOtp(targetValue.trim(), otp)
       } else {
-        await verifyPartnerEmailOtp(targetValue.trim(), fullOtp)
+        await verifyPartnerEmailOtp(targetValue.trim(), otp)
       }
 
       toast.success(
@@ -215,43 +171,14 @@ export function VerificationOtpModal({
         </div>
 
         <div className="my-8">
-          <div className="flex items-center justify-center gap-3 sm:gap-5">
-            {otp.map((digit, index) => (
-              <div
-                key={index}
-                className="flex cursor-text flex-col items-center"
-                onClick={() => inputRefs.current[index]?.focus()}
-              >
-                <input
-                  ref={(el) => {
-                    inputRefs.current[index] = el
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleInputChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="h-10 w-[42px] bg-transparent text-center text-2xl font-bold text-white caret-white focus:outline-none sm:w-[50px]"
-                />
-                <svg
-                  className={`mt-1 h-[10px] w-[42px] transition-colors sm:w-[50px] ${
-                    digit ? 'text-white' : 'text-white/40'
-                  }`}
-                  viewBox="0 0 50 10"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M 2 1.5 C 2 7, 7 8.5, 12 8.5 L 38 8.5 C 43 8.5, 48 7, 48 1.5"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            ))}
-          </div>
+          <OtpInput
+            length={length}
+            value={otp}
+            onChange={setOtp}
+            autoFocus
+            disabled={isVerifying}
+            className="gap-3 sm:gap-5"
+          />
 
           <div className="mt-6 text-center">
             {timer > 0 ? (

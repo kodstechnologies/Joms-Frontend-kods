@@ -17,6 +17,7 @@ type TableActionsDropdownProps = {
   onOpenChange: (open: boolean) => void
   children: ReactNode
   menuClassName?: string
+  buttonClassName?: string
   menuWidth?: number
   tone?: 'dark' | 'light'
 }
@@ -30,6 +31,7 @@ export function TableActionsDropdown({
   onOpenChange,
   children,
   menuClassName,
+  buttonClassName,
   menuWidth = 192,
   tone = 'light',
 }: TableActionsDropdownProps) {
@@ -42,10 +44,7 @@ export function TableActionsDropdown({
   } | null>(null)
 
   useLayoutEffect(() => {
-    if (!isOpen) {
-      setPlacement(null)
-      return
-    }
+    if (!isOpen) return
 
     const update = () => {
       const button = buttonRef.current
@@ -157,6 +156,7 @@ export function TableActionsDropdown({
           tone === 'light'
             ? 'text-muted hover:text-brand-text hover:bg-white/10'
             : 'text-brand-muted hover:text-brand-text hover:bg-white/10',
+          buttonClassName,
         )}
       >
         <MoreVertical className="icon-sm" aria-hidden="true" />

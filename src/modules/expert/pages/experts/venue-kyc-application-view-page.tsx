@@ -54,6 +54,7 @@ import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { formatApplicationExpertId } from './expert-list-format'
 import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
 import { getVenueKycApplicationPath } from '../../utils/expert-application-navigation'
+import { isSubmittedKycStatus } from '../../utils/expert-application-helpers'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -228,6 +229,7 @@ export function VenueKycApplicationViewPage() {
       : 'overview'
 
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
+  const [syncedQueryTab, setSyncedQueryTab] = useState(`${id}:${tabFromQuery}`)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalVariant, setModalVariant] = useState<DecisionVariant>('approve')
   const [modalTarget, setModalTarget] = useState<DecisionTarget>('kyc')
@@ -238,11 +240,13 @@ export function VenueKycApplicationViewPage() {
   const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
 
-  useEffect(() => {
+  const queryTabKey = `${id}:${tabFromQuery}`
+  if (queryTabKey !== syncedQueryTab) {
+    setSyncedQueryTab(queryTabKey)
     if (tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview') {
       setActiveTab(tabFromQuery)
     }
-  }, [tabFromQuery, id])
+  }
 
   const { data, isLoading, isError, error } = useApplicationDetails(id)
   const { data: assigneesData } = useEscalationAssignees()
@@ -524,12 +528,16 @@ export function VenueKycApplicationViewPage() {
     )
   }
 
-  const isBankingSubmitted = ['PENDING', 'APPROVED', 'REJECTED'].includes(
-    application?.bankingDetails?.status || application?.header?.bankingStatus || '',
+  const isBankingSubmitted = isSubmittedKycStatus(
+    application?.bankingDetails?.status || application?.header?.bankingStatus,
+  )
+  const isKycSubmitted = isSubmittedKycStatus(
+    application?.kycDetails?.status || application?.header?.kycStatus,
   )
 
   const decisionDisabled =
     (decisionTargetForTab === 'banking' && !isBankingSubmitted) ||
+    (decisionTargetForTab === 'kyc' && !isKycSubmitted) ||
     activeDecisionStatus !== 'PENDING' ||
     activeMutationPending
 
@@ -767,12 +775,17 @@ export function VenueKycApplicationViewPage() {
                 </button>
               )}
             </div>
-            {appliedLabel && <p className="text-body-sm text-muted mt-1">{appliedLabel}</p>}
+            {isKycSubmitted && appliedLabel && (
+              <p className="text-body-sm text-muted mt-1">{appliedLabel}</p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <StatusPill status={header.kycStatus} label={header.kycStatusLabel} />
             <StatusPill
-              status={header.bankingStatus}
+              status={isKycSubmitted ? header.kycStatus : 'DRAFT'}
+              label={isKycSubmitted ? header.kycStatusLabel : 'Not Submitted'}
+            />
+            <StatusPill
+              status={isBankingSubmitted ? header.bankingStatus : 'DRAFT'}
               label={isBankingSubmitted ? header.bankingStatusLabel : 'Not Submitted'}
             />
           </div>
@@ -788,7 +801,7 @@ export function VenueKycApplicationViewPage() {
           <div className="rounded-lg border border-white/5 bg-black p-4">
             <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
-              {formatDateTime(header.submittedAt)}
+              {isKycSubmitted ? formatDateTime(header.submittedAt) : 'N/A'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
@@ -841,13 +854,17 @@ export function VenueKycApplicationViewPage() {
               title="Venue Information"
               icon={<ClipboardList className="text-brand-accent size-4" />}
             >
-              <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
-                <InfoField label="Venue Name" value={venue?.venueName} />
-                <InfoField label="Venue Type" value={venue?.venueType} />
-                <InfoField label="Address" value={venue?.address} />
-                <InfoField label="City" value={venue?.city} />
-                <InfoField label="Pincode" value={venue?.pincode} />
-              </div>
+              {isKycSubmitted ? (
+                <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+                  <InfoField label="Venue Name" value={venue?.venueName} />
+                  <InfoField label="Venue Type" value={venue?.venueType} />
+                  <InfoField label="Address" value={venue?.address} />
+                  <InfoField label="City" value={venue?.city} />
+                  <InfoField label="Pincode" value={venue?.pincode} />
+                </div>
+              ) : (
+                <p className="text-body-sm text-muted">KYC is not submitted by partner</p>
+              )}
             </SectionCard>
           </div>
 
@@ -855,20 +872,28 @@ export function VenueKycApplicationViewPage() {
             title="Venue Images"
             icon={<FileText className="text-brand-accent size-4" />}
           >
-            {venueImages.length > 0 ? (
+            {isKycSubmitted && venueImages.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:max-w-[520px]">
                 {venueImages.slice(0, 6).map((image, index) => (
                   <VenueImage key={`${image}-${index}`} src={image} alt={`Venue ${index + 1}`} />
                 ))}
               </div>
             ) : (
-              <p className="text-body-sm text-muted">No venue images uploaded.</p>
+              <p className="text-body-sm text-muted">
+                {isKycSubmitted ? 'No venue images uploaded.' : 'KYC is not submitted by partner'}
+              </p>
             )}
           </SectionCard>
         </div>
       )}
 
-      {activeTab === 'kyc' && (
+      {activeTab === 'kyc' && !isKycSubmitted && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          KYC is not submitted by partner
+        </div>
+      )}
+
+      {activeTab === 'kyc' && isKycSubmitted && (
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
@@ -971,7 +996,13 @@ export function VenueKycApplicationViewPage() {
         </div>
       )}
 
-      {activeTab === 'banking' && (
+      {activeTab === 'banking' && !isBankingSubmitted && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          Banking is not submitted by partner
+        </div>
+      )}
+
+      {activeTab === 'banking' && isBankingSubmitted && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <SectionCard
             title="Account Information"
@@ -1046,8 +1077,16 @@ export function VenueKycApplicationViewPage() {
             </p>
           )}
 
+          {decisionTargetForTab === 'kyc' && !isKycSubmitted && (
+            <p className="text-body-sm text-muted mb-4 rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
+              KYC is not submitted by partner. Approve and reject are available only after the
+              partner submits KYC details.
+            </p>
+          )}
+
           {activeDecisionStatus !== 'PENDING' &&
-            !(decisionTargetForTab === 'banking' && !isBankingSubmitted) && (
+            !(decisionTargetForTab === 'banking' && !isBankingSubmitted) &&
+            !(decisionTargetForTab === 'kyc' && !isKycSubmitted) && (
               <p className="text-body-sm text-muted mb-4 rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
                 {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
                 {String(activeDecisionStatus).toLowerCase()}.
@@ -1056,6 +1095,7 @@ export function VenueKycApplicationViewPage() {
 
           {activeDecisionStatus === 'PENDING' &&
             !(decisionTargetForTab === 'banking' && !isBankingSubmitted) &&
+            !(decisionTargetForTab === 'kyc' && !isKycSubmitted) &&
             !sectionDocsApproved && (
               <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
                 Approve each uploaded document before approving this section.
@@ -1152,7 +1192,8 @@ export function VenueKycApplicationViewPage() {
             ? !isBankingSubmitted ||
               (application?.bankingDetails?.status || application?.header?.bankingStatus) !==
                 'PENDING'
-            : (application?.kycDetails?.status || application?.header?.kycStatus) !== 'PENDING')
+            : !isKycSubmitted ||
+              (application?.kycDetails?.status || application?.header?.kycStatus) !== 'PENDING')
         }
         isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
         onClose={() => setViewerDocument(null)}

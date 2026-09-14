@@ -39,6 +39,7 @@ import {
 } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { SafeImage } from '@/shared/components/media/safe-image'
+import { isSubmittedListingStatus } from '../../utils/management-status'
 
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
@@ -228,6 +229,25 @@ export function ApplicationDetailsPage() {
   }
 
   const { venue, space, gallery, terms } = fullView.overview
+
+  if (space && !isSubmittedListingStatus(space.status)) {
+    return (
+      <div className="relative flex w-full flex-col gap-5 pb-8 text-white">
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
+        >
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>Venue Application View</span>
+        </button>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          This listing is not submitted by partner
+        </div>
+      </div>
+    )
+  }
+
   const summary = fullView.spaces[0]
   const galleryImages: VenueFullViewGalleryImage[] = [
     ...(gallery?.venueCoverImages || []),

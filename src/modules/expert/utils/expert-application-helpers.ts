@@ -14,14 +14,18 @@ export const isAdminKycApproved = (expert?: ExpertApplicationExpert) =>
   expert?.finalReview?.approvalStatus === 'approved' ||
   (expert?.finalReview?.isVerified === true && hasAdminIdentityKyc(expert))
 
+export const isSubmittedKycStatus = (status?: string | null) => {
+  const normalized = String(status || '').toUpperCase()
+  return normalized === 'PENDING' || normalized === 'APPROVED' || normalized === 'REJECTED'
+}
+
 export const isKycSubmittedForApplication = (
   expert?: ExpertApplicationExpert,
   kyc?: ExpertApplicationKyc,
 ) =>
-  Boolean(kyc?._id) ||
-  kyc?.status === 'APPROVED' ||
   (kyc as { kycMandatory?: boolean })?.kycMandatory === false ||
   (kyc as { isExempt?: boolean })?.isExempt === true ||
+  isSubmittedKycStatus(kyc?.status) ||
   isAdminKycApproved(expert)
 
 export const getDisplayKycStatus = (
@@ -45,7 +49,8 @@ export const getExpertCurrentRole = (expert?: ExpertApplicationExpert) => {
   return jobTitle || undefined
 }
 
-const MONGO_ID_RE = /^[a-fA-F0-9]{24}$/
+export const LOOKS_LIKE_CATEGORY_ID =
+  /^(?:[a-fA-F0-9]{24}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|c[a-z0-9]{20,})$/i
 
 const getSubCategoryId = (entry: unknown) => {
   if (typeof entry === 'string') return entry
@@ -80,14 +85,14 @@ export const resolveExpertServiceCategoryDisplay = (
   const resolveOne = (entry: unknown) => {
     if (entry && typeof entry === 'object' && 'name' in entry) {
       const namedEntry = entry as { name?: string }
-      if (namedEntry.name?.trim() && !MONGO_ID_RE.test(namedEntry.name.trim())) {
+      if (namedEntry.name?.trim() && !LOOKS_LIKE_CATEGORY_ID.test(namedEntry.name.trim())) {
         return namedEntry.name.trim()
       }
     }
 
     const id = getSubCategoryId(entry)
     if (!id) return ''
-    return idToName.get(id) || (MONGO_ID_RE.test(id) ? '' : id)
+    return idToName.get(id) || (LOOKS_LIKE_CATEGORY_ID.test(id) ? '' : id)
   }
 
   const fromProfile = expert?.basicProfile?.serviceCategory ?? []

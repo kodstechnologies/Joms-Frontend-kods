@@ -93,7 +93,9 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
+import { getListingStatusDisplay } from '../../utils/management-status'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import { isSubmittedKycStatus } from '../../utils/expert-application-helpers'
 import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
@@ -198,12 +200,13 @@ const buildVenueTimelineEvents = (
   const createdAt = venue?.createdAt
   const createdMs = createdAt ? new Date(createdAt).getTime() : NaN
 
-  const kycApproved = ['approved', 'live'].includes(String(venue?.status || '').toLowerCase())
+  const kycStatus = data.profile?.kycStatus
+  const kycApproved = String(kycStatus || '').toUpperCase() === 'APPROVED'
   if (kycApproved) {
     events.push({
       id: 'kyc-verified',
       title: 'KYC verified',
-      detail: formatVenueKycStatusLabel(venue?.status),
+      detail: formatVenueKycStatusLabel(kycStatus),
       at: venue?.updatedAt || createdAt,
     })
   }
@@ -283,23 +286,26 @@ function SidebarRow({ label, children }: { label: string; children: ReactNode })
 }
 
 const formatVenueKycStatusLabel = (status?: string | null) => {
-  const normalized = (status || '').toLowerCase()
-  if (!normalized) return 'KYC Pending'
-  if (normalized === 'approved') return 'KYC Verified'
-  if (normalized === 'live') return 'Live'
-  if (normalized === 'in_review' || normalized === 'pending') return 'KYC Pending'
-  if (normalized === 'rejected') return 'Rejected'
-  if (normalized === 'suspended') return 'Suspended'
-  if (normalized === 'draft') return 'Draft'
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1).replace(/_/g, ' ')
+  const normalized = (status || '').toUpperCase().replace(/-/g, '_')
+  if (
+    normalized === 'APPROVED' ||
+    normalized === 'LIVE' ||
+    normalized === 'ACTIVE' ||
+    normalized === 'VERIFIED'
+  ) {
+    return 'Verified'
+  }
+  if (normalized === 'REJECTED') return 'Rejected'
+  // DRAFT / PREVIEW / empty: Admin never shows "Draft". After Partner submit this is Review Pending.
+  return 'Review Pending'
 }
 
 const getVenueKycStatusTone = (status?: string | null) => {
-  const normalized = (status || '').toLowerCase()
-  if (normalized === 'approved' || normalized === 'live') {
+  const normalized = (status || '').toUpperCase()
+  if (normalized === 'APPROVED') {
     return 'bg-[#143D2B] text-white border border-[#1E563D]/50'
   }
-  if (normalized === 'rejected' || normalized === 'suspended') {
+  if (normalized === 'REJECTED') {
     return 'bg-brand-danger/15 text-red-400'
   }
   return 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
@@ -330,11 +336,9 @@ function ProfileSidebar({
     kycStatus: null,
   }
   const overview = data.overview
-  const venue = overview?.venue
-  const venueStatus =
-    venue?.isSuspend || venue?.displayStatus === 'suspended' ? 'suspended' : venue?.status
-  const kycStatusLabel = formatVenueKycStatusLabel(venueStatus)
-  const kycStatusTone = getVenueKycStatusTone(venueStatus)
+  const kycStatus = profile.kycStatus
+  const kycStatusLabel = formatVenueKycStatusLabel(kycStatus)
+  const kycStatusTone = getVenueKycStatusTone(kycStatus)
   const ratingValue = profile.ratings ?? overview?.venue?.ratings ?? null
   const reviewCount = profile.reviewsCount ?? overview?.venue?.reviewsCount ?? null
   const ratingsAvailable =
@@ -345,6 +349,10 @@ function ProfileSidebar({
   const venueKycId = profile.kycId || overview?.venue?.kycId
 
   const handleViewKyc = () => {
+    if (!isSubmittedKycStatus(kycStatus)) {
+      toast.error('KYC is not submitted by partner')
+      return
+    }
     if (venueKycId) {
       navigate(`/experts/management/application/${venueKycId}?source=venue_kyc`)
       return
@@ -676,6 +684,9 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
   const spaces = useMemo(() => {
     return data.spaces.filter((space) => {
+      const listingStatus = (space.status || '').toLowerCase()
+      if (listingStatus === 'draft' || listingStatus === 'preview') return false
+
       if (search.trim()) {
         const query = search.toLowerCase().trim()
         const matchName = space.spaceName?.toLowerCase().includes(query)
@@ -1126,6 +1137,10 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           spaces.map((space) => {
             const selected = selectedSpaceIds.includes(space.spaceId)
             const availabilityLabel = formatSpaceAvailabilityChip(space.availability)
+            const listingStatus = getListingStatusDisplay(space.status, {
+              isSuspend: space.isSuspend,
+              isDeleted: space.isHidden,
+            })
             return (
               <button
                 key={space.spaceId}
@@ -1163,6 +1178,9 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
                 <div className="ml-4 flex flex-1 items-center justify-between">
                   <div>
                     <p className="text-body-md font-semibold text-white">{space.spaceName}</p>
+                    <span className={cn('mt-1 inline-flex', listingStatus.className)}>
+                      {space.isHidden ? 'Hidden' : listingStatus.label}
+                    </span>
 
                     <p className="text-body-sm mt-1 text-white/50">
                       {[space.city, space.state].filter(Boolean).join(', ') || '—'}
@@ -1593,8 +1611,10 @@ export function VenueProfileViewPage() {
 
   useEffect(() => {
     if (!fallbackKycId) return
+    const fallbackStatus = String(kycFallbackQuery.data?.data?.status || '')
+    if (!isSubmittedKycStatus(fallbackStatus)) return
     navigate(`/experts/management/application/${fallbackKycId}?source=venue_kyc`, { replace: true })
-  }, [fallbackKycId, navigate])
+  }, [fallbackKycId, kycFallbackQuery.data?.data?.status, navigate])
 
   const ownerPartnerId = String(
     fullView?.overview?.venue?.ownerId || fullView?.overview?.venue?.partnerId || '',
@@ -1725,7 +1745,7 @@ export function VenueProfileViewPage() {
     const satisfaction = profile?.clientSatisfaction
     const years =
       profile?.yearsInOperation?.years != null ? `${profile.yearsInOperation.years} Years` : ''
-    const kycLabel = formatVenueKycStatusLabel(venue.status)
+    const kycLabel = formatVenueKycStatusLabel(profile?.kycStatus)
 
     try {
       exportDataToFile(

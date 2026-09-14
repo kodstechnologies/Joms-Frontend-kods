@@ -27,6 +27,7 @@ export type ExpertOnboardingFormData = {
   coverImageUrl: string
   profileImageUrl: string
   sampleWorkFileName: string
+  sampleWorkFileUrl: string
 
   idType: string
   idNumber: string
@@ -83,6 +84,7 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
   coverImageUrl: '',
   profileImageUrl: '',
   sampleWorkFileName: '',
+  sampleWorkFileUrl: '',
 
   idType: '',
   idNumber: '',
@@ -146,7 +148,11 @@ export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormD
 
   if (form.coverImage) formData.append('coverImage', form.coverImage)
   if (form.profileImage) formData.append('profileImage', form.profileImage)
-  if (form.sampleWorkFile) formData.append('sampleWorkFile', form.sampleWorkFile)
+  if (form.sampleWorkFile) {
+    formData.append('sampleWorkFile', form.sampleWorkFile)
+  } else if (form.sampleWorkFileUrl) {
+    formData.append('sampleWorkFile', form.sampleWorkFileUrl)
+  }
 
   return formData
 }
@@ -269,26 +275,22 @@ export const mapExpertProfileToOnboardingForm = (profile: {
   const basic = profile.basicProfile || {}
   const identity = (profile.identityVerification || {}) as Record<string, unknown>
 
-  // Robust category extraction: handles strings, objects { name, _id }, and display arrays
-  const rawCategories =
-    Array.isArray(basic.serviceCategoryDisplay) && basic.serviceCategoryDisplay.length > 0
-      ? basic.serviceCategoryDisplay
-      : Array.isArray(basic.serviceCategory) && basic.serviceCategory.length > 0
-        ? basic.serviceCategory
-        : Array.isArray(profile.subCategory)
-          ? profile.subCategory
-          : []
+  const toCategoryValue = (item: unknown) => {
+    if (typeof item === 'string') return item
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>
+      return String(obj.name || obj.title || obj._id || obj.id || '')
+    }
+    return ''
+  }
 
-  const serviceCategory = rawCategories
-    .map((item: unknown) => {
-      if (typeof item === 'string') return item
-      if (item && typeof item === 'object') {
-        const obj = item as Record<string, unknown>
-        return String(obj.name || obj.title || obj._id || '')
-      }
-      return ''
-    })
-    .filter(Boolean)
+  const rawCategories = [
+    ...(Array.isArray(basic.serviceCategoryDisplay) ? basic.serviceCategoryDisplay : []),
+    ...(Array.isArray(basic.serviceCategory) ? basic.serviceCategory : []),
+    ...(Array.isArray(profile.subCategory) ? profile.subCategory : []),
+  ]
+
+  const serviceCategory = [...new Set(rawCategories.map(toCategoryValue).filter(Boolean))]
 
   const rawOfferings = Array.isArray(basic.offerings) ? basic.offerings : []
   const offerings = rawOfferings
@@ -378,6 +380,7 @@ export const mapExpertProfileToOnboardingForm = (profile: {
     coverImageUrl: basic.coverImage || '',
     profileImageUrl: basic.profileImage || '',
     sampleWorkFileName: fileNameFromUrl(basic.sampleWorkFile),
+    sampleWorkFileUrl: basic.sampleWorkFile || '',
 
     idType: String(identity.idType || identity.id_type || ''),
     idNumber: String(identity.idNumber || identity.id_number || ''),

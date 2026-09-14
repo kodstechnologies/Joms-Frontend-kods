@@ -6,6 +6,7 @@ import { checkPartnerAvailability } from '@/modules/auth/api/auth-api'
 import { STANDARD_INDUSTRIES, STANDARD_OFFERINGS } from '../config/expert-profile-options.config'
 import { useOfferingsList, useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
+import { LOOKS_LIKE_CATEGORY_ID } from '../utils/expert-application-helpers'
 import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
@@ -183,6 +184,27 @@ export const ExpertBasicProfileStep = ({
     }
     return map
   }, [categoryGroups])
+  const categoryIdToName = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const items of Object.values(categoryGroups)) {
+      for (const item of items) {
+        if (item?.id && item?.name) map.set(String(item.id), item.name)
+      }
+    }
+    return map
+  }, [categoryGroups])
+
+  useEffect(() => {
+    if (categoryIdToName.size === 0) return
+    setFormData((prev) => {
+      const next = prev.serviceCategory.map((value) =>
+        LOOKS_LIKE_CATEGORY_ID.test(value) ? categoryIdToName.get(value) || value : value,
+      )
+      const changed = next.some((value, index) => value !== prev.serviceCategory[index])
+      if (!changed) return prev
+      return { ...prev, serviceCategory: [...new Set(next.filter(Boolean))] }
+    })
+  }, [categoryIdToName, setFormData])
 
   const isVenueService = serviceType === 'venue'
 
@@ -216,24 +238,41 @@ export const ExpertBasicProfileStep = ({
 
   const toggleCategory = (categoryName: string, groupName?: string) => {
     setFormData((prev) => {
-      if (prev.serviceCategory.includes(categoryName)) {
+      const aliases = new Set<string>([categoryName])
+      for (const items of Object.values(categoryGroups)) {
+        for (const item of items) {
+          if (item.name === categoryName || item.id === categoryName) {
+            aliases.add(item.name)
+            aliases.add(item.id)
+          }
+        }
+      }
+      const displayName = categoryIdToName.get(categoryName) || categoryName
+      const isSelected = prev.serviceCategory.some((item) => aliases.has(item))
+
+      if (isSelected) {
         return {
           ...prev,
-          serviceCategory: prev.serviceCategory.filter((item) => item !== categoryName),
+          serviceCategory: prev.serviceCategory.filter((item) => !aliases.has(item)),
         }
       }
 
       if (isVenueService) {
-        const targetGroup = groupName ?? categoryNameToGroup.get(categoryName)
-        const next = prev.serviceCategory.filter(
-          (item) => categoryNameToGroup.get(item) === targetGroup,
-        )
-        return { ...prev, serviceCategory: [...next, categoryName] }
+        const targetGroup = groupName ?? categoryNameToGroup.get(displayName)
+        const next = prev.serviceCategory
+          .map((item) => categoryIdToName.get(item) || item)
+          .filter((item) => categoryNameToGroup.get(item) === targetGroup)
+        return { ...prev, serviceCategory: [...new Set([...next, displayName])] }
       }
 
       return {
         ...prev,
-        serviceCategory: [...prev.serviceCategory, categoryName],
+        serviceCategory: [
+          ...new Set([
+            ...prev.serviceCategory.map((item) => categoryIdToName.get(item) || item),
+            displayName,
+          ]),
+        ],
       }
     })
   }
@@ -395,13 +434,25 @@ export const ExpertBasicProfileStep = ({
                   <label className="mb-2 block text-xs font-medium text-white">
                     Upload Sample Work File {requireSampleWorkFile ? <RequiredMark /> : null}
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => sampleFileInputRef.current?.click()}
-                    className="hover:border-brand-accent/50 text-muted rounded-md border border-dashed border-white/20 px-8 py-3 text-xs transition-colors"
-                  >
-                    {formData.sampleWorkFileName || 'Upload here'}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => sampleFileInputRef.current?.click()}
+                      className="hover:border-brand-accent/50 text-muted rounded-md border border-dashed border-white/20 px-8 py-3 text-xs transition-colors"
+                    >
+                      {formData.sampleWorkFileName || 'Upload here'}
+                    </button>
+                    {formData.sampleWorkFileUrl ? (
+                      <a
+                        href={formData.sampleWorkFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-brand-accent text-xs underline"
+                      >
+                        View file
+                      </a>
+                    ) : null}
+                  </div>
                   <input
                     ref={sampleFileInputRef}
                     type="file"
@@ -411,7 +462,7 @@ export const ExpertBasicProfileStep = ({
                       setFormData((prev) => ({
                         ...prev,
                         sampleWorkFile: file,
-                        sampleWorkFileName: file?.name ?? '',
+                        sampleWorkFileName: file?.name ?? prev.sampleWorkFileName,
                       }))
                     }}
                   />
@@ -577,7 +628,9 @@ export const ExpertBasicProfileStep = ({
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {items.map((category) => {
-                                const isSelected = formData.serviceCategory.includes(category.name)
+                                const isSelected =
+                                  formData.serviceCategory.includes(category.name) ||
+                                  formData.serviceCategory.includes(category.id)
 
                                 return (
                                   <button
@@ -606,18 +659,21 @@ export const ExpertBasicProfileStep = ({
 
               {formData.serviceCategory.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {formData.serviceCategory.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center justify-between rounded-md bg-black px-3 py-2.5 text-xs text-white"
-                    >
-                      {item}
-                      <XCircle
-                        className="text-muted size-4 cursor-pointer hover:text-white"
-                        onClick={() => toggleCategory(item)}
-                      />
-                    </div>
-                  ))}
+                  {formData.serviceCategory.map((item) => {
+                    const label = categoryIdToName.get(item) || item
+                    return (
+                      <div
+                        key={item}
+                        className="flex items-center justify-between rounded-md bg-black px-3 py-2.5 text-xs text-white"
+                      >
+                        {label}
+                        <XCircle
+                          className="text-muted size-4 cursor-pointer hover:text-white"
+                          onClick={() => toggleCategory(item)}
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

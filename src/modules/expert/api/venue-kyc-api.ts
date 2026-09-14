@@ -12,7 +12,7 @@ export const fetchApplicationDetails = async (id: string) => {
 export const fetchVenueKycByPartnerId = async (partnerId: string) => {
   const response = await kycApiClient.get<{
     success?: boolean
-    data?: { _id?: string }
+    data?: { _id?: string; status?: string }
   }>(`/venue-kyc/admin/partner/${partnerId}`)
   return response.data
 }

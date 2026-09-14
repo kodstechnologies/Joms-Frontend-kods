@@ -131,6 +131,10 @@ import {
 import { formatListingExpertId } from './expert-list-format'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
+import {
+  getListingStatusDisplay,
+  getProfileServiceListingStatusDisplay,
+} from '../../utils/management-status'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { fetchSupportTickets } from '@/modules/support-management/api/support-api'
@@ -1068,7 +1072,11 @@ function ConsultationDetailCard({
     .filter(Boolean)
   const isSuspended = Boolean(consultation.isSuspend)
   const isPaused = Boolean(consultation.isPaused)
-  const statusLabel = isSuspended ? 'Suspended' : isPaused ? 'Paused' : null
+  const listingStatus = getListingStatusDisplay(consultation.status, {
+    isSuspend: isSuspended,
+    isDeleted: Boolean(consultation.isDeleted),
+  })
+  const statusLabel = isPaused && !isSuspended ? 'Paused' : listingStatus.label
 
   return (
     <div className="min-w-0 overflow-x-hidden rounded-xl bg-[#141414] p-4 sm:p-6">
@@ -1090,7 +1098,9 @@ function ConsultationDetailCard({
                 <span
                   className={cn(
                     'mt-1 inline-flex rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-                    isSuspended ? 'bg-amber-500/90 text-white' : 'bg-white/15 text-white/80',
+                    isPaused && !isSuspended
+                      ? 'bg-white/15 text-white/80'
+                      : listingStatus.className,
                   )}
                 >
                   {statusLabel}
@@ -1875,24 +1885,12 @@ function ServiceListCard({
   const isDeleted = Boolean(service.isDeleted) || status === 'deleted' || status === 'deactivated'
   const isSuspended = Boolean(service.isSuspend) || status === 'suspended'
   const coverImage = service.images?.find(Boolean)
-  const statusLabel = (() => {
-    if (isDeleted) return 'Deleted'
-    if (isSuspended) return 'Suspended'
-    if (!status) return null
-    if (status === 'live' || status === 'instant') return 'Instant'
-    return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
-  })()
-  const statusClass = isDeleted
-    ? 'bg-rose-500/90 text-white'
-    : isSuspended
-      ? 'bg-amber-500/90 text-white'
-      : status === 'live' || status === 'instant' || status === 'preview'
-        ? 'bg-[#16A34A] text-white'
-        : status === 'rejected'
-          ? 'bg-rose-500/90 text-white'
-          : status === 'closed'
-            ? 'bg-amber-500/90 text-white'
-            : 'bg-[#16A34A] text-white'
+  const listingStatus = getProfileServiceListingStatusDisplay(service.status, {
+    isSuspend: isSuspended,
+    isDeleted,
+  })
+  const statusLabel = listingStatus.label
+  const statusClass = listingStatus.className
 
   return (
     <div
@@ -1923,12 +1921,7 @@ function ServiceListCard({
             }
           />
           {statusLabel && (
-            <span
-              className={cn(
-                'absolute top-2 left-2 rounded-md px-2 py-0.5 text-[10px] leading-none font-bold text-white shadow-xs',
-                statusClass,
-              )}
-            >
+            <span className={cn('absolute top-2 left-2 leading-none shadow-xs', statusClass)}>
               {statusLabel}
             </span>
           )}

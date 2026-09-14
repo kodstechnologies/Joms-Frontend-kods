@@ -359,6 +359,10 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
                 )
               }
             />
+            <InfoRow
+              label="Sample Work File"
+              value={formData.sampleWorkFileName || formData.sampleWorkFileUrl || 'N/A'}
+            />
 
             <SectionTitle>Primary Verification</SectionTitle>
             <VerifiedRow label="Email" value={formData.email} />
@@ -402,6 +406,13 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
                   onView={setPreviewItem}
                 />
               )}
+              <DocumentCard
+                label="Sample Work File"
+                file={formData.sampleWorkFile}
+                fileName={formData.sampleWorkFileName}
+                fileUrl={formData.sampleWorkFileUrl}
+                onView={setPreviewItem}
+              />
             </div>
 
             <SectionTitle>Work History ({workHistoryEntries.length})</SectionTitle>

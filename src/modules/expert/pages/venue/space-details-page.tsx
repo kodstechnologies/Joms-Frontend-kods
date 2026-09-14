@@ -43,6 +43,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { getListingStatusDisplay } from '../../utils/management-status'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import {
   useAdminEscalation,
@@ -558,6 +559,10 @@ export function SpaceDetailsPage() {
   const isHidden = Boolean(detailSpace?.isHidden || summary?.isHidden)
   const isSuspended = Boolean(detailSpace?.isSuspend || summary?.isSuspend)
   const spaceStatus = detailSpace?.status ?? summary?.status ?? 'submitted'
+  const listingStatus = getListingStatusDisplay(spaceStatus, {
+    isSuspend: isSuspended,
+    isDeleted: isHidden,
+  })
   const isDecisionPending = spaceStatus === 'submitted'
   const decisionDisabled = !isDecisionPending || spaceStatusMutation.isPending || !spaceId
   const escalateDisabled = spaceStatus === 'approved' || escalateVenueSpace.isPending || !spaceId
@@ -581,6 +586,9 @@ export function SpaceDetailsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Space Details</span>
           </button>
+          <span className={cn('ml-7 w-fit', listingStatus.className)}>
+            {isHidden ? 'Hidden' : listingStatus.label}
+          </span>
           <div className="pl-7">
             <PageBreadcrumb
               items={[

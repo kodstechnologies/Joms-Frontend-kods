@@ -33,8 +33,8 @@ import {
   getDisplayKycStatus,
   getExpertCurrentRole,
   getExpertServiceType,
-  isAdminKycApproved,
   isKycSubmittedForApplication,
+  isSubmittedKycStatus,
   resolveExpertServiceCategoryDisplay,
 } from '../../utils/expert-application-helpers'
 import type { ApplicationStatus, DocumentStatusPayload } from '../../type/expert-application-view'
@@ -165,6 +165,7 @@ export function ExpertApplicationViewPage() {
       : 'overview'
 
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
+  const [syncedQueryTab, setSyncedQueryTab] = useState(`${id}:${tabFromQuery}`)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalVariant, setModalVariant] = useState<DecisionVariant>('approve')
   const [modalTarget, setModalTarget] = useState<DecisionTarget>('kyc')
@@ -175,11 +176,13 @@ export function ExpertApplicationViewPage() {
   const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
 
-  useEffect(() => {
+  const queryTabKey = `${id}:${tabFromQuery}`
+  if (queryTabKey !== syncedQueryTab) {
+    setSyncedQueryTab(queryTabKey)
     if (tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview') {
       setActiveTab(tabFromQuery)
     }
-  }, [tabFromQuery, id])
+  }
 
   const { data, isLoading, isError, error } = useExpertApplicationView(id)
   const { data: assigneesData } = useEscalationAssignees()
@@ -223,9 +226,9 @@ export function ExpertApplicationViewPage() {
   const decisionTargetForTab: DecisionTarget = activeTab === 'banking' ? 'banking' : 'kyc'
 
   const isKycSubmitted = isKycSubmittedForApplication(application?.expert, application?.kyc)
-  const isBankingSubmitted = Boolean(application?.banking?._id)
+  const isBankingSubmitted = isSubmittedKycStatus(application?.banking?.status)
   const displayKycStatus = getDisplayKycStatus(application?.expert, application?.kyc)
-  const showKycDetails = Boolean(application?.kyc) || isAdminKycApproved(application?.expert)
+  const showKycDetails = isKycSubmitted
 
   const activeSectionSubmitted =
     decisionTargetForTab === 'banking' ? isBankingSubmitted : isKycSubmitted
@@ -920,7 +923,13 @@ export function ExpertApplicationViewPage() {
         </div>
       )}
 
-      {activeTab === 'banking' && (
+      {activeTab === 'banking' && !isBankingSubmitted && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          Banking is not submitted by partner
+        </div>
+      )}
+
+      {activeTab === 'banking' && isBankingSubmitted && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <SectionCard
             title="Account Information"

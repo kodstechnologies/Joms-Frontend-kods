@@ -73,3 +73,88 @@ export const getManagementStatusDisplay = (
     className: getManagementStatusClassName(key),
   }
 }
+
+const formatListingStatusLabel = (status: string | null | undefined, key: ManagementStatusKey) => {
+  if (key === 'deleted') return 'Deleted'
+  if (key === 'suspended') return 'Suspended'
+  if (key === 'rejected') return 'Rejected'
+
+  const normalized = normalizeStatusToken(status)
+  if (['live', 'instant', 'approved', 'published', 'active'].includes(normalized)) {
+    return 'Live'
+  }
+  if (['in review', 'submitted', 'pending'].includes(normalized)) {
+    return 'Review Pending'
+  }
+  if (['preview', 'draft'].includes(normalized)) {
+    return 'Preview'
+  }
+  if (normalized === 'closed') {
+    return 'Closed'
+  }
+  if (normalized === 'paused') {
+    return 'Paused'
+  }
+
+  return formatManagementStatusLabel(key)
+}
+
+const getProfileServiceListingStatusClassName = (
+  status: string | null | undefined,
+  key: ManagementStatusKey,
+) => {
+  const normalized = normalizeStatusToken(status)
+  const base = 'rounded-md px-2 py-0.5 text-[10px] font-bold uppercase'
+
+  if (key === 'deleted' || key === 'rejected') {
+    return cn(base, 'bg-[#FF3B30]/50 text-white')
+  }
+  if (key === 'suspended') {
+    return cn(base, 'bg-[#AF52DE]/50 text-white')
+  }
+  if (['preview', 'draft', 'closed', 'paused'].includes(normalized)) {
+    return cn(base, 'bg-white/50 text-[#050505]')
+  }
+  if (
+    ['live', 'instant', 'approved', 'published', 'active'].includes(normalized) ||
+    key === 'approved'
+  ) {
+    return cn(base, 'bg-[#4CD964]/50 text-white')
+  }
+  if (['in review', 'submitted', 'pending'].includes(normalized) || key === 'pending') {
+    return cn(base, 'bg-[#FFCC00]/50 text-[#050505]')
+  }
+
+  return cn(base, 'bg-white/50 text-[#050505]')
+}
+
+export const isSubmittedListingStatus = (status: string | null | undefined) => {
+  const normalized = normalizeStatusToken(status)
+  return Boolean(normalized) && !['preview', 'draft'].includes(normalized)
+}
+
+/** Partner-facing labels for services, consultations, venues, and spaces. */
+export const getListingStatusDisplay = (
+  status: string | null | undefined,
+  options?: { isSuspend?: boolean; isDeleted?: boolean },
+) => {
+  const key = normalizeManagementStatus(status, options)
+  return {
+    key,
+    label: formatListingStatusLabel(status, key),
+    className: getManagementStatusClassName(key),
+  }
+}
+
+/** Overlay chips on expert profile service listing thumbnails. */
+export const getProfileServiceListingStatusDisplay = (
+  status: string | null | undefined,
+  options?: { isSuspend?: boolean; isDeleted?: boolean },
+) => {
+  const key = normalizeManagementStatus(status, options)
+  return {
+    key,
+    label: formatListingStatusLabel(status, key),
+    className: getProfileServiceListingStatusClassName(status, key),
+  }
+}

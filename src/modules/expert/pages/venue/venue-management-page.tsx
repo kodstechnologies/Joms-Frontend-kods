@@ -59,7 +59,6 @@ import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/sta
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
-import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -76,7 +75,7 @@ import {
   createVenueFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
-import { getManagementStatusDisplay } from '../../utils/management-status'
+import { getListingStatusDisplay } from '../../utils/management-status'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -1001,7 +1000,7 @@ export const VenueManagementPage = () => {
         accessorKey: 'status',
         header: 'Venue Status',
         cell: ({ row }) => {
-          const { label, className } = getManagementStatusDisplay(row.original.status, {
+          const { label, className } = getListingStatusDisplay(row.original.status, {
             isSuspend: row.original.isSuspend,
           })
 
@@ -1055,7 +1054,7 @@ export const VenueManagementPage = () => {
         header: 'Space Status',
         cell: ({ row }) => {
           const status = row.original.spaceStatus || 'active'
-          const { label, className } = getManagementStatusDisplay(status, {})
+          const { label, className } = getListingStatusDisplay(status, {})
           return <span className={className}>{label}</span>
         },
       },
