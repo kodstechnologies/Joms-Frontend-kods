@@ -574,7 +574,15 @@ export const addAmenity = async (payload: FormData) => {
   return response.data
 }
 
-export const saveVenueOnboardingBasicProfile = async (payload: FormData) => {
+export const saveVenueOnboardingBasicProfile = async (payload: FormData, venueId?: string) => {
+  if (venueId) {
+    const response = await venueApiClient.patch<VenueOnboardingBasicProfileResponse>(
+      `/venues/admin/onboarding/${venueId}/basic-profile`,
+      payload,
+    )
+    return response.data
+  }
+
   const response = await venueApiClient.post<VenueOnboardingBasicProfileResponse>(
     '/venues/admin/onboarding/basic-profile',
     payload,

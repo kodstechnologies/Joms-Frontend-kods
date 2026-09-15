@@ -139,13 +139,9 @@ export const buildBasicProfileFormData = (
     formData.append('venueCategoryId', JSON.stringify([form.venueCategoryId]))
   }
 
-  const years = Number(form.hostingSinceYears)
-  const months = Number(form.hostingSinceMonths)
-  if (!Number.isNaN(years) && form.hostingSinceYears !== '') {
-    formData.append(
-      'hostingSince',
-      JSON.stringify({ years, months: Number.isNaN(months) ? 0 : months }),
-    )
+  const hostingSince = toHostingSincePayload(form)
+  if (hostingSince) {
+    formData.append('hostingSince', JSON.stringify(hostingSince))
   }
 
   if (form.pocName) formData.append('pocName', form.pocName)
@@ -226,12 +222,78 @@ export const buildKycFormData = (form: VenueOnboardingFormData): FormData => {
   return formData
 }
 
+const parseOptionalNumber = (value?: string | number | null) => {
+  if (value == null || value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+export const parseHostingSince = (value: unknown): { years?: number; months?: number } => {
+  if (value == null || value === '') return {}
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return { years: value }
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return {}
+    try {
+      return parseHostingSince(JSON.parse(trimmed))
+    } catch {
+      const parsed = Number(trimmed)
+      return Number.isFinite(parsed) ? { years: parsed } : {}
+    }
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    const years = parseOptionalNumber(
+      (record.years ?? record.year ?? record.foundingYear) as string | number | null,
+    )
+    const months = parseOptionalNumber(record.months as string | number | null)
+    return {
+      ...(years != null ? { years } : {}),
+      ...(months != null ? { months } : {}),
+    }
+  }
+
+  return {}
+}
+
+export const toHostingSincePayload = (form: VenueOnboardingFormData) => {
+  const years = parseOptionalNumber(form.hostingSinceYears)
+  if (years == null) return null
+  return {
+    years,
+    months: parseOptionalNumber(form.hostingSinceMonths) ?? 0,
+  }
+}
+
+const isCalendarYear = (years: number) => {
+  const currentYear = new Date().getFullYear()
+  return years >= 1900 && years <= currentYear + 1
+}
+
 export const formatHostingSince = (years?: number, months?: number) => {
-  if (years == null && months == null) return '-'
+  if (years == null && (months == null || months === 0)) return '-'
+  if (years != null && isCalendarYear(years)) return String(years)
+
   const parts: string[] = []
   if (years) parts.push(`${years} Year${years === 1 ? '' : 's'}`)
   if (months) parts.push(`${months} Month${months === 1 ? '' : 's'}`)
   return parts.length > 0 ? parts.join(', ') : '-'
+}
+
+export const resolveHostingSinceLabel = (
+  hostingSince?: unknown,
+  formYears?: string,
+  formMonths?: string,
+) => {
+  const parsed = parseHostingSince(hostingSince)
+  const years = parsed.years ?? parseOptionalNumber(formYears) ?? undefined
+  const months = parsed.months ?? parseOptionalNumber(formMonths) ?? undefined
+  return formatHostingSince(years, months)
 }
 
 export const maskSensitiveValue = (value: string, visibleStart = 2, visibleEnd = 1) => {

@@ -1,8 +1,10 @@
 import type { VenueCategory } from './venue'
 
 export type HostingSince = {
-  years: number
-  months: number
+  years?: number
+  months?: number
+  year?: number
+  foundingYear?: number
 }
 
 export type VenueOnboardingLocation = {
@@ -67,7 +69,7 @@ export type VenueOnboardingReviewVenue = {
   name: string
   venueType: string
   venueCategoryId?: Array<VenueCategory | string>
-  hostingSince?: HostingSince
+  hostingSince?: HostingSince | number | string | null
   pocName?: string
   pocContactNumber?: string
   phone?: string

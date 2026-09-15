@@ -26,8 +26,9 @@ export const useVenueOnboardingMutations = () => {
   }
 
   const saveBasicProfile = useMutation({
-    mutationFn: saveVenueOnboardingBasicProfile,
-    onSuccess: () => invalidate(),
+    mutationFn: ({ payload, venueId }: { payload: FormData; venueId?: string }) =>
+      saveVenueOnboardingBasicProfile(payload, venueId),
+    onSuccess: (_, { venueId }) => invalidate(venueId),
   })
 
   const saveLocation = useMutation({

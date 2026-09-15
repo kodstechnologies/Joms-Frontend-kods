@@ -24,6 +24,7 @@ import {
   buildLocationFormData,
   buildVenuePartnerProfileFormData,
   createEmptyVenueOnboardingForm,
+  parseHostingSince,
   type VenueOnboardingFormData,
 } from '@/modules/expert/utils/venue-onboarding-form'
 import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
@@ -82,6 +83,7 @@ export function CreateVenueOnboardingPage() {
     if (reviewData?.data?.venue) {
       const venue = reviewData.data.venue
       const kyc = reviewData.data.kyc
+      const hostingSince = parseHostingSince(venue.hostingSince)
 
       setFormData((prev) => ({
         ...prev,
@@ -95,12 +97,10 @@ export function CreateVenueOnboardingPage() {
           (typeof venue.venueCategoryId?.[0] === 'object'
             ? (venue.venueCategoryId[0] as VenueCategory).name
             : prev.venueCategoryName) || prev.venueCategoryName,
-        hostingSinceYears: venue.hostingSince?.years
-          ? String(venue.hostingSince.years)
-          : prev.hostingSinceYears,
-        hostingSinceMonths: venue.hostingSince?.months
-          ? String(venue.hostingSince.months)
-          : prev.hostingSinceMonths,
+        hostingSinceYears:
+          hostingSince.years != null ? String(hostingSince.years) : prev.hostingSinceYears,
+        hostingSinceMonths:
+          hostingSince.months != null ? String(hostingSince.months) : prev.hostingSinceMonths,
         pocName: venue.pocName || prev.pocName,
         pocContactNumber: venue.pocContactNumber || prev.pocContactNumber,
         phone: venue.phone ? sanitizeMobileNumber(venue.phone) : prev.phone,
@@ -191,9 +191,9 @@ export function CreateVenueOnboardingPage() {
 
     try {
       if (currentStep === 1) {
-        if (!venueId) {
-          let activePartnerId = partnerId
+        let activePartnerId = partnerId || reviewData?.data?.venue?.ownerId || ''
 
+        if (!venueId) {
           if (!activePartnerId) {
             setIsCreatingPartner(true)
             const partnerResponse = await createExpertBasicProfile(
@@ -204,12 +204,21 @@ export function CreateVenueOnboardingPage() {
             setIsCreatingPartner(false)
           }
 
-          const response = await saveBasicProfile.mutateAsync(
-            buildBasicProfileFormData(activePartnerId, formData),
-          )
-          const newVenueId = response.data._id
-          setCreatedVenueId(newVenueId)
-          updateVenueIdInUrl(newVenueId, activePartnerId)
+          const response = await saveBasicProfile.mutateAsync({
+            payload: buildBasicProfileFormData(activePartnerId, formData),
+          })
+          const savedVenueId = response.data._id
+          setCreatedVenueId(savedVenueId)
+          updateVenueIdInUrl(savedVenueId, activePartnerId)
+        } else {
+          if (!activePartnerId) {
+            toast.error('Missing partner for this venue. Please reload and try again.')
+            return
+          }
+          await saveBasicProfile.mutateAsync({
+            payload: buildBasicProfileFormData(activePartnerId, formData),
+            venueId,
+          })
         }
         setCurrentStep(2)
         return
@@ -229,6 +238,15 @@ export function CreateVenueOnboardingPage() {
           venueId,
           payload: buildKycFormData(formData),
         })
+        if (partnerId || reviewData?.data?.venue?.ownerId) {
+          await saveBasicProfile.mutateAsync({
+            payload: buildBasicProfileFormData(
+              partnerId || reviewData?.data?.venue?.ownerId || '',
+              formData,
+            ),
+            venueId,
+          })
+        }
         await refetchReview()
         setCurrentStep(4)
         return

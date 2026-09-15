@@ -14,6 +14,19 @@ export type CommunicationAudience =
   | 'service-management'
   | 'venue-management'
   | 'all-partners'
+
+export const parseCommunicationAudiences = (
+  audience: CommunicationAudience | CommunicationAudience[] | string | null | undefined,
+): CommunicationAudience[] => {
+  const values = Array.isArray(audience)
+    ? audience
+    : String(audience || '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+  return [...new Set(values)] as CommunicationAudience[]
+}
+
 export type CommunicationDeliveryType = 'send-now' | 'schedule'
 export type CommunicationPriority = 'low' | 'medium' | 'high' | 'critical'
 export type CommunicationStatus =
@@ -45,7 +58,7 @@ export type Communication = {
   channelLabel: string
   type: CommunicationType
   typeLabel: string
-  audience: CommunicationAudience
+  audience: CommunicationAudience | CommunicationAudience[]
   audienceLabel: string
   audienceSize: number
   contentPreview: string
@@ -131,7 +144,7 @@ export type CreateCommunicationPayload = {
   title: string
   channel: CommunicationChannel
   type: CommunicationType
-  audience: CommunicationAudience
+  audience: CommunicationAudience | CommunicationAudience[]
   deliveryType: CommunicationDeliveryType
   priority?: CommunicationPriority
   scheduledAt?: string | null

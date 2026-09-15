@@ -414,7 +414,7 @@ export function LoginPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/company/justonemorestep/"
               target="_blank"
               rel="noreferrer"
               className="text-black transition-colors hover:opacity-75"
@@ -422,14 +422,19 @@ export function LoginPage() {
               <LinkedInIcon />
             </a>
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/joms_justonemorestep"
               target="_blank"
               rel="noreferrer"
               className="text-black transition-colors hover:opacity-75"
             >
               <InstagramIcon />
             </a>
-            <span className="font-normal text-black">Email: hello@joms.in</span>
+            <span className="font-normal text-black">
+              Email:{' '}
+              <a href="mailto:hello@joms.in" className="hover:underline">
+                hello@joms.in
+              </a>
+            </span>
           </div>
 
           <div className="text-center text-black">

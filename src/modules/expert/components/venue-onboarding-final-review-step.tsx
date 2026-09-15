@@ -4,8 +4,8 @@ import { Eye, EyeOff, Trash2 } from 'lucide-react'
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueOnboardingKyc, VenueOnboardingReviewVenue } from '../type/venue-onboarding'
 import {
-  formatHostingSince,
   maskSensitiveValue,
+  resolveHostingSinceLabel,
   type VenueOnboardingFormData,
 } from '../utils/venue-onboarding-form'
 type Props = {
@@ -108,12 +108,11 @@ export const VenueOnboardingFinalReviewStep = ({
     return '-'
   }, [venue?.venueCategoryId, formData.venueCategoryName, formData.venueCategoryId, categories])
 
-  const hostingSince = venue?.hostingSince
-    ? formatHostingSince(venue.hostingSince.years, venue.hostingSince.months)
-    : formatHostingSince(
-        Number(formData.hostingSinceYears) || undefined,
-        Number(formData.hostingSinceMonths) || undefined,
-      )
+  const hostingSince = resolveHostingSinceLabel(
+    venue?.hostingSince,
+    formData.hostingSinceYears,
+    formData.hostingSinceMonths,
+  )
 
   const coverUrl = venue?.coverImageUrl || formData.coverImageUrl
   const profileUrl = venue?.profileImageUrl || formData.profileImageUrl

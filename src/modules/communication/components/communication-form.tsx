@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronDown } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -14,6 +14,7 @@ import {
   type CommunicationPriority,
   type CommunicationType,
   type CreateCommunicationPayload,
+  parseCommunicationAudiences,
 } from '../api/communication-api'
 import {
   useCommunication,
@@ -37,7 +38,7 @@ type FormValues = {
   title: string
   channel: CommunicationChannel | ''
   type: CommunicationType | ''
-  audience: CommunicationAudience | ''
+  audiences: CommunicationAudience[]
   deliveryType: CommunicationDeliveryType
   priority: CommunicationPriority
   scheduledAt: string
@@ -50,7 +51,7 @@ const emptyForm: FormValues = {
   title: '',
   channel: '',
   type: '',
-  audience: '',
+  audiences: [],
   deliveryType: 'send-now',
   priority: 'medium',
   scheduledAt: '',
@@ -96,10 +97,10 @@ export function CommunicationForm() {
     ? (prefillChannelRaw as CommunicationChannel)
     : ''
   const prefillAudience = AUDIENCE_VALUES.has(prefillAudienceRaw)
-    ? (prefillAudienceRaw as CommunicationAudience)
+    ? [prefillAudienceRaw as CommunicationAudience]
     : prefillPartnerIds.length
-      ? 'experts'
-      : ''
+      ? (['experts'] as CommunicationAudience[])
+      : []
 
   const optionsQuery = useCommunicationOptions()
   const existingQuery = useCommunication(editId)
@@ -135,7 +136,7 @@ export function CommunicationForm() {
           title: item.title ?? '',
           channel: item.channel ?? '',
           type: item.type ?? '',
-          audience: item.audience ?? '',
+          audiences: parseCommunicationAudiences(item.audience),
           deliveryType: item.deliveryType ?? 'send-now',
           priority: item.priority ?? 'medium',
           scheduledAt: toDateTimeLocalValue(item.scheduledAt),
@@ -146,12 +147,13 @@ export function CommunicationForm() {
       : {
           ...emptyForm,
           channel: prefillChannel,
-          audience: prefillAudience,
+          audiences: prefillAudience,
         }
 
   // Remount when switching create/edit / prefill so form state resets without setState-in-effect
   const formKey =
-    editId || `create-${prefillChannel}-${prefillAudience}-${prefillPartnerIds.join(',') || 'all'}`
+    editId ||
+    `create-${prefillChannel}-${prefillAudience.join(',') || 'all'}-${prefillPartnerIds.join(',') || 'all'}`
 
   return (
     <CommunicationFormFields
@@ -197,7 +199,7 @@ function CommunicationFormFields({
   isEditMode,
   editId,
   partnerIds = [],
-  audiences,
+  audiences: audienceChoices,
   channels,
   types,
   priorities,
@@ -211,7 +213,9 @@ function CommunicationFormFields({
   const [title, setTitle] = useState(initialValues.title)
   const [channel, setChannel] = useState<CommunicationChannel | ''>(initialValues.channel)
   const [type, setType] = useState<CommunicationType | ''>(initialValues.type)
-  const [audience, setAudience] = useState<CommunicationAudience | ''>(initialValues.audience)
+  const [selectedAudiences, setSelectedAudiences] = useState<CommunicationAudience[]>(
+    initialValues.audiences,
+  )
   const [deliveryType, setDeliveryType] = useState<CommunicationDeliveryType>(
     initialValues.deliveryType,
   )
@@ -222,13 +226,40 @@ function CommunicationFormFields({
   const [additionalNotes, setAdditionalNotes] = useState(initialValues.additionalNotes)
 
   const audienceOptions = useMemo(() => {
-    const resolved = audiences?.length ? audiences : COMMUNICATION_AUDIENCE_OPTIONS
+    const resolved = audienceChoices?.length ? audienceChoices : COMMUNICATION_AUDIENCE_OPTIONS
     const options = [...resolved]
-    if (audience && !options.some((opt) => opt.value === audience)) {
-      options.push({ value: audience, label: audience })
+    for (const value of selectedAudiences) {
+      if (value && !options.some((opt) => opt.value === value)) {
+        options.push({ value, label: value })
+      }
     }
     return options
-  }, [audience, audiences])
+  }, [audienceChoices, selectedAudiences])
+
+  const availableAudienceOptions = useMemo(
+    () =>
+      audienceOptions.filter(
+        (opt) => !selectedAudiences.includes(opt.value as CommunicationAudience),
+      ),
+    [audienceOptions, selectedAudiences],
+  )
+
+  const addAudience = (value: CommunicationAudience | '') => {
+    if (!value || hasTargetedRecipients) return
+    if (value === 'all-users') {
+      setSelectedAudiences(['all-users'])
+      return
+    }
+    setSelectedAudiences((prev) => {
+      const withoutAllUsers = prev.filter((item) => item !== 'all-users' && item !== value)
+      return [...withoutAllUsers, value]
+    })
+  }
+
+  const removeAudience = (value: CommunicationAudience) => {
+    if (hasTargetedRecipients) return
+    setSelectedAudiences((prev) => prev.filter((item) => item !== value))
+  }
 
   const channelOptions = useMemo(() => channels ?? COMMUNICATION_CHANNEL_OPTIONS, [channels])
   const typeOptions = useMemo(() => types ?? COMMUNICATION_TYPE_OPTIONS, [types])
@@ -237,7 +268,7 @@ function CommunicationFormFields({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!title.trim() || !channel || !type || !audience || !messageContent.trim()) {
+    if (!title.trim() || !channel || !type || !selectedAudiences.length || !messageContent.trim()) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -256,7 +287,7 @@ function CommunicationFormFields({
       title: title.trim(),
       channel,
       type,
-      audience,
+      audience: selectedAudiences.length === 1 ? selectedAudiences[0] : selectedAudiences,
       deliveryType,
       priority,
       scheduledAt: deliveryType === 'schedule' ? new Date(scheduledAt).toISOString() : null,
@@ -396,36 +427,58 @@ function CommunicationFormFields({
           <div>
             <label className={labelClass}>Audience</label>
             <div className="relative">
-              <select
-                className={cn(selectClass, audience ? 'text-transparent' : '')}
-                value={audience}
-                onChange={(e) => setAudience(e.target.value as CommunicationAudience)}
-                required
-                disabled={hasTargetedRecipients}
+              <div
+                className={cn(
+                  inputClass,
+                  'flex !h-auto min-h-[var(--brand-input-height,42px)] flex-wrap items-center gap-1.5 py-1.5 pr-9',
+                )}
               >
-                <option value="">Select audience</option>
-                {audienceOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              {audience ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hasTargetedRecipients) return
-                    setAudience('')
-                  }}
-                  className="text-body-sm-semibold absolute top-1/2 left-3 inline-flex h-[26px] -translate-y-1/2 items-center gap-2 rounded-full px-3 text-black"
-                  style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
+                {hasTargetedRecipients ? (
+                  <span
+                    className="text-body-sm-semibold inline-flex h-[26px] items-center gap-2 rounded-full px-3 text-black"
+                    style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
+                  >
+                    {`${partnerIds.length} selected expert${partnerIds.length === 1 ? '' : 's'}`}
+                  </span>
+                ) : (
+                  selectedAudiences.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => removeAudience(value)}
+                      className="text-body-sm-semibold inline-flex h-[26px] items-center gap-2 rounded-full px-3 text-black"
+                      style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
+                    >
+                      {audienceOptions.find((opt) => opt.value === value)?.label ?? value}
+                      <span className="opacity-70">✕</span>
+                    </button>
+                  ))
+                )}
+                <select
+                  className={cn(
+                    'min-w-[8rem] flex-1 cursor-pointer appearance-none border-0 bg-transparent py-0.5 text-sm outline-none disabled:cursor-not-allowed',
+                    selectedAudiences.length || hasTargetedRecipients
+                      ? 'text-muted'
+                      : 'text-brand-text',
+                  )}
+                  value=""
+                  onChange={(e) => addAudience(e.target.value as CommunicationAudience)}
+                  disabled={hasTargetedRecipients || availableAudienceOptions.length === 0}
+                  aria-label="Add audience"
                 >
-                  {hasTargetedRecipients
-                    ? `${partnerIds.length} selected expert${partnerIds.length === 1 ? '' : 's'}`
-                    : (audienceOptions.find((o) => o.value === audience)?.label ?? audience)}
-                  {!hasTargetedRecipients ? <span className="opacity-70">✕</span> : null}
-                </button>
-              ) : null}
+                  <option value="">
+                    {selectedAudiences.length || hasTargetedRecipients
+                      ? 'Add audience'
+                      : 'Select audience'}
+                  </option>
+                  {availableAudienceOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white" />
             </div>
           </div>
 
