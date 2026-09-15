@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { ArrowLeft, Download } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
 import { useFinanceInvoice } from '@/modules/payments/hooks/use-finance'
@@ -119,7 +120,9 @@ export function InvoiceDetailViewPage() {
               invoice.invoiceNumber,
             )
               .then(() => toast.success('Invoice downloaded'))
-              .catch(() => toast.error('Failed to download invoice'))
+              .catch((error) =>
+                toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+              )
           }}
         >
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">

@@ -2,7 +2,9 @@ import { X, AlertCircle, FileText, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { updateServiceReport } from '../api/service-api'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 export interface ServiceReportItem {
   id: string
@@ -49,6 +51,7 @@ export function ServiceReportDetailModal({
   const [finalOutcome, setFinalOutcome] = useState<string>('')
   const [internalNotes, setInternalNotes] = useState<string>('')
   const [updating, setUpdating] = useState(false)
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
 
   if (report !== prevReport) {
     setPrevReport(report)
@@ -75,7 +78,7 @@ export function ServiceReportDetailModal({
       onUpdated?.()
       onClose()
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update service report')
+      toast.error(getApiErrorMessage(err, 'Failed to update service report'))
     } finally {
       setUpdating(false)
     }
@@ -144,16 +147,15 @@ export function ServiceReportDetailModal({
               </h4>
               <div className="flex flex-wrap gap-2">
                 {report.supportingDocuments.map((doc, idx) => (
-                  <a
+                  <button
                     key={idx}
-                    href={doc}
-                    target="_blank"
-                    rel="noreferrer"
+                    type="button"
+                    onClick={() => setMediaIndex(idx)}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700"
                   >
                     <FileText className="size-3.5 text-blue-400" />
                     Document {idx + 1}
-                  </a>
+                  </button>
                 ))}
               </div>
             </div>
@@ -242,6 +244,17 @@ export function ServiceReportDetailModal({
           </Button>
         </div>
       </div>
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={(report.supportingDocuments || []).map((url, idx) => ({
+          url,
+          title: `Document ${idx + 1}`,
+        }))}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
     </div>
   )
 }

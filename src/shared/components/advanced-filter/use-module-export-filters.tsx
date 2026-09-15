@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import type { FilterValues, ModuleFilterKey } from '@/shared/types/data-filter'
 
@@ -56,8 +57,8 @@ export function useModuleExportFilters({
       }
 
       setIsAdvancedFilterOpen(false)
-    } catch {
-      toast.error('Failed to apply filters')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to apply filters'))
     } finally {
       setIsApplying(false)
     }
@@ -80,7 +81,7 @@ export function useModuleExportFilters({
         if (error instanceof Error && error.message === 'NO_RECORDS') {
           toast.error('No records found to export')
         } else {
-          toast.error('Failed to export data')
+          toast.error(getApiErrorMessage(error, 'Failed to export data'))
         }
       } finally {
         setIsExporting(false)

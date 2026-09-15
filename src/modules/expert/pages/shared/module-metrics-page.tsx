@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   useDashboardMetricPreferences,
@@ -457,7 +458,8 @@ export function ModuleMetricsPage({
               onReset: () => {
                 resetMetricsMutation.mutate(undefined, {
                   onSuccess: () => toast.success('Dashboard metrics reset to default'),
-                  onError: () => toast.error('Failed to reset dashboard metrics'),
+                  onError: (error) =>
+                    toast.error(getApiErrorMessage(error, 'Failed to reset dashboard metrics')),
                 })
               },
             }
@@ -471,7 +473,8 @@ export function ModuleMetricsPage({
               onReset: () => {
                 resetColumnsMutation.mutate(undefined, {
                   onSuccess: () => toast.success('Column preferences reset to default'),
-                  onError: () => toast.error('Failed to reset column preferences'),
+                  onError: (error) =>
+                    toast.error(getApiErrorMessage(error, 'Failed to reset column preferences')),
                 })
               },
             }
@@ -504,8 +507,8 @@ export function ModuleMetricsPage({
           await Promise.all(tasks)
           toast.success('Metrics configuration saved')
           goBack()
-        } catch {
-          toast.error('Failed to save metrics configuration')
+        } catch (error) {
+          toast.error(getApiErrorMessage(error, 'Failed to save metrics configuration'))
         }
       }}
     />

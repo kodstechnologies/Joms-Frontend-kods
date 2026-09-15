@@ -48,6 +48,7 @@ import {
   type DocumentDecisionVariant,
   type DocumentReviewStatus,
 } from '../../components/document-review-viewer'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { areUploadedDocumentsApproved } from '../../utils/document-review'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
@@ -185,7 +186,7 @@ function InfoField({
   )
 }
 
-function VenueImage({ src, alt }: { src: string; alt: string }) {
+function VenueImage({ src, alt, onOpen }: { src: string; alt: string; onOpen?: () => void }) {
   const [errored, setErrored] = useState(false)
 
   if (errored) {
@@ -197,10 +198,9 @@ function VenueImage({ src, alt }: { src: string; alt: string }) {
   }
 
   return (
-    <a
-      href={src}
-      target="_blank"
-      rel="noreferrer"
+    <button
+      type="button"
+      onClick={onOpen}
       className="block aspect-square overflow-hidden rounded-xl border border-white/5 bg-black"
     >
       <img
@@ -210,7 +210,7 @@ function VenueImage({ src, alt }: { src: string; alt: string }) {
         loading="lazy"
         onError={() => setErrored(true)}
       />
-    </a>
+    </button>
   )
 }
 
@@ -239,6 +239,8 @@ export function VenueKycApplicationViewPage() {
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
+  const [undertakingOpen, setUndertakingOpen] = useState(false)
 
   const queryTabKey = `${id}:${tabFromQuery}`
   if (queryTabKey !== syncedQueryTab) {
@@ -875,7 +877,12 @@ export function VenueKycApplicationViewPage() {
             {isKycSubmitted && venueImages.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:max-w-[520px]">
                 {venueImages.slice(0, 6).map((image, index) => (
-                  <VenueImage key={`${image}-${index}`} src={image} alt={`Venue ${index + 1}`} />
+                  <VenueImage
+                    key={`${image}-${index}`}
+                    src={image}
+                    alt={`Venue ${index + 1}`}
+                    onOpen={() => setMediaIndex(index)}
+                  />
                 ))}
               </div>
             ) : (
@@ -943,14 +950,13 @@ export function VenueKycApplicationViewPage() {
                           {getDocumentMeta(compliance.gstUndertakingDocument)}
                         </p>
                       </div>
-                      <a
-                        href={compliance.gstUndertakingDocument}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => setUndertakingOpen(true)}
                         className="text-body-sm text-brand-action ml-auto font-semibold hover:underline"
                       >
                         View
-                      </a>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1198,6 +1204,25 @@ export function VenueKycApplicationViewPage() {
         isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
         onClose={() => setViewerDocument(null)}
         onSubmitDecision={handleDocumentDecision}
+      />
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={venueImages.map((url, index) => ({ url, title: `Venue ${index + 1}` }))}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
+
+      <InPageMediaViewer
+        open={undertakingOpen && Boolean(compliance?.gstUndertakingDocument)}
+        items={
+          compliance?.gstUndertakingDocument
+            ? [{ url: compliance.gstUndertakingDocument, title: 'Undertaking Document' }]
+            : []
+        }
+        index={0}
+        onClose={() => setUndertakingOpen(false)}
       />
     </div>
   )

@@ -276,11 +276,7 @@ export const ConsultationViewPage = () => {
       }
       closeDecisionModal()
     } catch (err) {
-      toast.error(
-        axios.isAxiosError(err)
-          ? err.response?.data?.message || 'Failed to update consultation status.'
-          : 'Failed to update consultation status.',
-      )
+      toast.error(getApiErrorMessage(err, 'Failed to update consultation status.'))
     }
   }
 

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
@@ -73,7 +74,8 @@ export function VenueProfileAnalyticsPage() {
 
   const venueAnalyticsCards = useMemo(() => {
     const venueAnalytics = data?.data?.profile as
-      ({ analytics?: Record<string, unknown> } & Record<string, unknown>) | undefined
+      | ({ analytics?: Record<string, unknown> } & Record<string, unknown>)
+      | undefined
     const allCards = buildVenueProfileAnalyticsMetricCards(
       analyticsData,
       venueAnalytics?.analytics ?? null,
@@ -106,7 +108,7 @@ export function VenueProfileAnalyticsPage() {
         toast.error('No analytics data available to export')
         return
       }
-      toast.error('Failed to export analytics data')
+      toast.error(getApiErrorMessage(error, 'Failed to export analytics data'))
     }
   }, [analyticsData, analyticsQuery.isLoading, venueAnalyticsCards, venueId, venueName])
 

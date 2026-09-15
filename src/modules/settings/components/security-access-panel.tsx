@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { SecurityQuestionsModal } from './security-questions-modal'
 import { MFA_METHOD_KEYS, countEnabledMfaMethods } from '../utils/security-settings'
@@ -347,8 +348,8 @@ export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAcce
             await onPersist(nextConfig)
             setSecurityQuestionsOpen(false)
             toast.success('Security questions saved')
-          } catch {
-            toast.error('Failed to save security questions')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to save security questions'))
           }
         }}
       />

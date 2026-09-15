@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AdminNoteModal } from '../components/admin-note-modal'
 import { RbacLoader } from '../components/rbac-loader'
@@ -108,7 +109,8 @@ type RoleHistoryRow = {
 
 const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   const previousVersion = log.metadata?.previousVersion as
-    { roleIds?: string[]; firstName?: string; lastName?: string } | undefined
+    | { roleIds?: string[]; firstName?: string; lastName?: string }
+    | undefined
 
   return {
     id: log.id || log._id || log.action,
@@ -260,8 +262,8 @@ export function AdminDetailPage() {
     try {
       await suspendMutation.mutateAsync(id)
       toast.success('Admin suspended')
-    } catch {
-      toast.error('Failed to suspend admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to suspend admin'))
     }
   }, [id, suspendMutation])
 
@@ -269,8 +271,8 @@ export function AdminDetailPage() {
     try {
       await reactivateMutation.mutateAsync(id)
       toast.success('Admin reactivated')
-    } catch {
-      toast.error('Failed to reactivate admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to reactivate admin'))
     }
   }, [id, reactivateMutation])
 
@@ -279,8 +281,8 @@ export function AdminDetailPage() {
       await deleteMutation.mutateAsync(id)
       toast.success('Admin deleted')
       navigate('/settings/access')
-    } catch {
-      toast.error('Failed to delete admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to delete admin'))
     }
   }, [deleteMutation, id, navigate])
 
@@ -294,7 +296,7 @@ export function AdminDetailPage() {
         toast.success('Password updated successfully')
         setPasswordModalOpen(false)
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to update password')
+        toast.error(getApiErrorMessage(error, 'Failed to update password'))
       }
     },
     [id, updatePasswordMutation],

@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, Clock, Upload, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   useContactSetupProfile,
@@ -323,7 +324,7 @@ function SubAdminProfileView() {
         toast.success('Password updated successfully')
         setPasswordModalOpen(false)
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to update password')
+        toast.error(getApiErrorMessage(error, 'Failed to update password'))
       }
     },
     [subAdmin, updatePasswordMutation],

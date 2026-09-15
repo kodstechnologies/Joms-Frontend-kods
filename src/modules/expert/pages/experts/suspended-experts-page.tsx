@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
@@ -50,9 +51,7 @@ export function ExpertSuspendedExpertsPage() {
         onSuccess: () => toast.success('Expert activated successfully'),
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(
-            err?.response?.data?.message || 'Failed to activate expert. Please try again.',
-          )
+          toast.error(getApiErrorMessage(err, 'Failed to activate expert. Please try again.'))
         },
       })
     },

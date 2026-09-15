@@ -58,6 +58,7 @@ import {
 } from '@/modules/settings/hooks/use-templates'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { SafeImage } from '@/shared/components/media/safe-image'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 
 type AmenitySubCategory = {
   _id: string
@@ -173,6 +174,8 @@ export function SpaceDetailsPage() {
   const [endDate, setEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
+  const [viewerKind, setViewerKind] = useState<'carousel' | 'gallery'>('carousel')
 
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
@@ -537,6 +540,15 @@ export function SpaceDetailsPage() {
     ...(gallery?.spaceCoverImages || []),
     ...(gallery?.galleryImages || []),
   ]
+  const carouselMediaItems = carouselImages.map((url, index) => ({
+    url,
+    title: `${spaceName} ${index + 1}`,
+  }))
+  const galleryMediaItems = galleryImages.map((image, index) => ({
+    url: image.url,
+    title: `Gallery ${index + 1}`,
+  }))
+  const mediaItems = viewerKind === 'carousel' ? carouselMediaItems : galleryMediaItems
   const imageCount = carouselImages.length
   const activeImage =
     imageCount > 0 ? carouselImages[Math.min(activeImageIndex, imageCount - 1)] : null
@@ -671,7 +683,19 @@ export function SpaceDetailsPage() {
       )}
 
       <div className="rounded-brand-lg bg-brand-surface relative h-64 w-full overflow-hidden border border-white/5">
-        <SafeImage src={activeImage} alt={spaceName} className="size-full object-cover" />
+        {activeImage ? (
+          <button
+            type="button"
+            aria-label="Open image viewer"
+            onClick={() => {
+              setViewerKind('carousel')
+              setMediaIndex(activeImageIndex)
+            }}
+            className="size-full"
+          >
+            <SafeImage src={activeImage} alt={spaceName} className="size-full object-cover" />
+          </button>
+        ) : null}
 
         {imageCount > 1 && (
           <>
@@ -828,11 +852,13 @@ export function SpaceDetailsPage() {
         {galleryImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {galleryImages.slice(0, 6).map((image, index) => (
-              <a
+              <button
                 key={`${image.url}-${index}`}
-                href={image.url}
-                target="_blank"
-                rel="noreferrer"
+                type="button"
+                onClick={() => {
+                  setViewerKind('gallery')
+                  setMediaIndex(index)
+                }}
                 className="block aspect-[4/3] overflow-hidden rounded-md border border-white/5 bg-black"
               >
                 <SafeImage
@@ -840,7 +866,7 @@ export function SpaceDetailsPage() {
                   alt={`Gallery ${index + 1}`}
                   className="size-full object-cover"
                 />
-              </a>
+              </button>
             ))}
           </div>
         ) : (
@@ -915,6 +941,14 @@ export function SpaceDetailsPage() {
       </div>
 
       <SpaceBookingsSection spaceId={spaceId} />
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
 
       <DecisionActionModal
         open={decisionModalOpen}

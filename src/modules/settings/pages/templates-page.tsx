@@ -3,6 +3,7 @@ import { ArrowLeft, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   useCreateModerationReason,
@@ -303,7 +304,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
             setReasonModalOpen(false)
             setEditingReason(null)
           },
-          onError: () => toast.error('Failed to update reason'),
+          onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to update reason')),
         },
       )
       return
@@ -321,9 +322,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           setReasonModalOpen(false)
         },
         onError: (error) => {
-          const apiMessage = (error as { response?: { data?: { message?: string } } }).response
-            ?.data?.message
-          toast.error(apiMessage || 'Failed to create reason')
+          toast.error(getApiErrorMessage(error, 'Failed to create reason'))
         },
       },
     )
@@ -487,7 +486,10 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                                     toast.success(
                                       data.isActive ? 'Reason activated' : 'Reason disabled',
                                     ),
-                                  onError: () => toast.error('Failed to update status'),
+                                  onError: (error) =>
+                                    toast.error(
+                                      getApiErrorMessage(error, 'Failed to update status'),
+                                    ),
                                 })
                               }
                             />
@@ -509,7 +511,8 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                             onClick={() =>
                               deleteReasonMutation.mutate(reason.id, {
                                 onSuccess: () => toast.success('Reason deleted'),
-                                onError: () => toast.error('Failed to delete reason'),
+                                onError: (error) =>
+                                  toast.error(getApiErrorMessage(error, 'Failed to delete reason')),
                               })
                             }
                             className="text-brand-danger hover:bg-brand-danger/10 rounded p-1.5"
@@ -558,7 +561,8 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                 toast.success('Category updated')
                 setCategoryEditOpen(false)
               },
-              onError: () => toast.error('Failed to update category'),
+              onError: (error) =>
+                toast.error(getApiErrorMessage(error, 'Failed to update category')),
             },
           )
         }}

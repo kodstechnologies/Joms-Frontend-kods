@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { fetchLoginTrails } from '../api/security-api'
 import { SettingsSubpageShell } from '../components/settings-subpage-shell'
@@ -264,7 +265,7 @@ export function LoginTrailsPage() {
         onSuccess: () => {
           toast.success(next ? 'Login alerts enabled' : 'Login alerts disabled')
         },
-        onError: () => toast.error('Failed to update login alerts'),
+        onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to update login alerts')),
       },
     )
   }

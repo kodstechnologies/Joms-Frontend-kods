@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { PlayCircle, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useActivateVenue } from '../../hooks/use-venues'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
@@ -50,7 +51,7 @@ export function VenueSuspendedPage() {
         onSuccess: () => toast.success('Venue activated successfully'),
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to activate venue. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to activate venue. Please try again.'))
         },
       })
     },

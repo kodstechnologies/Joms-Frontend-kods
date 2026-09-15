@@ -6,6 +6,7 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useRestoreVenue } from '../../hooks/use-venues'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
@@ -65,8 +66,8 @@ export function VenueDeletedPage() {
           },
         )
         toast.success('Venue exported')
-      } catch {
-        toast.error('Failed to export venue')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export venue'))
       }
     },
     [list.tableColumnPreferencesQuery.data],
@@ -78,7 +79,7 @@ export function VenueDeletedPage() {
         onSuccess: () => toast.success('Venue restored successfully'),
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to restore venue.')
+          toast.error(getApiErrorMessage(err, 'Failed to restore venue.'))
         },
       })
     },

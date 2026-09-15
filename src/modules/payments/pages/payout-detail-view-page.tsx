@@ -3,6 +3,7 @@ import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -155,7 +156,9 @@ export function PayoutDetailViewPage() {
                     payout.payoutId,
                   )
                     .then(() => toast.success('Invoice downloaded'))
-                    .catch(() => toast.error('Failed to download invoice'))
+                    .catch((error) =>
+                      toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+                    )
                 }}
               >
                 <Download className="size-4" />
@@ -266,7 +269,7 @@ export function PayoutDetailViewPage() {
                 toast.success('Note saved')
                 setNoteModal(null)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

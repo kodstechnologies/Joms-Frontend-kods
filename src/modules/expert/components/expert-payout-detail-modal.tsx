@@ -6,6 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import type { PayoutItem } from '@/modules/expert/type/payout'
 import { downloadInvoiceDocument, invoiceFromPayout } from '@/shared/utils/invoice-document'
 import { statusBadgeClass } from '../utils/payout-status'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 interface ExpertPayoutDetailModalProps {
   isOpen: boolean
@@ -74,7 +75,9 @@ export function ExpertPayoutDetailModal({ isOpen, onClose, payout }: ExpertPayou
                     payout.payoutId,
                   )
                     .then(() => toast.success('Invoice downloaded'))
-                    .catch(() => toast.error('Failed to download invoice'))
+                    .catch((error) =>
+                      toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+                    )
                 }}
                 className="flex h-auto w-fit items-center gap-2 rounded-lg bg-[#E5B54E] px-4 py-2 text-xs font-semibold text-black hover:bg-[#d4a53d]"
               >

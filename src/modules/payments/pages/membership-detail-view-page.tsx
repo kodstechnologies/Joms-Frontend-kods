@@ -3,6 +3,7 @@ import axios from 'axios'
 import { ArrowLeft, Check, Download } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
 import {
@@ -110,7 +111,9 @@ export function MembershipDetailViewPage() {
                 subscription.paymentInfo?.paymentId || subscription.subscriptionId,
               )
                 .then(() => toast.success('Invoice downloaded'))
-                .catch(() => toast.error('Failed to download invoice'))
+                .catch((error) =>
+                  toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+                )
             }}
           >
             <Download className="size-4" />

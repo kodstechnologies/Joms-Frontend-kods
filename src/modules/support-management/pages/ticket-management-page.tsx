@@ -380,8 +380,8 @@ export function TicketManagementPage() {
       const date = new Date().toISOString().slice(0, 10)
       await exportDataToFile(headers, rows, 'excel', `ticket_management_metrics_${date}`)
       toast.success('Ticket metrics exported to Excel')
-    } catch {
-      toast.error('Failed to export ticket metrics')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export ticket metrics'))
     } finally {
       setIsExportingMetrics(false)
     }

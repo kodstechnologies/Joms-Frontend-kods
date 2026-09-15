@@ -75,7 +75,7 @@ import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escal
 import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { buildExpertProfileServicesQueryParams } from '@/shared/utils/export-filter-utils'
-import { apiErrorMessage } from '@/shared/lib/api-error'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   useExpertAnalytics,
   useExpertAvailability,
@@ -194,9 +194,6 @@ const OPEN_REPORT_STATUSES = new Set([
   'open',
 ])
 const VIOLATION_ISSUE_TYPES = new Set(['fraud', 'misconduct', 'spam', 'fake profile', 'harassment'])
-
-const getApiErrorMessage = (error: unknown) =>
-  apiErrorMessage(error, 'Unable to load expert profile.')
 
 const resolveCustomUrl = (profile: ExpertProfileDetail, analytics?: ExpertAnalyticsData) =>
   profile.customUrl ||
@@ -1429,7 +1426,7 @@ function ServicesSubTab({
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to delete services')
+          toast.error(getApiErrorMessage(error, 'Failed to delete services'))
         },
       },
     )
@@ -1474,7 +1471,7 @@ function ServicesSubTab({
           },
           onError: (err: unknown) => {
             const error = err as { response?: { data?: { message?: string } } }
-            toast.error(error?.response?.data?.message || 'Failed to pause services')
+            toast.error(getApiErrorMessage(error, 'Failed to pause services'))
           },
         },
       )
@@ -1491,7 +1488,7 @@ function ServicesSubTab({
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to hide services')
+        toast.error(getApiErrorMessage(error, 'Failed to hide services'))
       },
     })
   }, [selectedServiceIds, bulkHideMutation])
@@ -1505,7 +1502,7 @@ function ServicesSubTab({
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to disable services')
+        toast.error(getApiErrorMessage(error, 'Failed to disable services'))
       },
     })
   }, [selectedServiceIds, bulkDisableMutation])
@@ -1537,8 +1534,8 @@ function ServicesSubTab({
       ])
       exportDataToFile(headers, rows, 'excel', 'expert_selected_services_export')
       toast.success(`Exported ${selectedServices.length} selected service(s)`)
-    } catch {
-      toast.error('Failed to export selected services.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
     }
   }, [expertId, selectedServices])
 
@@ -1609,8 +1606,9 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
-        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
 
@@ -1622,7 +1620,7 @@ function ServicesSubTab({
       setSelectedServiceIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getApiErrorMessage(err) || 'Failed to escalate services.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate services.'))
     } finally {
       setIsEscalating(false)
     }
@@ -2052,7 +2050,7 @@ function ConsultationsSubTab({
       closeRequestChangesModal()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to request changes.')
+      toast.error(getApiErrorMessage(err, 'Failed to request changes.'))
     }
   }, [
     buildRequestChangesReasonPayload,
@@ -2102,7 +2100,7 @@ function ConsultationsSubTab({
       closePauseModal()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to pause consultation.')
+      toast.error(getApiErrorMessage(err, 'Failed to pause consultation.'))
     }
   }, [
     buildPauseReasonPayload,
@@ -2152,7 +2150,7 @@ function ConsultationsSubTab({
       closeDeleteModal()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to delete consultation.')
+      toast.error(getApiErrorMessage(err, 'Failed to delete consultation.'))
     }
   }, [
     buildDeleteReasonPayload,
@@ -2789,7 +2787,7 @@ export function ExpertProfileViewPage() {
           setNotesModalOpen(false)
         },
         onError: (error: unknown) => {
-          toast.error(getApiErrorMessage(error) || 'Failed to save admin notes')
+          toast.error(getApiErrorMessage(error, 'Failed to save admin notes'))
         },
       })
     },
@@ -2916,7 +2914,7 @@ export function ExpertProfileViewPage() {
         setPasswordModalOpen(false)
       } catch (error: unknown) {
         const err = error as { response?: { data?: { message?: string } } }
-        toast.error(err?.response?.data?.message || 'Failed to update password')
+        toast.error(getApiErrorMessage(err, 'Failed to update password'))
       }
     },
     [id, setExpertPasswordMutation],
@@ -2982,7 +2980,7 @@ export function ExpertProfileViewPage() {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to suspend expert. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to suspend expert. Please try again.'))
         },
       },
     )
@@ -3041,7 +3039,7 @@ export function ExpertProfileViewPage() {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to delete expert. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to delete expert. Please try again.'))
         },
       },
     )
@@ -3077,7 +3075,7 @@ export function ExpertProfileViewPage() {
           <span>Expert Profile View</span>
         </button>
         <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
-          {getApiErrorMessage(profileErrorDetail)}
+          {getApiErrorMessage(profileErrorDetail, 'Unable to load expert profile.')}
         </div>
       </div>
     )
@@ -3194,7 +3192,7 @@ export function ExpertProfileViewPage() {
                     )
                   },
                   onError: (err: unknown) => {
-                    toast.error(getApiErrorMessage(err) || 'Failed to logout expert')
+                    toast.error(getApiErrorMessage(err, 'Failed to logout expert'))
                   },
                 })
               }}
@@ -3222,7 +3220,7 @@ export function ExpertProfileViewPage() {
                     toast.success(res?.message || 'Expert blocked successfully')
                   },
                   onError: (err: unknown) => {
-                    toast.error(getApiErrorMessage(err) || 'Failed to block expert')
+                    toast.error(getApiErrorMessage(err, 'Failed to block expert'))
                   },
                 })
               }}

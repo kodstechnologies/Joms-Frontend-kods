@@ -4,6 +4,7 @@ import { ClipboardList } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AssignUserModal } from './assign-user-modal'
 import {
@@ -417,7 +418,8 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
                     : undefined,
                 })
               },
-              onError: () => toast.error('Failed to assign incident'),
+              onError: (error) =>
+                toast.error(getApiErrorMessage(error, 'Failed to assign incident')),
             },
           )
         }}

@@ -221,6 +221,7 @@ export function MembershipPlanStatsBar({ type = 'expert' }: { type?: MembershipT
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <MiniStat label="Active Plans" value={counts?.active ?? 0} />
+      <MiniStat label="Paused Plans" value={counts?.paused ?? 0} />
       <MiniStat label="Inactive Plans" value={counts?.inactive ?? 0} />
       <MiniStat label="Cancelled Plans" value={counts?.cancelled ?? 0} />
       <MiniStat label="Deleted Plans" value={counts?.deleted ?? 0} />

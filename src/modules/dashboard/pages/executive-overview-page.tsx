@@ -16,6 +16,7 @@ import {
 } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AnalyticsWidget } from '@/shared/components/dashboard/analytics-widget'
 import { ChartCard } from '@/shared/components/dashboard/chart-card'
@@ -99,8 +100,8 @@ export function ExecutiveOverviewPage() {
     try {
       await overviewQuery.refresh()
       toast.success('Executive overview refreshed')
-    } catch {
-      toast.error('Failed to refresh overview')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to refresh overview'))
     }
   }
 
@@ -116,8 +117,8 @@ export function ExecutiveOverviewPage() {
       )
       await logExecutiveOverviewExport()
       toast.success('Export downloaded')
-    } catch {
-      toast.error('Failed to export overview data')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export overview data'))
     }
   }
 

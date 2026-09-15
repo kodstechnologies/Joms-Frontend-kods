@@ -39,6 +39,7 @@ import {
 } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { SafeImage } from '@/shared/components/media/safe-image'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { isSubmittedListingStatus } from '../../utils/management-status'
 
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
@@ -136,6 +137,7 @@ export function ApplicationDetailsPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [decisionConfirmed, setDecisionConfirmed] = useState(false)
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
 
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
@@ -254,6 +256,10 @@ export function ApplicationDetailsPage() {
     ...(gallery?.spaceCoverImages || []),
     ...(gallery?.galleryImages || []),
   ]
+  const mediaItems = galleryImages.map((image, index) => ({
+    url: image.url,
+    title: `Gallery ${index + 1}`,
+  }))
   const coverImage =
     gallery?.venueCoverImages?.[0]?.url ||
     venue.coverImageUrl ||
@@ -523,11 +529,10 @@ export function ApplicationDetailsPage() {
         {galleryImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {galleryImages.slice(0, 6).map((image, index) => (
-              <a
+              <button
                 key={`${image.url}-${index}`}
-                href={image.url}
-                target="_blank"
-                rel="noreferrer"
+                type="button"
+                onClick={() => setMediaIndex(index)}
                 className="block aspect-[4/3] overflow-hidden rounded-md border border-white/5 bg-black"
               >
                 <SafeImage
@@ -535,7 +540,7 @@ export function ApplicationDetailsPage() {
                   alt={`Gallery ${index + 1}`}
                   className="size-full object-cover"
                 />
-              </a>
+              </button>
             ))}
           </div>
         ) : (
@@ -679,6 +684,14 @@ export function ApplicationDetailsPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmitDecision}
         isSubmitting={isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending}
+      />
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
       />
     </div>
   )

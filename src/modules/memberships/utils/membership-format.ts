@@ -54,13 +54,17 @@ export const formatMembershipDate = (value?: string | null) => {
 export const formatMembershipDateTime = (value?: string | null) => {
   if (!value) return '—'
 
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+
   return new Intl.DateTimeFormat('en-IN', {
-    day: 'numeric',
+    day: '2-digit',
     month: 'short',
+    year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
-  }).format(new Date(value))
+  }).format(date)
 }
 
 export const formatMembershipTimelineDate = (value?: string | null) => {

@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { SERVICE_SUSPENDED_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
@@ -77,9 +78,7 @@ export function SuspendedServicesPage() {
         onSuccess: () => toast.success('Service activated successfully'),
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(
-            err?.response?.data?.message || 'Failed to activate service. Please try again.',
-          )
+          toast.error(getApiErrorMessage(err, 'Failed to activate service. Please try again.'))
         },
       })
     },

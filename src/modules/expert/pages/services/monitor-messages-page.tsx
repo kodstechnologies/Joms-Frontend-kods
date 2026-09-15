@@ -120,7 +120,7 @@ export function MonitorMessagesPage() {
       await flagMessage.mutateAsync({ messageId, isFlagged: !isFlagged })
       toast.success(isFlagged ? 'Flag removed' : 'Message flagged')
     } catch (error) {
-      toast.error(getApiErrorMessage(error) || 'Failed to update the message flag.')
+      toast.error(getApiErrorMessage(error, 'Failed to update the message flag.'))
     }
   }
 
@@ -130,7 +130,7 @@ export function MonitorMessagesPage() {
       await flagThread.mutateAsync({ isFlagged: !thread.adminFlag.isFlagged })
       toast.success(thread.adminFlag.isFlagged ? 'Conversation unflagged' : 'Conversation flagged')
     } catch (error) {
-      toast.error(getApiErrorMessage(error) || 'Failed to update the conversation flag.')
+      toast.error(getApiErrorMessage(error, 'Failed to update the conversation flag.'))
     }
   }
 

@@ -16,6 +16,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   PlatformHealthMetricCard,
@@ -745,8 +746,8 @@ export function PlatformHealthPage() {
         dashboard,
       })
       toast.success('Exported as Excel')
-    } catch {
-      toast.error('Failed to export platform health data')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export platform health data'))
     }
   }, [
     infrastructureFilters,

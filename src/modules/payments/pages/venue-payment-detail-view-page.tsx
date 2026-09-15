@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, Flag, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -211,7 +212,9 @@ export function VenuePaymentDetailViewPage() {
         (snapshot.spaceId || moduleData.spaceId ? '—' : 'No space on booking'),
       location,
       approvedStatus: (status === 'Paid' ? 'Approved' : 'Pending') as
-        'Approved' | 'Pending' | 'Rejected',
+        | 'Approved'
+        | 'Pending'
+        | 'Rejected',
     },
     parties: {
       clientId,
@@ -417,7 +420,7 @@ export function VenuePaymentDetailViewPage() {
                 toast.success('Note saved')
                 setIsNoteModalOpen(false)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

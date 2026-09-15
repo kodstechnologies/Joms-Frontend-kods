@@ -14,6 +14,7 @@ import { RefreshCw, Star } from 'lucide-react'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import type {
   MarketplaceMetric,
@@ -613,8 +614,8 @@ export function ServiceMarketplacePage() {
         rangeLabel: RANGE_LABELS[selectedRange] ?? selectedRange,
       })
       toast.success('Exported as Excel')
-    } catch {
-      toast.error('Failed to export data')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export data'))
     }
   }, [isLoading, visibleServiceMetrics, visibleConsultationMetrics, trendPoints, selectedRange])
 

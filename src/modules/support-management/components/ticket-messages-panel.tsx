@@ -5,6 +5,10 @@ import type { ChatMessage } from '../types/support'
 import { SupportAvatar } from './support-avatar'
 import { TicketDueStatusBadge } from './ticket-due-status-badge'
 import { cn } from '@/shared/lib/cn'
+import {
+  InPageMediaViewer,
+  type InPageMediaItem,
+} from '@/shared/components/media/in-page-media-viewer'
 
 type TicketMessagesPanelProps = {
   title: string
@@ -34,6 +38,8 @@ export function TicketMessagesPanel({
   active = true,
 }: TicketMessagesPanelProps) {
   const [draft, setDraft] = useState('')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
+  const [mediaItems, setMediaItems] = useState<InPageMediaItem[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -119,14 +125,28 @@ export function TicketMessagesPanel({
                   !msg.attachments?.some((file) => file.name && file.name === msg.content)
                     ? msg.content
                     : null}
-                  {msg.attachments?.map((file) => {
+                  {msg.attachments?.map((file, fileIndex) => {
                     const isImage =
                       String(file.mimeType || '').startsWith('image/') ||
                       /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif|avif)$/i.test(
                         String(file.name || file.url || ''),
                       )
+                    const openAttachment = () => {
+                      const items = (msg.attachments || []).map((attachment) => ({
+                        url: attachment.url,
+                        title: attachment.name || 'Attachment',
+                        mimeType: attachment.mimeType,
+                      }))
+                      setMediaItems(items)
+                      setMediaIndex(fileIndex)
+                    }
                     return (
-                      <a key={file.url} href={file.url} target="_blank" rel="noreferrer">
+                      <button
+                        key={file.url}
+                        type="button"
+                        onClick={openAttachment}
+                        className="block text-left"
+                      >
                         {isImage ? (
                           <img
                             src={file.url}
@@ -138,7 +158,7 @@ export function TicketMessagesPanel({
                             {file.name || 'Download file'}
                           </span>
                         )}
-                      </a>
+                      </button>
                     )
                   })}
                 </div>
@@ -173,6 +193,14 @@ export function TicketMessagesPanel({
           </button>
         </div>
       </div>
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
     </div>
   )
 }

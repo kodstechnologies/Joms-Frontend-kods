@@ -14,6 +14,7 @@ import { RefreshCw, Star } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   VENUE_DASHBOARD_MODULE_KEY,
@@ -357,8 +358,8 @@ export const VenueDashboardPage = () => {
         topVenues,
       })
       toast.success('Exported as Excel')
-    } catch {
-      toast.error('Failed to export venue dashboard')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export venue dashboard'))
     }
   }, [isLoading, selectedRange, topVenues, trendData, visibleMetrics])
 
