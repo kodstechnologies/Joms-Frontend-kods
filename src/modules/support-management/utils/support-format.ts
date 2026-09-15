@@ -223,7 +223,8 @@ export const dashIfEmpty = (value?: string | null) => {
 export const getReporterTypeLabel = (type: string) => {
   const map: Record<string, string> = {
     user: 'User',
-    expert: 'Expert',
+    expert: 'Service Partner',
+    service_partner: 'Service Partner',
     event_host: 'Event Host',
     venue_partner: 'Venue Partner',
   }

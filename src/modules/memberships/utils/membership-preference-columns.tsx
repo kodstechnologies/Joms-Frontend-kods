@@ -105,7 +105,18 @@ export function buildMembershipDataColumnsById(): Record<
       id: 'subscription-status',
       header: 'Subscription Status',
       cell: ({ row }) => (
-        <span className={getStatusBadgeClassName(row.original.status)}>{row.original.status}</span>
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
+            row.original.status === 'active' && 'bg-emerald-500/15 text-emerald-300',
+            row.original.status === 'paused' && 'bg-amber-500/15 text-amber-300',
+            row.original.status === 'suspended' && 'bg-orange-500/15 text-orange-300',
+            row.original.status === 'cancelled' && 'bg-rose-500/15 text-rose-300',
+            row.original.status === 'expired' && 'bg-blue-500/15 text-blue-300',
+          )}
+        >
+          {row.original.status}
+        </span>
       ),
     },
     'started-at': {

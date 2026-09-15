@@ -143,10 +143,22 @@ export function MembershipDetailsPage() {
             <DetailField
               label="Username"
               value={
-                <span className="inline-flex items-center gap-1.5">
-                  {subscription.partnerName}
-                  <ExternalLink className="text-brand-text size-3.5" strokeWidth={1.75} />
-                </span>
+                subscription.partnerId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/experts/management/profile/${subscription.partnerId}`)
+                    }
+                    className="text-body-md-semibold text-brand-text hover:text-brand-text/80 inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    {subscription.partnerName || '—'}
+                    <ExternalLink className="size-3.5 shrink-0" strokeWidth={1.75} />
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    {subscription.partnerName || '—'}
+                  </span>
+                )
               }
             />
             <DetailField

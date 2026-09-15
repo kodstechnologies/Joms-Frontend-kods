@@ -2,7 +2,8 @@ export type TicketStatus = 'open' | 'in_progress' | 'on_hold' | 'resolved' | 'cl
 export type TicketPriority = 'critical' | 'high' | 'medium' | 'low'
 export type TicketTab = 'my_tickets' | 'escalated' | 'all'
 export type WorkspaceTab = 'intelligence' | 'messages'
-export type ReporterType = 'user' | 'expert' | 'event_host' | 'venue_partner'
+export type ReporterType = 'user' | 'expert' | 'service_partner' | 'event_host' | 'venue_partner'
+
 export type EscalationStatus = 'pending' | 'accepted' | 'rejected' | 'completed'
 
 export type SupportTicket = {
