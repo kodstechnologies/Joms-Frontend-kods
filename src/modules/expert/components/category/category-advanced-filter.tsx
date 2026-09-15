@@ -11,9 +11,15 @@ import {
   ByOrdersFilter,
   ByServicesFilter,
 } from './filters'
+import { useCategoryManagementScope } from './category-management-scope'
 
 export function CategoryAdvancedFilter() {
   const navigate = useNavigate()
+  const scope = useCategoryManagementScope()
+  const filterTitle =
+    scope.categoryType === 'expert'
+      ? 'Advanced Filters - Expert Category Management'
+      : 'Advanced Filters - Service Category Management'
 
   return (
     <div className="bg-brand-bg text-brand-text min-h-screen">
@@ -22,18 +28,18 @@ export function CategoryAdvancedFilter() {
           <Button
             variant="ghost"
             className="h-10 w-10 p-0"
-            onClick={() => navigateBackOrFallback(navigate, '/categories/management')}
+            onClick={() => navigateBackOrFallback(navigate, scope.basePath)}
           >
             <ArrowLeft size={18} />
           </Button>
 
-          <h1 className="text-2xl font-semibold">Advanced Filters - Service Category Management</h1>
+          <h1 className="text-2xl font-semibold">{filterTitle}</h1>
         </div>
 
         <Button
           variant="ghost"
           className="h-10 w-10 p-0"
-          onClick={() => navigateBackOrFallback(navigate, '/categories/management')}
+          onClick={() => navigateBackOrFallback(navigate, scope.basePath)}
         >
           <X size={20} />
         </Button>

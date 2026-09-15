@@ -22,12 +22,15 @@ export type CategorySubCategoryInput = {
   vectorIconUrl?: string
 }
 
+export type CategoryTypeParam = 'service' | 'expert'
+
 export type CreateCategoryPayload = {
   name: string
   description: string
   iconFile?: File | null
   imageFile?: File | null
   subCategories: CategorySubCategoryInput[]
+  categoryType?: CategoryTypeParam
 }
 
 export type UpdateCategoryPayload = {
@@ -48,6 +51,9 @@ const buildCategoryFormData = (payload: CreateCategoryPayload) => {
   const formData = new FormData()
   formData.append('name', payload.name)
   formData.append('description', payload.description)
+  if (payload.categoryType) {
+    formData.append('categoryType', payload.categoryType)
+  }
 
   if (payload.iconFile) {
     formData.append('icon', payload.iconFile)
@@ -82,8 +88,10 @@ export const fetchCategories = async (params?: CategoryListParams) => {
   return response.data
 }
 
-export const fetchCategoryMetrics = async () => {
-  const response = await expertApiClient.get<CategoryMetricsResponse>('/categories/metrics')
+export const fetchCategoryMetrics = async (params?: { categoryType?: CategoryTypeParam }) => {
+  const response = await expertApiClient.get<CategoryMetricsResponse>('/categories/metrics', {
+    params,
+  })
   return response.data
 }
 
@@ -110,7 +118,10 @@ export const createCategory = async (payload: CreateCategoryPayload) => {
   const response = await expertApiClient.post<ApiSuccessResponse<ServiceCategoryApi>>(
     '/categories',
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+    {
+      params: payload.categoryType ? { categoryType: payload.categoryType } : undefined,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
   )
   return response.data
 }

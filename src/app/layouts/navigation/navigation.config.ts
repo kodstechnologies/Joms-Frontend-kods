@@ -80,6 +80,11 @@ export const navigationConfig: NavItem[] = [
             label: 'Leaderboard',
             to: '/experts/leaderboard',
           },
+          {
+            key: 'expert.management.categories',
+            label: 'Category Management',
+            to: '/experts/categories/management',
+          },
         ],
       },
       {

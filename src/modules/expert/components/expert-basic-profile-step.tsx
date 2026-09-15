@@ -3,7 +3,7 @@ import { Check, ChevronDown, ImageIcon, Plus, Search, Upload, X, XCircle } from 
 import { toast } from 'sonner'
 
 import { checkPartnerAvailability } from '@/modules/auth/api/auth-api'
-import { STANDARD_INDUSTRIES, STANDARD_OFFERINGS } from '../config/expert-profile-options.config'
+import { STANDARD_INDUSTRIES } from '../config/expert-profile-options.config'
 import { useOfferingsList, useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 import { LOOKS_LIKE_CATEGORY_ID } from '../utils/expert-application-helpers'
@@ -156,8 +156,7 @@ export const ExpertBasicProfileStep = ({
   const { data: dynamicOfferings = [] } = useOfferingsList()
 
   const allAvailableOfferings = useMemo(() => {
-    const merged = Array.from(new Set([...(dynamicOfferings || []), ...STANDARD_OFFERINGS]))
-    return merged
+    return Array.from(new Set(dynamicOfferings || []))
   }, [dynamicOfferings])
 
   const filteredOfferings = useMemo(() => {
@@ -282,6 +281,7 @@ export const ExpertBasicProfileStep = ({
   const addOffering = (value: string, reset?: () => void) => {
     const trimmed = value.trim()
     if (!trimmed) return
+    if (!allAvailableOfferings.includes(trimmed)) return
     setFormData((prev) =>
       prev.offerings.includes(trimmed)
         ? prev
@@ -597,7 +597,7 @@ export const ExpertBasicProfileStep = ({
 
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Service Category <RequiredMark />
+                {isVenueService ? 'Service Category' : 'Expert Category'} <RequiredMark />
               </label>
               {!serviceType ? (
                 <p className="text-muted rounded-md bg-black px-3 py-2.5 text-xs">
@@ -683,9 +683,7 @@ export const ExpertBasicProfileStep = ({
             <div ref={offeringContainerRef} className="relative">
               <div className="mb-2 flex items-center justify-between">
                 <label className="block text-xs font-medium text-white">Offerings</label>
-                <span className="text-[11px] text-white/40">
-                  Select from dropdown or add custom
-                </span>
+                <span className="text-[11px] text-white/40">Select from catalog</span>
               </div>
 
               <div className="relative mb-3">
@@ -700,13 +698,18 @@ export const ExpertBasicProfileStep = ({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
-                      addOffering(offeringInput, () => {
-                        setOfferingInput('')
-                        setOfferingDropdownOpen(false)
-                      })
+                      const match = filteredOfferings.find(
+                        (item) => item.toLowerCase() === offeringInput.trim().toLowerCase(),
+                      )
+                      if (match) {
+                        addOffering(match, () => {
+                          setOfferingInput('')
+                          setOfferingDropdownOpen(false)
+                        })
+                      }
                     }
                   }}
-                  placeholder="Select from dropdown or search offerings..."
+                  placeholder="Search and select offerings..."
                   className={`${fieldClass} ui-input-icon-left pr-9`}
                 />
                 <button
@@ -728,23 +731,11 @@ export const ExpertBasicProfileStep = ({
                 <div className="absolute z-50 mb-2 max-h-56 w-full overflow-y-auto rounded-lg border border-white/10 bg-[#161616] p-2 shadow-2xl backdrop-blur-md">
                   {filteredOfferings.length === 0 ? (
                     <div className="p-3 text-center text-xs text-white/50">
-                      {offeringInput.trim() ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            addOffering(offeringInput, () => {
-                              setOfferingInput('')
-                              setOfferingDropdownOpen(false)
-                            })
-                          }}
-                          className="text-brand-accent inline-flex items-center gap-1 font-semibold hover:underline"
-                        >
-                          <Plus className="size-3.5" />
-                          Add &quot;{offeringInput}&quot; as custom offering
-                        </button>
-                      ) : (
-                        'All standard offerings selected'
-                      )}
+                      {offeringInput.trim()
+                        ? 'No matching offerings'
+                        : allAvailableOfferings.length === 0
+                          ? 'No offerings available'
+                          : 'All offerings selected'}
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -763,22 +754,6 @@ export const ExpertBasicProfileStep = ({
                           <Plus className="size-3.5 text-white/40" />
                         </button>
                       ))}
-                      {offeringInput.trim() &&
-                        !filteredOfferings.includes(offeringInput.trim()) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              addOffering(offeringInput, () => {
-                                setOfferingInput('')
-                                setOfferingDropdownOpen(false)
-                              })
-                            }}
-                            className="text-brand-accent flex w-full items-center gap-1.5 border-t border-white/10 px-3 pt-2 pb-1 text-xs font-semibold hover:underline"
-                          >
-                            <Plus className="size-3.5" />
-                            Add custom &quot;{offeringInput}&quot;
-                          </button>
-                        )}
                     </div>
                   )}
                 </div>

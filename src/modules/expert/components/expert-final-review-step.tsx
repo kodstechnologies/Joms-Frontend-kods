@@ -320,7 +320,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
               }
             />
             <InfoRow
-              label="Service Category"
+              label="Expert Category"
               value={
                 formData.serviceCategory.length > 0 ? formData.serviceCategory.join(', ') : 'N/A'
               }

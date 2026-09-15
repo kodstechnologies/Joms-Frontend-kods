@@ -63,6 +63,7 @@ export type ModuleFilterKey =
   | 'service-deleted'
   | 'venue-management'
   | 'service-category-management'
+  | 'expert-category-management'
   | 'venue-category-management'
   | 'communication-management'
   | 'referral-management'

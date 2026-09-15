@@ -724,7 +724,10 @@ export function ExpertApplicationViewPage() {
             <InfoField label="Work Email" value={application.expert?.email} />
             <InfoField label="Service Type" value={applicantServiceType} />
             <InfoField label="Current role" value={applicantCurrentRole} />
-            <InfoField label="Service Category" value={applicantServiceCategory} />
+            <InfoField
+              label={normalizedServiceType === 'venue' ? 'Service Category' : 'Expert Category'}
+              value={applicantServiceCategory}
+            />
           </div>
         </SectionCard>
       )}

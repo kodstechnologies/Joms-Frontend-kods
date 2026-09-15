@@ -123,6 +123,14 @@ export const EXPERT_ECOSYSTEM_MODULE_METRICS: Record<string, ModuleMetricsDefini
     metrics: mapMetricsCatalog(SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG),
     columns: mapColumnsCatalog(SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG),
   },
+  'expert-category-management': {
+    moduleKey: 'expert-category-management',
+    moduleName: 'Expert Category Management',
+    returnTo: '/experts/categories/management',
+    maxActiveMetrics: SERVICE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS,
+    metrics: mapMetricsCatalog(SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG),
+    columns: mapColumnsCatalog(SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG),
+  },
   'venue-category-management': {
     moduleKey: VENUE_CATEGORY_MANAGEMENT_MODULE_KEY,
     moduleName: 'Venue Category Management',

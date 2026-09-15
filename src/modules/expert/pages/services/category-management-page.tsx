@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 
-import { SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
   DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS,
   SERVICE_CATEGORY_LEGACY_METRIC_ID_MAP,
@@ -66,7 +65,7 @@ export function CategoryManagementPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const scope = useCategoryManagementScope()
-  const preferencesQuery = useTableColumnPreferences(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY)
+  const preferencesQuery = useTableColumnPreferences(scope.moduleKey)
 
   const catalogColumnIds = useMemo(
     () => SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((c) => c.id),
@@ -105,15 +104,15 @@ export function CategoryManagementPage() {
     () =>
       createCategoryFilteredExportHandler(
         async (params) => {
-          const response = await fetchCategories(params)
+          const response = await fetchCategories({ ...params, categoryType: scope.categoryType })
           return { data: (response.data ?? []).map(mapServiceCategoryToUi) }
         },
         SERVICE_CATEGORY_EXPORT_COLUMN_MAP,
-        'service_categories_export',
+        `${scope.exportFilePrefix}_export`,
         { status: 'ACTIVE' },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [catalogColumnIds, exportColumnIds],
+    [catalogColumnIds, exportColumnIds, scope.categoryType, scope.exportFilePrefix],
   )
 
   const {
@@ -121,7 +120,7 @@ export function CategoryManagementPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'service-category-management',
+    moduleKey: scope.moduleKey,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
@@ -149,7 +148,7 @@ export function CategoryManagementPage() {
   const pausedCount = metrics?.pausedCategories ?? pausedData?.pagination?.total ?? 0
   const deletedCount = metrics?.deletedCategories ?? deletedData?.pagination?.total ?? 0
 
-  const savedMetricIdsRaw = useActiveMetricIds(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY, [
+  const savedMetricIdsRaw = useActiveMetricIds(scope.moduleKey, [
     ...DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS,
   ])
   const savedMetricIds = useMemo(

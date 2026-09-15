@@ -62,7 +62,7 @@ const validateStep = (
       return 'Please enter a valid email address.'
     }
     if (!form.serviceType) return 'Service type is required.'
-    if (form.serviceCategory.length === 0) return 'At least one service category is required.'
+    if (form.serviceCategory.length === 0) return 'At least one expert category is required.'
     if (!form.isPhoneVerified) return 'Please verify the phone number before continuing.'
     if (!form.isEmailVerified) return 'Please verify the email ID before continuing.'
   }

@@ -6,6 +6,7 @@ import { ContactSetupRoute } from '@/app/router/contact-setup-route'
 import { PermissionRoute } from '@/app/router/permission-route'
 import { HomeRedirect } from '@/app/router/home-redirect'
 import { SuperAdminRoute } from '@/app/router/super-admin-route'
+import { ExpertCategoryScopeLayout } from '@/modules/expert/components/category/category-management-scope'
 const LoginPage = lazy(() =>
   import('@/modules/auth/pages/login-page').then((m) => ({ default: m.LoginPage })),
 )
@@ -975,6 +976,48 @@ export function AppRouter() {
                 <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
                 <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
                 <Route path="/experts/leaderboard" element={<LeaderboardPage />} />
+                <Route element={<ExpertCategoryScopeLayout />}>
+                  <Route
+                    path="/experts/categories/management"
+                    element={<CategoryManagementPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/metrics"
+                    element={<CategoryManagementMetricsPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/create"
+                    element={<CreateCategoryPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/create-subcategory/:id"
+                    element={<CreateSubCategoryPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/paused"
+                    element={<PausedCategoriesPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/deleted"
+                    element={<DeletedCategoriesPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/rename/:id"
+                    element={<RenameCategoryPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/filter"
+                    element={<ServiceCategoryFilterPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/view/:id"
+                    element={<CategoryViewPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/:id/subcategory/:subCategoryId"
+                    element={<SubCategoryViewPage />}
+                  />
+                </Route>
               </Route>
 
               <Route element={<PermissionRoute module="services" />}>

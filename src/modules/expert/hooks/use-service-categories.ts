@@ -2,18 +2,26 @@ import { useQuery } from '@tanstack/react-query'
 
 import { fetchOfferingsList, fetchServiceCategoriesByType } from '../api/expert-onboarding-api'
 
-export const useServiceCategoriesByType = (
-  servicetype: 'concierge' | 'venue' | '',
-  search?: string,
-) => {
+type ServiceCategoryType = 'concierge' | 'venue' | 'expert' | 'service' | ''
+
+const toCatalogServiceType = (servicetype: ServiceCategoryType) => {
+  if (servicetype === 'venue') return 'venue' as const
+  if (servicetype === 'concierge' || servicetype === 'expert' || servicetype === 'service') {
+    return 'expert' as const
+  }
+  return null
+}
+
+export const useServiceCategoriesByType = (servicetype: ServiceCategoryType, search?: string) => {
+  const catalogType = toCatalogServiceType(servicetype)
   return useQuery({
-    queryKey: ['expert-service-categories', servicetype, search],
+    queryKey: ['expert-service-categories', catalogType, search],
     queryFn: () =>
       fetchServiceCategoriesByType({
-        servicetype: servicetype as 'concierge' | 'venue',
+        servicetype: catalogType as 'expert' | 'venue',
         search,
       }),
-    enabled: servicetype === 'concierge' || servicetype === 'venue',
+    enabled: Boolean(catalogType),
   })
 }
 

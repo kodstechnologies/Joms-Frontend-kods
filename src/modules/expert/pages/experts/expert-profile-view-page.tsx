@@ -55,6 +55,7 @@ import {
   isPendingListingReview,
 } from '../../lib/service-navigation'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import { LOOKS_LIKE_CATEGORY_ID } from '../../utils/expert-application-helpers'
 import {
   useDeactivateExpert,
   useSetExpertPassword,
@@ -433,6 +434,22 @@ const formatServiceType = (value?: string) => {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+const formatExpertCategory = (basic?: ExpertProfileDetail['basicProfile']) => {
+  const displayed = Array.isArray(basic?.serviceCategoryDisplay) ? basic.serviceCategoryDisplay : []
+  const stored = Array.isArray(basic?.serviceCategory) ? basic.serviceCategory : []
+  const names = [...displayed, ...stored]
+    .map((item) => {
+      if (typeof item === 'string') return item.trim()
+      if (item && typeof item === 'object' && 'name' in item) {
+        return String((item as { name?: string }).name || '').trim()
+      }
+      return String(item || '').trim()
+    })
+    .filter((name) => name && !LOOKS_LIKE_CATEGORY_ID.test(name))
+  const unique = [...new Set(names)]
+  return unique.length > 0 ? unique.join(', ') : '—'
+}
+
 const formatPricingType = (value?: string) => {
   if (!value) return '—'
   return value
@@ -560,6 +577,7 @@ function ProfileSidebar({
         <SidebarRow label="Expert Type">
           {formatServiceType(profile.servicetype || basic?.serviceType)}
         </SidebarRow>
+        <SidebarRow label="Expert Category">{formatExpertCategory(basic)}</SidebarRow>
         <SidebarRow label="Expert Custom URL">
           {customUrl ? (
             customLinkVisible ? (
@@ -1606,8 +1624,7 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
