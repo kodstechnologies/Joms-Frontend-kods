@@ -30,7 +30,7 @@ import {
   Pencil,
   Phone,
   Plus,
-  RefreshCw,
+  RotateCw,
   Search,
   Share2,
   Star,
@@ -1146,7 +1146,7 @@ function ConsultationDetailCard({
         >
           <TableActionsItem
             tone="light"
-            icon={<RefreshCw className="size-3.5" />}
+            icon={<RotateCw className="size-3.5" />}
             onClick={() => {
               onMenuOpenChange(false)
               onRequestChanges()

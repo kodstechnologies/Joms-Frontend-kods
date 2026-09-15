@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, RefreshCw } from 'lucide-react'
+import { ArrowLeft, RotateCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -351,7 +351,7 @@ export function LoginTrailsPage() {
                 disabled={isFetching}
                 onClick={() => void refetch()}
               >
-                <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+                <RotateCw className={cn('size-4', isFetching && 'animate-spin')} />
                 Refresh
               </button>
             }

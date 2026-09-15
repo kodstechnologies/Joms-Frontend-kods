@@ -14,6 +14,7 @@ import { useMediaQuery } from '@/shared/hooks/use-media-query'
 import { uiTokens } from '@/shared/lib/design-tokens'
 import { useSyncSubAdminPermissions } from '@/modules/auth/hooks/use-sync-sub-admin-permissions'
 import { usePushNotifications } from '@/modules/notifications'
+import { SidebarShellProvider } from '@/app/layouts/sidebar-shell-context'
 
 function PageContentLoader() {
   return (
@@ -48,88 +49,93 @@ export function DashboardLayout() {
   const showCompact = isTabletCompact || isCollapsed
 
   return (
-    <div className={cn('text-brand-text relative h-dvh overflow-hidden', uiTokens.shellBg)}>
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-white/10 transition-[width] duration-300 ease-in-out md:flex md:flex-col',
-          uiTokens.sidebarBg,
-          showCompact ? 'w-[var(--brand-sidebar-collapsed)]' : 'w-[var(--brand-sidebar-width)]',
-        )}
-      >
-        <div
+    <SidebarShellProvider isCollapsed={showCompact}>
+      <div className={cn('text-brand-text relative h-dvh overflow-hidden', uiTokens.shellBg)}>
+        <aside
           className={cn(
-            'relative z-10 flex h-[var(--brand-topbar-height)] shrink-0 items-center border-b border-white/10',
-            showCompact ? 'justify-center px-2' : 'gap-2 px-4 pr-2',
+            'fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-white/10 transition-[width] duration-300 ease-in-out md:flex md:flex-col',
+            uiTokens.sidebarBg,
+            showCompact ? 'w-[var(--brand-sidebar-collapsed)]' : 'w-[var(--brand-sidebar-width)]',
           )}
         >
-          {showCompact ? (
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(false)}
-              className="focus-visible:ring-brand-accent/30 grid size-10 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
-              aria-label="Expand sidebar"
-            >
-              <PanelLeftClose className="icon-lg" strokeWidth={1.5} />
-            </button>
-          ) : (
-            <>
-              <SidebarBrand className="min-w-0 flex-1 overflow-hidden" />
+          <div
+            className={cn(
+              'relative z-10 flex h-[var(--brand-topbar-height)] shrink-0 items-center border-b border-white/10',
+              showCompact ? 'justify-center px-2' : 'gap-2 px-4 pr-2',
+            )}
+          >
+            {showCompact ? (
               <button
                 type="button"
-                onClick={() => setIsCollapsed(true)}
-                className="focus-visible:ring-brand-accent/30 grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
-                aria-label="Collapse sidebar"
+                onClick={() => setIsCollapsed(false)}
+                className="focus-visible:ring-brand-accent/30 grid size-10 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
+                aria-label="Expand sidebar"
               >
                 <PanelLeftClose className="icon-lg" strokeWidth={1.5} />
               </button>
-            </>
-          )}
-        </div>
-
-        <div className="min-h-0 flex-1">
-          <Sidebar compact={showCompact} />
-        </div>
-      </aside>
-
-      <SidebarMobile open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <NotificationPanel open={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
-      <AlertsPanel open={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
-
-      <div
-        className={cn(
-          'relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out',
-          showCompact
-            ? 'md:pl-[var(--brand-sidebar-collapsed)]'
-            : 'md:pl-[var(--brand-sidebar-width)]',
-        )}
-      >
-        <Topbar
-          onMenuClick={() => setIsSidebarOpen((prev) => !prev)}
-          notificationsOpen={isNotificationsOpen}
-          onNotificationsOpen={() => {
-            setIsAlertsOpen(false)
-            setIsNotificationsOpen(true)
-          }}
-          alertsOpen={isAlertsOpen}
-          onAlertsOpen={() => {
-            setIsNotificationsOpen(false)
-            setIsAlertsOpen(true)
-          }}
-          showCompact={showCompact}
-        />
-        <main
-          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain scroll-smooth"
-          style={{ overflowY: !isDesktopShell && isSidebarOpen ? 'hidden' : 'auto' }}
-        >
-          <div className="min-w-0 py-4 md:py-6">
-            <PageContainer>
-              <Suspense fallback={<PageContentLoader />}>
-                <Outlet />
-              </Suspense>
-            </PageContainer>
+            ) : (
+              <>
+                <SidebarBrand className="min-w-0 flex-1 overflow-hidden" />
+                <button
+                  type="button"
+                  onClick={() => setIsCollapsed(true)}
+                  className="focus-visible:ring-brand-accent/30 grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
+                  aria-label="Collapse sidebar"
+                >
+                  <PanelLeftClose className="icon-md" strokeWidth={1.5} />
+                </button>
+              </>
+            )}
           </div>
-        </main>
+
+          <div className="min-h-0 flex-1">
+            <Sidebar compact={showCompact} />
+          </div>
+        </aside>
+
+        <SidebarMobile open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <NotificationPanel
+          open={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
+        />
+        <AlertsPanel open={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
+
+        <div
+          className={cn(
+            'relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out',
+            showCompact
+              ? 'md:pl-[var(--brand-sidebar-collapsed)]'
+              : 'md:pl-[var(--brand-sidebar-width)]',
+          )}
+        >
+          <Topbar
+            onMenuClick={() => setIsSidebarOpen((prev) => !prev)}
+            notificationsOpen={isNotificationsOpen}
+            onNotificationsOpen={() => {
+              setIsAlertsOpen(false)
+              setIsNotificationsOpen(true)
+            }}
+            alertsOpen={isAlertsOpen}
+            onAlertsOpen={() => {
+              setIsNotificationsOpen(false)
+              setIsAlertsOpen(true)
+            }}
+            showCompact={showCompact}
+          />
+          <main
+            className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain scroll-smooth"
+            style={{ overflowY: !isDesktopShell && isSidebarOpen ? 'hidden' : 'auto' }}
+          >
+            <div className="min-w-0 py-4 md:py-6">
+              <PageContainer>
+                <Suspense fallback={<PageContentLoader />}>
+                  <Outlet />
+                </Suspense>
+              </PageContainer>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarShellProvider>
   )
 }

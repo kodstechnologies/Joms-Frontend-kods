@@ -4,13 +4,56 @@ import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
 import { cn } from '@/shared/lib/cn'
 
-const PLAN_BADGE_COLORS = [
-  'bg-rose-500/15 text-rose-300',
-  'bg-amber-500/15 text-amber-300',
-  'bg-emerald-500/15 text-emerald-300',
-  'bg-blue-500/15 text-blue-300',
-  'bg-purple-500/15 text-purple-300',
-]
+const BADGE_BASE =
+  'inline-flex min-h-5 w-max max-w-full shrink-0 items-center justify-center rounded-[10px] px-2.5 py-0.5 text-center font-semibold tracking-normal whitespace-nowrap'
+
+const getBadgeTextClass = (label?: string | null) => {
+  const length = (label || '').trim().length
+  if (length > 14) return 'text-[8px] leading-[12px]'
+  if (length > 10) return 'text-[9px] leading-[12px]'
+  return 'text-[10px] leading-[14px]'
+}
+
+const PLAN_BADGE_BY_NAME: Record<string, string> = {
+  popular: 'bg-[#F6CB8633] text-[#F6CB86]',
+  legend: 'bg-[#155DFC33] text-[#155DFC]',
+  'raising star': 'bg-[#FF4C0633] text-[#FF4C06]',
+  'rising star': 'bg-[#FF4C0633] text-[#FF4C06]',
+  curator: 'bg-[#F6CB8633] text-[#F6CB86]',
+  "founder's circle": 'bg-[#00A63E33] text-[#00A63E]',
+  'founders circle': 'bg-[#00A63E33] text-[#00A63E]',
+  "founders' circle": 'bg-[#00A63E33] text-[#00A63E]',
+}
+
+const DEFAULT_PLAN_BADGE = 'bg-[#F6CB8633] text-[#F6CB86]'
+
+const getPlanBadgeClassName = (planName?: string | null) => {
+  const key = (planName || '').toLowerCase().replace(/\s+/g, ' ').trim()
+  return cn(BADGE_BASE, getBadgeTextClass(planName), PLAN_BADGE_BY_NAME[key] || DEFAULT_PLAN_BADGE)
+}
+
+const STATUS_BADGE_BY_NAME: Record<string, string> = {
+  pending: 'bg-[#E0A26333] text-[#E0A263]',
+  active: 'bg-[#00A63E33] text-[#00A63E]',
+  resolved: 'bg-[#00A63E33] text-[#00A63E]',
+  expired: 'bg-[#C8C8C833] text-[#C8C8C8]',
+  dismissed: 'bg-[#C8C8C833] text-[#C8C8C8]',
+  paused: 'bg-[#E0A26333] text-[#E0A263]',
+  cancelled: 'bg-[#C8C8C833] text-[#C8C8C8]',
+  suspended: 'bg-[#E0A26333] text-[#E0A263]',
+}
+
+const DEFAULT_STATUS_BADGE = 'bg-[#C8C8C833] text-[#C8C8C8]'
+
+const getStatusBadgeClassName = (status?: string | null) => {
+  const key = (status || '').toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim()
+  return cn(
+    BADGE_BASE,
+    'capitalize',
+    getBadgeTextClass(status),
+    STATUS_BADGE_BY_NAME[key] || DEFAULT_STATUS_BADGE,
+  )
+}
 
 const dash = (value?: string | number | null) => {
   if (value === null || value === undefined || value === '') return '—'
@@ -48,12 +91,7 @@ export function buildMembershipDataColumnsById(): Record<
       id: 'plan-name',
       header: 'Plan Name',
       cell: ({ row }) => (
-        <span
-          className={cn(
-            'rounded-full px-2.5 py-1 text-[11px] font-semibold',
-            PLAN_BADGE_COLORS[row.index % PLAN_BADGE_COLORS.length],
-          )}
-        >
+        <span className={getPlanBadgeClassName(row.original.planName)}>
           {row.original.planName}
         </span>
       ),
@@ -67,17 +105,7 @@ export function buildMembershipDataColumnsById(): Record<
       id: 'subscription-status',
       header: 'Subscription Status',
       cell: ({ row }) => (
-        <span
-          className={cn(
-            'rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-            row.original.status === 'active' && 'bg-emerald-500/15 text-emerald-300',
-            row.original.status === 'paused' && 'bg-amber-500/15 text-amber-300',
-            row.original.status === 'cancelled' && 'bg-rose-500/15 text-rose-300',
-            row.original.status === 'expired' && 'bg-blue-500/15 text-blue-300',
-          )}
-        >
-          {row.original.status}
-        </span>
+        <span className={getStatusBadgeClassName(row.original.status)}>{row.original.status}</span>
       ),
     },
     'started-at': {

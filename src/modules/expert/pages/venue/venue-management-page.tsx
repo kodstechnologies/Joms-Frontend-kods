@@ -587,8 +587,7 @@ export const VenueManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate venues.'))
         return
       }
@@ -954,16 +953,14 @@ export const VenueManagementPage = () => {
         id: 'category',
         accessorKey: 'venueCategory',
         header: 'Venue Category',
-        cell: ({ row }) => (
-          <span className="text-slate-300">{row.original.venueCategory || '—'}</span>
-        ),
+        cell: ({ row }) => <span className="text-white">{row.original.venueCategory || '—'}</span>,
       },
       'venue-type': {
         id: 'venue-type',
         accessorKey: 'venueType',
         header: 'Venue Type',
         cell: ({ row }) => (
-          <span className="text-slate-300">
+          <span className="text-white">
             {row.original.venueType || row.original.eventType || '—'}
           </span>
         ),
@@ -1020,7 +1017,7 @@ export const VenueManagementPage = () => {
         id: 'space-name',
         accessorKey: 'spaceName',
         header: 'Space Name',
-        cell: ({ row }) => row.original.spaceName || '—',
+        cell: ({ row }) => <span className="text-white">{row.original.spaceName || '—'}</span>,
       },
       'space-category': {
         id: 'space-category',

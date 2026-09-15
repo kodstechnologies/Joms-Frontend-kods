@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star } from 'lucide-react'
-import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { RotateCw, Star } from 'lucide-react'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -86,7 +86,7 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   const isUp = trend?.direction === 'up'
 
   return (
-    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+    <div className="flex h-[130px] w-full max-w-[220px] min-w-0 flex-col rounded-[10px] bg-[#050505] p-4">
       <p className="text-body-sm text-muted font-medium">{label}</p>
       <p className="text-h3 mt-2 font-bold tracking-tight text-white">{value}</p>
       <div className="mt-auto flex items-center gap-2 pt-3">
@@ -107,7 +107,7 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
+    <div className="flex h-[130px] w-full max-w-[220px] min-w-0 flex-col rounded-[10px] bg-[#050505] p-4">
       <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
       <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
       <div className="mt-auto pt-6">
@@ -129,7 +129,7 @@ function MetricsSection({
   return (
     <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
       <h2 className="text-body-md mb-5 font-bold text-white">{title}</h2>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] justify-items-start gap-3">
         {isLoading
           ? Array.from({ length: Math.max(metrics.length, 8) }).map((_, index) => (
               <MetricCardSkeleton key={`${title}-skeleton-${index}`} />
@@ -143,8 +143,8 @@ function MetricsSection({
 }
 
 const CHART_COLORS = {
-  services: '#2196F3',
-  consultations: '#4CAF50',
+  services: '#155DFC',
+  consultations: '#00A63E',
   revenue: '#FF9800',
 } as const
 
@@ -633,15 +633,15 @@ export function ServiceMarketplacePage() {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button
-            className="ui-manage-metrics h-9"
+            className="ui-manage-metrics"
             onClick={() => navigate('/services/dashboard/metrics')}
           >
-            <ManageMetricsIcon />
+            <ExportDataIcon className="ui-export-data-icon shrink-0" />
             Manage Metrics
           </Button>
 
-          <Button className="ui-export-data h-9" onClick={handleExportData}>
-            <ExportDataIcon className="size-5 shrink-0" />
+          <Button className="ui-cta ui-cta-primary ui-export-data" onClick={handleExportData}>
+            <ExportDataIcon className="ui-export-data-icon shrink-0" />
             Export Data
           </Button>
         </div>
@@ -660,7 +660,7 @@ export function ServiceMarketplacePage() {
       />
 
       <DashboardCard
-        className="border-white/[0.06] p-5"
+        className="box-border flex h-[635px] w-full max-w-[1201px] flex-col border-0 !p-5"
         title="Service & Consultation Trends"
         rightSlot={
           <div className="flex items-center gap-2">
@@ -678,26 +678,24 @@ export function ServiceMarketplacePage() {
             <button
               type="button"
               aria-label="Refresh trends"
-              className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+              className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
               onClick={() => {
                 dashboardQuery.refetch()
               }}
             >
-              <RefreshCw
-                className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`}
-              />
+              <RotateCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
             </button>
           </div>
         }
       >
         {isLoading ? (
-          <div className="h-[340px] w-full animate-pulse rounded-lg bg-white/5 sm:h-[400px]" />
+          <div className="min-h-0 w-full flex-1 animate-pulse rounded-lg bg-white/5" />
         ) : trendPoints.length === 0 ? (
-          <div className="text-muted flex h-[340px] items-center justify-center text-sm sm:h-[400px]">
+          <div className="text-muted flex min-h-0 flex-1 items-center justify-center text-sm">
             No trend data available.
           </div>
         ) : (
-          <div className="h-[340px] w-full sm:h-[400px]">
+          <div className="min-h-0 w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={trendPoints}
@@ -741,7 +739,8 @@ export function ServiceMarketplacePage() {
                   name="Services Delivered"
                   fill={CHART_COLORS.services}
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={32}
+                  maxBarSize={44}
+                  barSize={44}
                 />
                 <Bar
                   yAxisId="left"
@@ -749,7 +748,8 @@ export function ServiceMarketplacePage() {
                   name="Consultations Completed"
                   fill={CHART_COLORS.consultations}
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={32}
+                  maxBarSize={44}
+                  barSize={44}
                 />
                 <Line
                   yAxisId="right"

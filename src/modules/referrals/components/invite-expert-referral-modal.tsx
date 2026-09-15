@@ -130,7 +130,7 @@ const parseCsvRecipients = (text: string): BulkRecipient[] => {
     })
 }
 
-const fieldInputClass = 'ui-input h-11'
+const fieldInputClass = 'invite-modal-input'
 
 export function InviteExpertReferralModal({
   open,
@@ -257,10 +257,17 @@ export function InviteExpertReferralModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="ui-modal-shell relative max-w-xl">
-        <div className="ui-modal-header">
+      <div
+        className="invite-modal-shell relative"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="invite-modal-title"
+      >
+        <div className="invite-modal-header">
           <div className="min-w-0 pr-2">
-            <h2 className="invite-modal-title">Refer New User</h2>
+            <h2 id="invite-modal-title" className="invite-modal-title">
+              Refer New User
+            </h2>
             <p className="invite-modal-subtitle mt-1">Platform-referred users</p>
           </div>
           <button
@@ -273,8 +280,8 @@ export function InviteExpertReferralModal({
           </button>
         </div>
 
-        <div className="ui-modal-body space-y-5">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="invite-modal-body">
+          <div className="invite-modal-tabs">
             <TabButton active={mode === 'manual'} onClick={() => setMode('manual')}>
               Manual Referral
             </TabButton>
@@ -294,8 +301,8 @@ export function InviteExpertReferralModal({
                 />
               </Field>
 
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <Field label="Email ID*">
+              <div className="invite-modal-contact-row">
+                <Field label="Email ID">
                   <Input
                     type="email"
                     value={email}
@@ -304,13 +311,13 @@ export function InviteExpertReferralModal({
                     className={fieldInputClass}
                   />
                 </Field>
-                <Field label="Phone number*">
+                <Field label="Phone number">
                   <Input
                     type="tel"
                     inputMode="numeric"
                     value={phone}
                     onChange={(e) => setPhone(sanitizeMobileNumber(e.target.value))}
-                    placeholder="Enter 10-digit phone number"
+                    placeholder="Enter Phone Number"
                     className={fieldInputClass}
                   />
                 </Field>
@@ -327,7 +334,7 @@ export function InviteExpertReferralModal({
                   Download CSV template
                 </button>
               </div>
-              <label className="rounded-brand-md bg-brand-bg flex min-h-36 cursor-pointer flex-col items-center justify-center border border-dashed border-white/10 p-6 text-center">
+              <label className="invite-modal-upload">
                 {fileName ? (
                   <>
                     <CheckCircle2 className="text-brand-positive mb-2 size-8" />
@@ -374,29 +381,30 @@ export function InviteExpertReferralModal({
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Write your invitation message"
-              className="ui-textarea h-32"
+              placeholder="Enter here"
+              className="ui-textarea invite-modal-textarea"
             />
           </Field>
-        </div>
 
-        <div className="invite-modal-footer">
-          <p className="invite-modal-note">
-            <span className="text-white">Note:</span> The users will get referral code to their
-            email ID &amp; notified through SMS/WhatsApp.
-          </p>
-          <div className="invite-modal-footer-actions">
-            <button type="button" className="invite-modal-btn-cancel" onClick={handleClose}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="invite-modal-btn-submit"
-              onClick={() => void handleSubmit()}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Sending...' : 'Send Invite'}
-            </button>
+          <div className="invite-modal-actions-block">
+            <p className="invite-modal-note">
+              Note: The users will get referral code to their email ID &amp; notified through
+              SMS/WhatsApp.
+            </p>
+            <hr className="invite-modal-body-divider" />
+            <div className="invite-modal-footer-actions">
+              <button type="button" className="invite-modal-btn-cancel" onClick={handleClose}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="invite-modal-btn-submit"
+                onClick={() => void handleSubmit()}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Sending...' : 'Send Invite'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -429,7 +437,7 @@ function TabButton({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block space-y-2.5">
+    <label className="invite-modal-field">
       <span className="invite-modal-field-label">{requiredLabel(label)}</span>
       {children}
     </label>

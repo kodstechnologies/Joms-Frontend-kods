@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw } from 'lucide-react'
+import { RotateCw } from 'lucide-react'
 
 import { AnalyticsCard, PeriodSelect, SectionTitle } from './analytics-ui'
 import { CHART_TOOLTIP } from './analytics-constants'
@@ -68,7 +68,7 @@ export function VisualAnalyticsTab({
               aria-label="Refresh trends"
               className="rounded-lg p-2 text-white hover:bg-white/5"
             >
-              <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RotateCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -215,7 +215,7 @@ export function VisualAnalyticsTab({
               aria-label="Refresh bookings trend"
               className="rounded-lg p-2 text-white hover:bg-white/5"
             >
-              <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RotateCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>

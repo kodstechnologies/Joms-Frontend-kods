@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RotateCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -492,7 +492,7 @@ function ChartSkeleton() {
 
 function TableRowSkeleton() {
   return (
-    <div className="radius-lg bg-brand-bg grid gap-4 border border-white/10 px-4 py-4 lg:grid-cols-6 lg:items-center">
+    <div className="radius-lg bg-brand-bg box-border grid h-[90px] w-full max-w-[1151px] gap-4 border-0 px-4 lg:grid-cols-6 lg:items-center">
       {Array.from({ length: 6 }).map((_, index) => (
         <div key={`infra-skel-${index}`} className="h-4 animate-pulse rounded bg-white/10" />
       ))}
@@ -501,7 +501,7 @@ function TableRowSkeleton() {
 }
 
 const REFRESH_BUTTON_CLASS =
-  'text-muted hover:text-brand-text grid size-9 place-items-center rounded-full transition-colors'
+  'grid size-8 place-items-center rounded-lg p-2 text-white transition-colors hover:bg-white/5'
 
 function ChartPanel({
   title,
@@ -553,7 +553,7 @@ function ChartPanel({
             className={REFRESH_BUTTON_CLASS}
             aria-label="Refresh chart"
           >
-            <RefreshCw className={cn('size-4', isLoading && 'animate-spin')} />
+            <RotateCw className={cn('size-4', isLoading && 'animate-spin')} />
           </button>
         </div>
       </div>
@@ -794,7 +794,7 @@ export function PlatformHealthPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:justify-items-start">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] justify-items-start gap-3">
         {metricsQuery.isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <PlatformHealthMetricCardSkeleton key={`health-metric-skel-${index}`} />
@@ -1175,14 +1175,14 @@ export function PlatformHealthPage() {
               className={REFRESH_BUTTON_CLASS}
               aria-label="Refresh infrastructure"
             >
-              <RefreshCw
+              <RotateCw
                 className={cn('size-4', infrastructureQuery.isFetching && 'animate-spin')}
               />
             </button>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="flex flex-col items-center space-y-3">
           {infrastructureQuery.isLoading
             ? Array.from({ length: 6 }).map((_, index) => (
                 <TableRowSkeleton key={`infra-row-${index}`} />
@@ -1205,7 +1205,7 @@ export function PlatformHealthPage() {
                 return (
                   <div
                     key={row.id}
-                    className="radius-lg bg-brand-bg grid gap-4 border border-white/10 px-4 py-4 lg:grid-cols-[minmax(0,1.5fr)_repeat(auto-fit,minmax(90px,1fr))] lg:items-center"
+                    className="radius-lg bg-brand-bg box-border grid h-[90px] w-full max-w-[1151px] gap-4 border-0 px-4 lg:grid-cols-[minmax(0,1.5fr)_repeat(auto-fit,minmax(90px,1fr))] lg:items-center"
                   >
                     {(showName || showId || showServiceType || showStatus) && (
                       <div className="flex items-start gap-3">

@@ -1,4 +1,4 @@
-import { RefreshCw } from 'lucide-react'
+import { RotateCw } from 'lucide-react'
 import type { PropsWithChildren } from 'react'
 
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
@@ -39,14 +39,14 @@ export function ChartCard({
           onClick={onRefresh}
           disabled={isSpinning || !onRefresh}
           className={cn(
-            'flex items-center justify-center p-1 text-white/50 transition-colors',
+            'flex items-center justify-center rounded-lg p-2 text-white transition-colors',
             onRefresh
-              ? 'cursor-pointer hover:text-white active:scale-95'
+              ? 'cursor-pointer hover:bg-white/5 active:scale-95'
               : 'cursor-default opacity-40',
             isSpinning && 'opacity-70',
           )}
         >
-          <RefreshCw className={cn('size-4 transition-transform', isSpinning && 'animate-spin')} />
+          <RotateCw className={cn('size-4 transition-transform', isSpinning && 'animate-spin')} />
         </button>
       }
     >

@@ -50,11 +50,11 @@ export const formatManagementStatusLabel = (key: ManagementStatusKey): string =>
 
 export const getManagementStatusClassName = (key: ManagementStatusKey) =>
   cn(
-    'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+    'inline-flex h-5 min-w-[50px] items-center justify-center rounded-[10px] px-2.5 text-center text-[10px] leading-[14px] font-semibold tracking-normal',
     key === 'pending'
       ? 'bg-amber-500/10 text-amber-500'
       : key === 'approved'
-        ? 'bg-green-500/10 text-green-500'
+        ? 'bg-[#00A63E33] text-[#00A63E]'
         : key === 'suspended'
           ? 'bg-purple-500/10 text-purple-400'
           : key === 'deleted' || key === 'rejected'
@@ -80,7 +80,10 @@ const formatListingStatusLabel = (status: string | null | undefined, key: Manage
   if (key === 'rejected') return 'Rejected'
 
   const normalized = normalizeStatusToken(status)
-  if (['live', 'instant', 'approved', 'published', 'active'].includes(normalized)) {
+  if (normalized === 'active') {
+    return 'Active'
+  }
+  if (['live', 'instant', 'approved', 'published'].includes(normalized)) {
     return 'Live'
   }
   if (['in review', 'submitted', 'pending'].includes(normalized)) {

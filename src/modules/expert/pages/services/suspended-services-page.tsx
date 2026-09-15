@@ -203,7 +203,7 @@ export function SuspendedServicesPage() {
         onColumnSearchChange={list.enhancedSearch.setColumnSearch}
         onColumnSearchRemove={list.enhancedSearch.removeColumnSearch}
         onClearAllSearches={list.enhancedSearch.clearAll}
-        onAdvancedFilter={list.onAdvancedFilter}
+        showAdvancedFilter={false}
         onExport={list.onExport}
         {...list.serverSort.dataTableSortProps}
         searchPlaceholder="Search by service name or ID"

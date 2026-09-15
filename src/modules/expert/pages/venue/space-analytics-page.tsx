@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, RefreshCw, Star } from 'lucide-react'
+import { ArrowLeft, RotateCw, Star } from 'lucide-react'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -164,10 +164,10 @@ export function SpaceAnalyticsPage() {
           <button
             type="button"
             onClick={() => void refetch()}
-            className="text-white/80 hover:text-white"
+            className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
             aria-label="Refresh cash flow"
           >
-            <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+            <RotateCw className={cn('size-4', isFetching && 'animate-spin')} />
           </button>
         </div>
         <div className="h-72">
@@ -278,10 +278,10 @@ export function SpaceAnalyticsPage() {
             <button
               type="button"
               onClick={() => void refetch()}
-              className="text-white/80 hover:text-white"
+              className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
               aria-label="Refresh ratings"
             >
-              <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+              <RotateCw className={cn('size-4', isFetching && 'animate-spin')} />
             </button>
           </div>
           <div className="space-y-4">

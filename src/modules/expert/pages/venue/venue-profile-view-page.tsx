@@ -120,8 +120,13 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'health', label: 'Profile Health' },
 ]
 
-const PROFILE_BTN_PRIMARY =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-1.5 text-[12px] font-semibold text-[#050505] transition-[filter] hover:brightness-95'
+/** Figma Profile & Account — View (48×25 · radius 8 · solid #F6CB86) */
+const PROFILE_VIEW_BTN =
+  'inline-flex h-[25px] min-w-[48px] items-center justify-center rounded-[8px] bg-[#F6CB86] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-black transition-[filter] hover:brightness-95'
+
+/** Figma Profile & Account — Check Timelines (110×30 · radius 10 · gold gradient) */
+const PROFILE_CHECK_TIMELINES_BTN =
+  'inline-flex h-[30px] min-w-[110px] items-center justify-center gap-2.5 rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-[#050505] transition-[filter] hover:brightness-95'
 
 const PROFILE_HEADER_BTN =
   'inline-flex h-[25px] items-center justify-center gap-1.5 rounded-[12px] bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 text-[11px] leading-none font-semibold whitespace-nowrap text-[#050505] transition-[filter] hover:brightness-95'
@@ -272,8 +277,10 @@ const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <span className="text-body-sm text-muted">{label}</span>
-      <span className="max-w-[58%] text-right text-[13px] font-semibold text-white">
+      <span className="text-[16px] leading-[14px] font-normal tracking-normal text-[#FFFFFF80]">
+        {label}
+      </span>
+      <span className="max-w-[58%] text-right text-[16px] leading-5 font-semibold tracking-normal text-white">
         {children}
       </span>
     </div>
@@ -296,14 +303,19 @@ const formatVenueKycStatusLabel = (status?: string | null) => {
 }
 
 const getVenueKycStatusTone = (status?: string | null) => {
-  const normalized = (status || '').toUpperCase()
-  if (normalized === 'APPROVED') {
-    return 'bg-[#143D2B] text-white border border-[#1E563D]/50'
+  const normalized = (status || '').toUpperCase().replace(/-/g, '_')
+  if (
+    normalized === 'APPROVED' ||
+    normalized === 'LIVE' ||
+    normalized === 'ACTIVE' ||
+    normalized === 'VERIFIED'
+  ) {
+    return 'inline-flex h-[25px] min-w-[91px] items-center justify-center rounded-[10px] bg-[#00A63E4D] px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-white'
   }
-  if (normalized === 'REJECTED') {
-    return 'bg-brand-danger/15 text-red-400'
+  if (normalized === 'REJECTED' || normalized === 'SUSPENDED') {
+    return 'inline-flex h-[25px] items-center justify-center rounded-[10px] bg-brand-danger/15 px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-red-400'
   }
-  return 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+  return 'inline-flex h-[25px] items-center justify-center rounded-[10px] border border-amber-500/30 bg-amber-500/15 px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-amber-300'
 }
 
 function ProfileSidebar({
@@ -366,9 +378,7 @@ function ProfileSidebar({
           <h3 className="text-[13px] font-semibold text-white">
             Organisation Profile &amp; Account
           </h3>
-          <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycStatusTone)}>
-            {kycStatusLabel}
-          </span>
+          <span className={kycStatusTone}>{kycStatusLabel}</span>
         </div>
 
         <SidebarRow label="Venue Type">{profile.venueType || '—'}</SidebarRow>
@@ -381,7 +391,7 @@ function ProfileSidebar({
           <span className="inline-flex items-center gap-1">
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
             {ratingsAvailable ? Number(ratingValue).toFixed(1) : '—'}
-            <span className="text-body-sm text-muted font-normal">
+            <span className="text-[16px] leading-[14px] font-normal tracking-normal text-[#FFFFFF80]">
               ({ratingsAvailable && reviewCount != null ? reviewCount : 0})
             </span>
           </span>
@@ -397,12 +407,12 @@ function ProfileSidebar({
         <SidebarRow label="Total Earnings">{formatCurrency(profile.totalEarnings)}</SidebarRow>
         <SidebarRow label="Primary City">{profile.primaryCity || '—'}</SidebarRow>
         <SidebarRow label="KYC">
-          <button type="button" onClick={handleViewKyc} className={PROFILE_BTN_PRIMARY}>
+          <button type="button" onClick={handleViewKyc} className={PROFILE_VIEW_BTN}>
             View
           </button>
         </SidebarRow>
         <SidebarRow label="Timelines">
-          <button type="button" onClick={onCheckTimelines} className={PROFILE_BTN_PRIMARY}>
+          <button type="button" onClick={onCheckTimelines} className={PROFILE_CHECK_TIMELINES_BTN}>
             Check Timelines
           </button>
         </SidebarRow>
@@ -1001,8 +1011,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate spaces.'))
         return
       }
@@ -1334,8 +1343,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    | (typeof data.profile & { analytics?: Record<string, unknown> })
-    | undefined
+    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -2214,7 +2222,7 @@ export function VenueProfileViewPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
+      <div className="grid grid-cols-1 gap-5 @min-[900px]/main:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <ProfileSidebar
           data={fullView}
           tickets={activeTickets}
