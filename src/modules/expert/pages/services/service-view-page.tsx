@@ -1202,12 +1202,14 @@ export const ServiceViewPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="rounded-xl bg-[#141414] p-5">
-          <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
-            <History className="text-brand-accent size-4" aria-hidden="true" />
-            <h3>Internal Notes</h3>
+        <div className="box-border flex h-[162px] w-full max-w-[591px] flex-col overflow-hidden rounded-[10px] bg-[#141414] px-[21px] py-5">
+          <div className="mb-4 flex h-6 items-center gap-2">
+            <History className="size-5 shrink-0 text-white" aria-hidden="true" />
+            <h3 className="text-[20px] leading-6 font-semibold tracking-normal text-white">
+              Internal Notes <span className="text-[#D3191C]">*</span>
+            </h3>
           </div>
-          <div className="text-body-sm text-muted min-h-[120px] rounded-lg bg-[#050505] p-4">
+          <div className="text-body-sm text-muted box-border h-[72px] w-full max-w-[549px] overflow-y-auto rounded-[10px] bg-[#050505] p-4">
             {service.adminNote?.trim() || 'No notes yet.'}
             {escalation?.escalatedByName ? (
               <p className="text-body-sm text-muted mt-3">
@@ -1219,28 +1221,30 @@ export const ServiceViewPage = () => {
           </div>
         </div>
 
-        <div className="rounded-xl bg-[#141414] p-5">
-          <DecisionControlsHeader className="mb-4" />
-          {!showApprovalControls ? (
-            <p className="text-body-sm text-muted mb-4 rounded-md bg-black px-3 py-2 font-medium">
-              This listing is currently{' '}
-              <span className="font-bold text-white">{service.status || '—'}</span>. Approve and
-              reject are available only while review is pending.
-            </p>
-          ) : null}
-          <DecisionControlButtons
-            onApprove={() => openDecisionModal('approve')}
-            onRequestChanges={() => openDecisionModal('requestChanges')}
-            onEscalate={() => openDecisionModal('escalate')}
-            onReject={() => openDecisionModal('reject')}
-            showEscalate
-            approveDisabled={!showApprovalControls || isUpdatingStatus}
-            requestChangesDisabled={!showApprovalControls || isUpdatingStatus}
-            escalateDisabled={escalateDisabled}
-            rejectDisabled={!showApprovalControls || isUpdatingStatus}
-          />
+        <div className="box-border flex h-[162px] w-full max-w-[588px] flex-col overflow-hidden rounded-[10px] bg-[#141414] px-[21px] py-5">
+          <DecisionControlsHeader className="mb-5 shrink-0" />
+          <div className="mt-auto min-w-0">
+            <DecisionControlButtons
+              onApprove={() => openDecisionModal('approve')}
+              onRequestChanges={() => openDecisionModal('requestChanges')}
+              onEscalate={() => openDecisionModal('escalate')}
+              onReject={() => openDecisionModal('reject')}
+              showEscalate
+              approveDisabled={!showApprovalControls || isUpdatingStatus}
+              requestChangesDisabled={!showApprovalControls || isUpdatingStatus}
+              escalateDisabled={escalateDisabled}
+              rejectDisabled={!showApprovalControls || isUpdatingStatus}
+            />
+          </div>
         </div>
       </div>
+      {!showApprovalControls ? (
+        <p className="text-body-sm text-muted mt-3 rounded-[10px] bg-[#050505] px-3 py-2 font-medium">
+          This listing is currently{' '}
+          <span className="font-bold text-white">{service.status || '—'}</span>. Approve and reject
+          are available only while review is pending.
+        </p>
+      ) : null}
     </div>
   )
 }

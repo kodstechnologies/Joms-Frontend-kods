@@ -180,7 +180,7 @@ function PauseCategoryModalDialog({
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="size-[15px] shrink-0 rounded-[3px] border border-solid border-white bg-transparent accent-white"
+              className="ui-table-checkbox"
             />
             <span className="text-[12px] leading-5 font-normal tracking-normal text-white">
               I confirm the documents are not approved due to above reasons.

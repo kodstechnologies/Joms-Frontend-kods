@@ -4225,18 +4225,20 @@ select.settings-control,
   stroke: #050505 !important;
 }
 
-/* Figma Export Data — 126×40 · radius 10 · pad 10 · gap 10 · Figtree SemiBold 14/20 · #050505 */
+/* Figma Export Data — 152×40 · radius 10 · pad/gap 10 · #F6CB86 */
 .ui-export-data,
 button.ui-export-data,
 .ui-cta.ui-export-data,
-.ui-cta.ui-cta-primary.ui-export-data {
+.ui-cta.ui-cta-primary.ui-export-data,
+.ui-cta.ui-cta-primary.ui-export-data.h-9 {
   box-sizing: border-box !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 126px !important;
-  min-width: 126px !important;
-  max-width: 126px !important;
+  flex-shrink: 0 !important;
+  width: 152px !important;
+  min-width: 152px !important;
+  max-width: 152px !important;
   height: 40px !important;
   min-height: 40px !important;
   max-height: 40px !important;
@@ -4281,15 +4283,17 @@ button.ui-export-data:hover,
   stroke-width: 1.5 !important;
 }
 
-/* Figma Manage Metrics — same CTA chrome as Export Data · width 152 for longer label */
+/* Figma Manage Metrics — 152×40 · radius 10 · pad/gap 10 · #F6CB86 */
 .ui-manage-metrics,
 button.ui-manage-metrics,
 .ui-cta.ui-manage-metrics,
-.ui-cta.ui-cta-primary.ui-manage-metrics {
+.ui-cta.ui-cta-primary.ui-manage-metrics,
+.ui-cta.ui-cta-primary.ui-manage-metrics.h-9 {
   box-sizing: border-box !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0 !important;
   width: 152px !important;
   min-width: 152px !important;
   max-width: 152px !important;
@@ -4479,9 +4483,9 @@ button.ui-manage-metrics:hover,
   }
 
   .ui-export-data {
-    width: 126px !important;
-    min-width: 126px !important;
-    max-width: 126px !important;
+    width: 152px !important;
+    min-width: 152px !important;
+    max-width: 152px !important;
     height: 40px !important;
   }
 

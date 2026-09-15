@@ -147,7 +147,9 @@ const variantStyles: Record<
     showReasonsLabel: true,
     adminNotesMinHeight: '!h-[117px] !min-h-[117px] !max-h-[117px] rounded-[10px]',
     descriptionMaxWidth: 'w-[268px]',
-    descriptionCentered: false,
+    descriptionCentered: true,
+    descriptionClass:
+      'mx-auto flex h-12 w-[268px] max-w-full flex-col justify-center text-center text-[14px] font-semibold leading-6 tracking-normal text-white',
     fieldLabelClass: 'mb-2 block text-[14px] font-semibold leading-6 tracking-normal text-white',
     shellClass: '!h-[636px] !max-h-[636px]',
     titleClass: 'text-[24px] font-semibold leading-6 tracking-normal text-white',
@@ -285,8 +287,14 @@ export function DecisionActionModal({
   )
 
   const descriptionBlock = hasBodyDescription ? (
-    isInlineHero && variant === 'delete' ? (
-      <div className="flex w-[268px] max-w-[268px] flex-col text-left text-[14px] leading-6 font-semibold tracking-normal text-white">
+    variant === 'delete' ? (
+      <div
+        className={cn(
+          styles.descriptionClass ??
+            'mx-auto flex h-12 w-[268px] max-w-full flex-col justify-center text-center text-[14px] leading-6 font-semibold tracking-normal text-white',
+          isInlineHero && 'mx-0 text-left',
+        )}
+      >
         <span>{primary}</span>
         {secondary ? <span>{secondary}</span> : null}
       </div>
@@ -435,7 +443,7 @@ export function DecisionActionModal({
                 type="checkbox"
                 checked={confirmationChecked}
                 onChange={(event) => onConfirmationChange?.(event.target.checked)}
-                className="size-[15px] shrink-0 rounded-[3px] border border-solid border-white bg-transparent accent-white"
+                className="ui-table-checkbox"
               />
               <span className={styles.confirmationClass}>{resolvedConfirmationLabel}</span>
             </label>

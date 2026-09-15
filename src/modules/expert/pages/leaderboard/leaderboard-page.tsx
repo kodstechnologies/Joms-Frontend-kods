@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowDown,
   ArrowUp,
+  AlertTriangle,
   CalendarDays,
   ExternalLink,
   Search,
@@ -469,9 +470,14 @@ function ExpertProfileModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-brand-surface w-full max-w-4xl rounded-2xl border border-white/10 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h2 className="text-lg font-bold text-white">Expert Profile</h2>
+      <div
+        className="flex flex-col overflow-hidden px-9 py-6"
+        style={{ width: 774, height: 464, borderRadius: 16, background: '#141414' }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-[24px] leading-7 font-semibold tracking-normal text-white">
+            Expert Profile
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -481,44 +487,47 @@ function ExpertProfileModal({
             <X className="size-5" />
           </button>
         </div>
+        <div className="mt-3 h-px bg-white/10" />
 
-        <div className="space-y-5 p-5">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
           {isLoading && <p className="text-muted text-sm">Loading profile…</p>}
           {isError && <p className="text-sm text-red-400">Failed to load expert profile.</p>}
           {profile && (
             <>
-              <div className="relative flex items-start gap-4 rounded-xl border border-white/10 bg-black/20 p-4">
-                <SafeAvatar src={profile.profileImage} name={profile.name} />
+              <div className="relative flex items-start gap-4">
+                <SafeAvatar
+                  src={profile.profileImage}
+                  name={profile.name}
+                  sizeClassName="size-16"
+                />
                 <div className="min-w-0 flex-1">
                   <button
                     type="button"
-                    className="hover:text-brand-accent inline-flex items-center gap-2 text-left text-base font-bold text-white"
+                    className="hover:text-brand-accent inline-flex items-center gap-2 text-left text-base font-semibold text-white"
                     onClick={() => navigate(`/experts/management/profile/${profile.partnerId}`)}
                   >
                     {profile.name.replace(/\s+/g, '')}
                     <ExternalLink className="size-3.5" />
                   </button>
-                  <p className="text-muted mt-0.5 text-xs">{profile.expertId}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-white">
+                  <p className="mt-0.5 text-xs text-white/50">{profile.expertId}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-[#050505] px-2 py-1 text-xs font-semibold text-white">
                       {profile.category}
                     </span>
                     {profile.city && (
-                      <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-white">
-                        {profile.city}
-                      </span>
+                      <span className="text-xs font-medium text-white/80">{profile.city}</span>
                     )}
                   </div>
                   <div className="mt-2">
                     <Stars rating={profile.averageRating} />
                   </div>
                 </div>
-                <span className="bg-brand-accent absolute top-4 right-4 rounded-md px-2.5 py-1 text-xs font-bold text-black">
+                <span className="absolute top-0 right-0 rounded-lg bg-[#E0A263] px-3 py-1 text-xs font-semibold text-[#050505]">
                   Rank #{profile.rank}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
                 {[
                   {
                     label: 'Total Events',
@@ -546,22 +555,30 @@ function ExpertProfileModal({
                     icon: Trophy,
                   },
                 ].map((card) => (
-                  <div
-                    key={card.label}
-                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-4"
-                  >
-                    <card.icon className="text-brand-accent mb-2 size-4" />
-                    <p className="text-muted text-[10px] tracking-wide uppercase">{card.label}</p>
-                    <p className="mt-1 text-xl font-bold text-white">{card.value}</p>
+                  <div key={card.label} className="rounded-[10px] bg-[#050505] px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <card.icon className="size-4 text-white/70" />
+                      <p className="text-[12px] leading-4 font-medium text-white/70">
+                        {card.label}
+                      </p>
+                    </div>
+                    <p className="mt-2 text-[20px] leading-6 font-semibold text-white">
+                      {card.value}
+                    </p>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                <span className="mt-0.5 text-amber-400">⚠</span>
-                <p>
+              <div className="mt-auto flex h-[67px] w-[699px] max-w-full shrink-0 items-center gap-3 self-center rounded-[10px] border border-[#E0A263] bg-[#F6CB8633] px-4">
+                <AlertTriangle
+                  className="size-5 shrink-0 text-[#E0A263]"
+                  fill="#E0A263"
+                  stroke="#141414"
+                  aria-hidden="true"
+                />
+                <p className="text-[16px] leading-6 font-normal tracking-normal text-white">
                   {profile.notice ||
-                    "This is a read-only profile view. Rankings are calculated automatically based on expert's performance."}
+                    'This is a read-only profile view. Rankings are calculated automatically based on expert’s performance.'}
                 </p>
               </div>
             </>

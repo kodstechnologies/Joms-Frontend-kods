@@ -30,7 +30,7 @@ import {
   Pencil,
   Phone,
   Plus,
-  RefreshCw,
+  RotateCw,
   Search,
   Share2,
   Star,
@@ -1128,7 +1128,7 @@ function ConsultationDetailCard({
         >
           <TableActionsItem
             tone="light"
-            icon={<RefreshCw className="size-3.5" />}
+            icon={<RotateCw className="size-3.5" />}
             onClick={() => {
               onMenuOpenChange(false)
               onRequestChanges()
@@ -1606,8 +1606,7 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }

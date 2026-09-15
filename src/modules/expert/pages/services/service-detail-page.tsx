@@ -34,11 +34,7 @@ import {
 } from '../../hooks/use-service-drilldown'
 import { useSuspendService } from '../../hooks/use-services'
 import { VersionHistoryDrawer } from '../../components/service-drilldown/version-history-drawer'
-import {
-  DetailChip,
-  EmptyState,
-  ShimmerBlock,
-} from '../../components/service-drilldown/drilldown-primitives'
+import { DetailChip, ShimmerBlock } from '../../components/service-drilldown/drilldown-primitives'
 import {
   DASH,
   displayServiceTitle,
@@ -389,9 +385,10 @@ export const ServiceDetailPage = () => {
   const expertRole = service.expert?.serviceType ? titleCase(service.expert.serviceType) : 'Expert'
   const money = (value?: number | null) => formatCurrency(value, pricing.currency, 2)
   const headerActionClass =
-    'h-10 shrink-0 gap-1.5 rounded-lg border-white px-3.5 text-[13px] font-medium'
+    'ui-cta ui-cta-outline box-border inline-flex !h-10 !min-h-10 !max-h-10 !min-w-[135px] shrink-0 items-center justify-center !gap-2.5 !rounded-[10px] border border-white !p-2.5 text-[12px] leading-5 font-semibold tracking-normal whitespace-nowrap text-white'
+  const versionHistoryActionClass = `${headerActionClass} !w-[135px] !max-w-[135px]`
 
-  const ticketStatusClass = 'bg-[#3D2A1F] text-[#E0A263]'
+  const ticketStatusClass = 'bg-[#3D2814] text-[#E0A263]'
 
   const formatTicketStatus = (status?: string) => {
     const normalized = String(status || '')
@@ -470,11 +467,13 @@ export const ServiceDetailPage = () => {
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <Button
             variant="outline"
-            className={headerActionClass}
+            className={versionHistoryActionClass}
             onClick={() => setShowVersionHistory(true)}
           >
-            <Ban className="size-3.5" aria-hidden="true" />
-            Version History
+            <Ban className="!size-5 shrink-0 text-white" aria-hidden="true" />
+            <span className="inline-flex h-5 w-[85px] items-center text-[12px] leading-5 font-semibold tracking-normal text-white">
+              Version History
+            </span>
           </Button>
           <Button
             variant="outline"
@@ -483,9 +482,9 @@ export const ServiceDetailPage = () => {
             disabled={pauseMutation.isPending || unpauseMutation.isPending}
           >
             {service.isPaused ? (
-              <Play className="size-3.5" aria-hidden="true" />
+              <Play className="size-5 shrink-0 text-white" aria-hidden="true" />
             ) : (
-              <Ban className="size-3.5" aria-hidden="true" />
+              <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
             )}
             {service.isPaused ? 'Resume Service' : 'Pause Service'}
           </Button>
@@ -494,7 +493,7 @@ export const ServiceDetailPage = () => {
             className={headerActionClass}
             onClick={() => openModal('requestChanges')}
           >
-            <Ban className="size-3.5" aria-hidden="true" />
+            <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
             Request Changes
           </Button>
           <Button
@@ -503,7 +502,7 @@ export const ServiceDetailPage = () => {
             onClick={() => (service.isFlagged ? handleUnflag() : openModal('flag'))}
             disabled={flagMutation.isPending || unflagMutation.isPending}
           >
-            <Ban className="size-3.5" aria-hidden="true" />
+            <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
             {service.isFlagged ? 'Remove Flag' : 'Flag for Review'}
           </Button>
           <Button
@@ -512,15 +511,15 @@ export const ServiceDetailPage = () => {
             onClick={() => openModal('suspend')}
             disabled={service.isSuspend}
           >
-            <Ban className="size-3.5" aria-hidden="true" />
+            <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
             Suspend Service
           </Button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-5">
-          <div className="relative h-[320px] w-full overflow-hidden rounded-xl bg-black">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[438px_minmax(0,1fr)]">
+        <div className="flex w-full max-w-[438px] flex-col gap-5">
+          <div className="relative h-[248px] w-[384px] max-w-full shrink-0 overflow-hidden rounded-[10px] bg-[#D9D9D9]">
             {activeImage ? (
               <button
                 type="button"
@@ -625,20 +624,22 @@ export const ServiceDetailPage = () => {
             </div>
           ) : null}
 
-          <section className="rounded-xl bg-[#141414] p-5">
-            <h3 className="text-body-md font-semibold text-white">Support &amp; Admin</h3>
+          <section className="box-border flex h-[291px] w-[438px] max-w-full shrink-0 flex-col overflow-hidden rounded-[10px] bg-[#141414] p-3.5">
+            <h3 className="text-body-md shrink-0 font-semibold text-white">Support &amp; Admin</h3>
 
-            <div className="mt-4 rounded-xl bg-[#050505] p-4">
-              <p className="text-muted text-[12px] font-medium italic">All Tickets</p>
+            <div className="mt-2 box-border h-[143px] w-full max-w-[410px] shrink-0 overflow-y-auto rounded-[10px] bg-[#050505] px-3 py-2.5">
+              <p className="text-[12px] font-medium text-[#8E8E93]">All Tickets</p>
               {isTicketsLoading ? (
-                <div className="mt-3 space-y-2">
-                  <ShimmerBlock className="h-16 w-full" />
-                  <ShimmerBlock className="h-16 w-full" />
+                <div className="mt-2 space-y-2">
+                  <ShimmerBlock className="h-10 w-full" />
+                  <ShimmerBlock className="h-10 w-full" />
                 </div>
               ) : tickets.length === 0 ? (
-                <EmptyState message="No support tickets raised by this expert." />
+                <p className="text-muted mt-3 text-[12px]">
+                  No support tickets raised by this expert.
+                </p>
               ) : (
-                <ul className="mt-3 space-y-4">
+                <ul className="mt-2 space-y-3">
                   {tickets.map((ticket) => (
                     <li key={ticket._id}>
                       <button
@@ -646,21 +647,21 @@ export const ServiceDetailPage = () => {
                         onClick={() => navigate(`/support/tickets/${ticket._id}`)}
                         className="flex w-full items-start justify-between gap-3 text-left"
                       >
-                        <p className="text-body-sm min-w-0 flex-1 truncate font-medium text-white underline underline-offset-2">
+                        <p className="text-body-sm min-w-0 truncate font-medium text-white underline underline-offset-2">
                           # {ticket.ticketNumber} - {ticket.subject}
                         </p>
-                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                        <div className="flex shrink-0 flex-col items-end gap-1">
                           <span
                             className={cn(
-                              'rounded-full px-3 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
+                              'rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
                               ticketStatusClass,
                             )}
                           >
                             {formatTicketStatus(ticket.status)}
                           </span>
-                          <p className="text-muted text-[11px]">
+                          <span className="text-[11px] text-[#8E8E93]">
                             Updated: {formatRelativeTime(ticket.updatedAt || ticket.createdAt)}
-                          </p>
+                          </span>
                         </div>
                       </button>
                     </li>
@@ -669,11 +670,11 @@ export const ServiceDetailPage = () => {
               )}
             </div>
 
-            <p className="text-muted mt-5 text-[12px] font-medium">Admin notes</p>
-            <div className="text-body-sm mt-2 min-h-[72px] rounded-lg bg-[#050505] p-4 text-white">
-              {service.adminNote?.trim() || 'None.'}
+            <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-[10px] bg-[#050505] px-3 py-2.5">
+              <p className="text-[12px] font-medium text-[#8E8E93]">Admin notes</p>
+              <p className="text-body-sm mt-2 text-white">{service.adminNote?.trim() || 'None'}</p>
               {service.flagDetails?.reason ? (
-                <p className="mt-3 text-[#E0A263]">
+                <p className="mt-2 text-[12px] text-[#E0A263]">
                   Flagged: {service.flagDetails.reason}
                   {service.flagDetails.flaggedByName
                     ? ` (by ${service.flagDetails.flaggedByName})`
@@ -799,10 +800,12 @@ export const ServiceDetailPage = () => {
           <button
             type="button"
             onClick={() => navigate(servicePerformancePath(expertId, serviceId))}
-            className="mt-8 flex w-full items-center justify-between rounded-lg border border-white px-4 py-3 text-left text-[14px] font-medium text-white transition-colors hover:bg-white/5"
+            className="mt-8 box-border flex h-12 w-full max-w-[634px] items-center rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] p-px text-left transition-[filter] hover:brightness-110"
           >
-            <span>Service Performance</span>
-            <ChevronRight className="size-4" aria-hidden="true" />
+            <span className="flex h-full w-full items-center justify-between rounded-[9px] bg-[#050505] px-[18px] text-[16px] leading-none font-semibold tracking-normal text-white">
+              Service Performance
+              <ChevronRight className="size-4 shrink-0 text-white" aria-hidden="true" />
+            </span>
           </button>
         </div>
       </div>

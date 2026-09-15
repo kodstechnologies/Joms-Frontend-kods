@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star } from 'lucide-react'
+import { RotateCw, Star } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -421,14 +421,12 @@ export const VenueDashboardPage = () => {
             <button
               type="button"
               aria-label="Refresh"
-              className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+              className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
               onClick={() => {
                 dashboardQuery.refetch()
               }}
             >
-              <RefreshCw
-                className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`}
-              />
+              <RotateCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -514,12 +512,12 @@ export const VenueDashboardPage = () => {
           <button
             type="button"
             aria-label="Refresh"
-            className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+            className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
             onClick={() => {
               dashboardQuery.refetch()
             }}
           >
-            <RefreshCw className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
+            <RotateCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
           </button>
         </div>
 

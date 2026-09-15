@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star } from 'lucide-react'
+import { RotateCw, Star } from 'lucide-react'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 
@@ -146,12 +146,9 @@ function ChartCard({
             aria-label={`Refresh ${title}`}
             onClick={onRefresh}
             disabled={isLoading}
-            className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg text-white transition-colors hover:bg-white/5 disabled:opacity-50"
+            className="rounded-lg p-2 text-white transition-colors hover:bg-white/5 disabled:opacity-50"
           >
-            <RefreshCw
-              className={cn('size-5 transition-transform', isLoading && 'animate-spin')}
-              strokeWidth={1.75}
-            />
+            <RotateCw className={cn('size-4 transition-transform', isLoading && 'animate-spin')} />
           </button>
         ) : null}
       </div>
@@ -394,9 +391,9 @@ export const ExpertDashboardPage = () => {
               type="button"
               aria-label="Refresh revenue chart"
               onClick={loadDashboard}
-              className="grid h-8 w-8 place-items-center rounded-lg text-white transition-colors hover:bg-white/5"
+              className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
             >
-              <RefreshCw className="size-5" strokeWidth={1.75} />
+              <RotateCw className="size-4" />
             </button>
           </div>
         </div>
