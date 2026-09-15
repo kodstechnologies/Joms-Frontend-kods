@@ -794,7 +794,7 @@ export function PlatformHealthPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:justify-items-start">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] justify-items-start gap-3">
         {metricsQuery.isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <PlatformHealthMetricCardSkeleton key={`health-metric-skel-${index}`} />

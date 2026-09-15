@@ -517,9 +517,9 @@ export const ServiceDetailPage = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[438px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-8 @min-[980px]/main:grid-cols-[minmax(0,438px)_minmax(0,1fr)]">
         <div className="flex w-full max-w-[438px] flex-col gap-5">
-          <div className="relative h-[248px] w-[384px] max-w-full shrink-0 overflow-hidden rounded-[10px] bg-[#D9D9D9]">
+          <div className="relative h-[248px] w-full max-w-[384px] shrink-0 overflow-hidden rounded-[10px] bg-[#D9D9D9]">
             {activeImage ? (
               <button
                 type="button"
@@ -624,10 +624,10 @@ export const ServiceDetailPage = () => {
             </div>
           ) : null}
 
-          <section className="box-border flex h-[291px] w-[438px] max-w-full shrink-0 flex-col overflow-hidden rounded-[10px] bg-[#141414] p-3.5">
+          <section className="box-border flex h-[291px] w-full max-w-[438px] shrink-0 flex-col overflow-hidden rounded-[10px] bg-[#141414] p-3.5">
             <h3 className="text-body-md shrink-0 font-semibold text-white">Support &amp; Admin</h3>
 
-            <div className="mt-2 box-border h-[143px] w-full max-w-[410px] shrink-0 overflow-y-auto rounded-[10px] bg-[#050505] px-3 py-2.5">
+            <div className="mt-2 box-border h-[143px] w-full shrink-0 overflow-y-auto rounded-[10px] bg-[#050505] px-3 py-2.5">
               <p className="text-[12px] font-medium text-[#8E8E93]">All Tickets</p>
               {isTicketsLoading ? (
                 <div className="mt-2 space-y-2">

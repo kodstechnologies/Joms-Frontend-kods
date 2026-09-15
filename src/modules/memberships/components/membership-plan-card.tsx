@@ -102,7 +102,7 @@ export function MembershipPlanCard({
   }
 
   return (
-    <article className="relative flex min-h-[623px] w-[394px] max-w-full flex-col rounded-[16px] border border-white/10 bg-black">
+    <article className="relative mx-auto flex min-h-[623px] w-full max-w-[394px] flex-col rounded-[16px] border border-white/10 bg-black">
       <div className="flex items-start justify-between gap-3 px-[22px] pt-5 pb-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="bg-brand-surface flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10">

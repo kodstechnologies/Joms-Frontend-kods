@@ -2222,7 +2222,7 @@ export function VenueProfileViewPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
+      <div className="grid grid-cols-1 gap-5 @min-[900px]/main:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <ProfileSidebar
           data={fullView}
           tickets={activeTickets}

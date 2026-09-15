@@ -401,7 +401,7 @@ export const VenueDashboardPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 @min-[1100px]/main:grid-cols-4">
         {isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <MetricCardSkeleton key={`venue-metric-skeleton-${index}`} />

@@ -86,7 +86,7 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   const isUp = trend?.direction === 'up'
 
   return (
-    <div className="flex h-[130px] w-[220px] max-w-full flex-col rounded-[10px] bg-[#050505] p-4">
+    <div className="flex h-[130px] w-full max-w-[220px] min-w-0 flex-col rounded-[10px] bg-[#050505] p-4">
       <p className="text-body-sm text-muted font-medium">{label}</p>
       <p className="text-h3 mt-2 font-bold tracking-tight text-white">{value}</p>
       <div className="mt-auto flex items-center gap-2 pt-3">
@@ -107,7 +107,7 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
 
 function MetricCardSkeleton() {
   return (
-    <div className="flex h-[130px] w-[220px] max-w-full flex-col rounded-[10px] bg-[#050505] p-4">
+    <div className="flex h-[130px] w-full max-w-[220px] min-w-0 flex-col rounded-[10px] bg-[#050505] p-4">
       <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
       <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
       <div className="mt-auto pt-6">
@@ -129,7 +129,7 @@ function MetricsSection({
   return (
     <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
       <h2 className="text-body-md mb-5 font-bold text-white">{title}</h2>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] justify-items-start gap-3">
         {isLoading
           ? Array.from({ length: Math.max(metrics.length, 8) }).map((_, index) => (
               <MetricCardSkeleton key={`${title}-skeleton-${index}`} />
