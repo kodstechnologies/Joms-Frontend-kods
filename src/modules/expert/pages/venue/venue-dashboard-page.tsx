@@ -55,7 +55,7 @@ type VenueRow = {
   utilization: number
   revenue: string
   rating: number
-  status: 'High Performing' | 'Stable' | 'Needs Attention'
+  status: 'High Demand' | 'Good' | 'Available' | 'High Performing' | 'Stable' | 'Needs Attention'
 }
 
 const ZERO_METRICS: Metric[] = [
@@ -91,10 +91,23 @@ const ZERO_METRICS: Metric[] = [
 
 const DEFAULT_METRIC_IDS = DEFAULT_VENUE_DASHBOARD_ACTIVE_METRIC_IDS
 
-const STATUS_STYLES: Record<VenueRow['status'], string> = {
-  'High Performing': 'bg-brand-positive/15 text-brand-positive border-brand-positive/20',
-  Stable: 'bg-brand-action/10 text-brand-action border-brand-action/20',
-  'Needs Attention': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+const STATUS_BADGE_BASE =
+  'inline-flex min-h-5 w-max max-w-full shrink-0 items-center justify-center rounded-[10px] px-2.5 py-0.5 text-center font-semibold tracking-normal whitespace-nowrap'
+
+const getStatusBadgeTextClass = (status?: string | null) => {
+  const length = (status || '').trim().length
+  if (length > 14) return 'text-[8px] leading-[12px]'
+  if (length > 10) return 'text-[9px] leading-[12px]'
+  return 'text-[10px] leading-[14px]'
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  'High Demand': 'bg-[#00A63E33] text-[#00A63E]',
+  'High Performing': 'bg-[#00A63E33] text-[#00A63E]',
+  Good: 'bg-[#155DFC33] text-[#155DFC]',
+  Stable: 'bg-[#155DFC33] text-[#155DFC]',
+  Available: 'bg-[#E0A26333] text-[#E0A263]',
+  'Needs Attention': 'bg-[#E0A26333] text-[#E0A263]',
 }
 
 const tooltipStyle = {
@@ -534,17 +547,17 @@ export const VenueDashboardPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <thead>
-                <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
-                  <th className="px-3 py-3">Venue Name</th>
-                  <th className="px-3 py-3">City</th>
-                  <th className="px-3 py-3">Total Visits</th>
-                  <th className="px-3 py-3">Event Attendance</th>
-                  <th className="px-3 py-3">Bookings</th>
-                  <th className="px-3 py-3">Repeat Visitors %</th>
-                  <th className="px-3 py-3">Utilization %</th>
-                  <th className="px-3 py-3">Revenue</th>
-                  <th className="px-3 py-3">Rating</th>
-                  <th className="px-3 py-3">Status</th>
+                <tr className="text-[16px] leading-5 font-semibold tracking-normal text-white">
+                  <th className="px-3 py-3 text-center">Venue Name</th>
+                  <th className="px-3 py-3 text-center">City</th>
+                  <th className="px-3 py-3 text-center">Total Visits</th>
+                  <th className="px-3 py-3 text-center">Event Attendance</th>
+                  <th className="px-3 py-3 text-center">Bookings</th>
+                  <th className="px-3 py-3 text-center">Repeat Visitors %</th>
+                  <th className="px-3 py-3 text-center">Utilization %</th>
+                  <th className="px-3 py-3 text-center">Revenue</th>
+                  <th className="px-3 py-3 text-center">Rating</th>
+                  <th className="px-3 py-3 text-center">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -554,8 +567,12 @@ export const VenueDashboardPage = () => {
                       key={venue.name}
                       className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
                     >
-                      <td className="px-3 py-3 font-semibold text-white">{venue.name}</td>
-                      <td className="text-muted px-3 py-3">{venue.city}</td>
+                      <td className="px-3 py-3 text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.name}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.city}
+                      </td>
                       <td className="px-3 py-3">{venue.totalVisits || 0}</td>
                       <td className="px-3 py-3">{venue.eventAttendance || 0}</td>
                       <td className="px-3 py-3">{venue.bookings || 0}</td>
@@ -571,20 +588,23 @@ export const VenueDashboardPage = () => {
                           <span className="text-body-sm text-muted">{venue.utilization || 0}%</span>
                         </div>
                       </td>
-                      <td className="px-3 py-3 font-semibold text-white">
+                      <td className="px-3 py-3 text-[14px] leading-5 font-semibold tracking-normal text-white">
                         {venue.revenue || '₹0'}
                       </td>
                       <td className="px-3 py-3">
                         <span className="inline-flex items-center gap-1">
                           <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                          <span className="font-semibold text-white">{venue.rating || 0}</span>
+                          <span className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+                            {venue.rating || 0}
+                          </span>
                         </span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <span
                           className={cn(
-                            'inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold',
-                            STATUS_STYLES[venue.status] || STATUS_STYLES['Needs Attention'],
+                            STATUS_BADGE_BASE,
+                            getStatusBadgeTextClass(venue.status),
+                            STATUS_STYLES[venue.status] || STATUS_STYLES.Available,
                           )}
                         >
                           {venue.status}

@@ -6754,8 +6754,9 @@ select::-ms-expand {
   font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
   font-size: 16px;
-  line-height: 24px;
+  line-height: 20px;
   letter-spacing: 0;
+  color: #ffffff;
 }
 
 .ui-data-table-table tbody td {

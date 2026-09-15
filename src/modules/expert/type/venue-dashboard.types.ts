@@ -68,7 +68,7 @@ export interface VenueRowData {
   utilization: number
   revenue: string
   rating: number
-  status: 'High Performing' | 'Stable' | 'Needs Attention'
+  status: 'High Demand' | 'Good' | 'Available' | 'High Performing' | 'Stable' | 'Needs Attention'
 }
 
 export interface VenueMetricTrend {

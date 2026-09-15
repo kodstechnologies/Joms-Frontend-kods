@@ -17,11 +17,11 @@ export const formatVenueStatus = (status: VenueStatus) => status.replace(/_/g, '
 
 export const getVenueStatusClassName = (status: VenueStatus) =>
   cn(
-    'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+    'inline-flex h-5 min-w-[50px] items-center justify-center rounded-[10px] px-2.5 text-[10px] leading-[14px] font-semibold tracking-normal',
     status === 'pending' || status === 'in_review'
       ? 'bg-amber-500/10 text-amber-500'
       : status === 'live'
-        ? 'bg-green-500/10 text-green-500'
+        ? 'bg-[#00A63E33] text-[#00A63E]'
         : status === 'suspended'
           ? 'bg-purple-500/10 text-purple-400'
           : status === 'deleted'
@@ -34,6 +34,6 @@ export const getVenueDisplayStatus = (venue: Pick<Venue, 'venueStatus'>): VenueR
 
 export const getVenueDisplayStatusClassName = (venueStatus: VenueRawStatus) =>
   cn(
-    'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-    venueStatus === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-400',
+    'inline-flex h-5 min-w-[50px] items-center justify-center rounded-[10px] px-2.5 text-center text-[10px] leading-[14px] font-semibold tracking-normal',
+    venueStatus === 'active' ? 'bg-[#00A63E33] text-[#00A63E]' : 'bg-slate-500/10 text-slate-400',
   )
