@@ -19,6 +19,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { RbacStatsBar } from '../components/rbac-stats-bar'
 import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
 import {
@@ -147,8 +148,37 @@ const formatRiskLevel = (value?: string) => {
     .join(' ')
 }
 
-const ROLES_SORT_FIELD_MAP = buildCatalogSortFieldMap(RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG)
-const USERS_SORT_FIELD_MAP = buildCatalogSortFieldMap(RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG)
+const ROLES_SORT_FIELD_MAP = buildCatalogSortFieldMap(RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG, {
+  'roles-role-id': 'roleCode',
+  'roles-name': 'name',
+  'roles-description': 'description',
+  'roles-scope': 'scopes',
+  'roles-permissions': 'permissions',
+  'roles-risk-level': 'riskLevel',
+  'roles-mfa-required': 'mfaRequired',
+  'roles-status': 'status',
+  'roles-user-count': 'userCount',
+  'roles-assigned-tasks': null,
+  'roles-escalations': null,
+  'roles-created-at': 'createdAt',
+  'roles-updated-at': 'updatedAt',
+})
+
+const USERS_SORT_FIELD_MAP = buildCatalogSortFieldMap(RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG, {
+  'users-admin-code': 'adminCode',
+  'users-fullname': 'fullname',
+  'users-email': 'email',
+  'users-role-id': 'roleCode',
+  'users-role-name': 'roleName',
+  'users-scope': 'scopes',
+  'users-permissions': 'permissions',
+  'users-mfa-enabled': 'mfaEnabled',
+  'users-status': 'status',
+  'users-last-action': null,
+  'users-last-action-at': 'lastActionAt',
+  'users-last-login-at': null,
+  'users-created-at': 'createdAt',
+})
 
 export function RbacHubPage() {
   const navigate = useNavigate()
@@ -158,10 +188,12 @@ export function RbacHubPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const rolesServerSort = useServerTableSort({
     sortFieldMap: ROLES_SORT_FIELD_MAP,
+    defaultSortBy: 'roles-created-at',
     onPageReset: () => setCurrentPage(1),
   })
   const usersServerSort = useServerTableSort({
     sortFieldMap: USERS_SORT_FIELD_MAP,
+    defaultSortBy: 'users-created-at',
     onPageReset: () => setCurrentPage(1),
   })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -267,8 +299,8 @@ export function RbacHubPage() {
       try {
         await disableRoleMutation.mutateAsync(id)
         toast.success('Role disabled')
-      } catch {
-        toast.error('Failed to disable role')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to disable role'))
       }
       setActiveDropdownId(null)
     },
@@ -280,8 +312,8 @@ export function RbacHubPage() {
       try {
         await enableRoleMutation.mutateAsync(id)
         toast.success('Role enabled')
-      } catch {
-        toast.error('Failed to enable role')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to enable role'))
       }
       setActiveDropdownId(null)
     },
@@ -293,8 +325,8 @@ export function RbacHubPage() {
       try {
         await deleteRoleMutation.mutateAsync(id)
         toast.success('Role removed')
-      } catch {
-        toast.error('Failed to remove role')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to remove role'))
       }
       setActiveDropdownId(null)
     },
@@ -306,8 +338,8 @@ export function RbacHubPage() {
       try {
         await suspendMutation.mutateAsync(id)
         toast.success('User suspended')
-      } catch {
-        toast.error('Failed to suspend user')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to suspend user'))
       }
       setActiveDropdownId(null)
     },
@@ -319,8 +351,8 @@ export function RbacHubPage() {
       try {
         await reactivateMutation.mutateAsync(id)
         toast.success('User reactivated')
-      } catch {
-        toast.error('Failed to reactivate user')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to reactivate user'))
       }
       setActiveDropdownId(null)
     },
@@ -332,8 +364,8 @@ export function RbacHubPage() {
       try {
         await deleteSubAdminMutation.mutateAsync(id)
         toast.success('User removed')
-      } catch {
-        toast.error('Failed to remove user')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to remove user'))
       }
       setActiveDropdownId(null)
     },

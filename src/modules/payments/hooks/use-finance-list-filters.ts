@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import type { FinanceListParams } from '@/modules/payments/types/finance-api'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
@@ -81,6 +82,6 @@ export async function downloadKeyValueReport(fileName: string, pairs: Array<[str
       toast.error('No records found to export')
       return
     }
-    toast.error('Failed to export CSV')
+    toast.error(getApiErrorMessage(error, 'Failed to export CSV'))
   }
 }

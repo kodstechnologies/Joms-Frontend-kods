@@ -36,7 +36,7 @@ export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistory
 
   useEffect(() => {
     if (!isOpen || !isError) return
-    const message = getApiErrorMessage(error) || 'Failed to load payout history'
+    const message = getApiErrorMessage(error, 'Failed to load payout history')
     if (toastedErrorRef.current === message) return
     toastedErrorRef.current = message
     toast.error(message)

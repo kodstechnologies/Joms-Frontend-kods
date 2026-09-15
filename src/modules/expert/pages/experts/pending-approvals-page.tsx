@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, CheckCircle2, Eye, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { fetchExpertApplicationView, updateExpertKycStatus } from '../../api/expert-application-api'
 import {
@@ -169,7 +170,7 @@ export function ExpertPendingApprovalsPage() {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to reject application. Please try again.')
+      toast.error(getApiErrorMessage(err, 'Failed to reject application. Please try again.'))
     } finally {
       setIsRevoking(false)
     }
@@ -224,9 +225,7 @@ export function ExpertPendingApprovalsPage() {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(
-        err?.response?.data?.message || 'Failed to approve application. Please try again.',
-      )
+      toast.error(getApiErrorMessage(err, 'Failed to approve application. Please try again.'))
     } finally {
       setIsApproving(false)
     }

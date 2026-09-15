@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink, FileText, Flag, UserRound } from 'lucide-react
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useFlagAuditLog, useMySubAdminLogs, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac'
 import { fetchMySubAdminLogs, fetchRoleLogs, fetchSubAdminLogs } from '../api/rbac-api'
@@ -393,8 +394,8 @@ export function AdminLogsPage() {
         toast.success('Action flagged')
         setFlagLogId(null)
         logsQuery.refetch()
-      } catch {
-        toast.error('Failed to flag action')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to flag action'))
       }
     },
     [flagLogId, flagMutation, logsQuery],

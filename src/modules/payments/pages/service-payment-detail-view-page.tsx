@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
@@ -86,7 +87,9 @@ export function ServicePaymentDetailViewPage() {
       startDate: formatDate(payment.createdAt),
       endDate: formatDate(payment.updatedAt || payment.createdAt),
       completionStatus: (status === 'Paid' ? 'Completed' : 'Pending') as
-        'Completed' | 'In Progress' | 'Pending',
+        | 'Completed'
+        | 'In Progress'
+        | 'Pending',
       paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
     },
     timelineInformation: {
@@ -299,7 +302,7 @@ export function ServicePaymentDetailViewPage() {
                 toast.success('Note saved')
                 setIsNoteModalOpen(false)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

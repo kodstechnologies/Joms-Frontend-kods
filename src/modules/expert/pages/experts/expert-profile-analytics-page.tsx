@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
@@ -370,7 +371,7 @@ export function ExpertProfileAnalyticsPage() {
         toast.error('No analytics data available to export')
         return
       }
-      toast.error('Failed to export analytics data')
+      toast.error(getApiErrorMessage(error, 'Failed to export analytics data'))
     }
   }, [
     analyticsData,

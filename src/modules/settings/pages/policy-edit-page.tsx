@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { PolicyBreadcrumb, PolicySettingsTopTabs } from '../components/policy-settings-tabs'
 import { PolicyEditorForm } from '../components/policy-editor-form'
@@ -91,7 +92,7 @@ export function PolicyEditPage() {
           }
           navigate(policyViewPath(id, application))
         },
-        onError: () => toast.error('Failed to save policy version'),
+        onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save policy version')),
       },
     )
   }

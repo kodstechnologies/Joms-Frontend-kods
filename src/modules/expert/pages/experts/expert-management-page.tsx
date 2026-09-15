@@ -282,7 +282,7 @@ export const ExpertManagementPage = () => {
           setNotesExpertTarget(null)
         },
         onError: (error: unknown) => {
-          toast.error(getApiErrorMessage(error) || 'Failed to save admin notes')
+          toast.error(getApiErrorMessage(error, 'Failed to save admin notes'))
         },
       })
     },
@@ -382,8 +382,8 @@ export const ExpertManagementPage = () => {
       ])
       exportDataToFile(headers, rows, 'excel', 'selected_experts_export')
       toast.success(`Exported ${selectedExperts.length} selected expert(s)`)
-    } catch {
-      toast.error('Failed to export selected experts.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected experts.'))
     }
   }, [selectedExpertCount, selectedExperts])
 
@@ -425,7 +425,7 @@ export const ExpertManagementPage = () => {
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to escalate experts.')
+          toast.error(getApiErrorMessage(error, 'Failed to escalate experts.'))
         },
       },
     )
@@ -492,7 +492,7 @@ export const ExpertManagementPage = () => {
           },
           onError: (error: unknown) => {
             const err = error as { response?: { data?: { message?: string } } }
-            toast.error(err?.response?.data?.message || 'Failed to suspend experts.')
+            toast.error(getApiErrorMessage(err, 'Failed to suspend experts.'))
           },
         },
       )
@@ -521,7 +521,7 @@ export const ExpertManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to suspend expert. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to suspend expert. Please try again.'))
         },
       },
     )
@@ -587,7 +587,7 @@ export const ExpertManagementPage = () => {
           },
           onError: (error: unknown) => {
             const err = error as { response?: { data?: { message?: string } } }
-            toast.error(err?.response?.data?.message || 'Failed to delete experts.')
+            toast.error(getApiErrorMessage(err, 'Failed to delete experts.'))
           },
         },
       )
@@ -613,7 +613,7 @@ export const ExpertManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to delete expert. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to delete expert. Please try again.'))
         },
       },
     )
@@ -682,7 +682,7 @@ export const ExpertManagementPage = () => {
             setIsMembershipModalOpen(true)
           } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } }
-            toast.error(error?.response?.data?.message || 'Failed to verify expert memberships.')
+            toast.error(getApiErrorMessage(error, 'Failed to verify expert memberships.'))
           }
         })()
       } else if (actionLabel.includes('Export') || actionLabel.includes('Share')) {
@@ -713,7 +713,7 @@ export const ExpertManagementPage = () => {
             },
             onError: (err: unknown) => {
               const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to approve experts.')
+              toast.error(getApiErrorMessage(error, 'Failed to approve experts.'))
             },
           },
         )
@@ -727,7 +727,7 @@ export const ExpertManagementPage = () => {
             },
             onError: (err: unknown) => {
               const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to reject experts.')
+              toast.error(getApiErrorMessage(error, 'Failed to reject experts.'))
             },
           },
         )
@@ -741,7 +741,7 @@ export const ExpertManagementPage = () => {
             },
             onError: (err: unknown) => {
               const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to restore experts.')
+              toast.error(getApiErrorMessage(error, 'Failed to restore experts.'))
             },
           },
         )
@@ -755,7 +755,7 @@ export const ExpertManagementPage = () => {
             },
             onError: (err: unknown) => {
               const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to verify KYC.')
+              toast.error(getApiErrorMessage(error, 'Failed to verify KYC.'))
             },
           },
         )
@@ -1269,7 +1269,7 @@ export const ExpertManagementPage = () => {
                 },
                 onError: (err: unknown) => {
                   const error = err as { response?: { data?: { message?: string } } }
-                  toast.error(error?.response?.data?.message || 'Failed to update membership.')
+                  toast.error(getApiErrorMessage(error, 'Failed to update membership.'))
                 },
               },
             )

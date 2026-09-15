@@ -1,6 +1,7 @@
 import { ArrowLeft, Pencil, Save, X } from 'lucide-react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   MembershipPlanForm,
@@ -76,9 +77,12 @@ export function MembershipPlanFormPage() {
       }
 
       handleClose()
-    } catch {
+    } catch (error) {
       toast.error(
-        isEditMode ? 'Failed to update membership plan' : 'Failed to create membership plan',
+        getApiErrorMessage(
+          error,
+          isEditMode ? 'Failed to update membership plan' : 'Failed to create membership plan',
+        ),
       )
     }
   }

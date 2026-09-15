@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Check, ImageIcon, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { getDefaultHomeRoute } from '@/app/layouts/navigation/navigation.filter'
@@ -287,7 +288,7 @@ export function UpdateContactInformationPage() {
       setIsPhoneVerifyModalOpen(true)
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error?.response?.data?.message || 'Failed to verify phone availability.')
+      toast.error(getApiErrorMessage(error, 'Failed to verify phone availability.'))
     } finally {
       setIsCheckingPhone(false)
     }
@@ -366,7 +367,7 @@ export function UpdateContactInformationPage() {
       navigate(getDefaultHomeRoute(user!), { replace: true })
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error?.response?.data?.message || 'Failed to update contact information')
+      toast.error(getApiErrorMessage(error, 'Failed to update contact information'))
     }
   }
 

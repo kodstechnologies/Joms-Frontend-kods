@@ -1,8 +1,9 @@
-import { AlertCircle, Ban, Hourglass, Plus, Search, Trash2 } from 'lucide-react'
+import { AlertCircle, Ban, Hourglass, PauseCircle, Plus, Search, Trash2 } from 'lucide-react'
 import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { LucideIcon } from 'lucide-react'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { CreateMembershipModal } from '../components/create-membership-modal'
@@ -30,7 +31,7 @@ import {
   exportMembershipPlansToExcel,
   fetchAllMembershipPlansForExport,
 } from '../utils/export-membership-plans'
-import { getFeatureLines } from '../utils/membership-format'
+import { getFeatureLines, formatMembershipDateTime } from '../utils/membership-format'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -125,6 +126,13 @@ export function MembershipPlansPage({
       status: 'active',
     },
     {
+      label: 'Paused Plans',
+      count: counts.paused,
+      tone: 'danger',
+      icon: PauseCircle,
+      status: 'paused',
+    },
+    {
       label: 'Inactive Plans',
       count: counts.inactive,
       tone: 'danger',
@@ -199,8 +207,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan paused')
       closeModal()
-    } catch {
-      toast.error('Failed to pause plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to pause plan'))
     }
   }
 
@@ -214,8 +222,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan resumed')
       closeModal()
-    } catch {
-      toast.error('Failed to resume plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to resume plan'))
     }
   }
 
@@ -232,8 +240,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan deleted')
       closeModal()
-    } catch {
-      toast.error('Failed to delete plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to delete plan'))
     }
   }
 
@@ -247,8 +255,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan deactivated')
       closeModal()
-    } catch {
-      toast.error('Failed to deactivate plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to deactivate plan'))
     }
   }
 
@@ -262,8 +270,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan activated')
       closeModal()
-    } catch {
-      toast.error('Failed to activate plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to activate plan'))
     }
   }
 
@@ -283,8 +291,8 @@ export function MembershipPlansPage({
 
       await exportMembershipPlansToExcel(plans)
       toast.success('Membership plans exported to Excel')
-    } catch {
-      toast.error('Failed to export membership plans')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export membership plans'))
     } finally {
       setIsExporting(false)
     }
@@ -307,8 +315,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan validity updated')
       closeModal()
-    } catch {
-      toast.error('Failed to update validity')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to update validity'))
     }
   }
 
@@ -589,7 +597,7 @@ export function MembershipPlansPage({
                     className="text-body-md text-brand-text/80 rounded-lg border border-white/10 bg-black/30 p-3"
                   >
                     Version {entry.version} · {entry.updatedBy ?? 'Admin'} ·{' '}
-                    {entry.updatedAt ?? '—'}
+                    {formatMembershipDateTime(entry.updatedAt)}
                   </div>
                 ),
               )

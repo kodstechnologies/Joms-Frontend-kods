@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Eye, EyeOff, Trash2 } from 'lucide-react'
 
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueOnboardingKyc, VenueOnboardingReviewVenue } from '../type/venue-onboarding'
 import {
@@ -51,24 +52,33 @@ function DocumentPreview({
   url?: string
   fileName?: string
 }) {
+  const [open, setOpen] = useState(false)
+
   return (
     <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-white/20 bg-black p-2">
       <p className="text-muted mb-1 text-[10px]">{label}</p>
       {url ? (
         <div className="flex w-full items-center justify-between gap-2 px-1">
           <span className="text-muted truncate text-xs">{fileName || 'Uploaded'}</span>
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
             className="text-brand-accent shrink-0 text-[10px] underline"
           >
             View
-          </a>
+          </button>
         </div>
       ) : (
         <span className="text-muted text-xs">Not uploaded</span>
       )}
+      {url ? (
+        <InPageMediaViewer
+          open={open}
+          items={[{ url, title: fileName || label }]}
+          index={0}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }

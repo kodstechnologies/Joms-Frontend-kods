@@ -311,7 +311,7 @@ export function ExpertClientelePage() {
 
   useEffect(() => {
     if (!isError) return
-    toast.error(getApiErrorMessage(error) || 'Failed to load expert clientele')
+    toast.error(getApiErrorMessage(error, 'Failed to load expert clientele'))
   }, [isError, error])
 
   const d = res?.data

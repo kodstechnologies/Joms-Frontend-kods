@@ -2,6 +2,7 @@ import { CalendarDays, CircleArrowDown, CircleArrowUp, CircleX, Monitor, X } fro
 import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import type { ComponentType } from 'react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
 import {
@@ -140,7 +141,11 @@ export function MembershipHistoryModal({
                               `${subscription.subscriptionId}-${entry.action}`,
                             )
                               .then(() => toast.success('Invoice downloaded'))
-                              .catch(() => toast.error('Failed to download invoice'))
+                              .catch((error) =>
+                                toast.error(
+                                  getApiErrorMessage(error, 'Failed to download invoice'),
+                                ),
+                              )
                           }}
                           className="ui-cta ui-cta-outline mt-0.5 h-8 shrink-0 rounded-full px-3.5"
                         >

@@ -19,6 +19,7 @@ import {
   SortOutlineIcon,
 } from '@/shared/components/icons/action-button-icons'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -980,8 +981,8 @@ export const LeaderboardPage = () => {
         )
         toast.success(`Exported as ${format.toUpperCase()}`)
         setExportOpen(false)
-      } catch {
-        toast.error('Failed to export leaderboard')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export leaderboard'))
       } finally {
         setIsExporting(false)
       }

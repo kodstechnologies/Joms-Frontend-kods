@@ -2,6 +2,7 @@ import { ArrowLeft, CircleArrowDown, CircleArrowUp, ExternalLink } from 'lucide-
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipHistoryModal } from '../components/membership-history-modal'
@@ -118,7 +119,9 @@ export function MembershipDetailsPage() {
                     subscription.paymentInfo?.paymentId || subscription.subscriptionId,
                   )
                     .then(() => toast.success('Invoice downloaded'))
-                    .catch(() => toast.error('Failed to download invoice'))
+                    .catch((error) =>
+                      toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+                    )
                 }}
                 className="text-body-md-semibold text-brand-text hover:text-brand-text/80 underline underline-offset-[3px]"
               >
@@ -210,8 +213,8 @@ export function MembershipDetailsPage() {
             })
             toast.success('Membership upgraded')
             setActionType(null)
-          } catch {
-            toast.error('Failed to upgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to upgrade membership'))
           }
         }}
         onDowngrade={async (payload) => {
@@ -222,8 +225,8 @@ export function MembershipDetailsPage() {
             })
             toast.success('Membership downgraded')
             setActionType(null)
-          } catch {
-            toast.error('Failed to downgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to downgrade membership'))
           }
         }}
         onExtend={async (payload) => {
@@ -234,8 +237,8 @@ export function MembershipDetailsPage() {
             })
             toast.success('Membership extended')
             setActionType(null)
-          } catch {
-            toast.error('Failed to extend membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to extend membership'))
           }
         }}
         onCancel={async (payload) => {
@@ -246,8 +249,8 @@ export function MembershipDetailsPage() {
             })
             toast.success('Membership cancelled')
             setActionType(null)
-          } catch {
-            toast.error('Failed to cancel membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to cancel membership'))
           }
         }}
       />

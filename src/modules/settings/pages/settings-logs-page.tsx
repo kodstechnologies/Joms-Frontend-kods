@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, RotateCcw, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   useRestoreSettingsLog,
@@ -229,8 +230,8 @@ export function SettingsLogsPage() {
     try {
       await exportHandler({}, 'csv')
       toast.success('Settings logs exported')
-    } catch {
-      toast.error('Failed to export settings logs')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export settings logs'))
     } finally {
       setIsExporting(false)
     }
@@ -243,8 +244,8 @@ export function SettingsLogsPage() {
         toast.success('Previous settings version restored')
         setSelectedLogId(null)
         void refetch()
-      } catch {
-        toast.error('Failed to restore previous version')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to restore previous version'))
       }
     },
     [refetch, restoreMutation],

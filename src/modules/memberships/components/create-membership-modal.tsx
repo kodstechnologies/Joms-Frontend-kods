@@ -1,5 +1,6 @@
 import { Save, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { MembershipPlanForm, type MembershipPlanFormValues } from './membership-plan-form'
 import { useCreateMembership } from '../hooks/use-memberships'
@@ -42,8 +43,8 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
 
       toast.success('Membership plan created')
       onClose()
-    } catch {
-      toast.error('Failed to create membership plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to create membership plan'))
     }
   }
 

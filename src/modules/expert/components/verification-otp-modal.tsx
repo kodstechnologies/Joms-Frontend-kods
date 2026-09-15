@@ -8,6 +8,7 @@ import {
   verifyPartnerPhoneOtp,
 } from '@/modules/auth/api/auth-api'
 import { OtpInput } from '@/shared/components/form/otp-input'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 type VerificationOtpModalProps = {
   open: boolean
@@ -58,8 +59,7 @@ export function VerificationOtpModal({
       toast.success(`OTP sent to ${targetValue}`)
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string }; status?: number } }
-      const msg =
-        error?.response?.data?.message || 'Failed to send OTP. Please check the backend service.'
+      const msg = getApiErrorMessage(error, 'Failed to send OTP. Please check the backend service.')
       toast.error(msg)
       if (
         error?.response?.status === 409 ||

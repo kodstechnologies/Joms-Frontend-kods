@@ -177,7 +177,7 @@ export const ServiceManagementPage = () => {
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to delete services')
+          toast.error(getApiErrorMessage(error, 'Failed to delete services'))
         },
       },
     )
@@ -221,7 +221,7 @@ export const ServiceManagementPage = () => {
           },
           onError: (err: unknown) => {
             const error = err as { response?: { data?: { message?: string } } }
-            toast.error(error?.response?.data?.message || 'Failed to pause services')
+            toast.error(getApiErrorMessage(error, 'Failed to pause services'))
           },
         },
       )
@@ -244,7 +244,7 @@ export const ServiceManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to hide services')
+        toast.error(getApiErrorMessage(error, 'Failed to hide services'))
       },
     })
   }, [selectedServiceIds, bulkHideMutation])
@@ -258,7 +258,7 @@ export const ServiceManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to disable services')
+        toast.error(getApiErrorMessage(error, 'Failed to disable services'))
       },
     })
   }, [selectedServiceIds, bulkDisableMutation])
@@ -405,8 +405,8 @@ export const ServiceManagementPage = () => {
       ])
       exportDataToFile(headers, rows, 'excel', 'selected_services_export')
       toast.success(`Exported ${selectedServices.length} selected service(s)`)
-    } catch {
-      toast.error('Failed to export selected services.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
     }
   }, [selectedServiceCount, selectedServices])
 
@@ -480,8 +480,9 @@ export const ServiceManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
-        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
 
@@ -493,7 +494,7 @@ export const ServiceManagementPage = () => {
       setSelectedServiceIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getApiErrorMessage(err) || 'Failed to escalate services.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate services.'))
     } finally {
       setIsEscalating(false)
     }
@@ -605,7 +606,7 @@ export const ServiceManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to delete service.')
+          toast.error(getApiErrorMessage(err, 'Failed to delete service.'))
         },
       },
     )
@@ -675,9 +676,7 @@ export const ServiceManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(
-            err?.response?.data?.message || 'Failed to suspend service. Please try again.',
-          )
+          toast.error(getApiErrorMessage(err, 'Failed to suspend service. Please try again.'))
         },
       },
     )

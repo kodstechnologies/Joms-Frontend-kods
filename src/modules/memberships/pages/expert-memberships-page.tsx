@@ -4,6 +4,7 @@ import { CircleArrowDown, CircleArrowUp, CircleX, ClipboardList, Waypoints } fro
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
@@ -368,8 +369,8 @@ export function ExpertMembershipsPage() {
             })
             toast.success('Upgrade request submitted')
             closeAction()
-          } catch {
-            toast.error('Failed to upgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to upgrade membership'))
           }
         }}
         onDowngrade={async (payload) => {
@@ -381,8 +382,8 @@ export function ExpertMembershipsPage() {
             })
             toast.success('Downgrade request submitted')
             closeAction()
-          } catch {
-            toast.error('Failed to downgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to downgrade membership'))
           }
         }}
         onExtend={async (payload) => {
@@ -394,8 +395,8 @@ export function ExpertMembershipsPage() {
             })
             toast.success('Extension request submitted')
             closeAction()
-          } catch {
-            toast.error('Failed to extend membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to extend membership'))
           }
         }}
         onCancel={async (payload) => {
@@ -407,8 +408,8 @@ export function ExpertMembershipsPage() {
             })
             toast.success('Cancellation request submitted')
             closeAction()
-          } catch {
-            toast.error('Failed to cancel membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to cancel membership'))
           }
         }}
       />

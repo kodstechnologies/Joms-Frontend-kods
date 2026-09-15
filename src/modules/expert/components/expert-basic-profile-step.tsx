@@ -9,6 +9,7 @@ import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 import { LOOKS_LIKE_CATEGORY_ID } from '../utils/expert-application-helpers'
 import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { cn } from '@/shared/lib/cn'
 import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
 import { apiErrorMessage } from '@/shared/lib/api-error'
@@ -46,6 +47,7 @@ export const ExpertBasicProfileStep = ({
   const [offeringInput, setOfferingInput] = useState('')
   const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false)
   const [offeringDropdownOpen, setOfferingDropdownOpen] = useState(false)
+  const [sampleWorkViewerOpen, setSampleWorkViewerOpen] = useState(false)
 
   const [verifyModal, setVerifyModal] = useState<{
     open: boolean
@@ -443,14 +445,13 @@ export const ExpertBasicProfileStep = ({
                       {formData.sampleWorkFileName || 'Upload here'}
                     </button>
                     {formData.sampleWorkFileUrl ? (
-                      <a
-                        href={formData.sampleWorkFileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => setSampleWorkViewerOpen(true)}
                         className="text-brand-accent text-xs underline"
                       >
                         View file
-                      </a>
+                      </button>
                     ) : null}
                   </div>
                   <input
@@ -905,6 +906,22 @@ export const ExpertBasicProfileStep = ({
         targetValue={verifyModal.targetValue}
         onClose={() => setVerifyModal((prev) => ({ ...prev, open: false }))}
         onVerified={handleVerified}
+      />
+
+      <InPageMediaViewer
+        open={sampleWorkViewerOpen && Boolean(formData.sampleWorkFileUrl)}
+        items={
+          formData.sampleWorkFileUrl
+            ? [
+                {
+                  url: formData.sampleWorkFileUrl,
+                  title: formData.sampleWorkFileName || 'Sample work file',
+                },
+              ]
+            : []
+        }
+        index={0}
+        onClose={() => setSampleWorkViewerOpen(false)}
       />
     </div>
   )

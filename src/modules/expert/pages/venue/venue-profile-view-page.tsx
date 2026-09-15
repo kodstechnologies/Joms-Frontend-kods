@@ -100,14 +100,12 @@ import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
-import {
-  apiErrorMessage,
-  getApiErrorMessage as getSharedApiErrorMessage,
-} from '@/shared/lib/api-error'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import type { UpdateVenueSpaceVisibilityPayload } from '../../api/venue-api'
 import { fetchSupportTickets } from '@/modules/support-management/api/support-api'
 import type { SupportTicket } from '@/modules/support-management/types/support'
 import { SafeImage } from '@/shared/components/media/safe-image'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import {
   VenueReportDetailModal,
   type VenueReportItem,
@@ -133,9 +131,6 @@ const PROFILE_CARD = 'rounded-xl bg-[#141414]'
 const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505]'
 
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
-
-const getApiErrorMessage = (error: unknown) =>
-  apiErrorMessage(error, 'Unable to load venue profile.')
 
 const formatCurrency = (value?: number | null) => {
   if (value === null || value === undefined) return '—'
@@ -463,11 +458,16 @@ function OverviewTab({
   const location = venue.location
   const poc = gallery?.contact?.contacts?.[0]
   const [reviewFilter, setReviewFilter] = useState('all')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
   const insightsSort = toInsightsSort(reviewFilter)
   const { data: insightsRes, isLoading: reviewsLoading } = useVenueInsights(venueId, insightsSort)
   const reviews: PartnerInsightReview[] = insightsRes?.data?.reviews ?? []
 
   const galleryImages = gallery?.galleryImages?.map((image) => image.url) ?? venue.venueImages ?? []
+  const mediaItems = galleryImages.map((url, index) => ({
+    url,
+    title: `Gallery ${index + 1}`,
+  }))
 
   const addressLine = [
     location?.address,
@@ -514,11 +514,10 @@ function OverviewTab({
         {galleryImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {galleryImages.slice(0, 8).map((src, index) => (
-              <a
+              <button
                 key={`${src}-${index}`}
-                href={src}
-                target="_blank"
-                rel="noreferrer"
+                type="button"
+                onClick={() => setMediaIndex(index)}
                 className="block aspect-[4/3] overflow-hidden rounded-lg bg-[#050505]"
               >
                 <SafeImage
@@ -531,13 +530,21 @@ function OverviewTab({
                     </div>
                   }
                 />
-              </a>
+              </button>
             ))}
           </div>
         ) : (
           <p className="text-body-sm text-white/50">No gallery images uploaded.</p>
         )}
       </div>
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
 
       <div>
         <h3 className="text-body-md mb-4 font-semibold text-white">Reviews &amp; Ratings</h3>
@@ -868,7 +875,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           if (action === 'hide') closeBulkHideModal()
           else closeBulkSuspendModal()
         },
-        onError: (err) => toast.error(getSharedApiErrorMessage(err)),
+        onError: (err) => toast.error(getApiErrorMessage(err)),
       })
     },
     [
@@ -924,8 +931,8 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
       ])
       exportDataToFile(headers, rows, 'excel', 'venue_selected_spaces_export')
       toast.success(`Exported ${selectedSpaces.length} selected space(s)`)
-    } catch {
-      toast.error('Failed to export selected spaces.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected spaces.'))
     }
   }, [partnerId, selectedSpaces, venueId])
 
@@ -994,8 +1001,9 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
-        toast.error(getSharedApiErrorMessage(firstError?.reason) || 'Failed to escalate spaces.')
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate spaces.'))
         return
       }
 
@@ -1007,7 +1015,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
       setSelectedSpaceIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getSharedApiErrorMessage(err) || 'Failed to escalate spaces.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate spaces.'))
     } finally {
       setIsEscalating(false)
     }
@@ -1326,7 +1334,8 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
+    | (typeof data.profile & { analytics?: Record<string, unknown> })
+    | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -1717,7 +1726,7 @@ export function VenueProfileViewPage() {
           setNotesModalOpen(false)
         },
         onError: (err: unknown) => {
-          toast.error(getApiErrorMessage(err) || 'Failed to save admin notes')
+          toast.error(getApiErrorMessage(err, 'Failed to save admin notes'))
         },
       })
     },
@@ -1786,11 +1795,11 @@ export function VenueProfileViewPage() {
       )
       toast.success('Profile exported')
     } catch (err: unknown) {
-      const message =
-        err instanceof Error && err.message === 'NO_RECORDS'
-          ? 'Nothing to export'
-          : 'Failed to export profile'
-      toast.error(message)
+      if (err instanceof Error && err.message === 'NO_RECORDS') {
+        toast.error('Nothing to export')
+        return
+      }
+      toast.error(getApiErrorMessage(err, 'Failed to export profile'))
     }
   }, [fullView, resolvedVenueId])
 
@@ -1821,7 +1830,7 @@ export function VenueProfileViewPage() {
         setPasswordModalOpen(false)
       } catch (error: unknown) {
         const err = error as { response?: { data?: { message?: string } } }
-        toast.error(err?.response?.data?.message || 'Failed to update password')
+        toast.error(getApiErrorMessage(err, 'Failed to update password'))
       }
     },
     [ensureOwnerPartner, setVenueOwnerPasswordMutation],
@@ -1896,9 +1905,7 @@ export function VenueProfileViewPage() {
         },
         onError: (err: unknown) => {
           const apiError = err as { response?: { data?: { message?: string } } }
-          toast.error(
-            apiError?.response?.data?.message || 'Failed to suspend venue. Please try again.',
-          )
+          toast.error(getApiErrorMessage(apiError, 'Failed to suspend venue. Please try again.'))
         },
       },
     )
@@ -1964,7 +1971,7 @@ export function VenueProfileViewPage() {
         },
         onError: (err: unknown) => {
           const apiError = err as { response?: { data?: { message?: string } } }
-          toast.error(apiError?.response?.data?.message || 'Failed to delete venue.')
+          toast.error(getApiErrorMessage(apiError, 'Failed to delete venue.'))
         },
       },
     )
@@ -2001,7 +2008,7 @@ export function VenueProfileViewPage() {
           <span>Venue Profile View</span>
         </button>
         <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
-          {getApiErrorMessage(error)}
+          {getApiErrorMessage(error, 'Unable to load venue profile.')}
         </div>
       </div>
     )
@@ -2101,7 +2108,7 @@ export function VenueProfileViewPage() {
                   )
                 },
                 onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to logout user')
+                  toast.error(getApiErrorMessage(err, 'Failed to logout user'))
                 },
               })
             }}
@@ -2134,7 +2141,7 @@ export function VenueProfileViewPage() {
                   toast.success(res?.message || 'Owner blocked successfully')
                 },
                 onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to block user')
+                  toast.error(getApiErrorMessage(err, 'Failed to block user'))
                 },
               })
             }}

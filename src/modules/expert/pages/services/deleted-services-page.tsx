@@ -4,6 +4,7 @@ import { Eye, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { SERVICE_DELETED_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
@@ -86,8 +87,8 @@ export function DeletedServicesPage() {
           },
         )
         toast.success('Service exported')
-      } catch {
-        toast.error('Failed to export service')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export service'))
       }
     },
     [list.visibleColumnIds],
@@ -99,7 +100,7 @@ export function DeletedServicesPage() {
         onSuccess: () => toast.success('Service restored successfully'),
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to restore service.')
+          toast.error(getApiErrorMessage(err, 'Failed to restore service.'))
         },
       })
     },

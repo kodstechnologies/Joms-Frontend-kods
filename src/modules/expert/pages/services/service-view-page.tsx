@@ -458,9 +458,7 @@ export const ServiceViewPage = () => {
         toast.success('Service suspended successfully')
         closeDecisionModal()
       } catch (err) {
-        const message = axios.isAxiosError(err)
-          ? err.response?.data?.message || 'Failed to suspend service.'
-          : 'Failed to suspend service.'
+        const message = getApiErrorMessage(err, 'Failed to suspend service.')
         toast.error(message)
       }
       return

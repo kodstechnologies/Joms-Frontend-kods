@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { BackupRestorePanel } from '../components/backup-restore-panel'
 import { ExpertSettingsPanel } from '../components/expert-settings-panel'
@@ -166,8 +167,8 @@ export function MainSettingsPage() {
         await updateService.mutateAsync(serviceConfig)
       }
       toast.success(`${SETTINGS_TABS.find((t) => t.key === activeTab)?.label} settings saved`)
-    } catch {
-      toast.error('Failed to save settings')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to save settings'))
     }
   }
 
@@ -201,8 +202,8 @@ export function MainSettingsPage() {
         setServiceConfig(result.config)
       }
       toast.success('Settings reset to defaults')
-    } catch {
-      toast.error('Failed to reset settings')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to reset settings'))
     }
   }
 

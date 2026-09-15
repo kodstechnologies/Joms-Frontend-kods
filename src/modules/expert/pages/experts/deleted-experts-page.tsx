@@ -4,6 +4,7 @@ import { Eye, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS,
@@ -56,8 +57,8 @@ export function ExpertDeletedExpertsPage() {
           },
         )
         toast.success('Expert exported')
-      } catch {
-        toast.error('Failed to export expert')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export expert'))
       }
     },
     [list.visibleColumnIds],
@@ -116,8 +117,7 @@ export function ExpertDeletedExpertsPage() {
                       onError: (error: unknown) => {
                         const err = error as { response?: { data?: { message?: string } } }
                         toast.error(
-                          err?.response?.data?.message ||
-                            'Failed to restore expert. Please try again.',
+                          getApiErrorMessage(err, 'Failed to restore expert. Please try again.'),
                         )
                       },
                     })

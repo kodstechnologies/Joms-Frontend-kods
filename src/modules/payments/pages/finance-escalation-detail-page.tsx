@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import { AlertCircle, ArrowLeft, FileText, Flag, Lightbulb, Upload, User } from 'lucide-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import {
@@ -317,7 +318,8 @@ export function FinanceEscalationDetailPage() {
             ])
             toast.success(`${file.name} added to escalation evidence`)
           },
-          onError: () => toast.error(`Failed to attach ${file.name}`),
+          onError: (error) =>
+            toast.error(getApiErrorMessage(error, `Failed to attach ${file.name}`)),
         },
       )
     })
@@ -561,7 +563,7 @@ export function FinanceEscalationDetailPage() {
                 toast.success('Note saved')
                 setIsNoteModalOpen(false)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

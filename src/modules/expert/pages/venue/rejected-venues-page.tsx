@@ -4,6 +4,7 @@ import { ArrowLeft, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
@@ -127,7 +128,7 @@ export function RejectedVenuesPage() {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to activate venue. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to activate venue. Please try again.'))
         },
       })
     },

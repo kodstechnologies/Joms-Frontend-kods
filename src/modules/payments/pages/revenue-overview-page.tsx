@@ -4,6 +4,7 @@ import { AlertTriangle, Eye, SquarePen, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import type { RevenueOverviewRow } from '@/modules/payments/types/finance-table-rows'
 import {
@@ -526,7 +527,7 @@ export function RevenueOverviewPage() {
                 toast.success('Note saved')
                 setNoteTarget(null)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

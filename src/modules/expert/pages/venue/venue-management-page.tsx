@@ -293,7 +293,7 @@ export const VenueManagementPage = () => {
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to delete venues')
+          toast.error(getApiErrorMessage(error, 'Failed to delete venues'))
         },
       },
     )
@@ -335,7 +335,7 @@ export const VenueManagementPage = () => {
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to pause venues')
+          toast.error(getApiErrorMessage(error, 'Failed to pause venues'))
         },
       },
     )
@@ -359,7 +359,7 @@ export const VenueManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to hide venues')
+        toast.error(getApiErrorMessage(error, 'Failed to hide venues'))
       },
     })
   }, [selectedVenueIds, bulkHideMutation])
@@ -373,7 +373,7 @@ export const VenueManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to disable venues')
+        toast.error(getApiErrorMessage(error, 'Failed to disable venues'))
       },
     })
   }, [selectedVenueIds, bulkDisableMutation])
@@ -493,8 +493,8 @@ export const VenueManagementPage = () => {
       ])
       exportDataToFile(headers, rows, 'excel', 'selected_venues_export')
       toast.success(`Exported ${selectedVenues.length} selected venue(s)`)
-    } catch {
-      toast.error('Failed to export selected venues.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected venues.'))
     }
   }, [selectedVenueCount, selectedVenues])
 
@@ -587,8 +587,9 @@ export const VenueManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
-        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate venues.')
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate venues.'))
         return
       }
 
@@ -600,7 +601,7 @@ export const VenueManagementPage = () => {
       setSelectedVenueIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getApiErrorMessage(err) || 'Failed to escalate venues.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate venues.'))
     } finally {
       setIsEscalating(false)
     }
@@ -713,7 +714,7 @@ export const VenueManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to delete venue.')
+          toast.error(getApiErrorMessage(err, 'Failed to delete venue.'))
         },
       },
     )
@@ -787,7 +788,7 @@ export const VenueManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to suspend venue. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to suspend venue. Please try again.'))
         },
       },
     )

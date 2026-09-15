@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, Check, Star, User, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
@@ -176,8 +177,8 @@ export function ConsultationPerformancePage() {
       await cancelBooking.mutateAsync(cancelBookingRow.id)
       toast.success('Consultation cancelled')
       closeCancelModal()
-    } catch {
-      toast.error('Failed to cancel the consultation.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to cancel the consultation.'))
     }
   }
 

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, FileText, History, Plus, RotateCw } from 'lucide-react'
 import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { SettingsFooterActions } from '../components/settings-footer-actions'
 import { PolicyBreadcrumb, PolicySettingsTopTabs } from '../components/policy-settings-tabs'
@@ -240,7 +241,7 @@ export function PolicyCreatePage() {
           }
           navigate(policyListPath(application))
         },
-        onError: () => toast.error('Failed to create policy'),
+        onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to create policy')),
       },
     )
   }
