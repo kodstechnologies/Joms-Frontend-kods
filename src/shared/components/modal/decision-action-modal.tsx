@@ -88,6 +88,7 @@ const variantStyles: Record<
     descriptionClass?: string
     heroLayout?: 'stack' | 'inline'
     reasonsLabelClass?: string
+    headerDescriptionClass?: string
   }
 > = {
   approve: {
@@ -152,10 +153,12 @@ const variantStyles: Record<
       'mx-auto flex h-12 w-[268px] max-w-full flex-col justify-center text-center text-[14px] font-semibold leading-6 tracking-normal text-white',
     fieldLabelClass: 'mb-2 block text-[14px] font-semibold leading-6 tracking-normal text-white',
     shellClass: '!h-[636px] !max-h-[636px]',
-    titleClass: 'text-[24px] font-semibold leading-6 tracking-normal text-white',
+    titleClass: 'text-[24px] font-semibold leading-5 tracking-normal text-white',
     confirmationClass: 'max-w-[405px] text-[14px] font-normal leading-5 tracking-normal text-white',
     reasonsLabelClass:
       'mb-[10px] block text-[14px] font-normal leading-5 tracking-normal text-[#FFFFFF80]',
+    headerDescriptionClass:
+      'max-w-[525px] text-[14px] font-normal leading-5 tracking-normal text-[#FFFFFF80]',
   },
   pause: {
     submit: 'ui-modal-btn-negative',
@@ -338,7 +341,9 @@ export function DecisionActionModal({
               {title}
             </h2>
             {headerDescription ? (
-              <p className="text-body-sm text-muted">{headerDescription}</p>
+              <p className={styles.headerDescriptionClass ?? 'text-body-sm text-muted'}>
+                {headerDescription}
+              </p>
             ) : null}
           </div>
           <button
