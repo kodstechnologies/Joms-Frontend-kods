@@ -75,12 +75,16 @@ function SummaryCard({
   const isDown = change.trim().startsWith('-')
   const direction = isDown ? 'down' : 'up'
   return (
-    <div className="bg-brand-surface rounded-xl border border-white/[0.06] p-5">
-      <p className="text-body-sm-medium text-muted">{label}</p>
-      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+    <div className="flex h-[130px] w-full max-w-[280px] min-w-0 flex-col rounded-[10px] bg-[#141414] p-2.5">
+      <p className="text-[14px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">{label}</p>
+      <p className="mt-2.5 text-[20px] leading-5 font-semibold tracking-normal text-white">
+        {value}
+      </p>
+      <div className="mt-auto flex items-center gap-[10px] pt-2">
         <TrendBadge direction={direction}>{ensureTrendChangeSign(change, direction)}</TrendBadge>
-        <span className="text-body-sm text-muted">{changeNote}</span>
+        <span className="text-[14px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+          {changeNote}
+        </span>
       </div>
     </div>
   )
@@ -356,10 +360,13 @@ export function InvoicesBillingPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] justify-items-start gap-3">
         {isLoading
           ? Array.from({ length: 4 }).map((_, idx) => (
-              <StatCardSkeleton key={`invoice-skel-${idx}`} />
+              <StatCardSkeleton
+                key={`invoice-skel-${idx}`}
+                className="h-[130px] w-full max-w-[280px] rounded-[10px] border-0 bg-[#141414]"
+              />
             ))
           : invoiceSummaryMetrics.map((metric) => <SummaryCard key={metric.label} {...metric} />)}
       </div>

@@ -47,15 +47,18 @@ function ToggleSwitch({
       aria-checked={checked}
       disabled={disabled}
       onClick={onChange}
-      className={cn(
-        'relative h-5 w-9 rounded-full transition-colors disabled:opacity-50',
-        checked ? 'bg-[#F6CB86]' : 'bg-white/20',
-      )}
+      className="relative size-6 shrink-0 transition-opacity disabled:opacity-50"
     >
       <span
         className={cn(
-          'absolute top-0.5 left-0.5 size-4 rounded-full bg-black transition-transform',
-          checked && 'translate-x-4',
+          'absolute top-[5.25px] left-0 h-[13.5px] w-6 rounded-full transition-colors',
+          checked ? 'bg-[#E0A263]' : 'bg-white/20',
+        )}
+      />
+      <span
+        className={cn(
+          'absolute top-[6.75px] left-[1.5px] size-[10.5px] rounded-full bg-black transition-transform',
+          checked ? 'translate-x-[10.5px]' : 'translate-x-0',
         )}
       />
     </button>

@@ -92,31 +92,159 @@ const ZERO_METRICS: Metric[] = [
 const DEFAULT_METRIC_IDS = DEFAULT_VENUE_DASHBOARD_ACTIVE_METRIC_IDS
 
 const STATUS_BADGE_BASE =
-  'inline-flex min-h-5 w-max max-w-full shrink-0 items-center justify-center rounded-[10px] px-2.5 py-0.5 text-center font-semibold tracking-normal whitespace-nowrap'
-
-const getStatusBadgeTextClass = (status?: string | null) => {
-  const length = (status || '').trim().length
-  if (length > 14) return 'text-[8px] leading-[12px]'
-  if (length > 10) return 'text-[9px] leading-[12px]'
-  return 'text-[10px] leading-[14px]'
-}
+  'inline-flex h-5 w-max max-w-full shrink-0 items-center justify-center rounded-[10px] px-2.5 text-center text-[10px] leading-[14px] font-semibold tracking-normal whitespace-nowrap'
 
 const STATUS_STYLES: Record<string, string> = {
-  'High Demand': 'bg-[#00A63E33] text-[#00A63E]',
-  'High Performing': 'bg-[#00A63E33] text-[#00A63E]',
-  Good: 'bg-[#155DFC33] text-[#155DFC]',
-  Stable: 'bg-[#155DFC33] text-[#155DFC]',
-  Available: 'bg-[#E0A26333] text-[#E0A263]',
-  'Needs Attention': 'bg-[#E0A26333] text-[#E0A263]',
+  'high demand': 'bg-[#00A63E33] text-[#00A63E]',
+  'high performing': 'bg-[#00A63E33] text-[#00A63E]',
+  good: 'bg-[#155DFC33] text-[#155DFC]',
+  stable: 'bg-[#155DFC33] text-[#155DFC]',
+  available: 'bg-[#E0A26333] text-[#E0A263]',
+  'needs attention': 'bg-[#E0A26333] text-[#E0A263]',
 }
 
-const tooltipStyle = {
-  background: 'rgba(2,6,23,0.92)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  borderRadius: 12,
-  padding: '10px 12px',
-  color: 'rgba(226,232,240,0.95)',
-  boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+const STATUS_LABELS: Record<string, string> = {
+  'high demand': 'High Demand',
+  'high performing': 'High Demand',
+  good: 'Good',
+  stable: 'Good',
+  available: 'Available',
+  'needs attention': 'Available',
+}
+
+const normalizeVenueStatus = (status?: string | null) =>
+  (status || '').toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
+
+const getVenueStatusDisplay = (status?: string | null) => {
+  const key = normalizeVenueStatus(status)
+  return {
+    key,
+    label: STATUS_LABELS[key] || status || 'Available',
+    className: cn(STATUS_BADGE_BASE, STATUS_STYLES[key] || STATUS_STYLES.available),
+    barClassName:
+      key === 'high demand' || key === 'high performing'
+        ? 'bg-[#00A63E]'
+        : key === 'good' || key === 'stable'
+          ? 'bg-[#155DFC]'
+          : 'bg-[#E0A263]',
+  }
+}
+
+const VENUE_TREND_COLORS = {
+  avgRevenue: '#E0A263',
+  revenue: '#155DFC',
+  utilization: '#00A63E',
+} as const
+
+const AXIS_TICK = {
+  fill: '#FFFFFF',
+  fontSize: 16,
+  fontWeight: 600,
+  fontFamily: 'Figtree, sans-serif',
+} as const
+
+const formatRevenueAxisTick = (value: number) => {
+  const n = Number(value) || 0
+  const abs = Math.abs(n)
+  if (abs >= 10_000_000) {
+    const cr = n / 10_000_000
+    return `${Number.isInteger(cr) ? cr : Number(cr.toFixed(1))}Cr`
+  }
+  if (abs >= 100_000) {
+    const lakhs = n / 100_000
+    return `${Number.isInteger(lakhs) ? lakhs : Number(lakhs.toFixed(1))}L`
+  }
+  if (abs >= 1000) {
+    const thousands = n / 1000
+    return `${Number.isInteger(thousands) ? thousands : Number(thousands.toFixed(1))}K`
+  }
+  return String(Math.round(n))
+}
+
+const formatUtilizationAxisTick = (value: number) => {
+  const n = Number(value) || 0
+  return Number.isInteger(n) ? String(n) : n.toFixed(1)
+}
+
+type AxisTickProps = {
+  x?: number | string
+  y?: number | string
+  payload?: { value?: number }
+  textAnchor?: 'start' | 'middle' | 'end'
+  formatter: (value: number) => string
+}
+
+function ChartAxisTick({ x = 0, y = 0, payload, textAnchor = 'end', formatter }: AxisTickProps) {
+  const label = formatter(Number(payload?.value ?? 0))
+  return (
+    <text
+      x={Number(x)}
+      y={Number(y)}
+      dy={5}
+      textAnchor={textAnchor}
+      fill={AXIS_TICK.fill}
+      fontSize={AXIS_TICK.fontSize}
+      fontWeight={AXIS_TICK.fontWeight}
+      fontFamily={AXIS_TICK.fontFamily}
+    >
+      {label}
+    </text>
+  )
+}
+
+type VenueTrendsTooltipProps = {
+  active?: boolean
+  label?: string
+  payload?: Array<{ dataKey?: string; value?: number; name?: string }>
+}
+
+function VenueTrendsTooltip({ active, payload, label }: VenueTrendsTooltipProps) {
+  if (!active || !payload?.length) return null
+
+  const values = payload.reduce<Record<string, number>>((acc, entry) => {
+    if (entry.dataKey && typeof entry.value === 'number') {
+      acc[entry.dataKey] = entry.value
+    }
+    return acc
+  }, {})
+
+  const rows = [
+    {
+      key: 'avgRevenue',
+      label: 'Avg Revenue/Venue',
+      color: VENUE_TREND_COLORS.avgRevenue,
+      value: values.avgRevenue,
+    },
+    {
+      key: 'revenue',
+      label: 'Revenue',
+      color: VENUE_TREND_COLORS.revenue,
+      value: values.revenue,
+    },
+    {
+      key: 'utilization',
+      label: 'Utilization %',
+      color: VENUE_TREND_COLORS.utilization,
+      value: values.utilization,
+    },
+  ].filter((row) => row.value != null)
+
+  return (
+    <div className="box-border min-h-[96px] w-[159px] rounded-lg bg-white px-[9px] py-[6px]">
+      <p className="text-[12px] leading-[14px] font-medium tracking-normal text-black">{label}</p>
+      <div className="mt-[5px] space-y-[5px]">
+        {rows.map((row) => (
+          <p
+            key={row.key}
+            className="text-[12px] leading-[14px] font-semibold tracking-normal"
+            style={{ color: row.color }}
+          >
+            {row.label}: {row.value}
+          </p>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function MetricCard({ metric }: { metric: Metric }) {
@@ -412,7 +540,7 @@ export const VenueDashboardPage = () => {
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-body-md font-bold text-white">
+            <h2 className="text-[16px] leading-5 font-semibold tracking-normal text-white">
               Venue Utilization &amp; Revenue Trends
             </h2>
             <p className="text-body-sm text-muted mt-0.5">
@@ -451,13 +579,13 @@ export const VenueDashboardPage = () => {
             No trend data available.
           </div>
         ) : (
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full overflow-visible">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={trendData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+              <ComposedChart data={trendData} margin={{ left: 8, right: 8, top: 12, bottom: 8 }}>
                 <defs>
                   <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--brand-action)" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="var(--brand-action)" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={VENUE_TREND_COLORS.revenue} stopOpacity={0.45} />
+                    <stop offset="100%" stopColor={VENUE_TREND_COLORS.revenue} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -465,37 +593,60 @@ export const VenueDashboardPage = () => {
                   dataKey="month"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  tick={AXIS_TICK}
+                  interval="preserveStartEnd"
+                  minTickGap={16}
                 />
                 <YAxis
                   yAxisId="left"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  width={56}
+                  tickCount={5}
+                  allowDecimals={false}
+                  tick={(props) => (
+                    <ChartAxisTick {...props} textAnchor="end" formatter={formatRevenueAxisTick} />
+                  )}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  width={40}
+                  tickCount={5}
+                  domain={[0, 'auto']}
+                  tick={(props) => (
+                    <ChartAxisTick
+                      {...props}
+                      textAnchor="start"
+                      formatter={formatUtilizationAxisTick}
+                    />
+                  )}
                 />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                <Tooltip
+                  content={<VenueTrendsTooltip />}
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                />
                 <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
                 <Bar
                   yAxisId="right"
                   name="Utilization %"
                   dataKey="utilization"
-                  fill="var(--brand-positive)"
+                  fill={VENUE_TREND_COLORS.utilization}
                   radius={[4, 4, 0, 0]}
-                  barSize={28}
+                  barSize={Math.min(
+                    135,
+                    Math.max(28, Math.floor(700 / Math.max(trendData.length, 1))),
+                  )}
+                  maxBarSize={135}
                 />
                 <Area
                   yAxisId="left"
                   type="monotone"
                   name="Revenue"
                   dataKey="revenue"
-                  stroke="var(--brand-action)"
+                  stroke={VENUE_TREND_COLORS.revenue}
                   strokeWidth={2}
                   fill="url(#revenueFill)"
                 />
@@ -504,9 +655,9 @@ export const VenueDashboardPage = () => {
                   type="monotone"
                   name="Avg Revenue/Venue"
                   dataKey="avgRevenue"
-                  stroke="var(--brand-accent)"
+                  stroke={VENUE_TREND_COLORS.avgRevenue}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: 'var(--brand-accent)' }}
+                  dot={{ r: 3, fill: VENUE_TREND_COLORS.avgRevenue }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -547,17 +698,37 @@ export const VenueDashboardPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <thead>
-                <tr className="text-[16px] leading-5 font-semibold tracking-normal text-white">
-                  <th className="px-3 py-3 text-center">Venue Name</th>
-                  <th className="px-3 py-3 text-center">City</th>
-                  <th className="px-3 py-3 text-center">Total Visits</th>
-                  <th className="px-3 py-3 text-center">Event Attendance</th>
-                  <th className="px-3 py-3 text-center">Bookings</th>
-                  <th className="px-3 py-3 text-center">Repeat Visitors %</th>
-                  <th className="px-3 py-3 text-center">Utilization %</th>
-                  <th className="px-3 py-3 text-center">Revenue</th>
-                  <th className="px-3 py-3 text-center">Rating</th>
-                  <th className="px-3 py-3 text-center">Status</th>
+                <tr>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Venue Name
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    City
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Total Visits
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Event Attendance
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Bookings
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Repeat Visitors %
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Utilization %
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Revenue
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Rating
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -573,19 +744,34 @@ export const VenueDashboardPage = () => {
                       <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
                         {venue.city}
                       </td>
-                      <td className="px-3 py-3">{venue.totalVisits || 0}</td>
-                      <td className="px-3 py-3">{venue.eventAttendance || 0}</td>
-                      <td className="px-3 py-3">{venue.bookings || 0}</td>
-                      <td className="px-3 py-3">{venue.repeatVisitors || 0}%</td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.totalVisits || 0}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.eventAttendance || 0}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.bookings || 0}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.repeatVisitors || 0}%
+                      </td>
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-[5px] w-[100px] overflow-hidden rounded-[10px] bg-[#FFFFFF4D]">
                             <div
-                              className="bg-brand-accent h-full rounded-full"
-                              style={{ width: `${venue.utilization || 0}%` }}
+                              className={cn(
+                                'h-full rounded-[10px]',
+                                getVenueStatusDisplay(venue.status).barClassName,
+                              )}
+                              style={{
+                                width: `${Math.min(100, Math.max(0, venue.utilization || 0))}%`,
+                              }}
                             />
                           </div>
-                          <span className="text-body-sm text-muted">{venue.utilization || 0}%</span>
+                          <span className="text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                            {venue.utilization || 0}%
+                          </span>
                         </div>
                       </td>
                       <td className="px-3 py-3 text-[14px] leading-5 font-semibold tracking-normal text-white">
@@ -600,14 +786,8 @@ export const VenueDashboardPage = () => {
                         </span>
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">
-                        <span
-                          className={cn(
-                            STATUS_BADGE_BASE,
-                            getStatusBadgeTextClass(venue.status),
-                            STATUS_STYLES[venue.status] || STATUS_STYLES.Available,
-                          )}
-                        >
-                          {venue.status}
+                        <span className={getVenueStatusDisplay(venue.status).className}>
+                          {getVenueStatusDisplay(venue.status).label}
                         </span>
                       </td>
                     </tr>
