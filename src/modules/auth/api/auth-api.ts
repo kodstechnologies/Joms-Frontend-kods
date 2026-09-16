@@ -20,12 +20,14 @@ export type AdminSessionUser = {
   mfaEnabled?: boolean
   status?: string
   subAdminId?: string | null
+  contactSetupCompleted?: boolean
+  requiresContactSetup?: boolean
 }
 
 export type LoginResponse = {
   email: string
   mfaRequired: boolean
-  mfaMethod?: 'emailOtp' | 'authenticator'
+  mfaMethod?: 'emailOtp' | 'authenticator' | 'smsOtp'
   token?: string
   admin?: AdminSessionUser
 }

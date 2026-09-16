@@ -12,6 +12,9 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
+  Search,
+  Plus,
+  ChevronDown,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -97,6 +100,27 @@ const consultationSteps = [
   { id: '05', title: 'Review', description: 'Check before publish' },
 ]
 
+const MAX_CONSULTATION_PRICING_SLOTS = 3
+
+type ConsultationPricingSlot = {
+  durationMinutes: number | ''
+  pricingType: 'free' | 'paid' | ''
+  price: string
+}
+
+const DEFAULT_CONSULTATION_PRICING_SLOT: ConsultationPricingSlot = {
+  durationMinutes: '',
+  pricingType: '',
+  price: '',
+}
+
+const formatConsultationFeeLabel = (slot: ConsultationPricingSlot) => {
+  if (slot.pricingType === 'free') return 'Free'
+  const trimmed = slot.price.trim()
+  if (!trimmed) return '—'
+  return trimmed.startsWith('₹') ? trimmed : `₹${trimmed}`
+}
+
 export const CreateServiceListingPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -145,10 +169,14 @@ export const CreateServiceListingPage = () => {
   const [postSessionMessage, setPostSessionMessage] = useState('')
   const [hasFollowUp, setHasFollowUp] = useState(false)
   const [followUpDays, setFollowUpDays] = useState('7')
-  const [consultationMode, setConsultationMode] = useState<'audio' | 'video' | 'chat'>('video')
-  const [consultationDuration, setConsultationDuration] = useState<number>(30)
-  const [consultationPricingType, setConsultationPricingType] = useState<'free' | 'paid'>('paid')
-  const [consultationPrice, setConsultationPrice] = useState('')
+  const [consultationMode] = useState<'audio'>('audio')
+  const [consultationPricingSlots, setConsultationPricingSlots] = useState<
+    ConsultationPricingSlot[]
+  >([DEFAULT_CONSULTATION_PRICING_SLOT])
+  const [topicQuery, setTopicQuery] = useState('')
+  const [topicMenuOpen, setTopicMenuOpen] = useState(false)
+  const [debouncedTopicQuery, setDebouncedTopicQuery] = useState('')
+  const topicSearchRef = useRef<HTMLDivElement>(null)
 
   const { data: categoriesResponse, isLoading: isCategoriesLoading } = useCategories({
     page: 1,
@@ -180,8 +208,38 @@ export const CreateServiceListingPage = () => {
   const publishServiceMutation = usePublishService()
   const createConsultationMutation = useCreateConsultation()
   const updateConsultationBasicMutation = useUpdateConsultationBasic()
-  const { data: topicsResponse, isLoading: isTopicsLoading } = useConsultationTopics({ limit: 100 })
-  const topicOptions = topicsResponse?.data || []
+  const { data: topicsResponse, isLoading: isTopicsLoading } = useConsultationTopics({
+    search: debouncedTopicQuery || undefined,
+    limit: 100,
+  })
+  const topicOptions = useMemo(() => topicsResponse?.data || [], [topicsResponse?.data])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedTopicQuery(topicQuery.trim()), 250)
+    return () => window.clearTimeout(timer)
+  }, [topicQuery])
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (topicSearchRef.current && !topicSearchRef.current.contains(event.target as Node)) {
+        setTopicMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
+
+  const availableTopics = useMemo(() => {
+    const query = topicQuery.trim().toLowerCase()
+    return topicOptions.filter((option) => {
+      const optionId = String(option._id || option.id || '')
+      if (!optionId || topics.some((selected) => selected._id === optionId)) return false
+      if (!query) return true
+      return String(option.name || '')
+        .toLowerCase()
+        .includes(query)
+    })
+  }, [topicOptions, topics, topicQuery])
   const updateConsultationAdditionalInfoMutation = useUpdateConsultationAdditionalInfo()
   const updateConsultationPricingMutation = useUpdateConsultationPricing()
   const publishConsultationMutation = usePublishConsultation()
@@ -418,16 +476,8 @@ export const CreateServiceListingPage = () => {
     setHasFollowUp(Boolean(consultation.hasFollowUp))
     setFollowUpDays(consultation.followUpDays != null ? String(consultation.followUpDays) : '7')
 
-    const mode =
-      consultation.mode ||
-      (consultation as unknown as { modeOfConsultation?: 'audio' | 'video' | 'chat' })
-        .modeOfConsultation
-    if (mode === 'audio' || mode === 'video' || mode === 'chat') {
-      setConsultationMode(mode)
-    }
-
-    const primaryPricing =
-      consultation.pricingOptions?.[0] ||
+    const savedPricing =
+      consultation.pricingOptions ||
       (
         consultation as unknown as {
           pricing?: Array<{
@@ -436,13 +486,18 @@ export const CreateServiceListingPage = () => {
             price?: number
           }>
         }
-      ).pricing?.[0]
-    if (primaryPricing) {
-      setConsultationDuration(primaryPricing.durationMinutes || 30)
-      const pType = primaryPricing.pricingType === 'free' ? 'free' : 'paid'
-      setConsultationPricingType(pType)
-      setConsultationPrice(
-        pType === 'paid' && primaryPricing.price != null ? String(primaryPricing.price) : '',
+      ).pricing ||
+      []
+    if (savedPricing.length > 0) {
+      setConsultationPricingSlots(
+        savedPricing.slice(0, MAX_CONSULTATION_PRICING_SLOTS).map((option) => {
+          const pricingType = option.pricingType === 'free' ? 'free' : 'paid'
+          return {
+            durationMinutes: option.durationMinutes || '',
+            pricingType,
+            price: pricingType === 'paid' && option.price != null ? String(option.price) : '',
+          }
+        }),
       )
     }
 
@@ -644,10 +699,41 @@ export const CreateServiceListingPage = () => {
     if (!normalized._id || !normalized.name) return
     if (topics.some((selected) => selected._id === normalized._id)) return
     setTopics((current) => [...current, normalized])
+    setTopicQuery('')
+    setTopicMenuOpen(false)
   }
 
   const removeTopic = (topicId: string) => {
     setTopics((current) => current.filter((topic) => topic._id !== topicId))
+  }
+
+  const updatePricingSlot = (index: number, patch: Partial<ConsultationPricingSlot>) => {
+    setConsultationPricingSlots((current) =>
+      current.map((slot, slotIndex) => (slotIndex === index ? { ...slot, ...patch } : slot)),
+    )
+  }
+
+  const addPricingSlot = () => {
+    if (consultationPricingSlots.length >= MAX_CONSULTATION_PRICING_SLOTS) return
+    const usedDurations = new Set(
+      consultationPricingSlots
+        .map((slot) => slot.durationMinutes)
+        .filter((duration): duration is number => duration !== ''),
+    )
+    if (usedDurations.size >= DURATION_OPTIONS.length) {
+      toast.error('All duration options are already added.')
+      return
+    }
+    setConsultationPricingSlots((current) => [
+      ...current,
+      { durationMinutes: '', pricingType: '', price: '' },
+    ])
+  }
+
+  const removePricingSlot = (index: number) => {
+    setConsultationPricingSlots((current) =>
+      current.length <= 1 ? current : current.filter((_, slotIndex) => slotIndex !== index),
+    )
   }
 
   const buildServicePricingPayload = (): UpdateServicePricingPayload => {
@@ -958,26 +1044,44 @@ export const CreateServiceListingPage = () => {
             toast.error('Mode is required.')
             return
           }
-          if (consultationPricingType === 'paid') {
-            const price = parsePrice(consultationPrice)
-            if (!consultationPrice.trim() || price < 1) {
-              toast.error('Price must be greater than 0 for paid sessions.')
+          if (consultationPricingSlots.length === 0) {
+            toast.error('At least one pricing slot is required.')
+            return
+          }
+          const usedDurations = new Set<number>()
+          for (const [index, slot] of consultationPricingSlots.entries()) {
+            const slotLabel = consultationPricingSlots.length > 1 ? ` for slot ${index + 1}` : ''
+            if (slot.durationMinutes === '') {
+              toast.error(`Duration is required${slotLabel}.`)
               return
+            }
+            if (usedDurations.has(slot.durationMinutes)) {
+              toast.error('Each slot must have a unique duration.')
+              return
+            }
+            usedDurations.add(slot.durationMinutes)
+            if (slot.pricingType !== 'free' && slot.pricingType !== 'paid') {
+              toast.error(`Pricing option is required${slotLabel}.`)
+              return
+            }
+            if (slot.pricingType === 'paid') {
+              const price = parsePrice(slot.price)
+              if (!slot.price.trim() || price < 1) {
+                toast.error('Price must be greater than 0 for paid sessions.')
+                return
+              }
             }
           }
 
           await updateConsultationPricingMutation.mutateAsync({
             id: listingId,
             payload: {
-              mode: consultationMode,
-              pricingOptions: [
-                {
-                  durationMinutes: consultationDuration,
-                  pricingType: consultationPricingType,
-                  price:
-                    consultationPricingType === 'paid' ? parsePrice(consultationPrice) : undefined,
-                },
-              ],
+              mode: 'audio',
+              pricingOptions: consultationPricingSlots.map((slot) => ({
+                durationMinutes: Number(slot.durationMinutes),
+                pricingType: slot.pricingType as 'free' | 'paid',
+                price: slot.pricingType === 'paid' ? parsePrice(slot.price) : undefined,
+              })),
             },
           })
           toast.success('Pricing & duration updated')
@@ -1040,34 +1144,82 @@ export const CreateServiceListingPage = () => {
               <label className="text-body-sm font-bold tracking-tight text-white">
                 Add Topics <RequiredMark />
               </label>
-              <div className="relative">
-                <select
-                  value=""
-                  onChange={(e) => addTopicById(e.target.value)}
+              <div ref={topicSearchRef} className="relative">
+                <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={topicQuery}
                   disabled={isTopicsLoading}
-                  className={cn(consultationInputClass, 'appearance-none pr-8 disabled:opacity-50')}
-                >
-                  <option value="" disabled>
-                    {isTopicsLoading
+                  placeholder={
+                    isTopicsLoading
                       ? 'Loading topics...'
                       : topicOptions.length === 0
                         ? 'No topics available'
-                        : 'Select a topic'}
-                  </option>
-                  {topicOptions
-                    .filter((option) => {
-                      const optionId = String(option._id || option.id || '')
-                      return optionId && !topics.some((selected) => selected._id === optionId)
-                    })
-                    .map((option) => {
-                      const optionId = String(option._id || option.id || '')
-                      return (
-                        <option key={optionId} value={optionId}>
-                          {option.name}
-                        </option>
+                        : 'Search topics'
+                  }
+                  onFocus={() => setTopicMenuOpen(true)}
+                  onChange={(e) => {
+                    setTopicQuery(e.target.value)
+                    setTopicMenuOpen(true)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const match = availableTopics.find(
+                        (option) =>
+                          String(option.name || '').toLowerCase() ===
+                          topicQuery.trim().toLowerCase(),
                       )
-                    })}
-                </select>
+                      if (match) addTopicById(String(match._id || match.id || ''))
+                    }
+                    if (e.key === 'Escape') setTopicMenuOpen(false)
+                  }}
+                  className={cn(
+                    consultationInputClass,
+                    'ui-input-icon-left pr-8 disabled:opacity-50',
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setTopicMenuOpen((open) => !open)}
+                  className="text-muted absolute top-1/2 right-2.5 -translate-y-1/2 p-1 hover:text-white"
+                  aria-label="Toggle topic suggestions"
+                >
+                  <ChevronDown
+                    className={cn(
+                      'size-3.5 transition-transform duration-200',
+                      topicMenuOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
+                {topicMenuOpen && (
+                  <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-white/10 bg-[#161616] p-1.5 shadow-2xl">
+                    {availableTopics.length === 0 ? (
+                      <div className="p-3 text-center text-[11px] text-white/50">
+                        {topicQuery.trim()
+                          ? 'No matching topics'
+                          : topicOptions.length === 0
+                            ? 'No topics available'
+                            : 'All topics selected'}
+                      </div>
+                    ) : (
+                      availableTopics.map((option) => {
+                        const optionId = String(option._id || option.id || '')
+                        return (
+                          <button
+                            key={optionId}
+                            type="button"
+                            onClick={() => addTopicById(optionId)}
+                            className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-[12px] text-white/80 hover:bg-white/5 hover:text-white"
+                          >
+                            <span>{option.name}</span>
+                            <Plus className="size-3.5 text-white/40" />
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                )}
               </div>
               {topics.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-1">
@@ -1279,97 +1431,222 @@ export const CreateServiceListingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">
-                Mode Of Consultation <RequiredMark />
-              </label>
-              <div className="relative">
-                <select
-                  value={consultationMode}
-                  onChange={(e) =>
-                    setConsultationMode(e.target.value as 'audio' | 'video' | 'chat')
-                  }
-                  className="text-body-sm h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-white outline-none"
+          <div className="space-y-6">
+            {consultationPricingSlots.map((slot, index) => {
+              const usedDurations = new Set(
+                consultationPricingSlots
+                  .filter((_, slotIndex) => slotIndex !== index)
+                  .map((item) => item.durationMinutes)
+                  .filter((duration): duration is number => duration !== ''),
+              )
+              const selectClass = cn(
+                'text-body-sm h-10 w-full appearance-none rounded-lg border-0 bg-black px-4 pr-9 outline-none',
+              )
+              return (
+                <div
+                  key={`slot-${index}`}
+                  className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2"
                 >
-                  {CONSULTATION_MODES.map((mode) => (
-                    <option key={mode.value} value={mode.value}>
-                      {mode.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                  {index > 0 && (
+                    <>
+                      <div className="flex items-end gap-3">
+                        <div className="min-w-0 flex-1 space-y-2.5">
+                          <label className="text-body-sm font-bold text-white">
+                            Duration <RequiredMark />
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={slot.durationMinutes}
+                              onChange={(e) =>
+                                updatePricingSlot(index, {
+                                  durationMinutes: Number(e.target.value),
+                                })
+                              }
+                              className={cn(
+                                selectClass,
+                                slot.durationMinutes === '' ? 'text-white/40' : 'text-white',
+                              )}
+                            >
+                              <option value="" disabled>
+                                Select here
+                              </option>
+                              {DURATION_OPTIONS.map((duration) => (
+                                <option
+                                  key={duration}
+                                  value={duration}
+                                  disabled={usedDurations.has(duration)}
+                                >
+                                  {duration} mins
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePricingSlot(index)}
+                          className="text-muted mb-2.5 hover:text-white"
+                          aria-label={`Remove slot ${index + 1}`}
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                      <div />
+                    </>
+                  )}
 
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">
-                Duration <RequiredMark />
-              </label>
-              <div className="relative">
-                <select
-                  value={consultationDuration}
-                  onChange={(e) => setConsultationDuration(Number(e.target.value))}
-                  className="text-body-sm h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-white outline-none"
-                >
-                  {DURATION_OPTIONS.map((duration) => (
-                    <option key={duration} value={duration}>
-                      {duration} mins
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                  {index === 0 && (
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Mode Of Consultation <RequiredMark />
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={consultationMode}
+                          onChange={() => undefined}
+                          className={cn(selectClass, 'text-white')}
+                        >
+                          {CONSULTATION_MODES.map((mode) => (
+                            <option key={mode.value} value={mode.value}>
+                              {mode.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                      </div>
+                    </div>
+                  )}
 
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">
-                Pricing Option <RequiredMark />
-              </label>
-              <div className="overflow-hidden rounded-md border border-white/5 bg-black">
-                {(['paid', 'free'] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setConsultationPricingType(option)}
-                    className="text-body-sm flex h-8 w-full items-center justify-between px-3 font-bold text-white capitalize"
-                  >
-                    {option}
-                    <span
-                      className={cn(
-                        'flex size-3.5 items-center justify-center rounded-full border border-white',
-                        consultationPricingType === option && 'bg-white',
+                  {index === 0 && (
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Duration <RequiredMark />
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={slot.durationMinutes}
+                          onChange={(e) =>
+                            updatePricingSlot(index, {
+                              durationMinutes: Number(e.target.value),
+                            })
+                          }
+                          className={cn(
+                            selectClass,
+                            slot.durationMinutes === '' ? 'text-white/40' : 'text-white',
+                          )}
+                        >
+                          <option value="" disabled>
+                            Select here
+                          </option>
+                          {DURATION_OPTIONS.map((duration) => (
+                            <option
+                              key={duration}
+                              value={duration}
+                              disabled={usedDurations.has(duration)}
+                            >
+                              {duration} mins
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Pricing Option <RequiredMark />
+                      </label>
+                      <div className="relative">
+                        <div
+                          className={cn(
+                            selectClass,
+                            'flex items-center',
+                            slot.pricingType === '' ? 'text-white/40' : 'text-white',
+                          )}
+                        >
+                          {slot.pricingType === 'paid'
+                            ? 'Paid'
+                            : slot.pricingType === 'free'
+                              ? 'Free'
+                              : 'Select here'}
+                        </div>
+                        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                      </div>
+                    </div>
+                    <div className="overflow-hidden rounded-lg bg-black">
+                      {(['paid', 'free'] as const).map((option, optionIndex) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() =>
+                            updatePricingSlot(index, {
+                              pricingType: option,
+                              price: option === 'free' ? '' : slot.price,
+                            })
+                          }
+                          className={cn(
+                            'text-body-sm flex h-10 w-full items-center justify-between px-4 font-medium text-white capitalize',
+                            optionIndex > 0 && 'border-t border-white/10',
+                          )}
+                        >
+                          {option}
+                          <span
+                            className={cn(
+                              'flex size-4 items-center justify-center rounded-full border border-white',
+                              slot.pricingType === option && 'bg-white',
+                            )}
+                          >
+                            {slot.pricingType === option && (
+                              <span className="size-1.5 rounded-full bg-black" />
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Consultation Fees
+                        {slot.pricingType === 'paid' ? (
+                          <>
+                            {' '}
+                            <RequiredMark />
+                          </>
+                        ) : null}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="₹0.00"
+                        value={slot.price}
+                        onChange={(e) => updatePricingSlot(index, { price: e.target.value })}
+                        disabled={slot.pricingType === 'free'}
+                        className={cn(
+                          'text-body-sm h-10 w-full rounded-lg border-0 bg-black px-4 text-white outline-none placeholder:text-white/35',
+                          slot.pricingType === 'free' && 'opacity-50',
+                        )}
+                      />
+                    </div>
+                    {index === consultationPricingSlots.length - 1 &&
+                      consultationPricingSlots.length < MAX_CONSULTATION_PRICING_SLOTS && (
+                        <div className="mt-auto flex justify-end pt-10">
+                          <button
+                            type="button"
+                            onClick={addPricingSlot}
+                            className="text-muted text-body-sm underline underline-offset-2 hover:text-white"
+                          >
+                            Add slots
+                          </button>
+                        </div>
                       )}
-                    >
-                      {consultationPricingType === option && (
-                        <span className="size-1.5 rounded-full bg-black" />
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">
-                Consultation Fees
-                {consultationPricingType === 'paid' ? (
-                  <>
-                    {' '}
-                    <RequiredMark />
-                  </>
-                ) : null}
-              </label>
-              <input
-                type="text"
-                placeholder="₹0.00"
-                value={consultationPrice}
-                onChange={(e) => setConsultationPrice(e.target.value)}
-                disabled={consultationPricingType === 'free'}
-                className={cn(
-                  consultationInputClass,
-                  consultationPricingType === 'free' && 'opacity-50',
-                )}
-              />
-            </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )
@@ -1379,15 +1656,6 @@ export const CreateServiceListingPage = () => {
       .split(',')
       .map((lang) => lang.trim())
       .filter(Boolean)
-
-    const reviewPriceLabel =
-      consultationPricingType === 'free'
-        ? 'Free'
-        : consultationPrice.trim()
-          ? consultationPrice.trim().startsWith('₹')
-            ? consultationPrice.trim()
-            : `₹${consultationPrice.trim()}`
-          : '—'
 
     return (
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-7 duration-300">
@@ -1482,9 +1750,16 @@ export const CreateServiceListingPage = () => {
 
               <div>
                 <h3 className="text-body-sm mb-3 font-bold text-white">Duration &amp; Pricing</h3>
-                <span className="text-body-sm inline-flex rounded-md border border-white/40 px-4 py-2 font-bold text-white">
-                  {consultationDuration}mins ({reviewPriceLabel})
-                </span>
+                <div className="flex flex-wrap gap-2">
+                  {consultationPricingSlots.map((slot, index) => (
+                    <span
+                      key={`${slot.durationMinutes}-${index}`}
+                      className="text-body-sm inline-flex rounded-md border border-white/40 px-4 py-2 font-bold text-white"
+                    >
+                      {slot.durationMinutes}mins ({formatConsultationFeeLabel(slot)})
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

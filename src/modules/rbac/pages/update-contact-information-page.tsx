@@ -15,6 +15,7 @@ import type { PermissionCatalog, SubAdminRole } from '../types/rbac'
 import { grantsToMap, type PermissionLevel } from '@/shared/lib/permissions'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { SuperAdminContactDetailsForm } from '../components/super-admin-contact-details-form'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 
 type ModuleAccess = 'full' | 'limited' | 'none'
@@ -28,7 +29,6 @@ const VERIFY_BTN_CLASS =
 const VERIFY_DONE_BTN_CLASS =
   'h-10 shrink-0 rounded-xl border border-[#1E563D]/50 bg-[#143D2B] px-5 text-xs font-semibold text-[#00E065]'
 
-/** Figma calendar: rounded square, header bar, two top rings, date block */
 function ContactCalendarIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -61,7 +61,6 @@ function ContactCalendarIcon({ className }: { className?: string }) {
   )
 }
 
-/** Figma copy: two overlapping rounded squares */
 function ContactCopyIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -177,10 +176,6 @@ export function UpdateContactInformationPage() {
 
   useEffect(() => {
     if (!user) return
-    if (user.isSuperAdmin) {
-      navigate(getDefaultHomeRoute(user), { replace: true })
-      return
-    }
     if (user.contactSetupCompleted) {
       navigate(getDefaultHomeRoute(user), { replace: true })
     }
@@ -344,14 +339,6 @@ export function UpdateContactInformationPage() {
       toast.error('Emergency contact name is required.')
       return
     }
-    if (!mfaCode.trim()) {
-      toast.error('Authenticator 6-digit code is required.')
-      return
-    }
-    if (!isMfaVerified) {
-      toast.error('Please verify your authenticator 6-digit code before proceeding.')
-      return
-    }
 
     try {
       await completeMutation.mutateAsync({
@@ -361,7 +348,6 @@ export function UpdateContactInformationPage() {
         dateOfBirth: dateOfBirth || undefined,
         bloodGroup: bloodGroup.trim() || undefined,
         profileImageUrl: profileImageUrl || undefined,
-        mfaCode: mfaCode.trim(),
       })
 
       updateUser({
@@ -374,6 +360,10 @@ export function UpdateContactInformationPage() {
       const error = err as { response?: { data?: { message?: string } } }
       toast.error(getApiErrorMessage(error, 'Failed to update contact information'))
     }
+  }
+
+  if (user?.isSuperAdmin) {
+    return <SuperAdminContactDetailsForm />
   }
 
   if (profileQuery.isLoading) {
@@ -391,7 +381,6 @@ export function UpdateContactInformationPage() {
   return (
     <div className="min-h-screen bg-[#050505] px-4 py-8 text-white md:px-12">
       <div className="mx-auto flex w-full max-w-[999px] flex-col gap-6">
-        {/* Page Header */}
         <div className="flex flex-col gap-1.5">
           <button
             type="button"
@@ -411,7 +400,6 @@ export function UpdateContactInformationPage() {
           </div>
         </div>
 
-        {/* Contact Details Card — Figma: #141414, ~999×532 */}
         <div className="rounded-2xl bg-[#141414] p-6 md:px-8 md:py-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -442,7 +430,6 @@ export function UpdateContactInformationPage() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
-            {/* Phone Number */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
                 Phone Number <span className="text-white">*</span>
@@ -482,7 +469,6 @@ export function UpdateContactInformationPage() {
               ) : null}
             </div>
 
-            {/* Emergency Contact */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
                 Emergency contact <span className="text-white">*</span>
@@ -496,7 +482,6 @@ export function UpdateContactInformationPage() {
               />
             </div>
 
-            {/* Emergency Contact Name */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
                 Emergency contact name <span className="text-white">*</span>
@@ -510,7 +495,6 @@ export function UpdateContactInformationPage() {
               />
             </div>
 
-            {/* Date of Birth */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Date of Birth</label>
               <div className="relative">
@@ -550,7 +534,6 @@ export function UpdateContactInformationPage() {
               </div>
             </div>
 
-            {/* Blood Group */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Blood Group</label>
               <input
@@ -562,7 +545,6 @@ export function UpdateContactInformationPage() {
               />
             </div>
 
-            {/* Assigned Role */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Assigned role</label>
               <input
@@ -573,7 +555,6 @@ export function UpdateContactInformationPage() {
               />
             </div>
 
-            {/* Authenticator app code — copy icon inside field */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
                 Authenticator setup key
@@ -613,7 +594,6 @@ export function UpdateContactInformationPage() {
               ) : null}
             </div>
 
-            {/* Enter 6 digit code */}
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
                 Enter 6 digit code here <span className="text-white">*</span>
@@ -644,7 +624,6 @@ export function UpdateContactInformationPage() {
           </div>
         </div>
 
-        {/* Your Role & Permissions Card */}
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-white">Your Role &amp; Permissions</h2>
           <div className="create-user-permission-stack">
@@ -701,7 +680,6 @@ export function UpdateContactInformationPage() {
           </div>
         </section>
 
-        {/* Bottom Actions */}
         <div className="flex items-center justify-between pt-2">
           <button
             type="button"
@@ -721,12 +699,11 @@ export function UpdateContactInformationPage() {
         </div>
       </div>
 
-      {/* Phone OTP Verification Modal */}
       <VerificationOtpModal
         open={isPhoneVerifyModalOpen}
         type="phone"
         targetValue={otpPhone || phone}
-        length={6}
+        length={4}
         sendOtp={sendAdminPhoneOtp}
         verifyOtp={verifyAdminPhoneOtp}
         onClose={() => setIsPhoneVerifyModalOpen(false)}
@@ -736,7 +713,6 @@ export function UpdateContactInformationPage() {
         }}
       />
 
-      {/* Role Permissions Details Modal (RBAC Module Modal standard) */}
       {permissionModalTarget ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"

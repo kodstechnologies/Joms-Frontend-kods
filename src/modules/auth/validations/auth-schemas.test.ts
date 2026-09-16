@@ -34,6 +34,10 @@ describe('otpSchema', () => {
     expect(otpSchema.safeParse({ code: '123456' }).success).toBe(true)
   })
 
+  it('accepts a 4 digit SMS OTP code', () => {
+    expect(otpSchema.safeParse({ code: '1234' }).success).toBe(true)
+  })
+
   it('rejects a short code', () => {
     expect(otpSchema.safeParse({ code: '12' }).success).toBe(false)
   })

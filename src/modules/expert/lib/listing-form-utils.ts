@@ -45,8 +45,4 @@ export const normalizeTimelineUnit = (unit: string): 'days' | 'weeks' | 'months'
 
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const
 
-export const CONSULTATION_MODES = [
-  { label: 'Audio', value: 'audio' },
-  { label: 'Video', value: 'video' },
-  { label: 'Chat', value: 'chat' },
-] as const
+export const CONSULTATION_MODES = [{ label: 'Audio', value: 'audio' }] as const

@@ -15,12 +15,11 @@ const permissionFingerprint = (permissions: string[] = []) =>
  */
 export function useSyncSubAdminPermissions() {
   const userId = useAuthStore((state) => state.user?.id)
-  const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
   const updateUser = useAuthStore((state) => state.updateUser)
   const inFlight = useRef(false)
 
   useEffect(() => {
-    if (!userId || isSuperAdmin) return
+    if (!userId) return
 
     let cancelled = false
 
@@ -43,6 +42,8 @@ export function useSyncSubAdminPermissions() {
           ...(prevFingerprint !== nextFingerprint ? { permissions: nextPermissions } : {}),
           requiresContactSetup: Boolean(profile.requiresContactSetup),
           contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+          mfaEnabled: Boolean(profile.profile?.mfaEnabled),
+          fullname: profile.name || undefined,
         })
       } catch {
         // Keep existing session permissions if profile sync fails
@@ -72,5 +73,5 @@ export function useSyncSubAdminPermissions() {
       document.removeEventListener('visibilitychange', onVisibility)
       window.clearInterval(intervalId)
     }
-  }, [userId, isSuperAdmin, updateUser])
+  }, [userId, updateUser])
 }

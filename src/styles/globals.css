@@ -518,6 +518,24 @@ button:disabled,
   background-repeat: no-repeat;
 }
 
+.security-radio-input {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  border: 1.5px solid rgb(255 255 255 / 55%);
+  background: transparent;
+  cursor: pointer;
+}
+
+.security-radio-input:checked {
+  border-color: #e0a263;
+  background-image: radial-gradient(circle, #e0a263 0 5px, transparent 6px);
+}
+
 .security-toggle-header {
   display: flex;
   align-items: flex-start;
@@ -5872,7 +5890,7 @@ button.ui-manage-metrics:hover,
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0 14px;
   font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
   font-size: 13px;
@@ -5886,13 +5904,25 @@ button.ui-manage-metrics:hover,
 }
 
 .ad-btn-peach {
-  border: none;
-  background: #e0a263;
+  border: 1px solid #f6cb86;
+  background: #f6cb86;
   color: #050505;
+  border-radius: 10px;
 }
 
 .ad-btn-peach:hover {
   filter: brightness(0.96);
+}
+
+.ad-btn-auth {
+  border: 1px solid #e0a263;
+  background: #3d2e14;
+  color: #f6cb86;
+  border-radius: 10px;
+}
+
+.ad-btn-auth:hover {
+  background: #4a3818;
 }
 
 .ad-btn-outline {
@@ -5993,6 +6023,35 @@ button.ui-manage-metrics:hover,
   display: flex;
   align-items: flex-start;
   gap: 24px;
+}
+
+.ad-info-aside {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding-top: 4px;
+  text-align: right;
+}
+
+.ad-2fa-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.ad-2fa-pill.is-pending {
+  border: 1px solid #e0a263;
+  background: #3d2e14;
+  color: #f6cb86;
+}
+
+.ad-2fa-pill.is-enabled {
+  background: rgb(0 166 62 / 18%);
+  color: #00a63e;
 }
 
 .ad-avatar {
@@ -6226,6 +6285,12 @@ button.ui-manage-metrics:hover,
 @media (max-width: 768px) {
   .ad-info-layout {
     flex-direction: column;
+  }
+
+  .ad-info-aside {
+    margin-left: 0;
+    width: 100%;
+    text-align: left;
   }
 
   .ad-info-row,

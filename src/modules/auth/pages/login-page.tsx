@@ -4,7 +4,6 @@ import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
-/** Clarity `eye-show-solid` — Figma 18×18 (viewBox 36×36, pupil r≈6.86) */
 const ClarityEyeShowSolidIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 36 36"
@@ -19,7 +18,6 @@ const ClarityEyeShowSolidIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-/** Clarity `eye-hide-solid` — paired hide state at the same 18×18 size */
 const ClarityEyeHideSolidIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 36 36"
@@ -58,7 +56,6 @@ const InstagramIcon = () => (
   </svg>
 )
 
-// Material Design mdiAccountLock Icon
 const AccountLockIcon = () => (
   <svg viewBox="0 0 24 24" className="size-6 text-white" fill="currentColor" aria-hidden="true">
     <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14M18,16A2,2 0 0,1 20,18V19H21V23H15V19H16V18A2,2 0 0,1 18,16M18,17A1,1 0 0,0 17,18V19H19V18A1,1 0 0,0 18,17Z" />
@@ -92,6 +89,8 @@ function buildSessionUser(admin: AdminSessionUser | undefined, fallbackEmail: st
       mfaEnabled: admin.mfaEnabled,
       status: admin.status,
       subAdminId: admin.subAdminId ?? undefined,
+      requiresContactSetup: Boolean(admin.requiresContactSetup),
+      contactSetupCompleted: Boolean(admin.contactSetupCompleted),
     }
   }
 
@@ -114,7 +113,7 @@ export function LoginPage() {
   const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
-  const [mfaMethod, setMfaMethod] = useState<'emailOtp' | 'authenticator'>('emailOtp')
+  const [mfaMethod, setMfaMethod] = useState<'emailOtp' | 'authenticator' | 'smsOtp'>('emailOtp')
   const [showPassword, setShowPassword] = useState(false)
 
   const credentialsForm = useForm<LoginSchema>({
@@ -149,31 +148,35 @@ export function LoginPage() {
     let sessionUser = buildSessionUser(admin, email)
     setSession(sessionUser, token)
 
-    if (!sessionUser.isSuperAdmin) {
-      try {
-        const profileResponse = await fetchRbacMe()
-        const profile = profileResponse.data
-        const resolvedSubAdminId = profile.subAdminId || admin?.subAdminId || undefined
-        updateUser({
-          subAdminId: resolvedSubAdminId,
-          permissions: normalizeUserPermissions(profile.permissions ?? []),
-          requiresContactSetup: Boolean(profile.requiresContactSetup),
-          contactSetupCompleted: Boolean(profile.contactSetupCompleted),
-        })
+    try {
+      const profileResponse = await fetchRbacMe()
+      const profile = profileResponse.data
+      const resolvedSubAdminId = profile.subAdminId || admin?.subAdminId || undefined
+      updateUser({
+        subAdminId: resolvedSubAdminId,
+        permissions: normalizeUserPermissions(profile.permissions ?? sessionUser.permissions),
+        requiresContactSetup: Boolean(profile.requiresContactSetup),
+        contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+        fullname: profile.name || sessionUser.fullname,
+      })
 
-        sessionUser = {
-          ...sessionUser,
-          subAdminId: resolvedSubAdminId,
-          permissions: normalizeUserPermissions(profile.permissions ?? []),
-        }
+      sessionUser = {
+        ...sessionUser,
+        subAdminId: resolvedSubAdminId,
+        permissions: normalizeUserPermissions(profile.permissions ?? sessionUser.permissions),
+        requiresContactSetup: Boolean(profile.requiresContactSetup),
+        contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+      }
 
-        if (profile.requiresContactSetup) {
-          toast.success('Please complete your contact information')
-          navigate('/auth/contact-information', { replace: true })
-          return
-        }
-      } catch {
-        // Fall through to default home if profile fetch fails
+      if (profile.requiresContactSetup) {
+        toast.success('Please complete your contact information')
+        navigate('/auth/contact-information', { replace: true })
+        return
+      }
+    } catch {
+      if (sessionUser.requiresContactSetup) {
+        navigate('/auth/contact-information', { replace: true })
+        return
       }
     }
 
@@ -202,11 +205,19 @@ export function LoginPage() {
       }
 
       setPendingEmail(values.email)
-      const nextMfaMethod = session?.mfaMethod === 'authenticator' ? 'authenticator' : 'emailOtp'
+      const nextMfaMethod =
+        session?.mfaMethod === 'authenticator'
+          ? 'authenticator'
+          : session?.mfaMethod === 'smsOtp'
+            ? 'smsOtp'
+            : 'emailOtp'
       setMfaMethod(nextMfaMethod)
+      otpForm.reset({ code: '' })
       setStep('otp')
       if (nextMfaMethod === 'authenticator') {
         toast.success('Enter the code from your authenticator app')
+      } else if (nextMfaMethod === 'smsOtp') {
+        toast.success('OTP sent to your phone')
       } else {
         toast.success('OTP sent to your email')
       }
@@ -222,8 +233,11 @@ export function LoginPage() {
       return
     }
 
-    if (!/^\d{6}$/.test(values.code)) {
-      toast.error('Enter a valid 6 digit code')
+    const expectedLength = mfaMethod === 'smsOtp' ? 4 : 6
+    if (!new RegExp(`^\\d{${expectedLength}}$`).test(values.code)) {
+      toast.error(
+        expectedLength === 4 ? 'Enter a valid 4 digit code' : 'Enter a valid 6 digit code',
+      )
       return
     }
 
@@ -240,7 +254,11 @@ export function LoginPage() {
       await finalizeLogin(token, session?.admin, pendingEmail)
     } catch {
       toast.error(
-        mfaMethod === 'authenticator' ? 'Invalid authenticator code' : 'Invalid or expired OTP',
+        mfaMethod === 'authenticator'
+          ? 'Invalid authenticator code'
+          : mfaMethod === 'smsOtp'
+            ? 'Invalid or expired OTP'
+            : 'Invalid or expired OTP',
       )
     }
   }
@@ -253,13 +271,11 @@ export function LoginPage() {
           'linear-gradient(125deg, #797365 0%, #9c9483 25%, #d5c7a5 58%, #eee3c8 75%, #cec0a1 100%)',
       }}
     >
-      {/* Top Left Branding */}
       <header className="absolute top-8 left-8 flex items-center gap-3">
         <img src={jomsLogo} alt="JOMS" className="size-9 rounded-full object-contain shadow-sm" />
         <p className="text-lg font-semibold tracking-wider text-white">JOMS</p>
       </header>
 
-      {/* Main Login / 2FA Card Center */}
       <div className="flex flex-1 items-center justify-center px-4 py-20">
         <div
           className={
@@ -269,9 +285,7 @@ export function LoginPage() {
           }
         >
           {step === 'otp' ? (
-            /* Two Factor Authentication View */
             <div className="space-y-6">
-              {/* Account Lock Icon Badge */}
               <div className="flex justify-center">
                 <div className="grid size-12 place-items-center rounded-full bg-[#1E1E1E] shadow-sm">
                   <AccountLockIcon />
@@ -285,7 +299,9 @@ export function LoginPage() {
                 <p className="text-sm font-normal text-[#717182]">
                   {mfaMethod === 'authenticator'
                     ? 'Enter the 6 digit code from your authenticator app.'
-                    : 'Enter 6 digit authorisation code sent to your email.'}
+                    : mfaMethod === 'smsOtp'
+                      ? 'Enter 4 digit authorisation code sent to your phone.'
+                      : 'Enter 6 digit authorisation code sent to your email.'}
                 </p>
               </div>
 
@@ -296,7 +312,7 @@ export function LoginPage() {
                     name="code"
                     render={({ field }) => (
                       <OtpInput
-                        length={6}
+                        length={mfaMethod === 'smsOtp' ? 4 : 6}
                         value={field.value}
                         onChange={field.onChange}
                         autoFocus
@@ -310,7 +326,6 @@ export function LoginPage() {
                   ) : null}
                 </div>
 
-                {/* Login button with #FFFFF0 */}
                 <button
                   type="submit"
                   disabled={isVerifyPending}
@@ -321,7 +336,6 @@ export function LoginPage() {
               </form>
             </div>
           ) : (
-            /* Credentials View */
             <div>
               <div className="space-y-2 text-center">
                 <h1 className="font-sans text-[32px] leading-5 font-semibold tracking-normal text-white">
@@ -336,7 +350,6 @@ export function LoginPage() {
                 className="mt-8 space-y-6"
                 onSubmit={credentialsForm.handleSubmit(onSubmitCredentials)}
               >
-                {/* Email ID Field */}
                 <div className="space-y-1.5">
                   <label className="block text-[13px] font-normal text-white" htmlFor="login-email">
                     Email ID
@@ -358,7 +371,6 @@ export function LoginPage() {
                   ) : null}
                 </div>
 
-                {/* Password Field */}
                 <div className="space-y-1.5">
                   <label
                     className="block text-[13px] font-normal text-white"
@@ -395,7 +407,6 @@ export function LoginPage() {
                   ) : null}
                 </div>
 
-                {/* Sign In Button */}
                 <button
                   type="submit"
                   disabled={isLoginPending}
@@ -409,7 +420,6 @@ export function LoginPage() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="w-full border-t border-black/10 bg-transparent px-8 py-3.5 text-[11px] text-black sm:text-xs">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">

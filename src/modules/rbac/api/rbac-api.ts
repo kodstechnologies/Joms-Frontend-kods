@@ -49,13 +49,28 @@ export const checkSubAdminPhone = async (phone: string) => {
   return response.data
 }
 
-export const verifySubAdminMfa = async (code: string) => {
-  const response = await adminApiClient.post<{ success: boolean; message: string }>(
-    '/admin/rbac/me/verify-mfa',
-    { code },
-  )
+export const startAuthenticatorSetup = async () => {
+  const response = await adminApiClient.post<{
+    success: boolean
+    data: {
+      enrolled: boolean
+      mfaEnabled: boolean
+      secret: string
+      otpauthUrl: string
+    }
+  }>('/admin/rbac/me/authenticator/setup')
   return response.data
 }
+
+export const verifyAuthenticatorSetup = async (code: string) => {
+  const response = await adminApiClient.post<{
+    success: boolean
+    data: { verified: boolean; mfaEnabled: boolean }
+  }>('/admin/rbac/me/authenticator/verify', { code })
+  return response.data
+}
+
+export const verifySubAdminMfa = verifyAuthenticatorSetup
 
 export const fetchPermissionCatalog = async () => {
   const response = await adminApiClient.get<{ success: boolean; data: PermissionCatalog }>(

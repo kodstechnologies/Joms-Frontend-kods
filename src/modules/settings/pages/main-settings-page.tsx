@@ -136,9 +136,12 @@ export function MainSettingsPage() {
 
   const persistSecuritySettings = async (config: typeof securityConfig) => {
     const normalizedSecurity = normalizeSecuritySettings(config)
-    if (countEnabledMfaMethods(normalizedSecurity.mfa) === 0) {
-      toast.error('Enable at least one MFA method before saving')
-      throw new Error('At least one MFA method must be enabled')
+    if (
+      normalizedSecurity.mfa.requireForAllSubAdmins &&
+      countEnabledMfaMethods(normalizedSecurity.mfa) !== 1
+    ) {
+      toast.error('Select exactly one MFA method before saving')
+      throw new Error('Select exactly one MFA method before saving')
     }
     await updateSecurity.mutateAsync(normalizedSecurity)
     setSecurityConfig(normalizedSecurity)

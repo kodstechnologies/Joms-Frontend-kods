@@ -9,7 +9,7 @@ import type { NavItem } from '@/app/layouts/navigation/navigation.config'
 import { useBranding } from '@/app/providers/use-branding'
 import { useMaintenance } from '@/app/providers/use-maintenance'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
-import { useContactSetupProfile } from '@/modules/rbac/hooks/use-rbac'
+import { useContactSetupProfile, useRbacMe } from '@/modules/rbac/hooks/use-rbac'
 import { formatDisplayClock, useLiveClock } from '@/modules/settings/utils/display-clock'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -51,13 +51,16 @@ export function Topbar({
   const user = useAuthStore((state) => state.user)
   const isSubAdmin = Boolean(user && !user.isSuperAdmin)
   const profileQuery = useContactSetupProfile(isSubAdmin)
+  const meQuery = useRbacMe()
   const visibleNavigation = getVisibleNavigation(user)
   const title = getTitleFromNav(location.pathname, visibleNavigation)
   const displayName = user?.fullname ?? 'Admin'
   const profileRoleLabel =
     profileQuery.data?.data.profile.roles.map((role) => role.name).join(', ') || 'Sub Admin'
   const roleLabel = user?.isSuperAdmin ? 'Super Admin' : profileRoleLabel
-  const profileImageUrl = isSubAdmin ? profileQuery.data?.data.profile.profileImageUrl : undefined
+  const profileImageUrl = user?.isSuperAdmin
+    ? meQuery.data?.data.profile?.profileImageUrl
+    : profileQuery.data?.data.profile.profileImageUrl
   const userInitial = displayName.charAt(0).toUpperCase()
   const canOpenProfile = Boolean(user)
   const { applicationName, timezone, dateTimeFormat } = useBranding()

@@ -160,8 +160,8 @@ export const securityDefaults: SecuritySettings = {
   },
   mfa: {
     requireForAllSubAdmins: true,
-    authenticatorApp: true,
-    smsOtp: true,
+    authenticatorApp: false,
+    smsOtp: false,
     emailOtp: true,
   },
   passwordReset: {

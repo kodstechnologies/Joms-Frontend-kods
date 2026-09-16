@@ -756,16 +756,16 @@ export function AppRouter() {
         />
 
         <Route element={<ProtectedRoute />}>
-          <Route
-            path="/auth/contact-information"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <UpdateContactInformationPage />
-              </Suspense>
-            }
-          />
-
           <Route element={<ContactSetupRoute />}>
+            <Route
+              path="/auth/contact-information"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <UpdateContactInformationPage />
+                </Suspense>
+              }
+            />
+
             <Route element={<DashboardLayout />}>
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/dashboard" element={<HomeRedirect />} />

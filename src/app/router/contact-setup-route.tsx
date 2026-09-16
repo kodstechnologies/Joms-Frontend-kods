@@ -12,10 +12,6 @@ export function ContactSetupRoute() {
     return <Navigate to="/auth/login" replace state={{ from: location }} />
   }
 
-  if (user.isSuperAdmin) {
-    return <Outlet />
-  }
-
   const isContactSetupPage = location.pathname === '/auth/contact-information'
 
   if (profileQuery.isLoading && user.requiresContactSetup === undefined) {

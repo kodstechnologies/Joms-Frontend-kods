@@ -62,6 +62,15 @@ export type SubAdmin = {
   mfaSecret?: string
   otpauthUrl?: string
   contactSetupCompleted?: boolean
+  emailVerified?: boolean
+  alternativeNumber?: string
+  countryCode?: string
+  address?: string
+  district?: string
+  state?: string
+  pincode?: string
+  kind?: string
+  isSuperAdmin?: boolean
   roleIds: string[]
   roles: SubAdminRole[]
   scopes: string[]
@@ -82,6 +91,26 @@ export type SuperAdminSelfProfile = {
   lastName: string
   fullname: string
   email: string
+  emailVerified?: boolean
+  phone?: string
+  phoneVerified?: boolean
+  alternativeNumber?: string
+  countryCode?: string
+  address?: string
+  district?: string
+  state?: string
+  pincode?: string
+  dateOfBirth?: string | null
+  bloodGroup?: string
+  emergencyContact?: string
+  emergencyContactName?: string
+  location?: string
+  department?: string
+  jobTitle?: string
+  employmentType?: string
+  workplaceFlexibility?: string
+  profileImageUrl?: string
+  employeeId?: string
   roleLabel: string
   status: string
   mfaEnabled: boolean
@@ -90,6 +119,7 @@ export type SuperAdminSelfProfile = {
   lastActionAt?: string
   kind: 'superadmin'
   isSuperAdmin: true
+  contactSetupCompleted?: boolean
 }
 
 export type AdminLogSubject =
@@ -190,9 +220,22 @@ export type ContactSetupProfileResponse = {
 }
 
 export type CompleteContactSetupPayload = {
+  firstName?: string
+  lastName?: string
   phone: string
-  emergencyContact: string
-  emergencyContactName: string
+  alternativeNumber?: string
+  countryCode?: string
+  address?: string
+  district?: string
+  state?: string
+  pincode?: string
+  location?: string
+  department?: string
+  jobTitle?: string
+  employmentType?: string
+  workplaceFlexibility?: string
+  emergencyContact?: string
+  emergencyContactName?: string
   dateOfBirth?: string
   bloodGroup?: string
   profileImageUrl?: string

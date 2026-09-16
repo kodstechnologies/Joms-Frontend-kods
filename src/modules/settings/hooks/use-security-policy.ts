@@ -8,6 +8,10 @@ import { settingsKeys } from '@/modules/settings/hooks/use-settings'
 import type { SecuritySettings } from '@/modules/settings/types/settings'
 import { securityDefaults } from '@/modules/settings/config/settings.config'
 import {
+  selectedMfaMethod,
+  selectSingleMfaMethod,
+} from '@/modules/settings/utils/security-settings'
+import {
   DEFAULT_PASSWORD_POLICY,
   DEFAULT_SESSION_TIMEOUT_MINUTES,
 } from '@/modules/settings/utils/password-policy'
@@ -31,9 +35,13 @@ function normalizeMfaPolicy(
         : typeof legacyRequireForAllAdmins === 'boolean'
           ? legacyRequireForAllAdmins
           : securityDefaults.mfa.requireForAllSubAdmins,
-    authenticatorApp: source.authenticatorApp ?? securityDefaults.mfa.authenticatorApp,
-    smsOtp: source.smsOtp ?? securityDefaults.mfa.smsOtp,
-    emailOtp: source.emailOtp ?? securityDefaults.mfa.emailOtp,
+    ...selectSingleMfaMethod(
+      selectedMfaMethod({
+        authenticatorApp: source.authenticatorApp ?? false,
+        smsOtp: source.smsOtp ?? false,
+        emailOtp: source.emailOtp ?? true,
+      }),
+    ),
   }
 }
 

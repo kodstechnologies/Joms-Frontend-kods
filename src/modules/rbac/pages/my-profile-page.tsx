@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useCallback, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Clock, Upload, UserRound } from 'lucide-react'
+import { ArrowLeft, Clock, Shield, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -13,6 +13,7 @@ import {
 } from '../hooks/use-rbac'
 import { fetchMySubAdminLogs } from '../api/rbac-api'
 import { RbacLoader } from '../components/rbac-loader'
+import { AuthenticatorSetupModal } from '../components/authenticator-setup-modal'
 import { UpdatePasswordModal } from '../components/update-password-modal'
 import type { AuditLog, SuperAdminSelfProfile, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -118,10 +119,23 @@ function RolePill({ label }: { label: string }) {
   return <span className="rbac-role-name-pill">{label}</span>
 }
 
+function TwoFactorStatus({ enabled }: { enabled?: boolean }) {
+  return (
+    <span className={cn('ad-2fa-pill', enabled ? 'is-enabled' : 'is-pending')}>
+      {enabled ? 'Enabled' : 'Pending'}
+    </span>
+  )
+}
+
 function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) {
   const navigate = useNavigate()
+  const updateUser = useAuthStore((state) => state.updateUser)
+  const [authenticatorOpen, setAuthenticatorOpen] = useState(false)
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const isActive = profile.status === 'active'
-  const displayName = profile.fullname || `${profile.firstName} ${profile.lastName}`.trim() || '—'
+  const phoneDisplay = profile.phone
+    ? `${profile.countryCode || '+91'} ${profile.phone}`.trim()
+    : '—'
 
   return (
     <div className="ad-page">
@@ -135,7 +149,7 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
           <span>My Profile</span>
         </button>
         <p className="ad-breadcrumb">
-          Role Based Access / <span>{displayName}</span>
+          Role Based Access / <span>My Profile</span>
         </p>
       </div>
 
@@ -144,11 +158,11 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
         <div className="ad-actions">
           <button
             type="button"
-            className="ad-btn ad-btn-peach"
-            onClick={() => navigate('/settings/access/my-profile/logs')}
+            className="ad-btn ad-btn-auth"
+            onClick={() => setAuthenticatorOpen(true)}
           >
-            <Clock className="size-4" aria-hidden="true" />
-            View Activity Logs
+            <Shield className="size-4" aria-hidden="true" />
+            {profile.mfaEnabled ? 'Authenticator App' : 'Set Up Authenticator App'}
           </button>
           <button
             type="button"
@@ -156,7 +170,15 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
             onClick={() => navigate('/my-tasks')}
           >
             <Clock className="size-4" aria-hidden="true" />
-            View Assigned Tasks
+            All Tasks
+          </button>
+          <button
+            type="button"
+            className="ad-btn ad-btn-peach"
+            onClick={() => navigate('/settings/access/my-profile/logs')}
+          >
+            <Clock className="size-4" aria-hidden="true" />
+            View Activity Logs
           </button>
         </div>
       </div>
@@ -176,7 +198,11 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
 
         <div className="ad-info-layout">
           <div className="ad-avatar">
-            <UserRound className="size-8" strokeWidth={1.5} aria-hidden="true" />
+            {profile.profileImageUrl ? (
+              <img src={profile.profileImageUrl} alt="" className="ad-avatar-img" />
+            ) : (
+              <UserRound className="size-8" strokeWidth={1.5} aria-hidden="true" />
+            )}
           </div>
 
           <div className="ad-info-main">
@@ -186,18 +212,22 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
               <DetailField label="Role">
                 <RolePill label={profile.roleLabel || 'Super Admin'} />
               </DetailField>
-              <DetailField label="Last Active">
-                {formatOverviewDate(profile.lastActionAt || profile.updatedAt)}
-              </DetailField>
+              <DetailField label="Job title">{profile.jobTitle || '—'}</DetailField>
             </div>
             <div className="ad-info-row">
-              <DetailField label="Employee ID">—</DetailField>
-              <DetailField label="Department">—</DetailField>
+              <DetailField label="Employee ID">{profile.employeeId || 'JOMS_2026'}</DetailField>
+              <DetailField label="Department">{profile.department || '—'}</DetailField>
               <DetailField label="2FA Status">
-                {profile.mfaEnabled ? 'Enabled' : 'Disabled'}
+                <TwoFactorStatus enabled={profile.mfaEnabled} />
               </DetailField>
-              <DetailField label="Workplace">—</DetailField>
+              <DetailField label="Workplace">{profile.workplaceFlexibility || '—'}</DetailField>
             </div>
+          </div>
+
+          <div className="ad-info-aside">
+            <DetailField label="Last Active">
+              {formatOverviewDate(profile.lastActionAt || profile.updatedAt)}
+            </DetailField>
           </div>
         </div>
       </section>
@@ -213,19 +243,52 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
         </div>
 
         <div className="ad-more-grid">
-          <DetailField label="Date Of Birth">—</DetailField>
+          <DetailField label="Date Of Birth">{formatDateOnly(profile.dateOfBirth)}</DetailField>
           <DetailField label="Email ID">{profile.email || '—'}</DetailField>
-          <DetailField label="Phone number">—</DetailField>
-          <DetailField label="Blood Group">—</DetailField>
+          <DetailField label="Phone number">{phoneDisplay}</DetailField>
+          <DetailField label="Blood Group">{profile.bloodGroup || '—'}</DetailField>
           <DetailField label="Created By">System</DetailField>
-          <DetailField label="Location">—</DetailField>
+          <DetailField label="Location">
+            {profile.location ||
+              [profile.district, profile.state, profile.pincode].filter(Boolean).join(', ') ||
+              profile.address ||
+              '—'}
+          </DetailField>
           <DetailField label="Previous Role">—</DetailField>
           <DetailField label="Created At">{formatOverviewDate(profile.createdAt)}</DetailField>
-          <DetailField label="Password Updated">—</DetailField>
-          <DetailField label="Emergency contact name">—</DetailField>
-          <DetailField label="Contact details">—</DetailField>
+          <DetailField label="Password Updated">
+            <div className="ad-password-wrap">
+              <span>—</span>
+              <button
+                type="button"
+                onClick={() => setPasswordModalOpen(true)}
+                className="ad-change-password"
+              >
+                Change Password
+              </button>
+            </div>
+          </DetailField>
+          <DetailField label="Emergency contact name">
+            {profile.emergencyContactName || '—'}
+          </DetailField>
+          <DetailField label="Contact details">{profile.emergencyContact || '—'}</DetailField>
         </div>
       </section>
+      <AuthenticatorSetupModal
+        open={authenticatorOpen}
+        onClose={() => setAuthenticatorOpen(false)}
+        onEnrolled={() => {
+          updateUser({ mfaEnabled: true })
+        }}
+      />
+      <UpdatePasswordModal
+        open={passwordModalOpen}
+        userName={profile.fullname}
+        onClose={() => setPasswordModalOpen(false)}
+        onSubmit={() => {
+          toast.error('Password updates for Super Admin are not available from this screen yet.')
+        }}
+      />
     </div>
   )
 }
@@ -233,6 +296,7 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
 function SubAdminProfileView() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const updateUser = useAuthStore((state) => state.updateUser)
   const [historyPage, setHistoryPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: HISTORY_SORT_FIELD_MAP,
@@ -264,6 +328,7 @@ function SubAdminProfileView() {
   }, [logs])
 
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
+  const [authenticatorOpen, setAuthenticatorOpen] = useState(false)
   const updatePasswordMutation = useUpdateSubAdminPassword()
 
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
@@ -334,8 +399,6 @@ function SubAdminProfileView() {
     return <RbacLoader label="Loading profile..." />
   }
 
-  const displayName = subAdmin.fullname || `${subAdmin.firstName} ${subAdmin.lastName}`.trim()
-
   return (
     <div className="ad-page">
       <div className="ad-header">
@@ -348,13 +411,29 @@ function SubAdminProfileView() {
           <span>My Profile</span>
         </button>
         <p className="ad-breadcrumb">
-          Role Based Access / <span>{displayName}</span>
+          Role Based Access / <span>My Profile</span>
         </p>
       </div>
 
       <div className="ad-toolbar">
         <h2 className="ad-overview-tab">Admin Overview</h2>
         <div className="ad-actions">
+          <button
+            type="button"
+            className="ad-btn ad-btn-auth"
+            onClick={() => setAuthenticatorOpen(true)}
+          >
+            <Shield className="size-4" aria-hidden="true" />
+            {subAdmin.mfaEnabled ? 'Authenticator App' : 'Set Up Authenticator App'}
+          </button>
+          <button
+            type="button"
+            className="ad-btn ad-btn-peach"
+            onClick={() => navigate('/my-tasks')}
+          >
+            <Clock className="size-4" aria-hidden="true" />
+            All Tasks
+          </button>
           <button
             type="button"
             className="ad-btn ad-btn-peach"
@@ -364,14 +443,6 @@ function SubAdminProfileView() {
           >
             <Clock className="size-4" aria-hidden="true" />
             View Activity Logs
-          </button>
-          <button
-            type="button"
-            className="ad-btn ad-btn-peach"
-            onClick={() => navigate('/my-tasks')}
-          >
-            <Clock className="size-4" aria-hidden="true" />
-            View Assigned Tasks
           </button>
         </div>
       </div>
@@ -405,18 +476,22 @@ function SubAdminProfileView() {
               <DetailField label="Role">
                 <RolePill label={roleLabel} />
               </DetailField>
-              <DetailField label="Last Active">
-                {formatOverviewDate(subAdmin.lastActionAt || subAdmin.updatedAt)}
-              </DetailField>
+              <DetailField label="Job title">{subAdmin.jobTitle || '—'}</DetailField>
             </div>
             <div className="ad-info-row">
               <DetailField label="Employee ID">{subAdmin.employeeId || '—'}</DetailField>
               <DetailField label="Department">{subAdmin.department || '—'}</DetailField>
               <DetailField label="2FA Status">
-                {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
+                <TwoFactorStatus enabled={subAdmin.mfaEnabled} />
               </DetailField>
               <DetailField label="Workplace">{subAdmin.workplaceFlexibility || '—'}</DetailField>
             </div>
+          </div>
+
+          <div className="ad-info-aside">
+            <DetailField label="Last Active">
+              {formatOverviewDate(subAdmin.lastActionAt || subAdmin.updatedAt)}
+            </DetailField>
           </div>
         </div>
       </section>
@@ -512,6 +587,14 @@ function SubAdminProfileView() {
         onSubmit={handlePasswordUpdate}
       />
 
+      <AuthenticatorSetupModal
+        open={authenticatorOpen}
+        onClose={() => setAuthenticatorOpen(false)}
+        onEnrolled={() => {
+          updateUser({ mfaEnabled: true })
+        }}
+      />
+
       {exportFilterModals}
     </div>
   )
@@ -538,6 +621,7 @@ export function MyProfilePage() {
             lastName: rest.join(' '),
             fullname: fallbackName,
             email: user.email || '',
+            employeeId: 'JOMS_2026',
             roleLabel: 'Super Admin',
             status: user.status || 'active',
             mfaEnabled: Boolean(user.mfaEnabled),
