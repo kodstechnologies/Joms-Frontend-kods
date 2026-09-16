@@ -217,6 +217,15 @@ export function ExpertMembershipsPage() {
 
   const openAction = useCallback(
     (subscription: MembershipSubscription, action: typeof actionType) => {
+      const status = String(subscription.status || '').toLowerCase()
+      if (
+        (action === 'upgrade' || action === 'downgrade' || action === 'extend') &&
+        (status === 'cancelled' || status === 'expired')
+      ) {
+        toast.error(`Cannot ${action} a ${status} membership`)
+        setActiveDropdownId(null)
+        return
+      }
       setSelectedSubscription(subscription)
       setActionType(action)
       setActiveDropdownId(null)

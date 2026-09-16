@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { RotateCcw, Settings2, Trash2 } from 'lucide-react'
+import { HardDriveDownload, RotateCcw, Settings2, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -15,6 +15,7 @@ import {
   useBackups,
   useDeleteBackup,
   useRestoreBackup,
+  useRunBackup,
 } from '../hooks/use-backups'
 import { fetchBackups } from '../api/backups-api'
 import type { BackupHistoryRow, SettingsMetric } from '../types/settings'
@@ -34,6 +35,7 @@ import {
   buildPrefixedListQueryParams,
   createPrefixedListExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 const PAGE_SIZE = 10
 
@@ -131,11 +133,37 @@ export function BackupRestorePanel() {
   const { data: backupsResult, isLoading } = useBackups(listQueryParams)
   const restoreMutation = useRestoreBackup()
   const deleteMutation = useDeleteBackup()
+  const runMutation = useRunBackup()
+  const warnedRef = useRef<string | null>(null)
 
   const rows = backupsResult?.data ?? []
   const meta = backupsResult?.meta
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
+
+  useEffect(() => {
+    const warning = meta?.warning
+    if (!warning || warnedRef.current === warning) return
+    warnedRef.current = warning
+    toast.warning(warning)
+  }, [meta?.warning])
+
+  const handleRunBackup = () => {
+    runMutation.mutate(
+      { name: 'Manual Backup' },
+      {
+        onSuccess: (result) => {
+          if (result && typeof result === 'object' && 'rdsError' in result && result.rdsError) {
+            toast.success('Local backup created (cloud unavailable)')
+            toast.warning(String(result.rdsError))
+            return
+          }
+          toast.success('Backup started')
+        },
+        onError: (error) => toast.error(getApiErrorMessage(error, 'Backup failed')),
+      },
+    )
+  }
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     toast.success('Filters applied')
@@ -267,9 +295,7 @@ export function BackupRestorePanel() {
       <div className="backup-header">
         <div>
           <h2 className="referral-page-title">Backups &amp; Restore</h2>
-          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
-            View, download, and restore system backups
-          </p>
+          <p className="referral-page-subtitle mt-1">View, download, and restore system backups</p>
         </div>
         <div className="backup-actions">
           <Button
@@ -277,8 +303,17 @@ export function BackupRestorePanel() {
             className="ui-manage-metrics inline-flex items-center gap-2"
             onClick={() => navigate('/metrics/backup-configuration')}
           >
-            <ManageMetricsIcon />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
+          </Button>
+          <Button
+            variant="secondary"
+            className="inline-flex items-center gap-2"
+            onClick={handleRunBackup}
+            disabled={runMutation.isPending}
+          >
+            <HardDriveDownload className="size-4 shrink-0" />
+            {runMutation.isPending ? 'Running…' : 'Run Backup'}
           </Button>
           <Button
             className="backup-configure-btn inline-flex items-center gap-2"

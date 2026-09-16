@@ -408,7 +408,7 @@ export function SupportWorkspacePage() {
                 void openVenuePartnerProfile(reporterId, navigate)
                 return
               }
-              if (reporterType === 'expert') {
+              if (reporterType === 'expert' || reporterType === 'service_partner') {
                 navigate(`/experts/management/profile/${reporterId}`)
                 return
               }

@@ -62,7 +62,7 @@ const emptyForm: FormValues = {
 
 const inputClass = 'ui-input'
 const selectClass = 'ui-input appearance-none cursor-pointer [color-scheme:dark]'
-const labelClass = 'text-body-sm text-muted mb-1.5 block'
+const labelClass = 'mb-1.5 block text-[14px] leading-5 font-semibold tracking-normal text-white'
 
 const CHANNEL_VALUES = new Set(['in-app', 'email', 'push'])
 const AUDIENCE_VALUES = new Set([

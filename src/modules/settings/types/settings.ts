@@ -232,7 +232,6 @@ export type NotificationSettings = {
     accountSecurity: boolean
     paymentsTransaction: boolean
     reportsAbuseModeration: boolean
-    escalations: boolean
     rolePermissionModification: boolean
     paymentGatewayConfiguration: boolean
   }
@@ -337,11 +336,14 @@ export type BackupHistoryRow = {
   id: string
   name: string
   type: 'Automatic' | 'Manual'
-  scope: 'Full System' | 'Partial'
+  scope: 'Full System' | 'Partial' | string
   createdBy: string
   timestamp: string
   size: string
-  status: 'Completed' | 'Pending' | 'Failed'
+  status: 'Completed' | 'Pending' | 'Failed' | 'Restored'
+  partial?: boolean
+  rdsError?: string | null
+  jsonError?: string | null
 }
 
 export type ModuleSettingsMap = {
@@ -402,6 +404,7 @@ export type PaginationMeta = {
   limit: number
   total: number
   totalPages: number
+  warning?: string
 }
 
 export type PolicyStatus = 'Active' | 'Draft' | 'Archived'
