@@ -52,6 +52,7 @@ export type SubAdmin = {
   workplaceFlexibility: string
   location: string
   phone?: string
+  phoneVerified?: boolean
   emergencyContact?: string
   emergencyContactName?: string
   dateOfBirth?: string | null

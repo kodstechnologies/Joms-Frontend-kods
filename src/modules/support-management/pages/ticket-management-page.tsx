@@ -39,7 +39,6 @@ import {
   useDeleteSupportTicket,
   useEscalateSupportTicket,
   useLiveSupportUpdates,
-  useSupportAgents,
   useSupportTickets,
   useUpdateSupportTicket,
 } from '../hooks/use-support'
@@ -50,12 +49,14 @@ import {
   getEscalationStatusLabel,
   getPriorityLabel,
   getStatusLabel,
+  getSupportModuleEscalationPermission,
   nextPriority,
   nextStatus,
   formatTicketDateTime,
   formatTicketDurationHms,
   dashIfEmpty,
 } from '../utils/support-format'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { buildTicketManagementMetricCards } from '../utils/ticket-management-metrics'
 import {
   orderByActiveMetricIds,
@@ -259,7 +260,6 @@ export function TicketManagementPage() {
   const updateMutation = useUpdateSupportTicket()
   const escalateMutation = useEscalateSupportTicket()
   const deleteMutation = useDeleteSupportTicket()
-  const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
   const tableColumnPreferencesQuery = useTableColumnPreferences(TICKET_MANAGEMENT_MODULE_KEY)
 
@@ -742,6 +742,18 @@ export function TicketManagementPage() {
 
   const activeTicket = tickets.find((t) => t.id === activeTicketId)
   const escalateTicket = tickets.find((t) => t.id === escalateTicketId)
+  const escalatePermission = getSupportModuleEscalationPermission(escalateTicket?.module)
+  const escalateAssigneesQuery = useEscalationAssignees(escalatePermission)
+  const escalateAgents = useMemo(() => {
+    const rows = escalateAssigneesQuery.data?.data ?? []
+    return rows.map((assignee) => ({
+      id: String(assignee.id),
+      name: assignee.fullname || 'Sub Admin',
+      email: assignee.email || '',
+      role: 'Sub Admin',
+      avatarUrl: '',
+    }))
+  }, [escalateAssigneesQuery.data?.data])
 
   return (
     <div className="flex flex-col gap-6">
@@ -863,8 +875,8 @@ export function TicketManagementPage() {
 
       <EscalateTicketModal
         open={escalateOpen}
-        agents={agentsQuery.data?.data?.agents ?? []}
-        isLoading={agentsQuery.isFetching}
+        agents={escalateAgents}
+        isLoading={escalateAssigneesQuery.isFetching}
         currentAssigneeId={escalateTicket?.assignedToId}
         isSubmitting={escalateMutation.isPending}
         onClose={() => {

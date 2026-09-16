@@ -53,6 +53,7 @@ const ESCALATION_SORT_FIELD_MAP = buildCatalogSortFieldMap(ESCALATIONS_TABLE_COL
   'roles-id': 'roleId',
   'role-name': 'roleName',
   'escalation-type': 'escalationType',
+  status: 'status',
   'created-on': 'createdOn',
 })
 

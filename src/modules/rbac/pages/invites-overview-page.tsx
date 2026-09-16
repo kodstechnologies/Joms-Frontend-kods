@@ -93,7 +93,7 @@ export function InvitesOverviewPage() {
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: SORT_FIELD_MAP,
-    defaultSortBy: 'sentAt',
+    defaultSortBy: 'invites-sent-at',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })

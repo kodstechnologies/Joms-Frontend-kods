@@ -8,6 +8,7 @@ import {
   usePermissionCatalog,
   useRoles,
   useSubAdmin,
+  useSubAdmins,
   useUpdateSubAdmin,
 } from '../hooks/use-rbac'
 import { RbacLoader } from '../components/rbac-loader'
@@ -92,7 +93,23 @@ export function CreateSubAdminPage() {
     limit: 100,
     status: 'active',
   })
+  const { data: subAdminsData } = useSubAdmins(
+    { page: 1, limit: 500 },
+    { enabled: form.roleIds.length > 0 },
+  )
   const hasSelectedRoles = form.roleIds.length > 0
+  const duplicateRoleUser = useMemo(() => {
+    if (!form.roleIds.length) return null
+    const selectedKey = [...form.roleIds].map(String).sort().join('|')
+    return (
+      (subAdminsData?.data ?? []).find((admin) => {
+        if (editId && String(admin.id) === String(editId)) return false
+        if (admin.status !== 'active') return false
+        const existingKey = [...(admin.roleIds || [])].map(String).sort().join('|')
+        return existingKey === selectedKey
+      }) || null
+    )
+  }, [editId, form.roleIds, subAdminsData?.data])
   const { data: catalogData, isLoading: catalogLoading } = usePermissionCatalog({
     enabled: hasSelectedRoles || Boolean(permissionViewRole),
   })
@@ -209,6 +226,17 @@ export function CreateSubAdminPage() {
 
     if (!form.roleIds.length) {
       toast.error('Select at least one role')
+      return false
+    }
+    if (duplicateRoleUser) {
+      const label =
+        duplicateRoleUser.adminCode ||
+        duplicateRoleUser.fullname ||
+        duplicateRoleUser.email ||
+        'another user'
+      toast.error(
+        `Another user (${label}) already has this exact role combination. Choose a different set of roles.`,
+      )
       return false
     }
     return true
@@ -536,6 +564,16 @@ export function CreateSubAdminPage() {
                 </div>
               ) : null}
 
+              {duplicateRoleUser ? (
+                <p className="text-sm text-amber-300" role="alert">
+                  Another user (
+                  {duplicateRoleUser.adminCode ||
+                    duplicateRoleUser.fullname ||
+                    duplicateRoleUser.email}
+                  ) already has this exact role combination. Choose a different set of roles.
+                </p>
+              ) : null}
+
               {selectedRoles.length > 0 ? (
                 catalogLoading ? (
                   <RbacLoader label="Loading permissions..." className="min-h-[120px]" />
@@ -590,85 +628,81 @@ export function CreateSubAdminPage() {
       ) : null}
 
       {step === 'review' ? (
-        <>
-          <div className="flex flex-col gap-3">
-            <div>
-              <h2 className="text-brand-text text-lg font-semibold">Review</h2>
-              <p className="text-brand-muted mt-1 text-sm">
-                Review the details before assigning the role to the admin user.
-              </p>
-            </div>
-            <div className="flex items-start gap-2 rounded-[10px] border border-[#E0A263]/40 bg-[#E0A263]/12 px-4 py-3 text-sm text-[#E0A263]">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <p>
-                <span className="font-semibold">Warning:</span> Assigned permissions will apply
-                immediately after role assignment.
-              </p>
-            </div>
+        <div className="create-user-review">
+          <div className="create-user-review-header">
+            <h2 className="create-user-review-title">Review</h2>
+            <p className="create-user-review-subtitle">
+              Review the details before assigning the role to the admin user.
+            </p>
           </div>
 
-          <div className="rounded-brand-lg border border-white/10 bg-[#141414] p-5 md:p-6">
-            <h3 className="text-brand-text text-lg font-semibold">Summary</h3>
-            <div className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-5">
+          <div className="create-user-review-warning">
+            <AlertTriangle className="create-user-review-warning-icon" aria-hidden="true" />
+            <p>
+              <span className="font-semibold">Warning:</span> Assigned permissions will apply
+              immediately after role assignment.
+            </p>
+          </div>
+
+          <div className="create-user-review-summary">
+            <h3 className="create-user-review-summary-title">Summary</h3>
+            <div className="create-user-review-grid">
+              <div className="create-user-review-col">
                 {[
                   ['First Name', form.firstName],
                   ['Last Name', form.lastName],
                   ['Email ID', form.email],
                 ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-xs text-white/50">{label}</p>
-                    <p className="text-brand-text mt-1 text-sm font-medium">{value || '—'}</p>
+                  <div key={label} className="create-user-review-field">
+                    <p className="create-user-review-field-label">{label}:</p>
+                    <p className="create-user-review-field-value">{value || '—'}</p>
                   </div>
                 ))}
-                <div>
-                  <p className="text-xs text-white/50">Role Assigned</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                <div className="create-user-review-field is-roles">
+                  <p className="create-user-review-field-label">Role Assigned:</p>
+                  <div className="create-user-review-role-pills">
                     {selectedRoles.map((role) => (
-                      <span
-                        key={role.id}
-                        className="inline-flex items-center rounded-full bg-[#E0A263] px-2.5 py-1 text-xs font-semibold text-[#050505]"
-                      >
+                      <span key={role.id} className="create-user-review-role-pill">
                         {role.name}
                       </span>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="space-y-5">
+              <div className="create-user-review-col">
                 {[
                   ['Department', form.department],
                   ['Job Title', form.jobTitle],
                   ['Employee ID', form.employeeId],
                   ['Employment type', form.employmentType],
                 ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-xs text-white/50">{label}</p>
-                    <p className="text-brand-text mt-1 text-sm font-medium">{value || '—'}</p>
+                  <div key={label} className="create-user-review-field">
+                    <p className="create-user-review-field-label">{label}:</p>
+                    <p className="create-user-review-field-value">{value || '—'}</p>
                   </div>
                 ))}
               </div>
-              <div className="space-y-5">
+              <div className="create-user-review-col">
                 {[
                   ['Location', form.location],
                   ['2FA Status', effectiveMfaEnabled ? 'Enabled' : 'Disabled'],
                   ['Workplace', form.workplaceFlexibility],
                 ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="text-xs text-white/50">{label}</p>
-                    <p className="text-brand-text mt-1 text-sm font-medium">{value || '—'}</p>
+                  <div key={label} className="create-user-review-field">
+                    <p className="create-user-review-field-label">{label}:</p>
+                    <p className="create-user-review-field-value">{value || '—'}</p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="rounded-brand-lg border border-[#E0A263]/30 bg-[#E0A263]/10 px-5 py-6 md:px-6 md:py-8">
-            <div className="flex items-center gap-2">
+          <div className="create-user-review-next">
+            <div className="create-user-review-next-title-row">
               <Info className="size-5 shrink-0 text-white" aria-hidden="true" />
-              <h3 className="text-brand-text font-semibold">What happens next?</h3>
+              <h3 className="create-user-review-next-title">What happens next?</h3>
             </div>
-            <ul className="mt-4 list-disc space-y-3 pl-7 text-sm text-white/50">
+            <ul className="create-user-review-next-list">
               {isEditMode ? (
                 <>
                   <li>User profile and role assignment will be updated immediately</li>
@@ -685,7 +719,7 @@ export function CreateSubAdminPage() {
               )}
             </ul>
           </div>
-        </>
+        </div>
       ) : null}
 
       <div className="create-user-footer">

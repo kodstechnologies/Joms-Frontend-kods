@@ -1,4 +1,13 @@
-import { AlertCircle, Ban, Hourglass, PauseCircle, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowLeft,
+  Ban,
+  Hourglass,
+  PauseCircle,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -37,6 +46,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const STATUS_ROUTE_MAP = {
   active: '/memberships/plans',
@@ -322,101 +332,134 @@ export function MembershipPlansPage({
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div className="max-w-3xl">
-          <h1 className="text-h1 text-brand-text tracking-tight">{title}</h1>
-          <p className="ui-page-subtitle mt-2 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
-            {subtitle}
-          </p>
-        </div>
-        <Button
-          className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
-          onClick={() =>
-            navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
-          }
-        >
-          <ManageMetricsIcon />
-          Manage Metrics
-        </Button>
-      </div>
-
-      <MembershipStatsBar type="expert" />
-
-      <div className="flex justify-center">
-        <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
-          <TabButton active>Membership Plans</TabButton>
-          <TabButton onClick={() => navigate('/memberships/experts')}>
-            Expert Memberships Management
-          </TabButton>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative max-w-md flex-1">
-          <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-          <Input
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search by membership"
-            className="ui-input-icon-left bg-brand-bg text-body-md placeholder:text-muted h-11 rounded-full border-white/10 text-white"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2.5">
+      {fixedStatus ? (
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+          <div>
+            <button
+              type="button"
+              onClick={() => navigateBackOrFallback(navigate, '/memberships/plans')}
+              className="group flex w-fit items-center gap-2 text-[24px] leading-8 font-bold tracking-tight text-white transition-colors hover:text-[#E0A263]"
+            >
+              <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+              <span>{title}</span>
+            </button>
+            <p className="mt-1 pl-7 text-[14px] leading-5 font-medium text-[#FFFFFF80]">
+              Membership Management / <span className="text-white">{title}</span>
+            </p>
+          </div>
           <Button
-            className="ui-export-data"
-            onClick={() => void handleExportData()}
-            disabled={isExporting}
+            className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
+            onClick={() =>
+              navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
+            }
           >
-            <ExportDataIcon className="size-5 shrink-0" />
-            {isExporting ? 'Exporting...' : 'Export Data'}
-          </Button>
-          <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4" />
-            Add New Plan
+            <ManageMetricsIcon />
+            Manage Metrics
           </Button>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <p className="text-body-md text-muted">
-          Showing{' '}
-          <span className="font-semibold text-white">
-            {rangeStart}-{rangeEnd}
-          </span>{' '}
-          of <span className="font-semibold text-white">{totalItems}</span> users
-        </p>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {statusCards.map((card) => {
-            const isSelected = selectedStatus === card.status
-            const isGold = card.tone === 'gold'
-
-            return (
-              <button
-                key={card.label}
-                type="button"
-                onClick={() => handleStatusCardClick(card.status)}
-                className={cn(
-                  'flex items-center justify-between rounded-[10px] border px-4 py-3.5 text-white transition-all',
-                  isGold
-                    ? `${statusCardTones.warning.background} ${statusCardTones.warning.border}`
-                    : `${statusCardTones.danger.background} ${statusCardTones.danger.border}`,
-                  isSelected &&
-                    (isGold ? 'ring-brand-accent/50 ring-2' : 'ring-brand-danger/50 ring-2'),
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <card.icon className="size-5 shrink-0" strokeWidth={1.75} />
-                  <span className="text-body-md-medium">{card.label}</span>
-                </div>
-                <span className="text-body-lg font-bold tabular-nums">
-                  {String(card.count).padStart(2, '0')}
-                </span>
-              </button>
-            )
-          })}
+      ) : (
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+          <div className="max-w-3xl">
+            <h1 className="text-h1 text-brand-text tracking-tight">{title}</h1>
+            <p className="ui-page-subtitle mt-2 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+              {subtitle}
+            </p>
+          </div>
+          <Button
+            className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
+            onClick={() =>
+              navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
+            }
+          >
+            <ManageMetricsIcon />
+            Manage Metrics
+          </Button>
         </div>
-      </div>
+      )}
+
+      {!fixedStatus ? <MembershipStatsBar type="expert" /> : null}
+
+      {!fixedStatus ? (
+        <div className="flex justify-center">
+          <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
+            <TabButton active>Membership Plans</TabButton>
+            <TabButton onClick={() => navigate('/memberships/experts')}>
+              Expert Memberships Management
+            </TabButton>
+          </div>
+        </div>
+      ) : null}
+
+      {!fixedStatus ? (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative max-w-md flex-1">
+            <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search by membership"
+              className="ui-input-icon-left bg-brand-bg text-body-md placeholder:text-muted h-11 rounded-full border-white/10 text-white"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Button
+              className="ui-export-data"
+              onClick={() => void handleExportData()}
+              disabled={isExporting}
+            >
+              <ExportDataIcon className="size-5 shrink-0" />
+              {isExporting ? 'Exporting...' : 'Export Data'}
+            </Button>
+            <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Add New Plan
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {!fixedStatus ? (
+        <div className="flex flex-col gap-4">
+          <p className="text-body-md text-muted">
+            Showing{' '}
+            <span className="font-semibold text-white">
+              {rangeStart}-{rangeEnd}
+            </span>{' '}
+            of <span className="font-semibold text-white">{totalItems}</span> users
+          </p>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {statusCards.map((card) => {
+              const isSelected = selectedStatus === card.status
+              const isGold = card.tone === 'gold'
+
+              return (
+                <button
+                  key={card.label}
+                  type="button"
+                  onClick={() => handleStatusCardClick(card.status)}
+                  className={cn(
+                    'flex items-center justify-between rounded-[10px] border px-4 py-3.5 text-white transition-all',
+                    isGold
+                      ? `${statusCardTones.warning.background} ${statusCardTones.warning.border}`
+                      : `${statusCardTones.danger.background} ${statusCardTones.danger.border}`,
+                    isSelected &&
+                      (isGold ? 'ring-brand-accent/50 ring-2' : 'ring-brand-danger/50 ring-2'),
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <card.icon className="size-5 shrink-0" strokeWidth={1.75} />
+                    <span className="text-body-md-medium">{card.label}</span>
+                  </div>
+                  <span className="text-body-lg font-bold tabular-nums">
+                    {String(card.count).padStart(2, '0')}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <p className="text-body-md text-muted">Loading membership plans...</p>
@@ -424,16 +467,20 @@ export function MembershipPlansPage({
         <div className="bg-brand-bg rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center">
           <p className="text-body-lg font-medium text-white">No membership plans found</p>
           <p className="text-body-md text-muted mt-2">
-            Create your first plan to start managing memberships.
+            {fixedStatus
+              ? `No ${title.toLowerCase()} to show right now.`
+              : 'Create your first plan to start managing memberships.'}
           </p>
-          <Button className="ui-cta ui-cta-primary mt-5" onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4" />
-            Add New Plan
-          </Button>
+          {!fixedStatus ? (
+            <Button className="ui-cta ui-cta-primary mt-5" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Add New Plan
+            </Button>
+          ) : null}
         </div>
       ) : (
         <PlanSection
-          title="Expert Membership Plans"
+          title={fixedStatus ? undefined : 'Expert Membership Plans'}
           plans={expertPlans}
           onViewDetails={(plan) => navigate(`/memberships/plans/${plan._id}/view`)}
           onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
@@ -616,15 +663,15 @@ function PlanSection({
   plans,
   ...handlers
 }: {
-  title: string
+  title?: string
   plans: MembershipPlan[]
 } & Omit<ComponentProps<typeof MembershipPlanCard>, 'plan'>) {
   if (!plans.length) return null
 
   return (
     <section className="space-y-4">
-      <h2 className="text-h4 text-white">{title}</h2>
-      <div className="grid grid-cols-1 justify-items-center gap-4 sm:grid-cols-2 sm:justify-items-stretch @min-[1100px]/main:grid-cols-3">
+      {title ? <h2 className="text-h4 text-white">{title}</h2> : null}
+      <div className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 sm:justify-items-stretch @min-[1100px]/main:grid-cols-3">
         {plans.map((plan) => (
           <MembershipPlanCard key={plan._id} plan={plan} {...handlers} />
         ))}

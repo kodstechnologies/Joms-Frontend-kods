@@ -52,7 +52,14 @@ type IncidentTrackingPanelProps = {
   highlightIncidentId?: string | null
 }
 
-const INCIDENT_SORT_FIELD_MAP = buildCatalogSortFieldMap(INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG)
+const INCIDENT_SORT_FIELD_MAP = buildCatalogSortFieldMap(INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG, {
+  'incident-id': 'incidentId',
+  'incident-title': 'title',
+  'reported-at': 'createdAt',
+  'first-response-time': 'firstResponseAt',
+  'closed-at': 'resolvedAt',
+  'root-cause': 'reason',
+})
 
 const dash = (value: string | null | undefined) => (value && String(value).trim() ? value : '—')
 
@@ -186,6 +193,7 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: INCIDENT_SORT_FIELD_MAP,
+    defaultSortBy: 'reported-at',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })

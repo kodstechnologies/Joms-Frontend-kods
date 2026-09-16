@@ -73,6 +73,36 @@ export const SUPPORT_ESCALATION_PATHWAY_OPTIONS = [
   'Technical Support',
 ] as const
 
+/**
+ * Map support ticket module → RBAC permission prefix used when escalating
+ * to sub-admins (same pattern as service/expert/consultation escalate).
+ */
+export const getSupportModuleEscalationPermission = (module?: string | null): string => {
+  const value = String(module || '')
+    .trim()
+    .toLowerCase()
+
+  if (!value) return 'support.manage'
+
+  if (value === 'membership' || value.includes('membership')) return 'memberships.*'
+  if (value === 'experts' || value === 'expert') return 'experts.*'
+  if (
+    value === 'services' ||
+    value === 'service marketplace' ||
+    value === 'milestones' ||
+    value.includes('service') ||
+    value.includes('consultation')
+  ) {
+    return 'services.*'
+  }
+  if (value === 'venues' || value === 'events' || value.includes('venue')) return 'venues.*'
+  if (value.includes('finance') || value.includes('payment') || value.includes('refund')) {
+    return 'finance.*'
+  }
+
+  return 'support.manage'
+}
+
 export type SelectOption = { value: string; label: string }
 
 export function toSelectOptions(

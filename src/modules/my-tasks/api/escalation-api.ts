@@ -3,7 +3,13 @@ import { adminApiClient } from '@/shared/lib/axios'
 import { fetchEscalationAssignees } from '@/modules/expert/api/expert-application-api'
 
 export type AdminEscalationEntityType =
-  'partner' | 'service' | 'consultation' | 'venue_space' | 'refund' | 'membership_upgrade'
+  | 'partner'
+  | 'service'
+  | 'consultation'
+  | 'venue_space'
+  | 'refund'
+  | 'membership_upgrade'
+  | 'support_ticket'
 
 export type AdminEscalation = {
   _id?: string

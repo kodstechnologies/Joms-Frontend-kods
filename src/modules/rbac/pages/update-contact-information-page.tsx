@@ -189,6 +189,7 @@ export function UpdateContactInformationPage() {
   if (profile && profile !== hydratedProfile) {
     setHydratedProfile(profile)
     setPhone(profile.phone || '')
+    setIsPhoneVerified(Boolean(profile.phoneVerified && profile.phone))
     setEmergencyContact(profile.emergencyContact || '')
     setEmergencyContactName(profile.emergencyContactName || '')
     setBloodGroup(profile.bloodGroup || '')
@@ -266,6 +267,10 @@ export function UpdateContactInformationPage() {
   }
 
   const handleOpenPhoneVerify = async () => {
+    if (isPhoneVerified) {
+      toast.message('Phone number is already verified and cannot be changed.')
+      return
+    }
     const trimmed = phone.trim()
     if (!trimmed) {
       toast.error('Please enter a phone number to verify.')
@@ -447,21 +452,34 @@ export function UpdateContactInformationPage() {
                   type="tel"
                   value={phone}
                   onChange={(event) => {
+                    if (isPhoneVerified) return
                     setPhone(event.target.value)
                     setIsPhoneVerified(false)
                   }}
+                  readOnly={isPhoneVerified}
+                  disabled={isPhoneVerified}
                   placeholder="Enter Phone Number here"
-                  className={cn(FIELD_INPUT_CLASS, 'flex-1')}
+                  className={cn(
+                    FIELD_INPUT_CLASS,
+                    'flex-1',
+                    isPhoneVerified && 'cursor-not-allowed opacity-80',
+                  )}
+                  aria-readonly={isPhoneVerified}
                 />
                 <button
                   type="button"
                   onClick={handleOpenPhoneVerify}
-                  disabled={isCheckingPhone}
+                  disabled={isCheckingPhone || isPhoneVerified}
                   className={cn(isPhoneVerified ? VERIFY_DONE_BTN_CLASS : VERIFY_BTN_CLASS)}
                 >
                   {isCheckingPhone ? 'Checking…' : isPhoneVerified ? 'Verified ✓' : 'Verify'}
                 </button>
               </div>
+              {isPhoneVerified ? (
+                <p className="mt-2 text-[11px] text-white/45">
+                  Phone number is verified and locked. It cannot be edited.
+                </p>
+              ) : null}
             </div>
 
             {/* Emergency Contact */}

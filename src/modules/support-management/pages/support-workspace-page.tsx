@@ -29,9 +29,11 @@ import {
   getApiErrorMessage,
   getPriorityLabel,
   getStatusLabel,
+  getSupportModuleEscalationPermission,
   resolveTicketIntelligenceContext,
 } from '../utils/support-format'
 import { openVenuePartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { cn } from '@/shared/lib/cn'
 
 const ticketDetailMatchesSelection = (
@@ -143,6 +145,18 @@ export function SupportWorkspacePage() {
   const [reassignOpen, setReassignOpen] = useState(false)
   const [escalateOpen, setEscalateOpen] = useState(false)
   const agentsQuery = useSupportAgents()
+  const escalatePermission = getSupportModuleEscalationPermission(ticket?.module)
+  const escalateAssigneesQuery = useEscalationAssignees(escalatePermission)
+  const escalateAgents = useMemo(() => {
+    const rows = escalateAssigneesQuery.data?.data ?? []
+    return rows.map((assignee) => ({
+      id: String(assignee.id),
+      name: assignee.fullname || 'Sub Admin',
+      email: assignee.email || '',
+      role: 'Sub Admin',
+      avatarUrl: '',
+    }))
+  }, [escalateAssigneesQuery.data?.data])
   const { connected, joinTicket, leaveTicket, sendSupportMessage } = useLiveSupportUpdates()
 
   useEffect(() => {
@@ -477,8 +491,8 @@ export function SupportWorkspacePage() {
 
       <EscalateTicketModal
         open={escalateOpen}
-        agents={agentsQuery.data?.data?.agents ?? []}
-        isLoading={agentsQuery.isFetching}
+        agents={escalateAgents}
+        isLoading={escalateAssigneesQuery.isFetching}
         currentAssigneeId={ticket?.assignedToId}
         isSubmitting={escalateMutation.isPending}
         onClose={() => setEscalateOpen(false)}

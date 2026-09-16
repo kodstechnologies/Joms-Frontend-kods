@@ -60,6 +60,8 @@ const buildFallbackUrl = ({
       return `/settings/refund-details/${entityId}`
     case 'membership_upgrade':
       return `/settings/membership-upgrade-details/${entityId}`
+    case 'support_ticket':
+      return `/support/tickets/${entityId}`
     default:
       return null
   }

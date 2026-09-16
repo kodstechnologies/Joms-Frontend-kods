@@ -39,15 +39,10 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 const PAGE_SIZE = 10
 
-const BACKUP_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
-  'name',
-  'type',
-  'scope',
-  'createdBy',
-  'timestamp',
-  'size',
-  'status',
-])
+const BACKUP_SORT_FIELD_MAP = {
+  ...buildDefaultTableSortFieldMap(['name', 'type', 'scope', 'createdBy', 'size', 'status']),
+  timestamp: 'createdAt',
+}
 
 const BACKUP_EXPORT_COLUMN_MAP: Record<
   string,
@@ -109,6 +104,7 @@ export function BackupRestorePanel() {
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: BACKUP_SORT_FIELD_MAP,
+    defaultSortBy: 'timestamp',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })

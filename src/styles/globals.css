@@ -4967,6 +4967,213 @@ button.ui-manage-metrics:hover,
   border: none !important;
 }
 
+/* ===== Create User — Review step (Figma design system) ===== */
+.create-user-review {
+  display: flex;
+  max-width: 999px;
+  width: 100%;
+  flex-direction: column;
+  gap: 24px; /* 8px grid × 3 */
+}
+
+.create-user-review-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create-user-review-title {
+  margin: 0;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--brand-text, #ffffff);
+}
+
+.create-user-review-subtitle {
+  margin: 0;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #ffffff80; /* muted text 50% */
+}
+
+.create-user-review-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 999px;
+  border-radius: 10px; /* --brand-radius-lg */
+  border: none;
+  background: #f6cb8633; /* Figma: #F6CB86 @ 20% */
+  padding: 14px 16px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--brand-accent, #f6cb86);
+}
+
+.create-user-review-warning-icon {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--brand-accent, #f6cb86);
+}
+
+.create-user-review-summary {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 939px;
+  min-height: 194px;
+  border-radius: 10px;
+  border: 1px solid #ffffff1a;
+  background: var(--brand-bg, #050505);
+  padding: 20px 24px 24px;
+}
+
+.create-user-review-summary-title {
+  margin: 0 0 16px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--brand-text, #ffffff);
+}
+
+.create-user-review-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px 40px;
+}
+
+@media (min-width: 640px) {
+  .create-user-review-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .create-user-review-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.create-user-review-col {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Figma: "First Name: Sarah" — label + value on one row */
+.create-user-review-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  min-width: 0;
+}
+
+.create-user-review-field.is-roles {
+  align-items: center;
+}
+
+.create-user-review-field-label {
+  margin: 0;
+  flex-shrink: 0;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #ffffff80;
+}
+
+.create-user-review-field-value {
+  margin: 0;
+  min-width: 0;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--brand-text, #ffffff);
+  word-break: break-word;
+}
+
+.create-user-review-role-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* Figma role chips: gold text on gold+33 fill, radius 10 */
+.create-user-review-role-pill {
+  display: inline-flex;
+  height: 20px;
+  max-width: 100%;
+  width: max-content;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #e0a26333;
+  padding: 0 10px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--brand-gold-to, #e0a263);
+}
+
+.create-user-review-next {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 999px;
+  border-radius: 10px;
+  border: 1px solid rgb(224 162 99 / 20%);
+  background: rgb(224 162 99 / 20%); /* Figma: #E0A263 @ 20% */
+  padding: 24px;
+}
+
+.create-user-review-next-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-user-review-next-title {
+  margin: 0;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--brand-text, #ffffff);
+}
+
+.create-user-review-next-list {
+  margin: 16px 0 0;
+  padding-left: 28px;
+  list-style: disc;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #ffffff80;
+}
+
+.create-user-review-next-list li + li {
+  margin-top: 12px;
+}
+
 /* ===== Create / Edit Role ===== */
 .create-role-page {
   display: flex;

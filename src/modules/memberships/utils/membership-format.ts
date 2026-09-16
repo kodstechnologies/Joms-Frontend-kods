@@ -148,18 +148,29 @@ export const getStatusLabel = (status: MembershipPlan['status']) =>
 export const getStatusClassName = (status: MembershipPlan['status']) => {
   switch (status) {
     case 'active':
-      return 'bg-brand-teal/35 text-brand-progress border-brand-positive/25'
+      return 'bg-[#00A63E33] text-[#00A63E] border-transparent'
     case 'paused':
-      return 'bg-amber-500/15 text-amber-300 border-amber-500/25'
+      return 'bg-[#E0A26333] text-[#E0A263] border-transparent'
     case 'inactive':
-      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
+      return 'bg-[#F6CB8633] text-[#F6CB86] border-transparent'
     case 'cancelled':
-      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
+      return 'bg-[#C8C8C833] text-[#C8C8C8] border-transparent'
     case 'deleted':
-      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
+      return 'bg-[#D3191C33] text-[#D3191C] border-transparent'
     default:
-      return 'bg-white/10 text-brand-muted border-white/10'
+      return 'bg-white/10 text-brand-muted border-transparent'
   }
+}
+
+/** Figma deleted badge date: DD-MM-YYYY */
+export const formatMembershipDateSlash = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const yyyy = date.getFullYear()
+  return `${dd}-${mm}-${yyyy}`
 }
 
 export const getFeatureLines = (

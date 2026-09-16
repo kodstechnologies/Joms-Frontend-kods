@@ -64,13 +64,12 @@ const MODULE_TABS: Array<{ key: string; label: string }> = [
   { key: 'service', label: 'Service Marketplace' },
 ]
 
-const SETTINGS_LOG_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
-  'createdAt',
-  'module',
-  'status',
-  'performedBy',
-  'role',
-])
+const SETTINGS_LOG_SORT_FIELD_MAP = {
+  ...buildDefaultTableSortFieldMap(['created-at', 'module', 'status', 'performed-by', 'role']),
+  'changed-settings': null,
+  'old-values': null,
+  'new-values': null,
+}
 
 const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
   string,
@@ -165,7 +164,7 @@ export function SettingsLogsPage() {
 
   const serverSort = useServerTableSort({
     sortFieldMap: SETTINGS_LOG_SORT_FIELD_MAP,
-    defaultSortBy: 'createdAt',
+    defaultSortBy: 'created-at',
     onPageReset: () => setPage(1),
   })
   const [isExporting, setIsExporting] = useState(false)
