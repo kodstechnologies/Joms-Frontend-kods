@@ -58,3 +58,30 @@ export const updateVenueBankingDocumentStatus = async (
   )
   return response.data
 }
+
+export type VenueKycDocumentRule = {
+  key: string
+  label: string
+  required?: boolean
+  requiredIfGstEnabled?: boolean
+}
+
+export type VenueDocumentRules = {
+  categoryName?: string
+  mandatoryDocuments?: VenueKycDocumentRule[]
+  conditionalDocuments?: VenueKycDocumentRule[]
+}
+
+export const fetchVenueDocumentRules = async (typeOfVenue?: string, hasGST?: boolean) => {
+  const response = await kycApiClient.get<{
+    success: boolean
+    message: string
+    data: VenueDocumentRules
+  }>('/venue-kyc/document-rules', {
+    params: {
+      ...(typeOfVenue ? { typeOfVenue } : {}),
+      hasGST: hasGST ? 'true' : 'false',
+    },
+  })
+  return response.data
+}

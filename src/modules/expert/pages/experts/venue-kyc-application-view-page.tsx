@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Banknote,
   ClipboardList,
-  ExternalLink,
   FileText,
   History,
   ImageOff,
@@ -764,19 +763,7 @@ export function VenueKycApplicationViewPage() {
       <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-bold text-white">{applicantName}</h3>
-              {header.partnerId && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/experts/management/profile/${header.partnerId}`)}
-                  className="hover:text-brand-accent text-muted rounded-md p-1 transition-colors hover:bg-white/5"
-                  aria-label="Open expert profile"
-                >
-                  <ExternalLink className="size-4" />
-                </button>
-              )}
-            </div>
+            <h3 className="text-2xl font-bold text-white">{applicantName}</h3>
             {isKycSubmitted && appliedLabel && (
               <p className="text-body-sm text-muted mt-1">{appliedLabel}</p>
             )}

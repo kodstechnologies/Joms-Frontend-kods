@@ -1,8 +1,14 @@
 import { useRef } from 'react'
 import { Upload, X } from 'lucide-react'
 
+import { useVenueDocumentRules } from '../hooks/use-venue-kyc'
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
-import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import {
+  getVenueKycUploadSections,
+  isVenueKycDocumentRequired,
+  type VenueKycDocumentRule,
+  type VenueOnboardingFormData,
+} from '../utils/venue-onboarding-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 
 const fieldClass = 'ui-input'
@@ -26,22 +32,23 @@ type Props = {
   setFormData: React.Dispatch<React.SetStateAction<VenueOnboardingFormData>>
 }
 
-type FileField = 'panCard' | 'gstCertificate' | 'tradeLicense' | 'fssaiLicense' | 'gstUndertaking'
-
 function FileUploadBox({
   label,
   required,
   file,
+  existingUrl,
   onSelect,
   onClear,
 }: {
   label: string
   required?: boolean
   file: File | null
+  existingUrl?: string
   onSelect: (file: File | null) => void
   onClear: () => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const displayName = file?.name || (existingUrl ? 'Uploaded' : '')
 
   return (
     <div>
@@ -60,7 +67,7 @@ function FileUploadBox({
           onClick={() => inputRef.current?.click()}
           className="hover:border-brand-accent/50 text-muted flex h-24 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black text-xs transition-colors"
         >
-          {file ? <span className="truncate px-2">{file.name}</span> : 'Upload here'}
+          {displayName ? <span className="truncate px-2">{displayName}</span> : 'Upload here'}
         </button>
         {file && (
           <button
@@ -88,8 +95,15 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
 
   const { data: categoriesData } = useServiceCategoriesByType('venue')
   const categoryGroups = categoriesData?.data || {}
+  const { data: rulesResponse, isLoading: isRulesLoading } = useVenueDocumentRules(
+    formData.typeOfVenue,
+    formData.hasGST,
+  )
+  const { mandatory, conditional, categoryName } = getVenueKycUploadSections(
+    rulesResponse?.data,
+    formData.hasGST,
+  )
 
-  // Build dynamic venue type options from sub-categories matching the selected category
   let dynamicVenueTypes: string[] = []
 
   if (formData.venueCategoryId || formData.venueCategoryName) {
@@ -104,19 +118,23 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
     }
   }
 
-  // Fallback: show all sub-categories if no match found
   if (dynamicVenueTypes.length === 0) {
     const allSubs = Object.values(categoryGroups).flat()
     dynamicVenueTypes = Array.from(new Set(allSubs.map((sub) => sub.name)))
   }
 
-  // Preserve any existing value that might not be in the list
   if (formData.typeOfVenue && !dynamicVenueTypes.includes(formData.typeOfVenue)) {
     dynamicVenueTypes = [formData.typeOfVenue, ...dynamicVenueTypes]
   }
 
-  const setFile = (field: FileField, file: File | null) => {
-    setFormData((prev) => ({ ...prev, [field]: file }))
+  const setDocument = (key: string, file: File | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      kycDocuments: {
+        ...prev.kycDocuments,
+        [key]: file,
+      },
+    }))
   }
 
   const addOtherCertificates = (files: FileList | null) => {
@@ -128,6 +146,22 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
       otherCertificates: [...prev.otherCertificates, ...newFiles],
     }))
   }
+
+  const renderDocumentBox = (doc: VenueKycDocumentRule, required: boolean) => (
+    <FileUploadBox
+      key={doc.key}
+      label={doc.label}
+      required={required}
+      file={formData.kycDocuments[doc.key] || null}
+      existingUrl={
+        formData.kycDocumentUrls[doc.key] ||
+        (doc.key === 'gstUndertakingDocument' ? formData.kycDocumentUrls.gstUndertaking : '') ||
+        (doc.key === 'gstUndertaking' ? formData.kycDocumentUrls.gstUndertakingDocument : '')
+      }
+      onSelect={(file) => setDocument(doc.key, file)}
+      onClear={() => setDocument(doc.key, null)}
+    />
+  )
 
   return (
     <div className="mx-auto w-full max-w-[1140px] space-y-6">
@@ -295,57 +329,34 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
           </div>
         </div>
-
-        {!formData.hasGST && (
-          <div className="mt-5">
-            <FileUploadBox
-              label="GST Undertaking Document"
-              file={formData.gstUndertaking}
-              onSelect={(file) => setFile('gstUndertaking', file)}
-              onClear={() => setFile('gstUndertaking', null)}
-            />
-          </div>
-        )}
       </div>
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <h3 className="mb-4 text-sm font-bold text-white">
+        <h3 className="mb-1 text-sm font-bold text-white">
           Business Identity verification documents <RequiredMark />
         </h3>
+        <p className="text-muted mb-4 text-[10px]">
+          {formData.typeOfVenue
+            ? isRulesLoading
+              ? 'Loading documents for this venue type...'
+              : `Required documents for ${categoryName || formData.typeOfVenue}`
+            : 'Select a venue type to load the matching documents.'}
+        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <FileUploadBox
-            label="PAN Card"
-            required
-            file={formData.panCard}
-            onSelect={(file) => setFile('panCard', file)}
-            onClear={() => setFile('panCard', null)}
-          />
-          <FileUploadBox
-            label="Certificates or License & Permits"
-            required
-            file={formData.tradeLicense}
-            onSelect={(file) => setFile('tradeLicense', file)}
-            onClear={() => setFile('tradeLicense', null)}
-          />
-          {formData.hasGST ? (
-            <FileUploadBox
-              label="GST Certificate"
-              required
-              file={formData.gstCertificate}
-              onSelect={(file) => setFile('gstCertificate', file)}
-              onClear={() => setFile('gstCertificate', null)}
-            />
-          ) : (
-            <FileUploadBox
-              label="GST Undertaking Document"
-              required
-              file={formData.gstUndertaking}
-              onSelect={(file) => setFile('gstUndertaking', file)}
-              onClear={() => setFile('gstUndertaking', null)}
-            />
+          {mandatory.map((doc) =>
+            renderDocumentBox(doc, isVenueKycDocumentRequired(doc, formData.hasGST)),
           )}
         </div>
       </div>
+
+      {conditional.length > 0 && (
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
+          <h3 className="mb-4 text-sm font-bold text-white">Additional / Conditional Documents</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {conditional.map((doc) => renderDocumentBox(doc, false))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="mb-4 text-sm font-bold text-white">Other Documents</h3>
@@ -377,7 +388,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
               className="hover:border-brand-accent/50 text-muted flex h-24 items-center justify-center rounded-md border border-dashed border-white/20 bg-black text-xs transition-colors"
             >
               <Upload className="mr-1 size-4" />
-              [Venue Based Certificate]
+              Additional certificate
             </button>
           )}
         </div>

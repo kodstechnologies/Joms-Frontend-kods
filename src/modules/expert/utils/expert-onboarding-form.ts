@@ -1,3 +1,10 @@
+import {
+  isValidHttpUrl,
+  validateGstNumber,
+  validatePanNumber,
+} from '@/shared/lib/partner-field-validation'
+import { validateMobileNumber } from '@/shared/lib/phone'
+
 export type ExpertWorkExperienceEntry = {
   jobTitle: string
   companyName: string
@@ -420,3 +427,105 @@ export const formatExperience = (years?: number | string, months?: number | stri
   if (m) parts.push(`${m} Month${m === 1 ? '' : 's'}`)
   return parts.join(' ')
 }
+
+export type ExpertOnboardingFieldErrors = Record<string, string>
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export const getExpertOnboardingStepErrors = (
+  step: number,
+  form: ExpertOnboardingFormData,
+  isEdit: boolean,
+): ExpertOnboardingFieldErrors => {
+  const errors: ExpertOnboardingFieldErrors = {}
+
+  if (step === 1) {
+    if (!form.fullname.trim()) errors.fullname = 'Full name is required.'
+    else if (form.fullname.trim().length < 3) {
+      errors.fullname = 'Full name must be at least 3 characters.'
+    }
+    if (!form.location.trim()) errors.location = 'Location is required.'
+    if (!form.bio.trim()) errors.bio = 'Profile bio is required.'
+    if (!form.sampleWorkLink.trim()) errors.sampleWorkLink = 'Sample work link is required.'
+    else if (!isValidHttpUrl(form.sampleWorkLink)) {
+      errors.sampleWorkLink = 'Sample work link must be a valid URL.'
+    }
+    if (!isEdit && !form.sampleWorkFile && !form.sampleWorkFileName) {
+      errors.sampleWorkFile = 'Sample work file is required.'
+    }
+
+    const phoneError = validateMobileNumber(form.phoneNumber)
+    if (phoneError) errors.phoneNumber = phoneError
+    else if (!form.isPhoneVerified) errors.phoneNumber = 'Please verify the phone number.'
+
+    if (!form.email.trim()) errors.email = 'Email ID is required.'
+    else if (!EMAIL_PATTERN.test(form.email.trim())) {
+      errors.email = 'Please enter a valid email address.'
+    } else if (!form.isEmailVerified) {
+      errors.email = 'Please verify the email ID.'
+    }
+
+    if (!form.serviceType) errors.serviceType = 'Service type is required.'
+    if (form.serviceCategory.length === 0) {
+      errors.serviceCategory = 'At least one expert category is required.'
+    }
+  }
+
+  if (step === 2) {
+    if (!form.idType) errors.idType = 'ID type is required.'
+    if (!form.idNumber.trim()) errors.idNumber = 'ID number is required.'
+    const panError = validatePanNumber(form.panNumber)
+    if (panError) errors.panNumber = panError
+    if (form.gstAvailable) {
+      const gstError = validateGstNumber(form.gstNumber)
+      if (gstError) errors.gstNumber = gstError
+    }
+    if (!form.panCardFile && !form.panCardFileName) {
+      errors.panCardFile = 'PAN card document is required.'
+    }
+    if (!form.certificateFile && !form.certificateFileName) {
+      errors.certificateFile = 'Certificate / license document is required.'
+    }
+    if (form.gstAvailable && !form.gstCertificateFile && !form.gstCertificateFileName) {
+      errors.gstCertificateFile = 'GST certificate is required.'
+    }
+  }
+
+  if (step === 3) {
+    const validEntries = form.workExperience.filter(
+      (entry) => entry.jobTitle.trim() || entry.companyName.trim(),
+    )
+    if (validEntries.length === 0) {
+      errors.workExperience = 'At least one work experience entry is required.'
+      errors['workExperience.0.jobTitle'] = 'Job title is required.'
+      errors['workExperience.0.companyName'] = 'Company name is required.'
+    } else {
+      form.workExperience.forEach((entry, index) => {
+        const hasAny = entry.jobTitle.trim() || entry.companyName.trim()
+        if (!hasAny) return
+        if (!entry.jobTitle.trim()) {
+          errors[`workExperience.${index}.jobTitle`] = 'Job title is required.'
+        }
+        if (!entry.companyName.trim()) {
+          errors[`workExperience.${index}.companyName`] = 'Company name is required.'
+        }
+      })
+    }
+  }
+
+  if (step === 4 && form.galleryPreviews.length > 5) {
+    errors.galleryImages = 'A maximum of 5 images are allowed.'
+  }
+
+  if (step === 5 && !form.isVerified) {
+    errors.isVerified = 'Please verify the profile before submission.'
+  }
+
+  return errors
+}
+
+export const getExpertOnboardingStepError = (
+  step: number,
+  form: ExpertOnboardingFormData,
+  isEdit: boolean,
+) => Object.values(getExpertOnboardingStepErrors(step, form, isEdit))[0] ?? null

@@ -1,3 +1,6 @@
+import { validateGstNumber, validatePanNumber } from '@/shared/lib/partner-field-validation'
+import { validateMobileNumber } from '@/shared/lib/phone'
+
 export type VenueOnboardingFormData = {
   name: string
   venueType: string
@@ -37,11 +40,8 @@ export type VenueOnboardingFormData = {
   typeOfVenue: string
   itReturnsFiledLast2Years: boolean
   gstUndertakingEmail: string
-  panCard: File | null
-  gstCertificate: File | null
-  tradeLicense: File | null
-  fssaiLicense: File | null
-  gstUndertaking: File | null
+  kycDocuments: Record<string, File | null>
+  kycDocumentUrls: Record<string, string>
   otherCertificates: File[]
 
   internalNotes: string
@@ -70,6 +70,96 @@ export const VENUE_TYPE_OPTIONS = [
   { value: 'heritage_property', label: 'Heritage Property' },
   { value: 'unique_venue', label: 'Unique Venue' },
 ] as const
+
+export const VENUE_KYC_DOCUMENT_KEYS = [
+  'panCard',
+  'gstCertificate',
+  'businessRegistration',
+  'tradeLicense',
+  'propertyLeaseAgreement',
+  'authorizedSignatoryId',
+  'occupancyCertificate',
+  'fireNoc',
+  'wifiCompliance',
+  'structuralStabilityCert',
+  'culturalPermission',
+  'publicAssemblyLicense',
+  'seatingCapacityCert',
+  'sportsSafetyCert',
+  'publicLiabilityInsurance',
+  'fssaiLicense',
+  'gstUndertakingDocument',
+  'gstUndertaking',
+] as const
+
+export type VenueKycDocumentRule = {
+  key: string
+  label: string
+  required?: boolean
+  requiredIfGstEnabled?: boolean
+}
+
+export type VenueDocumentRules = {
+  categoryName?: string
+  mandatoryDocuments?: VenueKycDocumentRule[]
+  conditionalDocuments?: VenueKycDocumentRule[]
+}
+
+const GST_DOCUMENT_KEYS = new Set(['gstCertificate', 'gstUndertakingDocument', 'gstUndertaking'])
+
+const isGstKycDocument = (doc: VenueKycDocumentRule) =>
+  GST_DOCUMENT_KEYS.has(doc.key) || Boolean(doc.requiredIfGstEnabled)
+
+export const isVenueKycDocumentRequired = (doc: VenueKycDocumentRule, hasGST: boolean) => {
+  if (isGstKycDocument(doc)) {
+    return hasGST === true
+  }
+  return doc.required !== false
+}
+
+export const getVenueKycUploadSections = (rules?: VenueDocumentRules | null, hasGST = true) => {
+  const keepVisible = (docs: VenueKycDocumentRule[]) =>
+    hasGST ? docs : docs.filter((doc) => !isGstKycDocument(doc))
+
+  return {
+    mandatory: keepVisible([...(rules?.mandatoryDocuments || [])]),
+    conditional: keepVisible([...(rules?.conditionalDocuments || [])]),
+    categoryName: rules?.categoryName || '',
+  }
+}
+
+export const hasVenueKycDocument = (
+  form: Pick<VenueOnboardingFormData, 'kycDocuments' | 'kycDocumentUrls'>,
+  key: string,
+) => {
+  if (form.kycDocuments[key]) return true
+  if (form.kycDocumentUrls[key]) return true
+  if (key === 'gstUndertakingDocument') {
+    return Boolean(form.kycDocuments.gstUndertaking || form.kycDocumentUrls.gstUndertaking)
+  }
+  if (key === 'gstUndertaking') {
+    return Boolean(
+      form.kycDocuments.gstUndertakingDocument || form.kycDocumentUrls.gstUndertakingDocument,
+    )
+  }
+  return false
+}
+
+export const missingRequiredVenueKycDocument = (
+  form: VenueOnboardingFormData,
+  rules?: VenueDocumentRules | null,
+) => {
+  const { mandatory } = getVenueKycUploadSections(rules, form.hasGST)
+  const requiredDocs = [...mandatory]
+  if (!requiredDocs.some((doc) => doc.key === 'panCard')) {
+    requiredDocs.unshift({ key: 'panCard', label: 'PAN Card', required: true })
+  }
+  return (
+    requiredDocs.find(
+      (doc) => isVenueKycDocumentRequired(doc, form.hasGST) && !hasVenueKycDocument(form, doc.key),
+    ) || null
+  )
+}
 
 export const createEmptyVenueOnboardingForm = (): VenueOnboardingFormData => ({
   name: '',
@@ -110,11 +200,8 @@ export const createEmptyVenueOnboardingForm = (): VenueOnboardingFormData => ({
   typeOfVenue: '',
   itReturnsFiledLast2Years: true,
   gstUndertakingEmail: '',
-  panCard: null,
-  gstCertificate: null,
-  tradeLicense: null,
-  fssaiLicense: null,
-  gstUndertaking: null,
+  kycDocuments: {},
+  kycDocumentUrls: {},
   otherCertificates: [],
 
   internalNotes: '',
@@ -163,6 +250,11 @@ export const buildVenuePartnerProfileFormData = (form: VenueOnboardingFormData):
   formData.append('phoneNumber', form.phone.trim())
   formData.append('serviceType', 'venue')
 
+  const serviceCategory = [form.venueCategoryId, form.venueCategoryName].filter(Boolean)
+  if (serviceCategory.length > 0) {
+    formData.append('serviceCategory', JSON.stringify(serviceCategory))
+  }
+
   if (form.pocName) formData.append('bio', form.pocName.trim())
   if (form.coverImage) formData.append('coverImage', form.coverImage)
   if (form.profileImage) formData.append('profileImage', form.profileImage)
@@ -205,18 +297,18 @@ export const buildKycFormData = (form: VenueOnboardingFormData): FormData => {
   if (form.hasGST) {
     formData.append('gstNumber', form.gstNumber)
     formData.append('state', form.kycState)
-    if (form.gstCertificate) formData.append('gstCertificate', form.gstCertificate)
-    if (form.fssaiLicense) formData.append('fssaiLicense', form.fssaiLicense)
   } else {
     formData.append('itReturnsFiledLast2Years', form.itReturnsFiledLast2Years ? 'true' : 'false')
     if (form.gstUndertakingEmail) {
       formData.append('gstUndertakingEmail', form.gstUndertakingEmail)
     }
-    if (form.gstUndertaking) formData.append('gstUndertaking', form.gstUndertaking)
   }
 
-  if (form.panCard) formData.append('panCard', form.panCard)
-  if (form.tradeLicense) formData.append('tradeLicense', form.tradeLicense)
+  Object.entries(form.kycDocuments).forEach(([key, file]) => {
+    if (!file) return
+    if (!form.hasGST && GST_DOCUMENT_KEYS.has(key)) return
+    formData.append(key, file)
+  })
   form.otherCertificates.forEach((file) => formData.append('otherCertificates', file))
 
   return formData
@@ -301,3 +393,108 @@ export const maskSensitiveValue = (value: string, visibleStart = 2, visibleEnd =
   const maskedLength = Math.max(value.length - visibleStart - visibleEnd, 4)
   return value.slice(0, visibleStart) + '*'.repeat(maskedLength) + value.slice(-visibleEnd)
 }
+
+export const extractKycDocumentUrls = (businessKyc?: Record<string, unknown> | null) => {
+  const urls: Record<string, string> = {}
+  if (!businessKyc) return urls
+
+  for (const key of VENUE_KYC_DOCUMENT_KEYS) {
+    const value = businessKyc[key]
+    if (typeof value === 'string' && value.trim()) {
+      urls[key] = value
+    }
+  }
+
+  if (urls.gstUndertakingDocument && !urls.gstUndertaking) {
+    urls.gstUndertaking = urls.gstUndertakingDocument
+  }
+  if (urls.gstUndertaking && !urls.gstUndertakingDocument) {
+    urls.gstUndertakingDocument = urls.gstUndertaking
+  }
+
+  return urls
+}
+
+export type VenueOnboardingFieldErrors = Record<string, string>
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export const getVenueOnboardingStepErrors = (
+  step: number,
+  form: VenueOnboardingFormData,
+  documentRules?: VenueDocumentRules | null,
+): VenueOnboardingFieldErrors => {
+  const errors: VenueOnboardingFieldErrors = {}
+
+  if (step === 1) {
+    if (!form.name.trim()) errors.name = 'Venue name is required.'
+    if (!form.venueCategoryId) errors.venueCategoryId = 'Category is required.'
+
+    const phoneError = validateMobileNumber(form.phone)
+    if (phoneError) errors.phone = phoneError
+    else if (!form.isPhoneVerified) errors.phone = 'Please verify the phone number.'
+
+    if (!form.email.trim()) {
+      errors.email = 'Email ID is required.'
+    } else if (!EMAIL_PATTERN.test(form.email.trim())) {
+      errors.email = 'Please enter a valid email address.'
+    } else if (!form.isEmailVerified) {
+      errors.email = 'Please verify the email ID.'
+    }
+  }
+
+  if (step === 2) {
+    if (!form.address.trim()) errors.address = 'Address is required.'
+    if (!form.city.trim()) errors.city = 'City is required.'
+    if (!form.pincode.trim()) errors.pincode = 'Pin code is required.'
+
+    const imageCount = form.venueImages.length + form.venueImageUrls.length
+    if (imageCount === 0) errors.venueImages = 'At least one venue image is required.'
+    else if (imageCount > 3) errors.venueImages = 'A maximum of 3 venue images are allowed.'
+  }
+
+  if (step === 3) {
+    if (!form.idType) errors.idType = 'ID type is required.'
+    if (!form.idNumber.trim()) errors.idNumber = 'ID number is required.'
+
+    const panError = validatePanNumber(form.panNumber)
+    if (panError) errors.panNumber = panError
+    if (!form.typeOfVenue) errors.typeOfVenue = 'Type of venue is required.'
+
+    if (form.hasGST) {
+      const gstError = validateGstNumber(form.gstNumber)
+      if (gstError) errors.gstNumber = gstError
+      if (!form.kycState.trim()) errors.kycState = 'State is required when GST is available.'
+    }
+
+    if (form.typeOfVenue) {
+      if (!documentRules) {
+        errors.kycDocuments =
+          'Unable to load document requirements for this venue type. Please try again.'
+      } else {
+        const { mandatory } = getVenueKycUploadSections(documentRules, form.hasGST)
+        const requiredDocs = [...mandatory]
+        if (!requiredDocs.some((doc) => doc.key === 'panCard')) {
+          requiredDocs.unshift({ key: 'panCard', label: 'PAN Card', required: true })
+        }
+        for (const doc of requiredDocs) {
+          if (isVenueKycDocumentRequired(doc, form.hasGST) && !hasVenueKycDocument(form, doc.key)) {
+            errors[`kyc:${doc.key}`] = `${doc.label} is required.`
+          }
+        }
+      }
+    }
+  }
+
+  if (step === 4 && !form.isVerified) {
+    errors.isVerified = 'Please confirm verification before creating the account.'
+  }
+
+  return errors
+}
+
+export const getVenueOnboardingStepError = (
+  step: number,
+  form: VenueOnboardingFormData,
+  documentRules?: VenueDocumentRules | null,
+) => Object.values(getVenueOnboardingStepErrors(step, form, documentRules))[0] ?? null

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -16,6 +16,7 @@ import {
   useVenueOnboardingMutations,
   useVenueOnboardingReview,
 } from '@/modules/expert/hooks/use-venue-onboarding'
+import { useVenueDocumentRules } from '@/modules/expert/hooks/use-venue-kyc'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { VenueCategory } from '@/modules/expert/type/venue'
 import {
@@ -24,12 +25,13 @@ import {
   buildLocationFormData,
   buildVenuePartnerProfileFormData,
   createEmptyVenueOnboardingForm,
+  extractKycDocumentUrls,
+  getVenueOnboardingStepError,
   parseHostingSince,
   type VenueOnboardingFormData,
 } from '@/modules/expert/utils/venue-onboarding-form'
-import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
+import { sanitizeMobileNumber } from '@/shared/lib/phone'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
-import { validateGstNumber, validatePanNumber } from '@/shared/lib/partner-field-validation'
 
 const ONBOARDING_STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -66,6 +68,10 @@ export function CreateVenueOnboardingPage() {
   const { saveBasicProfile, saveLocation, saveKyc, createAccount } = useVenueOnboardingMutations()
 
   const { data: reviewData, refetch: refetchReview } = useVenueOnboardingReview(venueId)
+  const { data: documentRulesResponse, isFetching: isDocumentRulesLoading } = useVenueDocumentRules(
+    formData.typeOfVenue,
+    formData.hasGST,
+  )
 
   useEffect(() => {
     if (controlsLoading) return
@@ -105,6 +111,8 @@ export function CreateVenueOnboardingPage() {
         pocContactNumber: venue.pocContactNumber || prev.pocContactNumber,
         phone: venue.phone ? sanitizeMobileNumber(venue.phone) : prev.phone,
         email: venue.email || prev.email,
+        isPhoneVerified: venue.phone ? true : prev.isPhoneVerified,
+        isEmailVerified: venue.email ? true : prev.isEmailVerified,
         profileImageUrl: venue.profileImageUrl || prev.profileImageUrl,
         coverImageUrl: venue.coverImageUrl || prev.coverImageUrl,
         address: venue.location?.address || prev.address,
@@ -124,10 +132,19 @@ export function CreateVenueOnboardingPage() {
         gstNumber: kyc?.businessKyc?.gstNumber || prev.gstNumber,
         kycState: kyc?.businessKyc?.state || prev.kycState,
         panNumber: kyc?.businessKyc?.panNumber || prev.panNumber,
-        typeOfVenue: kyc?.businessKyc?.typeOfVenue || prev.typeOfVenue,
+        typeOfVenue:
+          kyc?.businessKyc?.typeOfVenue ||
+          prev.typeOfVenue ||
+          (typeof venue.venueCategoryId?.[0] === 'object'
+            ? (venue.venueCategoryId[0] as VenueCategory).name
+            : prev.venueCategoryName),
         itReturnsFiledLast2Years:
           kyc?.businessKyc?.itReturnsFiledLast2Years ?? prev.itReturnsFiledLast2Years,
         gstUndertakingEmail: kyc?.businessKyc?.gstUndertakingEmail || prev.gstUndertakingEmail,
+        kycDocumentUrls: {
+          ...prev.kycDocumentUrls,
+          ...extractKycDocumentUrls(kyc?.businessKyc),
+        },
         internalNotes: venue.adminInternalNotes || prev.internalNotes,
       }))
 
@@ -145,45 +162,12 @@ export function CreateVenueOnboardingPage() {
     setSearchParams(params, { replace: true })
   }
 
-  const validateStep = (step: number): string | null => {
-    if (step === 1) {
-      if (!formData.name.trim()) return 'Venue name is required.'
-      const phoneError = validateMobileNumber(formData.phone)
-      if (phoneError) return phoneError
-      if (!formData.email.trim()) return 'Email is required.'
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-        return 'Please enter a valid email address.'
-      }
-      if (!formData.venueCategoryId) return 'Category is required.'
-    }
-    if (step === 2) {
-      if (!formData.address.trim()) return 'Address is required.'
-      if (!formData.city.trim()) return 'City is required.'
-      if (!formData.pincode.trim()) return 'Pin code is required.'
-      const imageCount = formData.venueImages.length + formData.venueImageUrls.length
-      if (imageCount === 0) return 'At least one venue image is required.'
-      if (imageCount > 3) return 'A maximum of 3 venue images are allowed.'
-    }
-    if (step === 3) {
-      if (!formData.idType) return 'ID type is required.'
-      if (!formData.idNumber.trim()) return 'ID number is required.'
-      const panError = validatePanNumber(formData.panNumber)
-      if (panError) return panError
-      if (!formData.typeOfVenue) return 'Type of venue is required.'
-      if (formData.hasGST) {
-        const gstError = validateGstNumber(formData.gstNumber)
-        if (gstError) return gstError
-        if (!formData.kycState.trim()) return 'State is required when GST is available.'
-      }
-    }
-    if (step === 4) {
-      if (!formData.isVerified) return 'Please confirm verification before creating account.'
-    }
-    return null
-  }
-
   const handleNextStep = async () => {
-    const validationError = validateStep(currentStep)
+    const validationError = getVenueOnboardingStepError(
+      currentStep,
+      formData,
+      documentRulesResponse?.data,
+    )
     if (validationError) {
       toast.error(validationError)
       return
@@ -285,6 +269,8 @@ export function CreateVenueOnboardingPage() {
     createAccount.isPending ||
     isCreatingPartner
 
+  const isPrimaryDisabled = isLoading || (currentStep === 3 && isDocumentRulesLoading)
+
   const primaryLabel = (() => {
     if (isLoading) return 'Saving…'
     if (currentStep === 4) return 'Create Account'
@@ -305,7 +291,7 @@ export function CreateVenueOnboardingPage() {
       primaryAction={{
         label: primaryLabel,
         onClick: handleNextStep,
-        disabled: isLoading,
+        disabled: isPrimaryDisabled,
       }}
     >
       {currentStep === 1 && (

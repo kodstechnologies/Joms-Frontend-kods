@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   approveVenueKycByPartnerId,
   fetchApplicationDetails,
+  fetchVenueDocumentRules,
   updateVenueBankingDocumentStatus,
   updateVenueBankingStatus,
   updateVenueKycDocumentStatus,
@@ -94,5 +95,14 @@ export const useUpdateVenueBankingDocumentStatus = (id?: string) => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
+  })
+}
+
+export const useVenueDocumentRules = (typeOfVenue?: string, hasGST = true) => {
+  return useQuery({
+    queryKey: ['venue-document-rules', typeOfVenue || '', hasGST],
+    queryFn: () => fetchVenueDocumentRules(typeOfVenue, hasGST),
+    enabled: Boolean(typeOfVenue),
+    staleTime: 60 * 1000,
   })
 }

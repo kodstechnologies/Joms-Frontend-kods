@@ -21,16 +21,11 @@ import {
   buildSubmitPayload,
   buildWorkExperiencePayload,
   createEmptyExpertOnboardingForm,
+  getExpertOnboardingStepError,
   mapExpertProfileToOnboardingForm,
   type ExpertOnboardingFormData,
 } from '../../utils/expert-onboarding-form'
-import { validateMobileNumber } from '@/shared/lib/phone'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
-import {
-  isValidHttpUrl,
-  validateGstNumber,
-  validatePanNumber,
-} from '@/shared/lib/partner-field-validation'
 
 const STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -39,77 +34,6 @@ const STEPS = [
   { id: '04', title: 'Gallery', description: 'Work Images' },
   { id: '05', title: 'Final Review', description: 'Preview' },
 ]
-
-const validateStep = (
-  step: number,
-  form: ExpertOnboardingFormData,
-  isEdit: boolean,
-): string | null => {
-  if (step === 1) {
-    if (!form.fullname.trim()) return 'Full name is required.'
-    if (form.fullname.trim().length < 3) return 'Full name must be at least 3 characters.'
-    if (!form.location.trim()) return 'Location is required.'
-    if (!form.bio.trim()) return 'Profile bio is required.'
-    if (!form.sampleWorkLink.trim()) return 'Sample work link is required.'
-    if (!isValidHttpUrl(form.sampleWorkLink)) return 'Sample work link must be a valid URL.'
-    if (!isEdit && !form.sampleWorkFile && !form.sampleWorkFileName) {
-      return 'Sample work file is required.'
-    }
-    const phoneError = validateMobileNumber(form.phoneNumber)
-    if (phoneError) return phoneError
-    if (!form.email.trim()) return 'Email is required.'
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      return 'Please enter a valid email address.'
-    }
-    if (!form.serviceType) return 'Service type is required.'
-    if (form.serviceCategory.length === 0) return 'At least one expert category is required.'
-    if (!form.isPhoneVerified) return 'Please verify the phone number before continuing.'
-    if (!form.isEmailVerified) return 'Please verify the email ID before continuing.'
-  }
-  if (step === 2) {
-    if (!form.idType) return 'ID type is required.'
-    if (!form.idNumber.trim()) return 'ID number is required.'
-    const panError = validatePanNumber(form.panNumber)
-    if (panError) return panError
-    if (form.gstAvailable) {
-      const gstError = validateGstNumber(form.gstNumber)
-      if (gstError) return gstError
-    }
-    if (!form.panCardFile && !form.panCardFileName) {
-      return 'PAN card document is required.'
-    }
-    if (!form.certificateFile && !form.certificateFileName) {
-      return 'Certificate / license document is required.'
-    }
-    if (form.gstAvailable && !form.gstCertificateFile && !form.gstCertificateFileName) {
-      return 'GST certificate is required.'
-    }
-  }
-  if (step === 3) {
-    const validEntries = form.workExperience.filter(
-      (entry) => entry.jobTitle.trim() || entry.companyName.trim(),
-    )
-    if (validEntries.length === 0) return 'At least one work experience entry is required.'
-    for (let i = 0; i < validEntries.length; i++) {
-      if (!validEntries[i].jobTitle.trim()) {
-        return `Job title is required for work experience entry #${i + 1}.`
-      }
-      if (!validEntries[i].companyName.trim()) {
-        return `Company name is required for work experience entry #${i + 1}.`
-      }
-    }
-  }
-  if (step === 4) {
-    if (form.galleryPreviews.length > 5) return 'A maximum of 5 images are allowed.'
-    if (!isEdit && form.galleryImages.length === 0 && form.galleryPreviews.length === 0) {
-      return null
-    }
-  }
-  if (step === 5) {
-    if (!form.isVerified) return 'Please verify the profile before submission.'
-  }
-  return null
-}
 
 export const CreateExpertPage = () => {
   const navigate = useNavigate()
@@ -154,7 +78,7 @@ export const CreateExpertPage = () => {
   }
 
   const handleNextStep = async () => {
-    const validationError = validateStep(currentStep, formData, isEditMode)
+    const validationError = getExpertOnboardingStepError(currentStep, formData, isEditMode)
     if (validationError) {
       toast.error(validationError)
       return

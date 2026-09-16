@@ -110,6 +110,7 @@ export function CreateListingWizard({
 
       <div className="bg-brand-surface mx-auto flex w-full max-w-[1140px] items-center justify-between rounded-lg border border-white/5 p-4 shadow-lg">
         <Button
+          type="button"
           variant="secondary"
           onClick={onBack}
           className="ui-cta ui-cta-outline h-8 px-4 py-0"
@@ -119,6 +120,7 @@ export function CreateListingWizard({
         <div className="flex items-center gap-3">
           {secondaryAction && (
             <Button
+              type="button"
               variant="secondary"
               onClick={secondaryAction.onClick}
               disabled={secondaryAction.disabled}
@@ -131,6 +133,7 @@ export function CreateListingWizard({
             </Button>
           )}
           <Button
+            type="button"
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
             className={cn('ui-cta ui-cta-primary h-8 px-5 py-0', primaryAction.className)}
