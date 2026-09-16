@@ -16,22 +16,20 @@ import { cn } from '@/shared/lib/cn'
 
 type ActionType = 'upgrade' | 'downgrade' | 'extend' | 'cancel'
 
+type PlanChangePayload = {
+  newMembershipPlanId: string
+  newPlanName?: string
+  billingCycleName?: string
+  reasons: string[]
+  adminNotes?: string
+}
+
 type MembershipActionModalsProps = {
   subscription: MembershipSubscription | null
   action: ActionType | null
   onClose: () => void
-  onUpgrade: (payload: {
-    newMembershipPlanId: string
-    billingCycleName?: string
-    reasons: string[]
-    adminNotes?: string
-  }) => void
-  onDowngrade: (payload: {
-    newMembershipPlanId: string
-    billingCycleName?: string
-    reasons: string[]
-    adminNotes?: string
-  }) => void
+  onUpgrade: (payload: PlanChangePayload) => void
+  onDowngrade: (payload: PlanChangePayload) => void
   onExtend: (payload: { endDate: string; reasons: string[]; adminNotes?: string }) => void
   onCancel: (payload: {
     reasons: string[]
@@ -311,6 +309,7 @@ function MembershipActionModalsContent({
               onClick={() => {
                 const payload = {
                   newMembershipPlanId: selectedPlanId,
+                  newPlanName: selectedPlan?.planName,
                   billingCycleName: billingCycleName || undefined,
                   reasons: selectedReasons,
                   adminNotes,

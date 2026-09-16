@@ -81,14 +81,21 @@ export const updateServicePricing = async (id: string, payload: UpdateServicePri
   return response.data
 }
 
-export const updateServiceGallery = async (id: string, images: File[]) => {
+export const updateServiceGallery = async (
+  id: string,
+  images: File[],
+  existingImageUrls: string[] = [],
+) => {
   const formData = new FormData()
   images.forEach((file) => formData.append('images', file))
+  if (existingImageUrls.length > 0) {
+    formData.append('existingImages', JSON.stringify(existingImageUrls))
+  }
 
+  // Do not set Content-Type manually — the browser must add the multipart boundary.
   const response = await expertApiClient.patch<ServiceDetailResponse>(
     `/api/admin/services/${id}/gallery`,
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
   )
   return response.data
 }

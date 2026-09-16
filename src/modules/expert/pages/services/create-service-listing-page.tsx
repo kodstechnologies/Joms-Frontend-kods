@@ -10,6 +10,8 @@ import {
   X,
   Sparkles,
   Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -60,7 +62,7 @@ type UploadedImage = {
   id: string
   url: string
   name: string
-  file: File
+  file?: File
 }
 
 type TierName = 'basic' | 'standard' | 'premium'
@@ -375,6 +377,8 @@ export const CreateServiceListingPage = () => {
         timelineUnit: normalizeTimelineUnit(tier.timelineUnit),
       }))
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
+  const [galleryPreviewIndex, setGalleryPreviewIndex] = useState(0)
+  const [galleryViewerOpen, setGalleryViewerOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const MAX_IMAGES = 5
@@ -533,27 +537,73 @@ export const CreateServiceListingPage = () => {
       setTiers(loadedTiers)
     }
 
+    const existingImages = Array.isArray(service.images)
+      ? service.images
+          .map((url) => String(url || '').trim())
+          .filter(Boolean)
+          .slice(0, MAX_IMAGES)
+      : []
+    if (existingImages.length > 0) {
+      setUploadedImages(
+        existingImages.map((url, index) => ({
+          id: `existing-${index}-${url}`,
+          url,
+          name: `Gallery image ${index + 1}`,
+        })),
+      )
+      setGalleryPreviewIndex(0)
+    }
+
     setHasPrefill(true)
   }
 
   const handleFilesAdded = useCallback(
     (files: FileList | null) => {
-      if (!files) return
+      if (!files?.length) return
       const remaining = MAX_IMAGES - uploadedImages.length
-      const toAdd = guardUploadFiles(Array.from(files).slice(0, remaining))
-      const newImages: UploadedImage[] = toAdd.map((file) => ({
+      if (remaining <= 0) {
+        toast.error(`A maximum of ${MAX_IMAGES} images are allowed`)
+        return
+      }
+
+      const incoming = guardUploadFiles(Array.from(files))
+        .filter((file) => file.type.startsWith('image/'))
+        .slice(0, remaining)
+
+      if (incoming.length === 0) {
+        toast.error('Please upload JPG, PNG, or WebP images only.')
+        return
+      }
+
+      if (files.length > remaining) {
+        toast.error(`A maximum of ${MAX_IMAGES} images are allowed`)
+      }
+
+      const newImages: UploadedImage[] = incoming.map((file) => ({
         id: crypto.randomUUID(),
         url: URL.createObjectURL(file),
         name: file.name,
         file,
       }))
       setUploadedImages((prev) => [...prev, ...newImages])
+      setGalleryPreviewIndex((prev) => (uploadedImages.length === 0 ? 0 : prev))
     },
     [uploadedImages.length],
   )
 
   const handleRemoveImage = (id: string) => {
-    setUploadedImages((prev) => prev.filter((img) => img.id !== id))
+    setUploadedImages((prev) => {
+      const target = prev.find((img) => img.id === id)
+      if (target?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(target.url)
+      }
+      const next = prev.filter((img) => img.id !== id)
+      setGalleryPreviewIndex((current) => {
+        if (next.length === 0) return 0
+        return Math.min(current, next.length - 1)
+      })
+      return next
+    })
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -729,18 +779,55 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 4) {
-          if (uploadedImages.length > 0) {
-            await updateServiceGalleryMutation.mutateAsync({
-              id: listingId,
-              images: uploadedImages.map((image) => image.file),
-            })
-            toast.success('Gallery updated successfully')
+          if (uploadedImages.length === 0) {
+            toast.error('At least one gallery image is required.')
+            return
           }
+
+          const filesToUpload = uploadedImages
+            .map((image) => image.file)
+            .filter((file): file is File => Boolean(file))
+          const existingImageUrls = uploadedImages
+            .filter((image) => !image.file && /^https?:\/\//i.test(image.url))
+            .map((image) => image.url)
+
+          if (filesToUpload.length === 0 && existingImageUrls.length === 0) {
+            toast.error('Please re-upload your gallery images.')
+            return
+          }
+
+          const response = await updateServiceGalleryMutation.mutateAsync({
+            id: listingId,
+            images: filesToUpload,
+            existingImageUrls,
+          })
+          const savedUrls = (response.data?.images || [])
+            .map((url) => String(url || '').trim())
+            .filter(Boolean)
+
+          if (savedUrls.length > 0) {
+            setUploadedImages((prev) => {
+              prev.forEach((image) => {
+                if (image.url.startsWith('blob:')) URL.revokeObjectURL(image.url)
+              })
+              return savedUrls.map((url, index) => ({
+                id: `saved-${index}-${url}`,
+                url,
+                name: prev[index]?.name || `Gallery image ${index + 1}`,
+              }))
+            })
+            setGalleryPreviewIndex(0)
+          }
+          toast.success('Gallery updated successfully')
           handleNext()
           return
         }
 
         if (currentStep === 5) {
+          if (uploadedImages.length === 0) {
+            toast.error('At least one gallery image is required before publishing.')
+            return
+          }
           await publishServiceMutation.mutateAsync(listingId)
           toast.success('Service published successfully')
           navigate('/services/management')
@@ -1449,8 +1536,6 @@ export const CreateServiceListingPage = () => {
       'Save & Continue'
     )
 
-  const primaryActionClassName = currentStep === 5 ? 'ui-cta-positive' : 'ui-cta-primary'
-
   return (
     <CreateListingWizard
       title={isEditMode ? 'Edit Consultation' : 'Create Service Listing'}
@@ -1470,7 +1555,7 @@ export const CreateServiceListingPage = () => {
         onClick: handlePrimaryAction,
         disabled:
           (currentStep === 1 && !selectedType) || isSubmitting || (isEditMode && isEditLoading),
-        className: primaryActionClassName,
+        variant: currentStep === 5 ? 'positive' : 'primary',
       }}
     >
       {currentStep === 1 ? (
@@ -2165,9 +2250,11 @@ export const CreateServiceListingPage = () => {
       ) : currentStep === 4 ? (
         <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] space-y-5 rounded-lg border border-white/5 p-5 duration-300">
           <div>
-            <h2 className="mb-1 text-[13px] font-bold text-white">Gallery</h2>
+            <h2 className="mb-1 text-[13px] font-bold text-white">
+              Gallery <RequiredMark />
+            </h2>
             <p className="text-body-sm text-muted font-medium">
-              Upload visual assets to support your service (optional)
+              Upload at least one visual asset to support your service
             </p>
           </div>
 
@@ -2214,23 +2301,37 @@ export const CreateServiceListingPage = () => {
               accept="image/jpeg,image/png,image/webp"
               multiple
               className="hidden"
-              onChange={(e) => handleFilesAdded(e.target.files)}
+              onChange={(e) => {
+                handleFilesAdded(e.target.files)
+                e.target.value = ''
+              }}
             />
 
-            {uploadedImages.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-body-sm font-semibold text-white">
-                  Uploaded Images ({uploadedImages.length}/{MAX_IMAGES})
-                </p>
+            <div className="space-y-3">
+              <p className="text-body-sm font-semibold text-white">
+                Uploaded Images ({uploadedImages.length}/{MAX_IMAGES})
+              </p>
+              {uploadedImages.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
-                  {uploadedImages.map((img) => (
+                  {uploadedImages.map((img, index) => (
                     <div key={img.id} className="group relative">
-                      <img
-                        src={img.url}
-                        alt={img.name}
-                        className="h-[90px] w-[90px] rounded-md border border-white/5 object-cover"
-                      />
                       <button
+                        type="button"
+                        aria-label={`Open ${img.name}`}
+                        onClick={() => {
+                          setGalleryPreviewIndex(index)
+                          setGalleryViewerOpen(true)
+                        }}
+                        className="block cursor-zoom-in"
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.name}
+                          className="h-[90px] w-[90px] rounded-md border border-white/5 object-cover"
+                        />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleRemoveImage(img.id)}
                         className="bg-brand-danger hover:bg-brand-danger absolute top-1.5 left-1.5 rounded-full px-2 py-0.5 text-[8px] font-bold text-white shadow-lg transition-colors"
                       >
@@ -2239,8 +2340,12 @@ export const CreateServiceListingPage = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-muted text-xs">
+                  No images uploaded yet. At least one is required.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       ) : currentStep === 5 ? (
@@ -2256,27 +2361,68 @@ export const CreateServiceListingPage = () => {
             <div className="flex w-full shrink-0 flex-col gap-5 md:w-[360px]">
               <div className="relative h-[210px] w-full overflow-hidden rounded-lg border border-white/5 bg-black">
                 {uploadedImages.length > 0 ? (
-                  <img
-                    src={uploadedImages[0].url}
-                    alt="cover"
-                    className="h-full w-full object-cover"
-                  />
+                  <button
+                    type="button"
+                    aria-label="Open image viewer"
+                    onClick={() => setGalleryViewerOpen(true)}
+                    className="block h-full w-full cursor-zoom-in"
+                  >
+                    <img
+                      src={
+                        uploadedImages[Math.min(galleryPreviewIndex, uploadedImages.length - 1)]
+                          ?.url
+                      }
+                      alt={
+                        uploadedImages[Math.min(galleryPreviewIndex, uploadedImages.length - 1)]
+                          ?.name || 'cover'
+                      }
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
                 ) : (
                   <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                     <ImageIcon className="size-8" aria-hidden="true" />
                     <span className="text-[10px]">No images uploaded</span>
                   </div>
                 )}
-                <div className="text-body-sm absolute right-3 bottom-3 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2.5 py-1 font-bold text-white shadow-md backdrop-blur-sm">
-                  <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span>{uploadedImages.length > 0 ? `1/${uploadedImages.length}` : '0/0'}</span>
+
+                {uploadedImages.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Previous image"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setGalleryPreviewIndex(
+                          (current) =>
+                            (current - 1 + uploadedImages.length) % uploadedImages.length,
+                        )
+                      }}
+                      className="absolute top-1/2 left-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next image"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setGalleryPreviewIndex((current) => (current + 1) % uploadedImages.length)
+                      }}
+                      className="absolute top-1/2 right-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </>
+                ) : null}
+
+                <div className="text-body-sm absolute right-3 bottom-3 z-10 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2.5 py-1 font-bold text-white shadow-md backdrop-blur-sm">
+                  <ImageIcon className="size-3.5" aria-hidden="true" />
+                  <span>
+                    {uploadedImages.length > 0
+                      ? `${Math.min(galleryPreviewIndex, uploadedImages.length - 1) + 1}/${uploadedImages.length}`
+                      : '0/0'}
+                  </span>
                 </div>
               </div>
 
@@ -2453,6 +2599,69 @@ export const CreateServiceListingPage = () => {
           Step {currentStep} coming soon...
         </div>
       )}
+
+      {galleryViewerOpen && uploadedImages.length > 0
+        ? (() => {
+            const activeIndex = Math.min(galleryPreviewIndex, uploadedImages.length - 1)
+            const activeImage = uploadedImages[activeIndex]
+            return (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+                onClick={() => setGalleryViewerOpen(false)}
+              >
+                <button
+                  type="button"
+                  aria-label="Close image viewer"
+                  onClick={() => setGalleryViewerOpen(false)}
+                  className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <X className="size-5" />
+                </button>
+                {uploadedImages.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Previous image"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setGalleryPreviewIndex(
+                        (current) => (current - 1 + uploadedImages.length) % uploadedImages.length,
+                      )
+                    }}
+                    className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                  >
+                    <ChevronLeft className="size-6" />
+                  </button>
+                ) : null}
+                <div
+                  className="flex max-h-[85vh] max-w-[min(900px,90vw)] flex-col items-center"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <img
+                    src={activeImage.url}
+                    alt={activeImage.name || 'Gallery image'}
+                    className="max-h-[80vh] max-w-full rounded-lg object-contain"
+                  />
+                  <p className="mt-3 text-[13px] text-white/70">
+                    {activeIndex + 1} / {uploadedImages.length}
+                  </p>
+                </div>
+                {uploadedImages.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Next image"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setGalleryPreviewIndex((current) => (current + 1) % uploadedImages.length)
+                    }}
+                    className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                  >
+                    <ChevronRight className="size-6" />
+                  </button>
+                ) : null}
+              </div>
+            )
+          })()
+        : null}
     </CreateListingWizard>
   )
 }

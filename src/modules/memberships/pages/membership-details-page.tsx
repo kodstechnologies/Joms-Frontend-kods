@@ -1,5 +1,6 @@
 import { ArrowLeft, CircleArrowDown, CircleArrowUp, ExternalLink } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -8,12 +9,11 @@ import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipHistoryModal } from '../components/membership-history-modal'
 import {
   useCancelSubscription,
-  useDowngradeSubscription,
   useExtendSubscription,
   useSubscription,
-  useUpgradeSubscription,
 } from '../hooks/use-membership-subscriptions'
 import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
+import { submitMembershipPlanChangeForApproval } from '../utils/submit-membership-plan-change-approval'
 import { useBranding } from '@/app/providers/use-branding'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -25,17 +25,17 @@ import {
 export function MembershipDetailsPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { logoUrl } = useBranding()
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
 
   const { data, isLoading } = useSubscription(id)
   const subscription = data?.data
 
-  const upgradeMutation = useUpgradeSubscription()
-  const downgradeMutation = useDowngradeSubscription()
   const extendMutation = useExtendSubscription()
   const cancelMutation = useCancelSubscription()
 
@@ -55,6 +55,11 @@ export function MembershipDetailsPage() {
         : (subscription.upgradedBy ?? 'User')
 
   const paymentMethod = subscription.paymentInfo?.paymentMethod || 'Credit Card'
+
+  const membershipPlanDocId =
+    typeof subscription.membershipPlanId === 'string'
+      ? subscription.membershipPlanId
+      : subscription.membershipPlanId?._id || null
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col">
@@ -90,10 +95,18 @@ export function MembershipDetailsPage() {
             <DetailField
               label="Plan Name"
               value={
-                <span className="inline-flex items-center gap-1.5">
-                  {subscription.planName}
-                  <ExternalLink className="text-brand-text size-3.5" strokeWidth={1.75} />
-                </span>
+                membershipPlanDocId ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/memberships/plans/${membershipPlanDocId}/view`)}
+                    className="text-body-md-semibold text-brand-text hover:text-brand-text/80 inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    {subscription.planName}
+                    <ExternalLink className="size-3.5 shrink-0" strokeWidth={1.75} />
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">{subscription.planName}</span>
+                )
               }
             />
             <DetailField label="Billing Type" value={subscription.billingCycleName} />
@@ -212,33 +225,34 @@ export function MembershipDetailsPage() {
         action={actionType}
         onClose={() => setActionType(null)}
         isSubmitting={
-          upgradeMutation.isPending ||
-          downgradeMutation.isPending ||
-          extendMutation.isPending ||
-          cancelMutation.isPending
+          isPlanChangeSubmitting || extendMutation.isPending || cancelMutation.isPending
         }
         onUpgrade={async (payload) => {
+          setIsPlanChangeSubmitting(true)
           try {
-            await upgradeMutation.mutateAsync({
-              id: subscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Membership upgraded')
+            await submitMembershipPlanChangeForApproval(subscription, 'upgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Upgrade sent for approval — check My Tasks')
             setActionType(null)
           } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to upgrade membership'))
+            toast.error(getApiErrorMessage(error, 'Failed to send upgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onDowngrade={async (payload) => {
+          setIsPlanChangeSubmitting(true)
           try {
-            await downgradeMutation.mutateAsync({
-              id: subscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Membership downgraded')
+            await submitMembershipPlanChangeForApproval(subscription, 'downgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Downgrade sent for approval — check My Tasks')
             setActionType(null)
           } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to downgrade membership'))
+            toast.error(getApiErrorMessage(error, 'Failed to send downgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onExtend={async (payload) => {

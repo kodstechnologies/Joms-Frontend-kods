@@ -152,5 +152,6 @@ export type PermissionModuleKey =
   | 'referrals'
   | 'finance'
   | 'settings'
+  | 'support'
   | 'audit'
   | 'bulk'

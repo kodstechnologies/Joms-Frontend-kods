@@ -1395,13 +1395,59 @@ export function buildExpertMembershipsListQueryParams(
   filterValues: FilterValues,
   options: FinanceListQueryOptions = {},
 ): Record<string, unknown> {
-  const params = buildRevenueListQueryParams(filterValues, options)
+  const {
+    searchById,
+    searchByName,
+    searchByStatus,
+    searchByDate,
+    status: optionStatus,
+    ...restOptions
+  } = options as FinanceListQueryOptions & {
+    searchById?: string
+    searchByName?: string
+    searchByStatus?: string
+    searchByDate?: string
+    status?: string
+  }
+
+  const params = buildRevenueListQueryParams(filterValues, restOptions)
+
   if (params.purchasedPriceMin != null && params.amountMin == null) {
     params.amountMin = params.purchasedPriceMin
   }
   if (params.purchasedPriceMax != null && params.amountMax == null) {
     params.amountMax = params.purchasedPriceMax
   }
+
+  // Column search aliases → API query fields
+  if (typeof searchById === 'string' && searchById.trim() && params.subscriptionId == null) {
+    params.subscriptionId = searchById.trim()
+  }
+  if (typeof searchByName === 'string' && searchByName.trim() && params.partnerName == null) {
+    params.partnerName = searchByName.trim()
+  }
+  if (typeof searchByDate === 'string' && searchByDate.trim()) {
+    if (params.startedAtMin == null) params.startedAtMin = searchByDate.trim()
+    if (params.startedAtMax == null) params.startedAtMax = searchByDate.trim()
+  }
+
+  const statusParts = [
+    typeof params.status === 'string' ? params.status : '',
+    typeof optionStatus === 'string' ? optionStatus : '',
+    typeof searchByStatus === 'string' ? searchByStatus : '',
+  ]
+    .flatMap((value) =>
+      String(value || '')
+        .split(',')
+        .map((part) => part.trim().toLowerCase())
+        .filter(Boolean),
+    )
+    .map((part) => (part === 'canceled' ? 'cancelled' : part))
+
+  if (statusParts.length) {
+    params.status = [...new Set(statusParts)].join(',')
+  }
+
   return params
 }
 

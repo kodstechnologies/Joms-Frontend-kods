@@ -32,8 +32,15 @@ export const useUpdateServicePricing = () =>
 
 export const useUpdateServiceGallery = () =>
   useMutation({
-    mutationFn: ({ id, images }: { id: string; images: File[] }) =>
-      updateServiceGallery(id, images),
+    mutationFn: ({
+      id,
+      images,
+      existingImageUrls,
+    }: {
+      id: string
+      images: File[]
+      existingImageUrls?: string[]
+    }) => updateServiceGallery(id, images, existingImageUrls),
   })
 
 export const usePublishService = () =>

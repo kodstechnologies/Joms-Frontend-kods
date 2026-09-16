@@ -320,7 +320,6 @@ export const createAdminVenueGallery = async (
 ) => {
   const response = await venueApiClient.post(`/venues/admin/gallery/${venueId}`, payload, {
     params: { spaceId },
-    headers: { 'Content-Type': 'multipart/form-data' },
   })
   return response.data
 }
@@ -518,7 +517,6 @@ export const createVenueAmenity = async (
 export const createVenueGallery = async (venueId: string, spaceId: string, payload: FormData) => {
   const response = await venueApiClient.post(`/venues/gallery/${venueId}`, payload, {
     params: { spaceId },
-    headers: { 'Content-Type': 'multipart/form-data' },
   })
   return response.data
 }

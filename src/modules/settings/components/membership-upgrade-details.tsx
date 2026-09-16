@@ -30,6 +30,9 @@ export function MembershipUpgradeDetails() {
     () => (escalation?.metadata || {}) as Record<string, unknown>,
     [escalation?.metadata],
   )
+  const changeType = String(metadata.changeType || 'upgrade').toLowerCase()
+  const isDowngrade = changeType === 'downgrade'
+  const actionLabel = isDowngrade ? 'Downgrade' : 'Upgrade'
 
   useEffect(() => {
     if (!id || !escalation || escalation.escalationStatus !== 'assigned') return
@@ -43,13 +46,19 @@ export function MembershipUpgradeDetails() {
   }, [escalation, id, queryClient])
 
   if (escalationQuery.isLoading) {
-    return <p className="mx-20 py-8 text-sm text-slate-400">Loading upgrade details...</p>
+    return (
+      <p className="mx-20 py-8 text-sm text-slate-400">
+        Loading {actionLabel.toLowerCase()} details...
+      </p>
+    )
   }
 
   if (!escalation) {
     return (
       <div className="mx-20 flex flex-col gap-4 pb-8">
-        <p className="text-sm text-red-400">Membership upgrade escalation not found.</p>
+        <p className="text-sm text-red-400">
+          Membership {actionLabel.toLowerCase()} escalation not found.
+        </p>
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/my-tasks')}
@@ -66,7 +75,7 @@ export function MembershipUpgradeDetails() {
   const partnerId = String(metadata.partnerId || escalation.partnerId || '')
   const sourceApp = String(metadata.sourceApp || 'User App')
   const currentPlan = String(metadata.currentPlanName || '—')
-  const upgradingPlan = String(metadata.newPlanName || '—')
+  const targetPlan = String(metadata.newPlanName || '—')
   const reasons = Array.isArray(metadata.reasons)
     ? (metadata.reasons as string[]).join(', ')
     : String(metadata.reasons || escalation.escalationNote || '—')
@@ -78,14 +87,14 @@ export function MembershipUpgradeDetails() {
     setIsSubmitting(true)
     try {
       await approveMembershipUpgradeEscalation(id, {
-        decisionNote: 'Approved via My Tasks',
+        decisionNote: `Approved via My Tasks`,
       })
       void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
       void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
-      toast.success('Membership upgrade approved')
+      toast.success(`Membership ${actionLabel.toLowerCase()} approved`)
       navigate('/my-tasks')
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to approve upgrade'))
+      toast.error(apiErrorMessage(err, `Failed to approve ${actionLabel.toLowerCase()}`))
     } finally {
       setIsSubmitting(false)
     }
@@ -95,14 +104,14 @@ export function MembershipUpgradeDetails() {
     setIsSubmitting(true)
     try {
       await denyMembershipUpgradeEscalation(id, {
-        decisionNote: 'Denied via My Tasks',
+        decisionNote: `Denied via My Tasks`,
       })
       void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
       void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
-      toast.success('Membership upgrade denied')
+      toast.success(`Membership ${actionLabel.toLowerCase()} denied`)
       navigate('/my-tasks')
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to deny upgrade'))
+      toast.error(apiErrorMessage(err, `Failed to deny ${actionLabel.toLowerCase()}`))
     } finally {
       setIsSubmitting(false)
     }
@@ -117,16 +126,16 @@ export function MembershipUpgradeDetails() {
           className="mb-3 flex items-center gap-2 text-sm text-white transition hover:text-[#F0C27B]"
         >
           <ArrowLeft className="-ml-10 h-4 w-4" />
-          Membership Upgrade
+          Membership {actionLabel}
         </button>
         <p className="ml-10 text-sm text-slate-400">
-          My Tasks /<span className="ml-1 font-medium text-white">Membership Upgrade</span>
+          My Tasks /<span className="ml-1 font-medium text-white">Membership {actionLabel}</span>
         </p>
       </div>
 
       <div className="rounded-xl border border-[#242424] bg-[#171717] px-6 py-6">
         <div className="border-b border-[#2A2A2A] pb-5">
-          <h2 className="text-xl font-semibold text-white">Upgrade Details</h2>
+          <h2 className="text-xl font-semibold text-white">{actionLabel} Details</h2>
           <p className="mt-2 text-sm text-slate-400">Verify and approve the below details.</p>
         </div>
 
@@ -154,8 +163,10 @@ export function MembershipUpgradeDetails() {
               <p className="mt-2 text-sm font-medium text-white">{currentPlan}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-400">Upgrading Plan</p>
-              <p className="mt-2 text-sm font-medium text-white">{upgradingPlan}</p>
+              <p className="text-sm text-slate-400">
+                {isDowngrade ? 'Downgrading Plan' : 'Upgrading Plan'}
+              </p>
+              <p className="mt-2 text-sm font-medium text-white">{targetPlan}</p>
             </div>
           </div>
 
@@ -173,7 +184,7 @@ export function MembershipUpgradeDetails() {
           </div>
 
           <div className="mt-8">
-            <p className="text-sm text-slate-400">Reason for Upgrade</p>
+            <p className="text-sm text-slate-400">Reason for {actionLabel}</p>
             <p className="mt-3 text-sm leading-7 text-white">{reasons || '—'}</p>
           </div>
 
@@ -212,7 +223,7 @@ export function MembershipUpgradeDetails() {
               onClick={() => void handleDeny()}
               className="flex items-center gap-2 rounded-lg bg-[#DC2626] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#B91C1C] disabled:opacity-50"
             >
-              Deny Upgrade
+              Deny {actionLabel}
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                 <X className="h-3 w-3" />
               </span>

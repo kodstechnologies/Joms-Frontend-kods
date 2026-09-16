@@ -782,7 +782,7 @@ export function AppRouter() {
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
               </Route>
 
-              <Route element={<SuperAdminRoute />}>
+              <Route element={<PermissionRoute module="support" />}>
                 <Route path="/support/dashboard" element={<SupportDashboardPage />} />
                 <Route path="/support/tickets" element={<TicketManagementPage />} />
                 <Route path="/support/tickets/:id" element={<TicketDetailPage />} />

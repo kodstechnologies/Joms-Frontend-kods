@@ -76,8 +76,44 @@ export const mapPaymentStatus = (status: string) => {
   return 'Pending' as const
 }
 
-export const mapPaymentToRevenueRow = (payment: FinancePayment) => {
+const firstNonEmpty = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return null
+}
+
+/** True when the stored "name" is actually an id (or missing). */
+export const needsPartnerDisplayName = (payment: FinancePayment, snapshotName?: string | null) => {
+  const partnerId = firstNonEmpty(payment.partnerId, payment.moduleSnapshot?.partnerId)
+  const name = firstNonEmpty(snapshotName, payment.moduleSnapshot?.partnerName)
+  if (!partnerId) return false
+  if (!name) return true
+  if (name === partnerId) return true
+  if (name === payment.userId) return true
+  return false
+}
+
+export const mapPaymentToRevenueRow = (
+  payment: FinancePayment,
+  partnerNameMap?: Record<string, string> | null,
+) => {
   const snapshot = payment.moduleSnapshot || {}
+  const partnerId = firstNonEmpty(payment.partnerId, snapshot.partnerId)
+  const snapshotPartnerName = firstNonEmpty(snapshot.partnerName, payment.moduleData?.partnerName)
+  const lookedUp = partnerId && partnerNameMap ? firstNonEmpty(partnerNameMap[partnerId]) : null
+  const ownerName =
+    (snapshotPartnerName &&
+    snapshotPartnerName !== partnerId &&
+    snapshotPartnerName !== payment.userId
+      ? snapshotPartnerName
+      : null) ||
+    lookedUp ||
+    snapshotPartnerName ||
+    partnerId ||
+    payment.userId ||
+    '—'
+
   return {
     id: payment._id,
     transactionId: payment.orderId || payment.razorpayPaymentId || payment._id,
@@ -88,7 +124,7 @@ export const mapPaymentToRevenueRow = (payment: FinancePayment) => {
     category: (snapshot.category as string) || titleCase(payment.module),
     subCategory: (snapshot.subCategory as string) || '—',
     ownerType: payment.userType === 'partner' ? 'Expert' : titleCase(payment.userType),
-    ownerName: (snapshot.partnerName as string) || payment.partnerId || payment.userId || '—',
+    ownerName,
     grossAmount: formatInr(payment.amount),
     discounts: '—',
     refundAmount: '—',
@@ -98,7 +134,7 @@ export const mapPaymentToRevenueRow = (payment: FinancePayment) => {
     netProfit: '—',
     status: mapPaymentStatus(payment.status),
     settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : '—',
-    complianceStatus: '—',
+    complianceStatus: payment.complianceStatus ? titleCase(payment.complianceStatus) : '—',
     lastUpdated: formatDate(payment.updatedAt || payment.createdAt),
   }
 }
@@ -339,7 +375,8 @@ export const mapEscrowToServiceRow = (escrow: FinanceEscrowHold) => ({
   bookingId: escrow.referenceId || String(escrow.transactionId || escrow.paymentId),
   userName: escrow.userName || escrow.userId || '—',
   status: (mapEscrowStatus(escrow.status) === 'Released' ? 'Paid' : 'Pending') as
-    'Paid' | 'Pending',
+    | 'Paid'
+    | 'Pending',
   revenue: formatInr(escrow.amountHeld),
 })
 
@@ -373,7 +410,9 @@ export const mapPaymentToVenueRow = (payment: FinancePayment) => {
       (typeof snapshot.title === 'string' && snapshot.title) ||
       titleCase(payment.pricingType || payment.module),
     status: (status === 'Paid' ? 'Completed' : status === 'Failed' ? 'Cancelled' : 'Pending') as
-      'Completed' | 'Pending' | 'Cancelled',
+      | 'Completed'
+      | 'Pending'
+      | 'Cancelled',
     revenue: formatInr(payment.amount),
   }
 }

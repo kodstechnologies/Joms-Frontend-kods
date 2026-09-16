@@ -32,12 +32,13 @@ function isNavItemVisible(
 ): boolean {
   const isSuperAdmin = user?.isSuperAdmin ?? false
 
-  if (item.superAdminOnly && !isSuperAdmin) {
-    return false
-  }
-
+  // Module permission grants override superAdminOnly (e.g. Settings / Support roles).
   if (item.permissionModule) {
     return hasModuleAccess(user, item.permissionModule)
+  }
+
+  if (item.superAdminOnly && !isSuperAdmin) {
+    return false
   }
 
   if (item.key === 'my-task') {
@@ -120,6 +121,10 @@ export function getDefaultHomeRoute(user: AdminUser | null | undefined): string 
 
   if (hasModuleAccess(user, 'referrals')) {
     return '/referrals/management'
+  }
+
+  if (hasModuleAccess(user, 'support')) {
+    return '/support/dashboard'
   }
 
   if (hasModuleAccess(user, 'settings')) {

@@ -4,40 +4,73 @@ import { fetchRbacMe } from '@/modules/rbac/api/rbac-api'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { normalizeUserPermissions } from '@/app/layouts/navigation/navigation.filter'
 
+const SYNC_INTERVAL_MS = 30_000
+
+const permissionFingerprint = (permissions: string[] = []) =>
+  [...permissions].map(String).sort().join('|')
+
+/**
+ * Keep sub-admin sidebar/permissions in sync with live role assignments.
+ * Role updates by a super-admin must appear without requiring a full re-login.
+ */
 export function useSyncSubAdminPermissions() {
   const userId = useAuthStore((state) => state.user?.id)
   const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
   const updateUser = useAuthStore((state) => state.updateUser)
-  const syncedForUserId = useRef<string | null>(null)
+  const inFlight = useRef(false)
 
   useEffect(() => {
     if (!userId || isSuperAdmin) return
-    if (syncedForUserId.current === userId) return
 
     let cancelled = false
 
     const sync = async () => {
+      if (cancelled || inFlight.current) return
+      inFlight.current = true
+
       try {
         const response = await fetchRbacMe()
         if (cancelled) return
 
         const profile = response.data
-        syncedForUserId.current = userId
+        const nextPermissions = normalizeUserPermissions(profile.permissions ?? [])
+        const currentPermissions = useAuthStore.getState().user?.permissions ?? []
+        const prevFingerprint = permissionFingerprint(currentPermissions)
+        const nextFingerprint = permissionFingerprint(nextPermissions)
+
         updateUser({
           subAdminId: profile.subAdminId,
-          permissions: normalizeUserPermissions(profile.permissions ?? []),
+          ...(prevFingerprint !== nextFingerprint ? { permissions: nextPermissions } : {}),
           requiresContactSetup: Boolean(profile.requiresContactSetup),
           contactSetupCompleted: Boolean(profile.contactSetupCompleted),
         })
       } catch {
-        // Fall through to default home if profile sync fails
+        // Keep existing session permissions if profile sync fails
+      } finally {
+        inFlight.current = false
       }
     }
 
     void sync()
 
+    const onFocus = () => {
+      void sync()
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void sync()
+    }
+
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisibility)
+    const intervalId = window.setInterval(() => {
+      void sync()
+    }, SYNC_INTERVAL_MS)
+
     return () => {
       cancelled = true
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.clearInterval(intervalId)
     }
   }, [userId, isSuperAdmin, updateUser])
 }

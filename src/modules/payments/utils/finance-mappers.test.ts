@@ -86,6 +86,23 @@ describe('finance-mappers', () => {
         }),
       ).status,
     ).toBe('Paid')
+    expect(
+      mapPaymentToRevenueRow(
+        payment({
+          partnerId: 'cmu3r3itn000mmv01hagg7ij8',
+          moduleSnapshot: { title: 'T', partnerName: null },
+        }),
+        { cmu3r3itn000mmv01hagg7ij8: 'Madhi Expert' },
+      ).ownerName,
+    ).toBe('Madhi Expert')
+    expect(
+      mapPaymentToRevenueRow(
+        payment({
+          partnerId: 'cmu3r3itn000mmv01hagg7ij8',
+          moduleSnapshot: { title: 'T' },
+        }),
+      ).ownerName,
+    ).toBe('cmu3r3itn000mmv01hagg7ij8')
     expect(mapEscrowStatus('held')).toBe('Active')
     expect(mapEscrowStatus('released_to_payout')).toBe('Released')
     expect(mapEscrowStatus('refunded')).toBe('Dispute')

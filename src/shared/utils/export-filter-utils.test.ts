@@ -116,6 +116,27 @@ describe('export-filter-utils builders', () => {
     expect(buildPrefixedListQueryParams(filters, opts).page).toBe(3)
   })
 
+  it('maps expert membership status filters and column search aliases', () => {
+    const params = buildExpertMembershipsListQueryParams(
+      { 'memberships.status': ['active', 'paused'], 'memberships.autoRenew': ['true'] },
+      {
+        page: 1,
+        limit: 10,
+        searchByStatus: 'expired',
+        searchById: 'CTM001',
+        searchByName: 'Marcus',
+        searchByDate: '2026-01-15',
+      },
+    )
+
+    expect(params.status).toBe('active,paused,expired')
+    expect(params.autoRenew).toBe('true')
+    expect(params.subscriptionId).toBe('CTM001')
+    expect(params.partnerName).toBe('Marcus')
+    expect(params.startedAtMin).toBe('2026-01-15')
+    expect(params.startedAtMax).toBe('2026-01-15')
+  })
+
   it('maps referral table search params to API query fields', () => {
     const params = buildReferralListQueryParams(
       { 'referral.status': ['pending'] },

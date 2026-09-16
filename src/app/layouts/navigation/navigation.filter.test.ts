@@ -79,4 +79,11 @@ describe('navigation.filter', () => {
     expect(keys(superAdmin)).toContain('finance')
     expect(keys(superAdmin)).toContain('executive')
   })
+
+  it('shows settings and support for sub-admins with module permissions', () => {
+    const keys = (user: AdminUser) => getVisibleNavigation(user).map((item) => item.key)
+    expect(keys(subAdmin(['settings.rbac_management']))).toContain('settings')
+    expect(keys(subAdmin(['support.view']))).toContain('support')
+    expect(keys(subAdmin(['finance.view_transactions']))).toContain('finance')
+  })
 })

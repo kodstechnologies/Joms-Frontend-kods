@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, Eye, SquarePen, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -15,6 +16,7 @@ import {
 } from '@/modules/payments/hooks/use-finance'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
+import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import {
   DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
   FINANCE_REVENUE_LEGACY_COLUMN_ID_MAP,
@@ -23,7 +25,10 @@ import {
 } from '@/modules/payments/config/finance-revenue-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
-import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  mapPaymentToRevenueRow,
+  needsPartnerDisplayName,
+} from '@/modules/payments/utils/finance-mappers'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -150,7 +155,27 @@ export function RevenueOverviewPage() {
 
   const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
 
-  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToRevenueRow), [data])
+  const payments = useMemo(() => (data?.data?.rows ?? []) as FinancePayment[], [data])
+
+  const partnerIdsNeedingLookup = useMemo(() => {
+    const ids = payments
+      .filter((payment) => needsPartnerDisplayName(payment))
+      .map((payment) => String(payment.partnerId || payment.moduleSnapshot?.partnerId || ''))
+      .filter(Boolean)
+    return [...new Set(ids)].sort()
+  }, [payments])
+
+  const { data: partnerNameMap } = useQuery({
+    queryKey: ['finance-revenue-partner-names', partnerIdsNeedingLookup.join(',')],
+    queryFn: () => fetchPartnerDisplayNames(partnerIdsNeedingLookup),
+    enabled: partnerIdsNeedingLookup.length > 0,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const rows = useMemo(
+    () => payments.map((payment) => mapPaymentToRevenueRow(payment, partnerNameMap)),
+    [payments, partnerNameMap],
+  )
   const meta = data?.data?.meta
 
   const {
@@ -171,7 +196,16 @@ export function RevenueOverviewPage() {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchFinanceRevenue(params)
       const payments = (result.data?.rows ?? []) as FinancePayment[]
-      return { data: payments.map(mapPaymentToRevenueRow) }
+      const exportLookupIds = [
+        ...new Set(
+          payments
+            .filter((payment) => needsPartnerDisplayName(payment))
+            .map((payment) => String(payment.partnerId || payment.moduleSnapshot?.partnerId || ''))
+            .filter(Boolean),
+        ),
+      ]
+      const nameMap = exportLookupIds.length ? await fetchPartnerDisplayNames(exportLookupIds) : {}
+      return { data: payments.map((payment) => mapPaymentToRevenueRow(payment, nameMap)) }
     }
     return createRevenueFilteredExportHandler(
       fetchForExport,
@@ -406,7 +440,7 @@ export function RevenueOverviewPage() {
         header: 'Settlement Status',
         cell: ({ row }) => {
           const status = (row.original as { settlementStatus?: string }).settlementStatus
-          return status ? <FinanceTableStatusBadge status={status} /> : '—'
+          return status && status !== '—' ? <FinanceTableStatusBadge status={status} /> : '—'
         },
       },
       'compliance-status': {
@@ -414,7 +448,7 @@ export function RevenueOverviewPage() {
         header: 'Compliance Status',
         cell: ({ row }) => {
           const status = (row.original as { complianceStatus?: string }).complianceStatus
-          return status ? <FinanceTableStatusBadge status={status} /> : '—'
+          return status && status !== '—' ? <FinanceTableStatusBadge status={status} /> : '—'
         },
       },
       'last-updated': {

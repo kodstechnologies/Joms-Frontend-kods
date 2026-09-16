@@ -36,8 +36,9 @@ export type AdminEscalation = {
 }
 
 export type EscalateAdminEntityPayload = {
-  assigneeSubAdminId: string
+  assigneeSubAdminId?: string
   assigneeName?: string
+  assigneeAuthAdminId?: string
   adminNote: string
   venueId?: string
   applicationUrl?: string
@@ -62,6 +63,7 @@ export type EscalateAdminEntityPayload = {
   adminNotes?: string
   sourceApp?: string
   username?: string
+  changeType?: 'upgrade' | 'downgrade' | string
 }
 
 export type EscalationListItem = {

@@ -21,6 +21,7 @@ type WizardAction = {
   onClick?: () => void
   disabled?: boolean
   className?: string
+  variant?: 'primary' | 'secondary' | 'outline' | 'positive' | 'negative' | 'ghost'
 }
 
 type CreateListingWizardProps = {
@@ -134,9 +135,10 @@ export function CreateListingWizard({
           )}
           <Button
             type="button"
+            variant={primaryAction.variant ?? 'primary'}
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
-            className={cn('ui-cta ui-cta-primary h-8 px-5 py-0', primaryAction.className)}
+            className={cn('h-8 px-5 py-0', primaryAction.className)}
           >
             {primaryAction.label}
           </Button>

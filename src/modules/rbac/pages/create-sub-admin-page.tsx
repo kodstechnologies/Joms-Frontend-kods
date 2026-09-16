@@ -706,7 +706,9 @@ export function CreateSubAdminPage() {
               {isEditMode ? (
                 <>
                   <li>User profile and role assignment will be updated immediately</li>
-                  <li>Updated permissions will apply on the user's next session refresh</li>
+                  <li>
+                    Updated permissions appear in the sidebar within ~30 seconds (or on tab focus)
+                  </li>
                   <li>All actions will be logged in audit logs</li>
                 </>
               ) : (

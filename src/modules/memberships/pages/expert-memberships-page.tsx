@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { useQueryClient } from '@tanstack/react-query'
 import { CircleArrowDown, CircleArrowUp, CircleX, ClipboardList, Waypoints } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -15,15 +16,14 @@ import {
 import { EXPERT_MEMBERSHIP_SORT_FIELD_MAP } from '../config/membership-table-sort-fields'
 import {
   useCancelSubscription,
-  useDowngradeSubscription,
   useExpertSubscriptions,
   useExtendSubscription,
-  useUpgradeSubscription,
 } from '../hooks/use-membership-subscriptions'
 import { useExpertMembershipStore } from '../store/expert-membership-store'
 import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
 import { buildMembershipDataColumnsById } from '../utils/membership-preference-columns'
+import { submitMembershipPlanChangeForApproval } from '../utils/submit-membership-plan-change-approval'
 import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
@@ -145,6 +145,7 @@ const EXPORT_COLUMN_MAP: Record<
 
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
     null,
@@ -152,6 +153,7 @@ export function ExpertMembershipsPage() {
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
+  const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
 
   const { currentPage, setCurrentPage } = useExpertMembershipStore()
   const serverSort = useServerTableSort({
@@ -175,8 +177,6 @@ export function ExpertMembershipsPage() {
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
   const tableColumnPreferencesQuery = useTableColumnPreferences(MEMBERSHIPS_MODULE_KEY)
 
-  const upgradeMutation = useUpgradeSubscription()
-  const downgradeMutation = useDowngradeSubscription()
   const extendMutation = useExtendSubscription()
   const cancelMutation = useCancelSubscription()
 
@@ -364,35 +364,36 @@ export function ExpertMembershipsPage() {
         action={actionType}
         onClose={closeAction}
         isSubmitting={
-          upgradeMutation.isPending ||
-          downgradeMutation.isPending ||
-          extendMutation.isPending ||
-          cancelMutation.isPending
+          isPlanChangeSubmitting || extendMutation.isPending || cancelMutation.isPending
         }
         onUpgrade={async (payload) => {
           if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
           try {
-            await upgradeMutation.mutateAsync({
-              id: selectedSubscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Upgrade request submitted')
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'upgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Upgrade sent for approval — check My Tasks')
             closeAction()
           } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to upgrade membership'))
+            toast.error(getApiErrorMessage(error, 'Failed to send upgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onDowngrade={async (payload) => {
           if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
           try {
-            await downgradeMutation.mutateAsync({
-              id: selectedSubscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Downgrade request submitted')
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'downgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Downgrade sent for approval — check My Tasks')
             closeAction()
           } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to downgrade membership'))
+            toast.error(getApiErrorMessage(error, 'Failed to send downgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onExtend={async (payload) => {

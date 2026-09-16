@@ -66,6 +66,7 @@ export type FinancePayment = {
   gatewayAmount?: number | null
   platformReceivedAmount?: number | null
   settlementStatus?: string | null
+  complianceStatus?: string | null
   createdAt?: string
   updatedAt?: string
 }

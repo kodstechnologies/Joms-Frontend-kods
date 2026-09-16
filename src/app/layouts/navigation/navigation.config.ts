@@ -199,7 +199,7 @@ export const navigationConfig: NavItem[] = [
     key: 'support',
     label: 'Support',
     icon: LifeBuoy,
-    superAdminOnly: true,
+    permissionModule: 'support',
     matchPaths: ['/support'],
     children: [
       { key: 'support.dashboard', label: 'Dashboard', to: '/support/dashboard' },
@@ -212,7 +212,6 @@ export const navigationConfig: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     permissionModule: 'settings',
-    superAdminOnly: true,
     matchPaths: ['/settings'],
     children: [
       {
