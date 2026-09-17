@@ -1,5 +1,12 @@
 export type SettingsModule =
-  'platform' | 'security' | 'notifications' | 'finance' | 'backup' | 'expert' | 'venue' | 'service'
+  | 'platform'
+  | 'security'
+  | 'notifications'
+  | 'finance'
+  | 'backup'
+  | 'expert'
+  | 'venue'
+  | 'service'
 
 export type PlatformSettings = {
   applicationSettings: {
@@ -232,6 +239,7 @@ export type NotificationSettings = {
     accountSecurity: boolean
     paymentsTransaction: boolean
     reportsAbuseModeration: boolean
+    escalations: boolean
     rolePermissionModification: boolean
     paymentGatewayConfiguration: boolean
   }
