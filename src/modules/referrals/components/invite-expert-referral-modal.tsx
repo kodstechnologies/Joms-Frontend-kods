@@ -3,6 +3,10 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/referral'
+import {
+  parseBulkInviteFile,
+  type BulkInviteRecipient,
+} from '../utils/parse-bulk-invite-recipients'
 import { requiredLabel } from '@/shared/components/form/required-label'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
@@ -16,118 +20,13 @@ type InviteExpertReferralModalProps = {
   isSubmitting?: boolean
 }
 
-type BulkRecipient = { name: string; email?: string; phone?: string }
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const MOBILE_PATTERN = /^[0-9]{10}$/
-
-const isValidEmail = (value: string) => EMAIL_PATTERN.test(value.trim())
-const isValidMobile = (phone: string) => MOBILE_PATTERN.test(phone)
 
 const validateEmailValue = (value: string): string | null => {
   const email = value.trim()
   if (!email) return 'Email ID is required'
-  if (!isValidEmail(email)) return 'Enter a valid email ID'
+  if (!EMAIL_PATTERN.test(email)) return 'Enter a valid email ID'
   return null
-}
-
-const parseCsvLine = (line: string, delimiter: string): string[] => {
-  const cols: string[] = []
-  let current = ''
-  let inQuotes = false
-
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i]
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"'
-        i += 1
-      } else {
-        inQuotes = !inQuotes
-      }
-      continue
-    }
-    if (ch === delimiter && !inQuotes) {
-      cols.push(current.trim())
-      current = ''
-      continue
-    }
-    current += ch
-  }
-  cols.push(current.trim())
-  return cols
-}
-
-const detectDelimiter = (headerLine: string): string => {
-  const counts: Record<string, number> = { ',': 0, ';': 0, '\t': 0 }
-  let inQuotes = false
-  for (const ch of headerLine) {
-    if (ch === '"') {
-      inQuotes = !inQuotes
-      continue
-    }
-    if (!inQuotes && ch in counts) counts[ch] += 1
-  }
-  const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1])
-  return ranked[0][1] > 0 ? ranked[0][0] : ','
-}
-
-const findHeaderIndex = (headers: string[], exact: string, aliases: string[]) => {
-  const exactIdx = headers.findIndex((h) => h === exact)
-  if (exactIdx >= 0) return exactIdx
-  return headers.findIndex((h) => aliases.some((alias) => h.includes(alias)))
-}
-
-const parseCsvRecipients = (text: string): BulkRecipient[] => {
-  const lines = text
-    .replace(/^\uFEFF/, '')
-    .split(/\r\n|\n|\r/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-
-  if (lines.length < 2) return []
-
-  const delimiter = detectDelimiter(lines[0])
-  const headers = parseCsvLine(lines[0], delimiter).map((h) =>
-    h
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim(),
-  )
-
-  const nameIdx = findHeaderIndex(headers, 'name', ['full name', 'fullname', 'name'])
-  const emailIdx = findHeaderIndex(headers, 'email', ['email', 'mail'])
-  const phoneIdx = findHeaderIndex(headers, 'phone', ['phone', 'mobile', 'contact'])
-
-  if (nameIdx < 0) return []
-
-  const seen = new Set<string>()
-
-  return lines
-    .slice(1)
-    .map((line) => {
-      const cols = parseCsvLine(line, delimiter)
-      const name = (cols[nameIdx] ?? '').trim()
-      const email = emailIdx >= 0 ? (cols[emailIdx] ?? '').trim().toLowerCase() : ''
-      const phone = phoneIdx >= 0 ? sanitizeMobileNumber((cols[phoneIdx] ?? '').trim()) : ''
-      return {
-        name,
-        email: email || undefined,
-        phone: phone || undefined,
-      }
-    })
-    .filter((item) => {
-      if (!item.name) return false
-      if (!item.email || !isValidEmail(item.email)) return false
-      if (!item.phone || !isValidMobile(item.phone)) return false
-      return true
-    })
-    .filter((item) => {
-      const key = `${item.email || ''}|${item.phone || ''}|${item.name.toLowerCase()}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
 }
 
 const fieldInputClass = 'invite-modal-input'
@@ -145,7 +44,7 @@ export function InviteExpertReferralModal({
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
   const [fileName, setFileName] = useState<string | null>(null)
-  const [recipients, setRecipients] = useState<BulkRecipient[]>([])
+  const [recipients, setRecipients] = useState<BulkInviteRecipient[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
 
   if (!open) return null
@@ -169,32 +68,29 @@ export function InviteExpertReferralModal({
   const handleFileChange = async (file?: File | null) => {
     if (!file) return
 
-    const lower = file.name.toLowerCase()
-    if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+    try {
+      const parsed = await parseBulkInviteFile(file)
+      if (!parsed.length) {
+        setFileName(null)
+        setRecipients([])
+        setParseError(
+          'No valid rows found. File needs name, email, and a 10-digit phone on each expert row.',
+        )
+        toast.error('No valid recipients found in the file')
+        return
+      }
+
+      setParseError(null)
+      setRecipients(parsed)
+      setFileName(file.name)
+    } catch {
       setFileName(null)
       setRecipients([])
       setParseError(
-        'Please upload a CSV file (name, email, phone). Excel .xlsx is not supported yet.',
+        'Could not read that file. Upload a CSV or Excel sheet with name, email, and phone.',
       )
-      toast.error('Please upload a CSV file')
-      return
+      toast.error('Could not read the upload file')
     }
-
-    const text = await file.text()
-    const parsed = parseCsvRecipients(text)
-    if (!parsed.length) {
-      setFileName(null)
-      setRecipients([])
-      setParseError(
-        'No valid rows found. CSV needs name, email, and phone. Email must be valid and phone must be 10 digits.',
-      )
-      toast.error('No valid recipients found in CSV')
-      return
-    }
-
-    setParseError(null)
-    setRecipients(parsed)
-    setFileName(file.name)
   }
 
   const handleSubmit = async () => {
@@ -231,7 +127,7 @@ export function InviteExpertReferralModal({
     }
 
     if (!recipients.length) {
-      toast.error('Upload a CSV with at least one valid recipient')
+      toast.error('Upload a CSV or Excel file with at least one valid recipient')
       return
     }
 
@@ -324,7 +220,7 @@ export function InviteExpertReferralModal({
               </div>
             </>
           ) : (
-            <Field label="Upload CSV*">
+            <Field label="Upload CSV or Excel*">
               <div className="mb-2 flex justify-end">
                 <button
                   type="button"
@@ -355,22 +251,34 @@ export function InviteExpertReferralModal({
                       </button>
                     </div>
                     <p className="text-muted text-body-sm mt-1">
-                      {recipients.length} partners parsed
+                      {recipients.length} expert{recipients.length === 1 ? '' : 's'} parsed
                     </p>
+                    <ul className="text-muted mt-2 max-h-24 w-full space-y-0.5 overflow-y-auto text-left text-xs">
+                      {recipients.map((recipient) => (
+                        <li key={`${recipient.email}|${recipient.phone}`}>
+                          {recipient.name}
+                          {recipient.email ? ` · ${recipient.email}` : ''}
+                        </li>
+                      ))}
+                    </ul>
                   </>
                 ) : (
                   <>
                     <CloudUpload className="text-muted mb-2 size-8" />
                     <p className="text-muted text-body-md">
-                      Upload CSV with name, email, and 10-digit phone
+                      Upload CSV or Excel with name, email, and 10-digit phone
                     </p>
                   </>
                 )}
                 <input
                   type="file"
-                  accept=".csv,text/csv"
+                  accept=".csv,text/csv,.xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                   className="hidden"
-                  onChange={(e) => void handleFileChange(e.target.files?.[0])}
+                  onChange={(e) => {
+                    const selected = e.target.files?.[0]
+                    e.target.value = ''
+                    void handleFileChange(selected)
+                  }}
                 />
               </label>
               {parseError ? <p className="mt-2 text-xs text-rose-300">{parseError}</p> : null}

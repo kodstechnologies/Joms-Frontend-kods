@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { cn } from '@/shared/lib/cn'
 import { getApiErrorMessage, assertFileWithinUploadLimit } from '@/shared/lib/api-error'
-import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
+import {
+  sanitizeMobileNumber,
+  validateMobileNumber,
+  normalizeImportedMobileNumber,
+} from '@/shared/lib/phone'
 import { PLATFORM_TAGS } from '@/shared/constants/platform-tags'
 import { MODULE_METRICS_REGISTRY } from '@/shared/lib/module-metrics-registry'
 import {
@@ -32,6 +36,12 @@ describe('phone helpers', () => {
     expect(validateMobileNumber('')).toMatch(/required/)
     expect(validateMobileNumber('123')).toMatch(/10-digit/)
     expect(validateMobileNumber('9876543210')).toBeNull()
+  })
+
+  it('normalizes imported +91 and leading-zero numbers', () => {
+    expect(normalizeImportedMobileNumber('+91 98765-43210')).toBe('9876543210')
+    expect(normalizeImportedMobileNumber('09876543210')).toBe('9876543210')
+    expect(normalizeImportedMobileNumber('9876543210')).toBe('9876543210')
   })
 })
 
