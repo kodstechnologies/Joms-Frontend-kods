@@ -169,6 +169,8 @@ export interface VenueFullViewAmenities {
       name?: string | null
       image?: string | null
       icon?: string | null
+      icon3D?: string | null
+      vectorIcon?: string | null
       category?: string | null
     }>
     _id?: string

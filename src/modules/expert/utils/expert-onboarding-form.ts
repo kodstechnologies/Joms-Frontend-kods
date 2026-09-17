@@ -1,5 +1,10 @@
 import {
   isValidHttpUrl,
+  normalizeGovernmentIdNumber,
+  normalizeGstNumber,
+  normalizePanNumber,
+  validateGovernmentIdNumber,
+  validateGovernmentIdType,
   validateGstNumber,
   validatePanNumber,
 } from '@/shared/lib/partner-field-validation'
@@ -168,12 +173,12 @@ export const buildIdentityVerificationFormData = (form: ExpertOnboardingFormData
   const formData = new FormData()
 
   formData.append('idType', form.idType)
-  formData.append('idNumber', form.idNumber.trim())
+  formData.append('idNumber', normalizeGovernmentIdNumber(form.idType, form.idNumber))
   formData.append('gstAvailable', form.gstAvailable ? 'true' : 'false')
-  formData.append('panNumber', form.panNumber.trim())
+  formData.append('panNumber', normalizePanNumber(form.panNumber))
 
   if (form.gstAvailable) {
-    if (form.gstNumber) formData.append('gstNumber', form.gstNumber.trim())
+    if (form.gstNumber) formData.append('gstNumber', normalizeGstNumber(form.gstNumber))
     if (form.gstCertificateFile) {
       formData.append('gstCertificateFile', form.gstCertificateFile)
     }
@@ -472,8 +477,10 @@ export const getExpertOnboardingStepErrors = (
   }
 
   if (step === 2) {
-    if (!form.idType) errors.idType = 'ID type is required.'
-    if (!form.idNumber.trim()) errors.idNumber = 'ID number is required.'
+    const idTypeError = validateGovernmentIdType(form.idType)
+    if (idTypeError) errors.idType = idTypeError
+    const idNumberError = validateGovernmentIdNumber(form.idType, form.idNumber)
+    if (idNumberError) errors.idNumber = idNumberError
     const panError = validatePanNumber(form.panNumber)
     if (panError) errors.panNumber = panError
     if (form.gstAvailable) {

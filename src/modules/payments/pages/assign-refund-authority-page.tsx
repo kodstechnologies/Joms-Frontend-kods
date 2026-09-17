@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, CircleDollarSign } from 'lucide-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -32,23 +32,14 @@ const innerRowClass = 'radius-lg border border-white/[0.06] bg-brand-bg p-4 sm:p
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 
+const ROLE_DESCRIPTION = 'Can approve and issue refunds within policy limits'
+
 const REFUND_PERMISSIONS = [
   'Approve & issue refunds',
   'Partial refund capability',
   'Reject with reason',
   'Escalate if amount exceeds limit',
 ] as const
-
-const ROLE_DESCRIPTION = 'Can approve and issue refunds within policy limits'
-
-const AUTHORITY_ROLES = [
-  { id: 'finance-admin', name: 'Finance Admin' },
-  { id: 'operations-admin', name: 'Operations Admin' },
-  { id: 'support-lead', name: 'Support Lead' },
-  { id: 'super-admin', name: 'Super Admin' },
-] as const
-
-type AuthorityRoleId = (typeof AUTHORITY_ROLES)[number]['id']
 
 type SummaryItem = {
   label: string
@@ -224,28 +215,28 @@ export function AssignRefundAuthorityPage() {
     queryFn: () => fetchEscalationAssignees('finance.*'),
   })
 
-  const assignees = useMemo(() => {
+  const financeAssignees = useMemo(() => {
     const list = assigneesQuery.data?.data
-    if (Array.isArray(list) && list.length > 0) return list
-    return []
+    return Array.isArray(list) ? list.filter((item) => Boolean(item?.id)) : []
   }, [assigneesQuery.data?.data])
 
-  const fallbackAssigneesQuery = useQuery({
-    queryKey: ['escalation-assignees', 'experts.*'],
-    queryFn: () => fetchEscalationAssignees('experts.*'),
-    enabled: !assigneesQuery.isLoading && assignees.length === 0,
-  })
-
-  const resolvedAssignees =
-    assignees.length > 0 ? assignees : fallbackAssigneesQuery.data?.data || []
-
-  const [selectedRoleId, setSelectedRoleId] = useState<AuthorityRoleId>('finance-admin')
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState('')
   const [isEscalateOpen, setIsEscalateOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const selectedRoleIndex = AUTHORITY_ROLES.findIndex((role) => role.id === selectedRoleId)
-  const selectedRole = AUTHORITY_ROLES[selectedRoleIndex] || AUTHORITY_ROLES[0]
-  const selected = resolvedAssignees[selectedRoleIndex] || resolvedAssignees[0]
+  useEffect(() => {
+    if (!financeAssignees.length) {
+      if (selectedAssigneeId) setSelectedAssigneeId('')
+      return
+    }
+    if (!financeAssignees.some((item) => item.id === selectedAssigneeId)) {
+      setSelectedAssigneeId(financeAssignees[0].id)
+    }
+  }, [financeAssignees, selectedAssigneeId])
+
+  const selected =
+    financeAssignees.find((item) => item.id === selectedAssigneeId) || financeAssignees[0] || null
+  const selectedDisplayName = selected?.fullname || 'Finance Admin'
 
   const heading = 'Assign Refund Authority'
   const subtitle = 'Select the role responsible for reviewing and processing this refund request'
@@ -429,7 +420,7 @@ export function AssignRefundAuthorityPage() {
       return
     }
     if (!selected?.id) {
-      toast.error('Select a role to assign this case')
+      toast.error('No finance-scoped sub-admin available to assign')
       return
     }
     setIsEscalateOpen(true)
@@ -443,7 +434,7 @@ export function AssignRefundAuthorityPage() {
     adminNotes: string
   }) => {
     if (!id || !selected?.id) {
-      toast.error('Select a role to assign this case')
+      toast.error('Select a finance sub-admin to assign this case')
       throw new Error('Missing assignee')
     }
 
@@ -472,9 +463,9 @@ export function AssignRefundAuthorityPage() {
       }
       void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
       void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
-      toast.success(`Escalated to ${selectedRole.name}`)
+      toast.success(`Escalated to ${selectedDisplayName}`)
       const separator = detailPath.includes('?') ? '&' : '?'
-      navigate(`${detailPath}${separator}assignee=${encodeURIComponent(selectedRole.name)}`)
+      navigate(`${detailPath}${separator}assignee=${encodeURIComponent(selectedDisplayName)}`)
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to escalate'))
       throw err
@@ -528,12 +519,12 @@ export function AssignRefundAuthorityPage() {
         <section className="flex-1 pb-4">
           <p className="text-body-sm-medium text-brand-text mb-4">{listLabel}</p>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {AUTHORITY_ROLES.map((role) => (
+            {financeAssignees.map((assignee) => (
               <RoleCard
-                key={role.id}
-                name={role.name}
-                selected={selectedRoleId === role.id}
-                onSelect={() => setSelectedRoleId(role.id)}
+                key={assignee.id}
+                name={assignee.fullname || assignee.email || 'Sub Admin'}
+                selected={selected?.id === assignee.id}
+                onSelect={() => setSelectedAssigneeId(assignee.id)}
               />
             ))}
           </div>
@@ -565,7 +556,7 @@ export function AssignRefundAuthorityPage() {
         refundId={modalSummary.recordId || id}
         requestedBy={modalSummary.requestedBy}
         amount={modalSummary.amount}
-        assigneeName={selectedRole.name}
+        assigneeName={selectedDisplayName}
         recordIdLabel={modalSummary.recordIdLabel}
         requestedByLabel={modalSummary.requestedByLabel}
         isSubmitting={isSubmitting}

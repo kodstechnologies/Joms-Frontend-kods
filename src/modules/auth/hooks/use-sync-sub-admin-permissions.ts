@@ -42,7 +42,7 @@ export function useSyncSubAdminPermissions() {
           ...(prevFingerprint !== nextFingerprint ? { permissions: nextPermissions } : {}),
           requiresContactSetup: Boolean(profile.requiresContactSetup),
           contactSetupCompleted: Boolean(profile.contactSetupCompleted),
-          mfaEnabled: Boolean(profile.profile?.mfaEnabled),
+          mfaEnabled: Boolean(profile.mfaEnabled ?? profile.profile?.mfaEnabled),
           fullname: profile.name || undefined,
         })
       } catch {

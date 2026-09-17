@@ -8,6 +8,7 @@ export type AdminEscalationEntityType =
   | 'consultation'
   | 'venue_space'
   | 'refund'
+  | 'finance'
   | 'membership_upgrade'
   | 'support_ticket'
 
@@ -19,7 +20,7 @@ export type AdminEscalation = {
   partnerId?: string
   venueId?: string
   moduleKey?: string
-  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
+  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'finance' | 'membership_upgrade'
   applicationUrl?: string
   escalatedToSubAdminId?: string
   escalatedToAuthAdminId?: string
@@ -43,7 +44,7 @@ export type EscalateAdminEntityPayload = {
   venueId?: string
   applicationUrl?: string
   entityTitle?: string
-  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
+  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'finance' | 'membership_upgrade'
   partnerId?: string
   priority?: 'Low' | 'Medium' | 'High' | 'Critical'
   metadata?: Record<string, unknown>

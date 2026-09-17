@@ -78,7 +78,7 @@ export function PendingApprovalsPage() {
 
   const list = useServiceStatusList({
     moduleKey: SERVICE_PENDING_APPROVALS_MODULE_KEY,
-    status: 'in_review',
+    status: 'pending',
     defaultVisibleColumnIds: DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
     exportFileName: 'pending_services_export',

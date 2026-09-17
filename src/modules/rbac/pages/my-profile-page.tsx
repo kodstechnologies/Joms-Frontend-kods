@@ -15,6 +15,7 @@ import { fetchMySubAdminLogs } from '../api/rbac-api'
 import { RbacLoader } from '../components/rbac-loader'
 import { AuthenticatorSetupModal } from '../components/authenticator-setup-modal'
 import { UpdatePasswordModal } from '../components/update-password-modal'
+import { useAuthenticatorSetupModal } from '../hooks/use-authenticator-setup-modal'
 import type { AuditLog, SuperAdminSelfProfile, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -119,6 +120,18 @@ function RolePill({ label }: { label: string }) {
   return <span className="rbac-role-name-pill">{label}</span>
 }
 
+function RolePills({ labels }: { labels: string[] }) {
+  const names = labels.map((label) => label.trim()).filter(Boolean)
+  if (!names.length) return <span>—</span>
+  return (
+    <span className="inline-flex flex-wrap gap-1.5">
+      {names.map((name) => (
+        <RolePill key={name} label={name} />
+      ))}
+    </span>
+  )
+}
+
 function TwoFactorStatus({ enabled }: { enabled?: boolean }) {
   return (
     <span className={cn('ad-2fa-pill', enabled ? 'is-enabled' : 'is-pending')}>
@@ -130,7 +143,7 @@ function TwoFactorStatus({ enabled }: { enabled?: boolean }) {
 function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) {
   const navigate = useNavigate()
   const updateUser = useAuthStore((state) => state.updateUser)
-  const [authenticatorOpen, setAuthenticatorOpen] = useState(false)
+  const authenticator = useAuthenticatorSetupModal()
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const isActive = profile.status === 'active'
   const phoneDisplay = profile.phone
@@ -142,7 +155,10 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
       <div className="ad-header">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
+          onClick={() => {
+            authenticator.close()
+            navigateBackOrFallback(navigate, '/settings/access')
+          }}
           className="ad-back"
         >
           <ArrowLeft className="size-5" aria-hidden="true" />
@@ -159,7 +175,7 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
           <button
             type="button"
             className="ad-btn ad-btn-auth"
-            onClick={() => setAuthenticatorOpen(true)}
+            onClick={() => authenticator.setOpen(true)}
           >
             <Shield className="size-4" aria-hidden="true" />
             {profile.mfaEnabled ? 'Authenticator App' : 'Set Up Authenticator App'}
@@ -210,7 +226,13 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
               <DetailField label="First Name">{profile.firstName || '—'}</DetailField>
               <DetailField label="Last Name">{profile.lastName || '—'}</DetailField>
               <DetailField label="Role">
-                <RolePill label={profile.roleLabel || 'Super Admin'} />
+                <RolePills
+                  labels={
+                    profile.roleLabel
+                      ? profile.roleLabel.split(',').map((part) => part.trim())
+                      : ['Super Admin']
+                  }
+                />
               </DetailField>
               <DetailField label="Job title">{profile.jobTitle || '—'}</DetailField>
             </div>
@@ -275,8 +297,8 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
         </div>
       </section>
       <AuthenticatorSetupModal
-        open={authenticatorOpen}
-        onClose={() => setAuthenticatorOpen(false)}
+        open={authenticator.open}
+        onClose={authenticator.close}
         onEnrolled={() => {
           updateUser({ mfaEnabled: true })
         }}
@@ -319,7 +341,10 @@ function SubAdminProfileView() {
   const subAdmin = profileData?.data.profile
   const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
   const logsMeta = logsData?.meta
-  const roleLabel = subAdmin?.roles.map((role) => role.name).join(', ') || '—'
+  const roleNames = useMemo(
+    () => subAdmin?.roles.map((role) => role.name).filter(Boolean) ?? [],
+    [subAdmin?.roles],
+  )
   const isActive = subAdmin?.status === 'active'
 
   const passwordUpdatedAt = useMemo(() => {
@@ -328,7 +353,7 @@ function SubAdminProfileView() {
   }, [logs])
 
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
-  const [authenticatorOpen, setAuthenticatorOpen] = useState(false)
+  const authenticator = useAuthenticatorSetupModal()
   const updatePasswordMutation = useUpdateSubAdminPassword()
 
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
@@ -359,7 +384,9 @@ function SubAdminProfileView() {
           {
             accessorKey: 'changedTo',
             header: 'Changed To',
-            cell: ({ row }) => <RolePill label={row.original.changedTo} />,
+            cell: ({ row }) => (
+              <RolePills labels={row.original.changedTo.split(',').map((part) => part.trim())} />
+            ),
           },
           { accessorKey: 'changedOn', header: 'Changed On' },
           { accessorKey: 'changedBy', header: 'Changed BY' },
@@ -404,7 +431,10 @@ function SubAdminProfileView() {
       <div className="ad-header">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
+          onClick={() => {
+            authenticator.close()
+            navigateBackOrFallback(navigate, '/settings/access')
+          }}
           className="ad-back"
         >
           <ArrowLeft className="size-5" aria-hidden="true" />
@@ -421,7 +451,7 @@ function SubAdminProfileView() {
           <button
             type="button"
             className="ad-btn ad-btn-auth"
-            onClick={() => setAuthenticatorOpen(true)}
+            onClick={() => authenticator.setOpen(true)}
           >
             <Shield className="size-4" aria-hidden="true" />
             {subAdmin.mfaEnabled ? 'Authenticator App' : 'Set Up Authenticator App'}
@@ -474,7 +504,7 @@ function SubAdminProfileView() {
               <DetailField label="First Name">{subAdmin.firstName || '—'}</DetailField>
               <DetailField label="Last Name">{subAdmin.lastName || '—'}</DetailField>
               <DetailField label="Role">
-                <RolePill label={roleLabel} />
+                <RolePills labels={roleNames} />
               </DetailField>
               <DetailField label="Job title">{subAdmin.jobTitle || '—'}</DetailField>
             </div>
@@ -588,8 +618,8 @@ function SubAdminProfileView() {
       />
 
       <AuthenticatorSetupModal
-        open={authenticatorOpen}
-        onClose={() => setAuthenticatorOpen(false)}
+        open={authenticator.open}
+        onClose={authenticator.close}
         onEnrolled={() => {
           updateUser({ mfaEnabled: true })
         }}

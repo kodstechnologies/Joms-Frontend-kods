@@ -41,6 +41,7 @@ import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { SafeImage } from '@/shared/components/media/safe-image'
 import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { isSubmittedListingStatus } from '../../utils/management-status'
+import { resolveAmenityMediaUrl } from '../../utils/venue-form'
 
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
@@ -49,6 +50,8 @@ type AmenitySubCategory = {
   name: string
   image?: string
   icon?: string
+  icon3D?: string
+  vectorIcon?: string
 }
 
 type AmenityCategory = {
@@ -105,12 +108,15 @@ function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
   return (data.overview.amenities?.amenities || []).flatMap((amenity) => {
     const category = categories.get(String(amenity.categoryId))
     if (Array.isArray(amenity.items) && amenity.items.length) {
-      return amenity.items.map((item) => ({
-        id: `${amenity.categoryId}-${item._id}`,
-        categoryName: amenity.category || category?.category || String(amenity.categoryId),
-        name: item.name || String(item._id),
-        image: item.image || item.icon || null,
-      }))
+      return amenity.items.map((item) => {
+        const subCategory = subCategories.get(String(item._id))
+        return {
+          id: `${amenity.categoryId}-${item._id}`,
+          categoryName: amenity.category || category?.category || String(amenity.categoryId),
+          name: item.name || subCategory?.name || String(item._id),
+          image: resolveAmenityMediaUrl(item) || resolveAmenityMediaUrl(subCategory),
+        }
+      })
     }
 
     return (amenity.subCategoryIds || []).map((subCategoryId) => {
@@ -120,7 +126,7 @@ function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
         id: `${amenity.categoryId}-${id}`,
         categoryName: category?.category || String(amenity.categoryId),
         name: subCategory?.name || id,
-        image: subCategory?.image || subCategory?.icon || null,
+        image: resolveAmenityMediaUrl(subCategory),
       }
     })
   })

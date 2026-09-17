@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowLeft, Check, Download, Flag, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as DetailRow,
@@ -14,6 +15,7 @@ import { FinanceStatusBadge } from '@/modules/payments/components/finance-status
 import { financeTaxComplianceStatusClass } from '@/modules/payments/utils/finance-status-tones'
 import {
   useAddFinanceNote,
+  useFinanceNotes,
   useFinanceTaxDetail,
   useMarkTaxFiled,
 } from '@/modules/payments/hooks/use-finance'
@@ -32,6 +34,31 @@ const cardClass = financeDetailCardClass
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
+const TAGS_PREFIX_RE = /\[Tags:\s*([^\]]+)\]/i
+
+function parseTagsFromNotes(notes: Array<{ adminNote?: string | null }> = []) {
+  const tags = new Set<string>()
+  for (const note of notes) {
+    const match = String(note.adminNote || '').match(TAGS_PREFIX_RE)
+    if (!match?.[1]) continue
+    for (const tag of match[1].split(',')) {
+      const trimmed = tag.trim()
+      if (trimmed) tags.add(trimmed)
+    }
+  }
+  return [...tags]
+}
+
+function latestPlainNote(notes: Array<{ adminNote?: string | null }> = []) {
+  for (const note of notes) {
+    const plain = String(note.adminNote || '')
+      .replace(TAGS_PREFIX_RE, '')
+      .trim()
+    if (plain) return plain
+  }
+  return '—'
+}
+
 export function TaxComplianceDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
@@ -40,6 +67,11 @@ export function TaxComplianceDetailViewPage() {
   const markFiledMutation = useMarkTaxFiled()
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const tax = data?.data
+  const resourceId = tax?._id || tax?.taxRecordId || id
+  const notesQuery = useFinanceNotes(resourceId)
+  const financeNotes = notesQuery.data?.data ?? []
+  const recordTags = useMemo(() => parseTagsFromNotes(financeNotes), [financeNotes])
+  const notesSummary = useMemo(() => latestPlainNote(financeNotes), [financeNotes])
 
   if (isLoading) {
     return <p className="text-body-sm text-muted">Loading tax record...</p>
@@ -83,6 +115,7 @@ export function TaxComplianceDetailViewPage() {
       filedBy: tax.filedByAdminId || (canMarkFiled ? '—' : 'Finance Admin'),
       referenceNumber: tax.taxRecordId,
       filingStatus,
+      tags: recordTags.length ? recordTags.join(', ') : '—',
     },
     financialBreakdown: {
       clientId: tax.userId || '—',
@@ -121,7 +154,8 @@ export function TaxComplianceDetailViewPage() {
       reportingCategoryCode: tax.taxType,
       taxStatus: filingStatus,
       adjustments: '—',
-      notes: '—',
+      tags: recordTags.length ? recordTags.join(', ') : '—',
+      notes: notesSummary,
     },
   }
 
@@ -309,10 +343,13 @@ export function TaxComplianceDetailViewPage() {
               />
               <DetailRow label="Tax Status" value={detail.complianceInformation.taxStatus} />
               <DetailRow label="Adjustments" value={detail.complianceInformation.adjustments} />
+              <DetailRow label="Tags" value={detail.complianceInformation.tags} />
               <DetailRow label="Notes" value={detail.complianceInformation.notes} />
             </DetailCard>
           </div>
         </div>
+
+        <FinanceInternalNotesCard resourceId={resourceId} />
 
         <footer className={cn(cardClass, 'flex items-center justify-between px-5 py-4')}>
           <button
@@ -364,7 +401,7 @@ export function TaxComplianceDetailViewPage() {
         onClose={() => setIsNoteModalOpen(false)}
         onSubmit={(adminNote) => {
           noteMutation.mutate(
-            { id: tax._id, resourceType: 'TaxRecord', adminNote },
+            { id: resourceId, resourceType: 'TaxRecord', adminNote },
             {
               onSuccess: () => {
                 toast.success('Note saved')

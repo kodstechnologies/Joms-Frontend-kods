@@ -94,6 +94,11 @@ const FALLBACK_CATALOG: NotificationCatalogGroup[] = [
         description: 'Notifications triggered by user reports and moderation actions',
       },
       {
+        key: 'escalations',
+        label: 'Escalation Notifications',
+        description: 'Alerts when tickets or applications are escalated for review',
+      },
+      {
         key: 'rolePermissionModification',
         label: 'Role & Permission Modification',
         description: 'Change user roles and access permissions',

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import {
   useAddFinanceNote,
   useFinanceReconciliationDetail,
@@ -243,6 +244,8 @@ export function ReconciliationDetailViewPage() {
             </DetailCard>
           </div>
         </div>
+
+        <FinanceInternalNotesCard resourceId={row._id || id} />
       </FinanceDetailShell>
 
       <AddFinanceNoteModal
@@ -251,7 +254,7 @@ export function ReconciliationDetailViewPage() {
         onClose={() => setIsNoteModalOpen(false)}
         onSubmit={(adminNote) => {
           noteMutation.mutate(
-            { id: row._id, resourceType: 'ReconciliationRecord', adminNote },
+            { id: row._id || id, resourceType: 'ReconciliationRecord', adminNote },
             {
               onSuccess: () => {
                 toast.success('Note saved')

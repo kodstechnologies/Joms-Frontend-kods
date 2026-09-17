@@ -9,6 +9,8 @@ export interface CategoryApiSubCategory {
   name: string
   description?: string
   vectorIcon?: string | null
+  icon?: string | null
+  icon3D?: string | null
   status?: CategoryApiStatus
   isDeleted?: boolean
   isPaused?: boolean
@@ -40,6 +42,7 @@ export interface ServiceCategoryApi {
   name: string
   description?: string
   icon3D?: string | null
+  icon?: string | null
   image?: string | null
   status: CategoryApiStatus
   deletedAt?: string | null
@@ -69,6 +72,7 @@ export interface VenueCategoryApi {
   name: string
   description?: string
   icon?: string | null
+  icon3D?: string | null
   image?: string | null
   isDeleted?: boolean
   isPaused?: boolean

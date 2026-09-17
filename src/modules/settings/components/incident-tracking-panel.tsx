@@ -4,7 +4,6 @@ import { ClipboardList } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
-import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AssignUserModal } from './assign-user-modal'
 import {
@@ -53,12 +52,11 @@ type IncidentTrackingPanelProps = {
 }
 
 const INCIDENT_SORT_FIELD_MAP = buildCatalogSortFieldMap(INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG, {
-  'incident-id': 'incidentId',
-  'incident-title': 'title',
   'reported-at': 'createdAt',
-  'first-response-time': 'firstResponseAt',
   'closed-at': 'resolvedAt',
   'root-cause': 'reason',
+  'incident-title': 'title',
+  'first-response-time': 'firstResponseAt',
 })
 
 const dash = (value: string | null | undefined) => (value && String(value).trim() ? value : '—')
@@ -194,6 +192,7 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
   const serverSort = useServerTableSort({
     sortFieldMap: INCIDENT_SORT_FIELD_MAP,
     defaultSortBy: 'reported-at',
+    defaultSortOrder: 'desc',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
@@ -337,16 +336,14 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
       <div className="incident-header">
         <div>
           <h2 className="referral-page-title">Error Reporting &amp; Incident Tracking</h2>
-          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
-            Track errors &amp; incident in the platform
-          </p>
+          <p className="referral-page-subtitle mt-1">Track errors &amp; incident in the platform</p>
         </div>
         <Button
           variant="secondary"
           className="ui-manage-metrics inline-flex items-center gap-2"
           onClick={() => navigate('/metrics/incident-tracking?section=table')}
         >
-          <ManageMetricsIcon />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>
@@ -426,8 +423,7 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
                     : undefined,
                 })
               },
-              onError: (error) =>
-                toast.error(getApiErrorMessage(error, 'Failed to assign incident')),
+              onError: () => toast.error('Failed to assign incident'),
             },
           )
         }}

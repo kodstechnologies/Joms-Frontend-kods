@@ -11,7 +11,9 @@ export type MyTask = {
     | 'consultation'
     | 'venue_space'
     | 'refund'
+    | 'finance'
     | 'membership_upgrade'
+    | 'support_ticket'
   entityId?: string
   venueId?: string
   title: string
@@ -20,7 +22,7 @@ export type MyTask = {
   moduleKey: string
   status: TaskStatus
   reviewStatus: string
-  escalationTarget: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
+  escalationTarget: 'kyc' | 'banking' | 'application' | 'refund' | 'finance' | 'membership_upgrade'
   serviceType: string
   assigneeSubAdminId: string
   assigneeName: string

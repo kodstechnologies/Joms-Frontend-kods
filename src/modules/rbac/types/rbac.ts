@@ -210,6 +210,7 @@ export type AdminProfile = {
   subAdminId?: string
   requiresContactSetup?: boolean
   contactSetupCompleted?: boolean
+  mfaEnabled?: boolean
   profile?: SuperAdminSelfProfile
 }
 

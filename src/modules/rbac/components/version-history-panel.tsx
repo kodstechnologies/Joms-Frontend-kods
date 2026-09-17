@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { ArrowLeft, Briefcase, CalendarDays, UserRound, X } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -78,18 +79,35 @@ const getDateMeta = (log: AuditLog) => {
   return { label: 'Date & Time', value: formatHistoryDateTime(log.createdAt) }
 }
 
+const getSubjectProfileHref = (log: AuditLog) => {
+  const fromLog = typeof log.subAdminId === 'string' ? log.subAdminId.trim() : ''
+  if (fromLog) return `/settings/access/users/${fromLog}`
+
+  const metadata = log.metadata || {}
+  const fromMeta =
+    (typeof metadata.subAdminId === 'string' && metadata.subAdminId.trim()) ||
+    (typeof metadata.userId === 'string' && metadata.userId.trim()) ||
+    (typeof metadata.targetUserId === 'string' && metadata.targetUserId.trim()) ||
+    ''
+  return fromMeta ? `/settings/access/users/${fromMeta}` : undefined
+}
+
 const getSubjectMeta = (log: AuditLog) => {
   const action = log.action.toLowerCase()
   const username = log.username && log.username !== '—' ? log.username : ''
+  const profileHref = getSubjectProfileHref(log)
 
   if (action.includes('suspend') && username) {
-    return { label: 'Suspended User', value: username }
+    return { label: 'Suspended User', value: username, href: profileHref }
   }
   if (action.includes('plan') || action.includes('pric')) {
-    return { label: 'Updated Plan', value: log.changedTo || username || log.module || '—' }
+    return {
+      label: 'Updated Plan',
+      value: log.changedTo || username || log.module || '—',
+    }
   }
   if (username) {
-    return { label: 'Account for', value: username }
+    return { label: 'Account for', value: username, href: profileHref }
   }
   if (log.changedTo) {
     return { label: 'Updated Role', value: log.changedTo }
@@ -114,12 +132,12 @@ function MetaRow({
   icon,
   label,
   value,
-  valueLinked,
+  href,
 }: {
   icon: ReactNode
   label: string
   value: string
-  valueLinked?: boolean
+  href?: string
 }) {
   return (
     <p className="vh-meta-row">
@@ -128,10 +146,188 @@ function MetaRow({
       </span>
       <span className="vh-meta-text">
         <span className="vh-meta-label">{label}: </span>
-        <span className={cn('vh-meta-value', valueLinked && 'is-link')}>{value}</span>
+        {href ? (
+          <Link to={href} className="vh-meta-value is-link">
+            {value}
+          </Link>
+        ) : (
+          <span className="vh-meta-value">{value}</span>
+        )}
       </span>
     </p>
   )
+}
+
+const SNAPSHOT_FIELD_ORDER = [
+  'firstName',
+  'lastName',
+  'fullname',
+  'name',
+  'email',
+  'phone',
+  'status',
+  'jobTitle',
+  'department',
+  'roleNames',
+  'roles',
+  'permissions',
+  'changedTo',
+  'previousRole',
+  'action',
+] as const
+
+const SNAPSHOT_FIELD_LABELS: Record<string, string> = {
+  firstName: 'First Name',
+  lastName: 'Last Name',
+  fullname: 'Full Name',
+  name: 'Name',
+  email: 'Email',
+  phone: 'Phone',
+  status: 'Status',
+  jobTitle: 'Job Title',
+  department: 'Department',
+  roleNames: 'Assigned Roles',
+  roles: 'Assigned Roles',
+  roleIds: 'Role IDs',
+  permissions: 'Permissions',
+  changedTo: 'Changed To',
+  previousRole: 'Previous Role',
+  action: 'Action',
+}
+
+const HIDDEN_SNAPSHOT_KEYS = new Set([
+  'id',
+  '_id',
+  'password',
+  'passwordHash',
+  'mfaSecret',
+  'mfaPendingSecret',
+])
+
+const humanizeKey = (key: string) =>
+  SNAPSHOT_FIELD_LABELS[key] ||
+  key
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+
+const asPlainObject = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+const toStringList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => {
+      if (typeof item === 'string' || typeof item === 'number') return String(item).trim()
+      if (item && typeof item === 'object') {
+        const record = item as Record<string, unknown>
+        const label = record.name ?? record.label ?? record.title ?? record.roleName
+        return typeof label === 'string' ? label.trim() : ''
+      }
+      return ''
+    })
+    .filter(Boolean)
+}
+
+const formatPrimitive = (value: unknown): string => {
+  if (value == null || value === '') return '—'
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'string') return value.trim() || '—'
+  return String(value)
+}
+
+const buildSnapshotRows = (snapshot: unknown) => {
+  const object = asPlainObject(snapshot)
+  if (!object) {
+    return [{ key: 'value', label: 'Details', value: snapshot }]
+  }
+
+  const keys = Object.keys(object).filter((key) => !HIDDEN_SNAPSHOT_KEYS.has(key))
+  const hasRoleNames =
+    toStringList(object.roleNames).length > 0 || toStringList(object.roles).length > 0
+  const ordered = [
+    ...SNAPSHOT_FIELD_ORDER.filter((key) => keys.includes(key)),
+    ...keys
+      .filter((key) => !(SNAPSHOT_FIELD_ORDER as readonly string[]).includes(key))
+      .sort((a, b) => a.localeCompare(b)),
+  ].filter((key, index, list) => list.indexOf(key) === index)
+
+  return ordered
+    .filter((key) => !(key === 'roleIds' && hasRoleNames))
+    .map((key) => ({
+      key,
+      label: humanizeKey(key),
+      value: object[key],
+    }))
+    .filter((row) => {
+      if (row.value == null || row.value === '') return false
+      if (Array.isArray(row.value) && row.value.length === 0) return false
+      return true
+    })
+}
+
+function SnapshotValue({ fieldKey, value }: { fieldKey: string; value: unknown }) {
+  if (fieldKey === 'status' && typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    const isActive = normalized === 'active'
+    return (
+      <span className={cn('admin-info-status-pill', isActive ? 'is-active' : 'is-inactive')}>
+        {value}
+      </span>
+    )
+  }
+
+  const list =
+    fieldKey === 'roleNames' ||
+    fieldKey === 'roles' ||
+    fieldKey === 'permissions' ||
+    fieldKey === 'roleIds'
+      ? toStringList(value)
+      : Array.isArray(value)
+        ? toStringList(value)
+        : []
+
+  if (list.length > 0) {
+    return (
+      <div className="vh-snapshot-chips">
+        {list.map((item) => (
+          <span key={`${fieldKey}-${item}`} className="vh-snapshot-chip">
+            {item}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  const nested = asPlainObject(value)
+  if (nested) {
+    const nestedRows = Object.entries(nested)
+      .filter(([key]) => !HIDDEN_SNAPSHOT_KEYS.has(key))
+      .map(([key, nestedValue]) => ({
+        key,
+        label: humanizeKey(key),
+        text: formatPrimitive(nestedValue),
+      }))
+      .filter((row) => row.text !== '—')
+
+    if (!nestedRows.length) return <span className="vh-snapshot-value">—</span>
+
+    return (
+      <div className="vh-snapshot-nested">
+        {nestedRows.map((row) => (
+          <div key={row.key} className="vh-snapshot-nested-row">
+            <span className="vh-snapshot-nested-label">{row.label}</span>
+            <span className="vh-snapshot-value">{row.text}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return <span className="vh-snapshot-value">{formatPrimitive(value)}</span>
 }
 
 function SnapshotModal({
@@ -143,30 +339,55 @@ function SnapshotModal({
   snapshot: unknown
   onClose: () => void
 }) {
+  const rows = buildSnapshotRows(snapshot)
+
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4">
+    <div
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4"
+      role="presentation"
+      onClick={onClose}
+    >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="vh-snapshot-title"
         className={cn(
           uiTokens.radiusCard,
           uiTokens.borderSubtle,
-          'bg-brand-surface w-full max-w-lg p-6 shadow-[0_18px_60px_rgba(0,0,0,0.55)]',
+          'bg-brand-surface flex w-full max-w-lg flex-col overflow-hidden shadow-[0_18px_60px_rgba(0,0,0,0.55)]',
         )}
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-brand-text text-lg font-semibold">{title}</h3>
+        <div className="flex items-start justify-between gap-3 border-b border-white/10 px-6 py-5">
+          <h3 id="vh-snapshot-title" className="text-brand-text text-lg font-semibold">
+            {title}
+          </h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-muted hover:text-white"
+            className="text-muted grid size-8 place-items-center rounded-md hover:bg-white/10 hover:text-white"
             aria-label="Close"
           >
             <X className="size-4" />
           </button>
         </div>
-        <pre className="rounded-brand-md text-brand-text bg-brand-bg mt-4 max-h-72 overflow-auto border border-white/10 p-4 text-xs">
-          {JSON.stringify(snapshot, null, 2)}
-        </pre>
-        <div className="mt-6 flex justify-end">
+
+        <div className="max-h-[min(70vh,520px)] overflow-y-auto px-6 py-5">
+          {rows.length === 0 ? (
+            <p className="text-muted text-sm">No version details available.</p>
+          ) : (
+            <div className="vh-snapshot-grid">
+              {rows.map((row) => (
+                <div key={row.key} className="vh-snapshot-row">
+                  <p className="vh-snapshot-label">{row.label}</p>
+                  <SnapshotValue fieldKey={row.key} value={row.value} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end border-t border-white/10 px-6 py-4">
           <Button variant="secondary" onClick={onClose}>
             Close
           </Button>
@@ -205,7 +426,7 @@ function HistoryEntry({
             icon={<Briefcase className="size-3.5" strokeWidth={1.75} />}
             label={subjectMeta.label}
             value={subjectMeta.value}
-            valueLinked
+            href={subjectMeta.href}
           />
           <MetaRow
             icon={<UserRound className="size-3.5" strokeWidth={1.75} />}

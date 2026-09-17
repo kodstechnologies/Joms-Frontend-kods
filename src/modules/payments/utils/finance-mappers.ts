@@ -94,6 +94,78 @@ export const needsPartnerDisplayName = (payment: FinancePayment, snapshotName?: 
   return false
 }
 
+const roundMoney = (value: unknown) => Math.round((Number(value) || 0) * 100) / 100
+const moneyNumber = (value: unknown, fallback = 0) => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+export const derivePaymentMoneyFields = (payment: FinancePayment) => {
+  const snapshot = payment.moduleSnapshot || {}
+  const moduleData = payment.moduleData || {}
+  const gross = roundMoney(payment.amount)
+  const discounts = roundMoney(
+    payment.discountAmount ??
+      snapshot.discountAmount ??
+      snapshot.discounts ??
+      moduleData.discountAmount ??
+      moduleData.discounts,
+  )
+  const refundAmount = roundMoney(
+    payment.refundAmount ?? snapshot.refundAmount ?? snapshot.refunds ?? moduleData.refundAmount,
+  )
+  const afterDiscounts = roundMoney(gross - discounts)
+  const afterRefunds = roundMoney(afterDiscounts - refundAmount)
+  const gstRate = moneyNumber(snapshot.taxRate ?? snapshot.taxRateApplied, 18)
+  const taxAmount = roundMoney(
+    payment.taxAmount ?? snapshot.taxAmount ?? (afterRefunds * gstRate) / 100,
+  )
+  const isVenue = payment.module === 'venue' || Boolean(snapshot.venueId)
+  const isReceivable = payment.direction === 'receivable' || payment.module === 'membership'
+  const commissionPct = moneyNumber(
+    payment.platformCommissionPercent ?? snapshot.platformCommissionPercent,
+    isReceivable ? 0 : isVenue ? 20 : 10,
+  )
+  const gatewayPct = moneyNumber(snapshot.convenienceFeePercent, 2)
+  const platformCommission = roundMoney(
+    payment.platformCommission ?? (afterRefunds * commissionPct) / 100,
+  )
+  const gatewayCharges = roundMoney(
+    payment.gatewayCharges ??
+      snapshot.gatewayFee ??
+      snapshot.convenienceFee ??
+      (gross * gatewayPct) / 100,
+  )
+  const partnerPayout = isReceivable
+    ? 0
+    : roundMoney(payment.partnerPayout ?? afterRefunds - platformCommission)
+  const netRevenue = payment.netRevenue != null ? roundMoney(payment.netRevenue) : afterRefunds
+  const netProfit =
+    payment.netProfit != null
+      ? roundMoney(payment.netProfit)
+      : roundMoney(platformCommission - gatewayCharges)
+
+  return {
+    discounts,
+    refundAmount,
+    taxAmount,
+    netRevenue,
+    platformCommission,
+    platformCommissionPercent: commissionPct,
+    gatewayCharges,
+    partnerPayout,
+    netProfit,
+  }
+}
+
+const formatPct = (value: number) => `${Number(value || 0).toFixed(value % 1 === 0 ? 0 : 2)}%`
+const gatewayLabel = (payment: FinancePayment) => {
+  const method = String(payment.paymentMethod || '').toUpperCase()
+  if (method === 'DUMMY') return 'Dummy'
+  if (method.includes('RAZOR') || payment.razorpayPaymentId) return 'Razorpay'
+  return method || 'Razorpay'
+}
+
 export const mapPaymentToRevenueRow = (
   payment: FinancePayment,
   partnerNameMap?: Record<string, string> | null,
@@ -113,6 +185,7 @@ export const mapPaymentToRevenueRow = (
     partnerId ||
     payment.userId ||
     '—'
+  const money = derivePaymentMoneyFields(payment)
 
   return {
     id: payment._id,
@@ -122,18 +195,19 @@ export const mapPaymentToRevenueRow = (
     entityId: payment.referenceId || payment.orderId,
     entityName: (snapshot.title as string) || payment.description || payment.orderId,
     category: (snapshot.category as string) || titleCase(payment.module),
-    subCategory: (snapshot.subCategory as string) || '—',
+    subCategory:
+      firstNonEmpty(snapshot.subCategory, snapshot.subcategory, snapshot.serviceSubCategory) || '—',
     ownerType: payment.userType === 'partner' ? 'Expert' : titleCase(payment.userType),
     ownerName,
     grossAmount: formatInr(payment.amount),
-    discounts: '—',
-    refundAmount: '—',
-    taxAmount: '—',
-    netRevenue: '—',
-    platformCommission: '—',
-    netProfit: '—',
+    discounts: formatInr(money.discounts),
+    refundAmount: formatInr(money.refundAmount),
+    taxAmount: formatInr(money.taxAmount),
+    netRevenue: formatInr(money.netRevenue),
+    platformCommission: formatInr(money.platformCommission),
+    netProfit: formatInr(money.netProfit),
     status: mapPaymentStatus(payment.status),
-    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : '—',
+    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Pending',
     complianceStatus: payment.complianceStatus ? titleCase(payment.complianceStatus) : '—',
     lastUpdated: formatDate(payment.updatedAt || payment.createdAt),
   }
@@ -353,6 +427,7 @@ export const mapPaymentToServiceRow = (
 ) => {
   const snapshot = payment.moduleSnapshot || {}
   const paid = mapPaymentStatus(payment.status) === 'Paid'
+  const money = derivePaymentMoneyFields(payment)
   return {
     id: payment._id,
     tab,
@@ -360,9 +435,31 @@ export const mapPaymentToServiceRow = (
     name: displayServiceTitle((snapshot.title as string) || payment.description) || payment.orderId,
     expertName: (snapshot.partnerName as string) || payment.partnerId || '—',
     bookingId: payment.referenceId || payment.orderId,
-    userName: (snapshot.userName as string) || payment.userId || '—',
+    userName:
+      firstNonEmpty(snapshot.userName, snapshot.clientName, snapshot.username) ||
+      payment.userId ||
+      '—',
     status: (paid ? 'Paid' : 'Pending') as 'Paid' | 'Pending',
     revenue: formatInr(payment.amount),
+    transactionId: payment.orderId || payment.razorpayPaymentId || payment._id,
+    module: titleCase(payment.module),
+    clientId: payment.userId || '—',
+    partnerId: payment.partnerId || firstNonEmpty(snapshot.partnerId) || '—',
+    transactionDate: formatDate(payment.createdAt),
+    discount: formatInr(money.discounts),
+    tax: formatInr(money.taxAmount),
+    gatewayCharges: formatInr(money.gatewayCharges),
+    platformCommissionPct: formatPct(money.platformCommissionPercent),
+    platformCommission: formatInr(money.platformCommission),
+    partnerPayout: formatInr(money.partnerPayout),
+    refundAmount: formatInr(money.refundAmount),
+    netRevenue: formatInr(money.netRevenue),
+    netProfit: formatInr(money.netProfit),
+    paymentMethod: payment.paymentMethod ? titleCase(payment.paymentMethod) : '—',
+    gateway: gatewayLabel(payment),
+    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Pending',
+    settlementDate: formatDate(payment.settlementDate),
+    invoiceId: payment.invoiceNumber || '—',
   }
 }
 
@@ -378,12 +475,32 @@ export const mapEscrowToServiceRow = (escrow: FinanceEscrowHold) => ({
     | 'Paid'
     | 'Pending',
   revenue: formatInr(escrow.amountHeld),
+  transactionId: String(escrow.transactionId || escrow.paymentOrderId || escrow.paymentId || '—'),
+  module: titleCase(escrow.module),
+  clientId: escrow.userId || '—',
+  partnerId: escrow.partnerId || '—',
+  transactionDate: formatDate(escrow.heldAt || escrow.createdAt),
+  discount: '—',
+  tax: '—',
+  gatewayCharges: '—',
+  platformCommissionPct: '—',
+  platformCommission: formatInr(escrow.platformFee),
+  partnerPayout: '—',
+  refundAmount: '—',
+  netRevenue: formatInr(escrow.amountHeld),
+  netProfit: '—',
+  paymentMethod: '—',
+  gateway: '—',
+  settlementStatus: mapEscrowStatus(escrow.status),
+  settlementDate: formatDate(escrow.releasedAt),
+  invoiceId: '—',
 })
 
 export const mapPaymentToVenueRow = (payment: FinancePayment) => {
   const snapshot = (payment.moduleSnapshot || {}) as Record<string, unknown>
   const fulfilled = (payment.fulfillmentResult || {}) as Record<string, unknown>
   const status = mapPaymentStatus(payment.status)
+  const money = derivePaymentMoneyFields(payment)
   const venueName =
     (typeof snapshot.venueName === 'string' && snapshot.venueName) ||
     (typeof fulfilled.venueName === 'string' && fulfilled.venueName) ||
@@ -414,6 +531,29 @@ export const mapPaymentToVenueRow = (payment: FinancePayment) => {
       | 'Pending'
       | 'Cancelled',
     revenue: formatInr(payment.amount),
+    transactionId: payment.orderId || payment.razorpayPaymentId || payment._id,
+    module: titleCase(payment.module),
+    clientId: payment.userId || firstNonEmpty(snapshot.userId) || '—',
+    clientName:
+      firstNonEmpty(snapshot.userName, snapshot.clientName, snapshot.username) ||
+      payment.userId ||
+      '—',
+    partnerId: payment.partnerId || firstNonEmpty(snapshot.partnerId) || '—',
+    transactionDate: formatDate(payment.createdAt),
+    discount: formatInr(money.discounts),
+    tax: formatInr(money.taxAmount),
+    gatewayCharges: formatInr(money.gatewayCharges),
+    platformCommissionPct: formatPct(money.platformCommissionPercent),
+    platformCommission: formatInr(money.platformCommission),
+    partnerPayout: formatInr(money.partnerPayout),
+    refundAmount: formatInr(money.refundAmount),
+    netRevenue: formatInr(money.netRevenue),
+    netProfit: formatInr(money.netProfit),
+    paymentMethod: payment.paymentMethod ? titleCase(payment.paymentMethod) : '—',
+    gateway: gatewayLabel(payment),
+    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Pending',
+    settlementDate: formatDate(payment.settlementDate),
+    invoiceId: payment.invoiceNumber || '—',
   }
 }
 
