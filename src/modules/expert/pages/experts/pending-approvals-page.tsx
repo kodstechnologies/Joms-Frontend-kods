@@ -17,6 +17,7 @@ import {
   buildExpertDataColumnsById,
   pickPreferenceColumns,
 } from '../../utils/expert-preference-columns'
+import { EXPERT_PENDING_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import { ExpertListHeader } from './expert-list-shared'
@@ -79,9 +80,8 @@ export function ExpertPendingApprovalsPage() {
     defaultVisibleColumnIds: DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
     exportFileName: 'pending_experts_export',
+    exportColumnMap: EXPERT_PENDING_EXPORT_COLUMN_MAP,
     filterExperts: filterPendingExperts,
-    // Match prior pending export: full mapped columns.
-    restrictExportToVisibleColumns: false,
   })
 
   const recordReasonUsage = useRecordModerationReasonUsage()

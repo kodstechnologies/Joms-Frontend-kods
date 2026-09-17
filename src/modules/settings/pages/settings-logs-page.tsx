@@ -10,6 +10,7 @@ import {
   useSettingsLogMetrics,
   useSettingsLogs,
 } from '../hooks/use-settings'
+import { useDefaultExportFormat } from '../hooks/use-default-export-format'
 import { fetchSettingsLogs } from '../api/settings-api'
 import type { SettingsLog, SettingsModule } from '../types/settings'
 import { SettingsLogActionDetailsModal } from '../components/settings-log-action-details-modal'
@@ -23,6 +24,7 @@ import {
 import {
   DEFAULT_SETTINGS_LOGS_VISIBLE_COLUMN_IDS,
   SETTINGS_LOGS_LEGACY_COLUMN_ID_MAP,
+  SETTINGS_LOGS_TABLE_COLUMNS_CATALOG,
 } from '../config/settings-logs-table-columns.config'
 import { buildSettingsLogsMetricCards } from '../utils/settings-logs-metrics'
 import {
@@ -34,6 +36,7 @@ import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import {
@@ -74,29 +77,33 @@ const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: SettingsLog) => string }
 > = {
-  performedBy: { header: 'User ID', accessor: (row) => exportDisplayValue(row.performedBy) },
+  'performed-by': { header: 'User ID', accessor: (row) => exportDisplayValue(row.performedBy) },
   role: { header: 'Roles', accessor: (row) => exportDisplayValue(row.role) },
   module: {
     header: 'Module',
     accessor: (row) => exportDisplayValue(row.moduleLabel || row.module),
   },
-  changedSettings: {
+  'changed-settings': {
     header: 'Changed Settings',
     accessor: (row) => exportDisplayValue((row.changedSettings || []).join(', ')),
   },
-  oldValues: {
+  'old-values': {
     header: 'Old Values',
     accessor: (row) =>
       exportDisplayValue((row.changes || []).map((item) => item.oldValue).join(', ')),
   },
-  newValues: {
+  'new-values': {
     header: 'New Values',
     accessor: (row) =>
       exportDisplayValue((row.changes || []).map((item) => item.newValue).join(', ')),
   },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  createdAt: { header: 'Timestamp', accessor: (row) => exportDisplayValue(row.createdAt) },
+  'created-at': { header: 'Timestamp', accessor: (row) => exportDisplayValue(row.createdAt) },
 }
+
+const SETTINGS_LOG_EXPORT_COLUMN_IDS = SETTINGS_LOGS_TABLE_COLUMNS_CATALOG.map(
+  (column) => column.id,
+).filter((id) => id !== 'actions')
 
 function summarizeChanges(log: SettingsLog) {
   const changes = log.changes || []
@@ -154,6 +161,7 @@ function UserIdCell({ name }: { name: string }) {
 
 export function SettingsLogsPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const location = useLocation()
   const initialModule =
     typeof (location.state as { module?: string } | null)?.module === 'string' &&
@@ -179,6 +187,13 @@ export function SettingsLogsPage() {
     module: metricsModule,
   })
   const tableColumnPreferencesQuery = useTableColumnPreferences(SETTINGS_LOGS_MODULE_KEY)
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_SETTINGS_LOGS_VISIBLE_COLUMN_IDS.filter((id) => id !== 'actions'),
+    catalogColumnIds: SETTINGS_LOG_EXPORT_COLUMN_IDS,
+    legacyColumnIdMap: SETTINGS_LOGS_LEGACY_COLUMN_ID_MAP,
+    allowedColumnIds: SETTINGS_LOG_EXPORT_COLUMN_IDS,
+  })
 
   const activeMetricIds = useActiveMetricIds(SETTINGS_LOGS_MODULE_KEY, [
     ...DEFAULT_SETTINGS_LOGS_METRIC_IDS,
@@ -226,20 +241,21 @@ export function SettingsLogsPage() {
       {
         module: activeModuleTab,
       },
+      { columnIds: exportColumnIds, catalogOrder: SETTINGS_LOG_EXPORT_COLUMN_IDS },
     )
-  }, [activeModuleTab])
+  }, [activeModuleTab, exportColumnIds])
 
   const handleHeaderExport = useCallback(async () => {
     setIsExporting(true)
     try {
-      await exportHandler({}, 'csv')
-      toast.success('Settings logs exported')
+      await exportHandler({}, fileFormat)
+      toast.success(`Settings logs exported as ${exportFormat}`)
     } catch {
       toast.error('Failed to export settings logs')
     } finally {
       setIsExporting(false)
     }
-  }, [exportHandler])
+  }, [exportFormat, exportHandler, fileFormat])
 
   const handleRestore = useCallback(
     async (log: SettingsLog) => {

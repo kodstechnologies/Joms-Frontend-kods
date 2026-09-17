@@ -6,10 +6,10 @@ import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { SERVICE_PENDING_APPROVALS_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DataTable } from '@/shared/components/table/data-table'
 import {
   DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
+  SERVICE_PENDING_APPROVALS_MODULE_KEY,
   SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
 } from '../../config/service-management-table-columns.config'
 import { useServiceStatusList } from '../../hooks/use-service-status-list'
@@ -19,7 +19,7 @@ import {
   buildServiceDataColumnsById,
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
-import { DataTable } from '@/shared/components/table/data-table'
+import { SERVICE_PENDING_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_PENDING_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -28,45 +28,6 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(price)
-
-const formatExportDateTime = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : ''
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
-  serviceId: { header: 'Listing ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
-  title: { header: 'Listing Name', accessor: (s) => exportDisplayValue(s.title) },
-  categoryName: { header: 'Category', accessor: (s) => exportDisplayValue(s.categoryName) },
-  serviceType: { header: 'Listing Type', accessor: (s) => exportDisplayValue(s.serviceType) },
-  pricing: {
-    header: 'Base Price',
-    accessor: (s) => exportDisplayValue(s.pricing ? formatPrice(s.pricing) : undefined),
-  },
-  expertId: {
-    header: 'Expert ID',
-    accessor: (s) => exportDisplayValue(s.expertid || s.partnerId),
-  },
-  expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
-  submittedAt: { header: 'Submitted At', accessor: (s) => formatExportDateTime(s.submittedAt) },
-  lastUpdatedAt: {
-    header: 'Last Updated At',
-    accessor: (s) => formatExportDateTime(s.lastUpdatedAt),
-  },
-}
 
 export function PendingApprovalsPage() {
   const navigate = useNavigate()
@@ -82,10 +43,7 @@ export function PendingApprovalsPage() {
     defaultVisibleColumnIds: DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
     exportFileName: 'pending_services_export',
-    exportColumnMap: EXPORT_COLUMN_MAP,
-    // Match prior pending export: full mapped columns, no live search params.
-    restrictExportToVisibleColumns: false,
-    includeSearchInExport: false,
+    exportColumnMap: SERVICE_PENDING_EXPORT_COLUMN_MAP,
   })
 
   const {

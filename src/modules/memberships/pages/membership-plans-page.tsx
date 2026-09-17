@@ -35,6 +35,7 @@ import {
   useSetMembershipValidity,
 } from '../hooks/use-memberships'
 import { useMembershipStore } from '../store/membership-store'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import type { MembershipPlan, MembershipStatus } from '../types/membership'
 import {
   exportMembershipPlansToExcel,
@@ -68,6 +69,7 @@ export function MembershipPlansPage({
   subtitle = 'Centralized membership system supporting User App and Expert App with analytics, plan configuration, and lifecycle controls',
 }: MembershipPlansPageProps) {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [createOpen, setCreateOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null)
@@ -299,14 +301,14 @@ export function MembershipPlansPage({
         return
       }
 
-      await exportMembershipPlansToExcel(plans)
-      toast.success('Membership plans exported to Excel')
+      await exportMembershipPlansToExcel(plans, fileFormat)
+      toast.success(`Membership plans exported as ${exportFormat}`)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export membership plans'))
     } finally {
       setIsExporting(false)
     }
-  }, [isExporting, searchQuery, statusFilter])
+  }, [exportFormat, fileFormat, isExporting, searchQuery, statusFilter])
 
   const handleSetValidity = async () => {
     if (!selectedPlan || !validityStart || !validityEnd) {

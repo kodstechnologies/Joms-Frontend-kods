@@ -18,6 +18,7 @@ import {
 } from '../config/rbac-hub-table-columns.config'
 import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
@@ -102,6 +103,17 @@ export function InvitesOverviewPage() {
   const [selectedInvite, setSelectedInvite] = useState<SubAdminInvite | null>(null)
   const [actionMode, setActionMode] = useState<'revoke' | 'reinvite' | null>(null)
   const tableColumnPreferencesQuery = useTableColumnPreferences(RBAC_HUB_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => RBAC_HUB_INVITES_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds?.filter((id) =>
+      id.startsWith(RBAC_HUB_INVITES_COLUMN_PREFIX),
+    ),
+    defaultColumnIds: DEFAULT_RBAC_HUB_INVITES_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const listQueryParams = useMemo(
     () =>
@@ -135,8 +147,9 @@ export function InvitesOverviewPage() {
       INVITE_EXPORT_COLUMN_MAP,
       'rbac_invites_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,

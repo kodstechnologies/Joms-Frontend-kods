@@ -25,8 +25,13 @@ import {
 } from '../../config/venue-view-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildVenueViewAnalyticsMetricCards } from '../../utils/venue-view-analytics-metrics'
+import { exportSpaceAnalytics } from '../../utils/export-space-analytics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { cn } from '@/shared/lib/cn'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { getExportFormatLabel } from '@/modules/settings/utils/export-format'
+import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -47,6 +52,7 @@ export function SpaceAnalyticsPage() {
   const navigate = useNavigate()
   const { venueId, spaceId } = useParams<{ venueId: string; spaceId: string }>()
   const { data, isLoading, isError, isFetching, refetch } = useSpaceAnalytics(spaceId)
+  const { fileFormat } = useDefaultExportFormat()
 
   const activeMetricIds = useActiveMetricIds(VENUE_VIEW_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_VIEW_ANALYTICS_METRIC_IDS,
@@ -112,15 +118,24 @@ export function SpaceAnalyticsPage() {
             className="ui-export-data h-9"
             onClick={() => {
               if (!data) return
-              const blob = new Blob([JSON.stringify(data, null, 2)], {
-                type: 'application/json',
-              })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = `space-analytics-${spaceId || 'export'}.json`
-              a.click()
-              URL.revokeObjectURL(url)
+              void exportSpaceAnalytics(
+                {
+                  spaceId,
+                  overviewCards,
+                  cashFlow,
+                  timeSlots,
+                  ratings,
+                  cancellations,
+                  timeSlotInsight: data.timeSlotInsight,
+                },
+                fileFormat,
+              )
+                .then(() =>
+                  toast.success(`Exported space analytics as ${getExportFormatLabel(fileFormat)}`),
+                )
+                .catch((error) => {
+                  toast.error(getApiErrorMessage(error, 'Failed to export space analytics'))
+                })
             }}
           >
             <ExportDataIcon className="size-5 shrink-0" />

@@ -36,6 +36,19 @@ import {
   createPrefixedListExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  BACKUP_HISTORY_COLUMNS_CATALOG,
+  BACKUP_MODULE_KEY,
+  DEFAULT_BACKUP_HISTORY_VISIBLE_COLUMN_IDS,
+  DEFAULT_BACKUP_METRIC_IDS,
+} from '../config/backup-metrics.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import { buildFinancePreferenceColumns } from '@/modules/payments/utils/finance-table-column-utils'
 
 const PAGE_SIZE = 10
 
@@ -53,11 +66,11 @@ const BACKUP_EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: BackupHistoryRow) => string }
 > = {
-  name: { header: 'Backup ID', accessor: (row) => exportDisplayValue(row.name) },
+  'backup-id': { header: 'Backup ID', accessor: (row) => exportDisplayValue(row.name) },
   type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
   scope: { header: 'Scope', accessor: (row) => exportDisplayValue(row.scope) },
-  createdBy: { header: 'Created By', accessor: (row) => exportDisplayValue(row.createdBy) },
-  timestamp: { header: 'Timestamps', accessor: (row) => exportDisplayValue(row.timestamp) },
+  'created-by': { header: 'Created By', accessor: (row) => exportDisplayValue(row.createdBy) },
+  timestamps: { header: 'Timestamps', accessor: (row) => exportDisplayValue(row.timestamp) },
   size: { header: 'Size', accessor: (row) => exportDisplayValue(row.size) },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
 }
@@ -118,6 +131,15 @@ export function BackupRestorePanel() {
 
   const { data: metrics = [], isLoading: metricsLoading } = useBackupMetrics()
   const metricCards: SettingsMetric[] = metricsLoading ? [] : metrics
+  const activeMetricIds = useActiveMetricIds(BACKUP_MODULE_KEY, DEFAULT_BACKUP_METRIC_IDS)
+  const visibleMetricCards = useMemo(() => {
+    const withIds = metricCards.filter((metric): metric is SettingsMetric & { id: string } =>
+      Boolean(metric.id),
+    )
+    if (!withIds.length) return metricCards
+    const ordered = orderByActiveMetricIds(withIds, activeMetricIds)
+    return ordered.length ? ordered : metricCards
+  }, [activeMetricIds, metricCards])
 
   const listQueryParams = useMemo(
     () =>
@@ -135,6 +157,16 @@ export function BackupRestorePanel() {
   const deleteMutation = useDeleteBackup()
   const runMutation = useRunBackup()
   const warnedRef = useRef<string | null>(null)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(BACKUP_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => BACKUP_HISTORY_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_BACKUP_HISTORY_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const rows = backupsResult?.data ?? []
   const meta = backupsResult?.meta
@@ -186,8 +218,9 @@ export function BackupRestorePanel() {
       BACKUP_EXPORT_COLUMN_MAP,
       'backups_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -199,101 +232,116 @@ export function BackupRestorePanel() {
     onExportData: handleExportData,
   })
 
-  const columns = useMemo<ColumnDef<BackupHistoryRow>[]>(
-    () =>
-      withServerSortMeta(
-        [
-          {
-            accessorKey: 'name',
-            header: 'Backup ID',
-            cell: ({ row }) => (
-              <span className="backup-cell-primary" title={row.original.name}>
-                {row.original.name}
-              </span>
-            ),
-          },
-          {
-            accessorKey: 'type',
-            header: 'Type',
-            cell: ({ row }) => <span className="backup-cell-primary">{row.original.type}</span>,
-          },
-          {
-            accessorKey: 'scope',
-            header: 'Scope',
-            cell: ({ row }) => <ScopeCell scope={row.original.scope} />,
-          },
-          {
-            accessorKey: 'createdBy',
-            header: 'Created By',
-            cell: ({ row }) => (
-              <span className="backup-cell-primary">{row.original.createdBy}</span>
-            ),
-          },
-          {
-            accessorKey: 'timestamp',
-            header: 'Timestamps',
-            cell: ({ row }) => {
-              const { date, time } = splitTimestamp(row.original.timestamp)
-              return (
-                <div className="backup-timestamp">
-                  <span className="backup-cell-primary">{date}</span>
-                  {time ? <span className="backup-timestamp-time">{time}</span> : null}
-                </div>
-              )
-            },
-          },
-          {
-            accessorKey: 'size',
-            header: 'Size',
-            cell: ({ row }) => <span className="backup-cell-primary">{row.original.size}</span>,
-          },
-          {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
-          },
-          {
-            id: 'actions',
-            header: 'Actions',
-            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => (
-              <TableActionsDropdown
-                label="Backup actions"
-                isOpen={menuOpenId === row.original.id}
-                onOpenChange={(open) => setMenuOpenId(open ? row.original.id : null)}
-                menuWidth={140}
-                menuClassName="ui-table-actions-menu-access"
-              >
-                <TableActionsItem
-                  icon={<RotateCcw className="size-3.5" />}
-                  onClick={() => {
-                    setMenuOpenId(null)
-                    setRestoreTarget(row.original)
-                  }}
-                >
-                  Restore
-                </TableActionsItem>
-                <TableActionsItem
-                  className="ui-table-actions-item-danger"
-                  icon={<Trash2 className="size-3.5" />}
-                  onClick={() => {
-                    setMenuOpenId(null)
-                    deleteMutation.mutate(row.original.id, {
-                      onSuccess: () => toast.success('Backup deleted'),
-                      onError: () => toast.error('Delete failed'),
-                    })
-                  }}
-                >
-                  Delete
-                </TableActionsItem>
-              </TableActionsDropdown>
-            ),
-          },
-        ],
-        BACKUP_SORT_FIELD_MAP,
+  const columns = useMemo<ColumnDef<BackupHistoryRow>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<BackupHistoryRow>> = {
+      'backup-id': {
+        id: 'backup-id',
+        accessorKey: 'name',
+        header: 'Backup ID',
+        cell: ({ row }) => (
+          <span className="backup-cell-primary" title={row.original.name}>
+            {row.original.name}
+          </span>
+        ),
+      },
+      type: {
+        id: 'type',
+        accessorKey: 'type',
+        header: 'Type',
+        cell: ({ row }) => <span className="backup-cell-primary">{row.original.type}</span>,
+      },
+      scope: {
+        id: 'scope',
+        accessorKey: 'scope',
+        header: 'Scope',
+        cell: ({ row }) => <ScopeCell scope={row.original.scope} />,
+      },
+      'created-by': {
+        id: 'created-by',
+        accessorKey: 'createdBy',
+        header: 'Created By',
+        cell: ({ row }) => <span className="backup-cell-primary">{row.original.createdBy}</span>,
+      },
+      timestamps: {
+        id: 'timestamps',
+        accessorKey: 'timestamp',
+        header: 'Timestamps',
+        cell: ({ row }) => {
+          const { date, time } = splitTimestamp(row.original.timestamp)
+          return (
+            <div className="backup-timestamp">
+              <span className="backup-cell-primary">{date}</span>
+              {time ? <span className="backup-timestamp-time">{time}</span> : null}
+            </div>
+          )
+        },
+      },
+      size: {
+        id: 'size',
+        accessorKey: 'size',
+        header: 'Size',
+        cell: ({ row }) => <span className="backup-cell-primary">{row.original.size}</span>,
+      },
+      status: {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      },
+    }
+
+    const preferenceColumns = buildFinancePreferenceColumns(
+      dataColumnsById,
+      catalogColumnIds,
+      tableColumnPreferencesQuery.data?.visibleColumnIds,
+      DEFAULT_BACKUP_HISTORY_VISIBLE_COLUMN_IDS,
+    )
+
+    const actionsColumn: ColumnDef<BackupHistoryRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => (
+        <TableActionsDropdown
+          label="Backup actions"
+          isOpen={menuOpenId === row.original.id}
+          onOpenChange={(open) => setMenuOpenId(open ? row.original.id : null)}
+          menuWidth={140}
+          menuClassName="ui-table-actions-menu-access"
+        >
+          <TableActionsItem
+            icon={<RotateCcw className="size-3.5" />}
+            onClick={() => {
+              setMenuOpenId(null)
+              setRestoreTarget(row.original)
+            }}
+          >
+            Restore
+          </TableActionsItem>
+          <TableActionsItem
+            className="ui-table-actions-item-danger"
+            icon={<Trash2 className="size-3.5" />}
+            onClick={() => {
+              setMenuOpenId(null)
+              deleteMutation.mutate(row.original.id, {
+                onSuccess: () => toast.success('Backup deleted'),
+                onError: () => toast.error('Delete failed'),
+              })
+            }}
+          >
+            Delete
+          </TableActionsItem>
+        </TableActionsDropdown>
       ),
-    [menuOpenId, deleteMutation],
-  )
+    }
+
+    return withServerSortMeta([...preferenceColumns, actionsColumn], BACKUP_SORT_FIELD_MAP)
+  }, [
+    catalogColumnIds,
+    deleteMutation,
+    menuOpenId,
+    tableColumnPreferencesQuery.data?.visibleColumnIds,
+  ])
 
   return (
     <div className="backup-page">
@@ -337,9 +385,9 @@ export function BackupRestorePanel() {
           ? Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="backup-stats-skeleton" />
             ))
-          : metricCards.map((metric) => (
+          : visibleMetricCards.map((metric) => (
               <StatCard
-                key={metric.title}
+                key={metric.id ?? metric.title}
                 className="backup-stat-card"
                 title={metric.title}
                 value={metric.value}

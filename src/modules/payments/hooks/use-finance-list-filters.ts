@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { getExportFormatLabel } from '@/modules/settings/utils/export-format'
 
 import type { FinanceListParams } from '@/modules/payments/types/finance-api'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
@@ -68,20 +70,34 @@ export function flattenExportPairs(
   return pairs
 }
 
-export async function downloadKeyValueReport(fileName: string, pairs: Array<[string, unknown]>) {
+export async function downloadKeyValueReport(
+  fileName: string,
+  pairs: Array<[string, unknown]>,
+  format = 'csv',
+) {
+  const label = getExportFormatLabel(format)
   try {
     await exportDataToFile(
       ['Field', 'Value'],
       pairs.map(([key, value]) => [key, exportDisplayValue(value)]),
-      'csv',
+      format,
       fileName,
     )
-    toast.success('CSV report downloaded')
+    toast.success(`${label} report downloaded`)
   } catch (error) {
     if (error instanceof Error && error.message === 'NO_RECORDS') {
       toast.error('No records found to export')
       return
     }
-    toast.error(getApiErrorMessage(error, 'Failed to export CSV'))
+    toast.error(getApiErrorMessage(error, `Failed to export ${label}`))
   }
+}
+
+export function useDownloadKeyValueReport() {
+  const { fileFormat } = useDefaultExportFormat()
+  return useCallback(
+    (fileName: string, pairs: Array<[string, unknown]>) =>
+      downloadKeyValueReport(fileName, pairs, fileFormat),
+    [fileFormat],
+  )
 }

@@ -28,6 +28,7 @@ import { Button } from '@/shared/components/ui/button'
 import {
   VENUE_REPORTED_MODULE_KEY,
   DEFAULT_VENUE_REPORTED_VISIBLE_COLUMN_IDS,
+  VENUE_REPORTED_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 
 export function VenueReportedVenuesPage() {
@@ -43,6 +44,8 @@ export function VenueReportedVenuesPage() {
     exportColumnMap: VENUE_REPORTED_EXPORT_COLUMN_MAP,
     fetchReports: fetchVenueReports,
     parseResponse: defaultParseResponse<VenueReportItem>,
+    defaultVisibleColumnIds: DEFAULT_VENUE_REPORTED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: VENUE_REPORTED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
   const columns = useMemo<ColumnDef<VenueReportItem>[]>(() => {

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { FilterValues, ModuleFilterKey } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import {
@@ -24,6 +25,8 @@ type UseVenueStatusListArgs = {
   sortFieldMap: Record<string, string | null | undefined>
   exportFileName: string
   exportColumnMap: ExportColumnMap
+  defaultVisibleColumnIds?: string[]
+  catalogColumnIds?: string[]
 }
 
 export function useVenueStatusList({
@@ -33,6 +36,8 @@ export function useVenueStatusList({
   sortFieldMap,
   exportFileName,
   exportColumnMap,
+  defaultVisibleColumnIds,
+  catalogColumnIds,
 }: UseVenueStatusListArgs) {
   const [page, setPage] = useState(1)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -44,6 +49,13 @@ export function useVenueStatusList({
   })
   const search = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const columnPrefs = useTableColumnPreferences(preferencesKey)
+  const catalogIds = catalogColumnIds ?? Object.keys(exportColumnMap)
+  const defaultColumnIds = defaultVisibleColumnIds ?? catalogIds
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: columnPrefs.data?.visibleColumnIds,
+    defaultColumnIds,
+    catalogColumnIds: catalogIds,
+  })
 
   const query = useMemo(
     () =>
@@ -69,10 +81,16 @@ export function useVenueStatusList({
 
   const exportData = useMemo(
     () =>
-      createVenueFilteredExportHandler(fetchVenues, exportColumnMap, exportFileName, {
-        status,
-      }),
-    [exportColumnMap, exportFileName, status],
+      createVenueFilteredExportHandler(
+        fetchVenues,
+        exportColumnMap,
+        exportFileName,
+        {
+          status,
+        },
+        { columnIds: exportColumnIds, catalogOrder: catalogIds },
+      ),
+    [catalogIds, exportColumnIds, exportColumnMap, exportFileName, status],
   )
 
   const exportFilters = useModuleExportFilters({

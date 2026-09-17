@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import {
   AlertOctagon,
   ArrowLeft,
@@ -653,6 +654,7 @@ function OverviewTab({
 
 function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
   const navigate = useNavigate()
+  const { fileFormat } = useDefaultExportFormat()
   const [search, setSearch] = useState('')
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null)
   const [selectedSpaceIds, setSelectedSpaceIds] = useState<string[]>([])
@@ -939,12 +941,12 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         space.isHidden ? 'Yes' : 'No',
         space.isSuspend ? 'Yes' : 'No',
       ])
-      exportDataToFile(headers, rows, 'excel', 'venue_selected_spaces_export')
+      exportDataToFile(headers, rows, fileFormat, 'venue_selected_spaces_export')
       toast.success(`Exported ${selectedSpaces.length} selected space(s)`)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export selected spaces.'))
     }
-  }, [partnerId, selectedSpaces, venueId])
+  }, [fileFormat, partnerId, selectedSpaces, venueId])
 
   const handleBulkNotify = useCallback(() => {
     if (!partnerId) {
@@ -1573,6 +1575,7 @@ function HealthTab({
 export function VenueProfileViewPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { venueId } = useParams<{ venueId: string }>()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -1796,10 +1799,10 @@ export function VenueProfileViewPage() {
             exportCell((venue.adminTags || []).join(', ')),
           ],
         ],
-        'excel',
+        fileFormat,
         `venue_${venueCode}_profile`,
       )
-      toast.success('Profile exported')
+      toast.success(`Profile exported as ${exportFormat}`)
     } catch (err: unknown) {
       if (err instanceof Error && err.message === 'NO_RECORDS') {
         toast.error('Nothing to export')
@@ -1807,7 +1810,7 @@ export function VenueProfileViewPage() {
       }
       toast.error(getApiErrorMessage(err, 'Failed to export profile'))
     }
-  }, [fullView, resolvedVenueId])
+  }, [exportFormat, fileFormat, fullView, resolvedVenueId])
 
   const handlePasswordSubmit = useCallback(
     async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {

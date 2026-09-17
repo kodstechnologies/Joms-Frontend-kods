@@ -31,6 +31,7 @@ import {
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildExpertProfileAnalyticsMetricCards } from '../../utils/expert-profile-analytics-metrics'
 import { exportExpertProfileAnalyticsToExcel } from '../../utils/export-expert-profile-analytics'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import {
   AnalyticsCard,
@@ -61,6 +62,7 @@ function formatCompactCount(value: number) {
 
 export function ExpertProfileAnalyticsPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { id } = useParams<{ id: string }>()
   const { data } = useExpertProfile(id ?? '')
   const expert = data?.data
@@ -338,34 +340,37 @@ export function ExpertProfileAnalyticsPage() {
     }
 
     try {
-      await exportExpertProfileAnalyticsToExcel({
-        expertName: profile.name,
-        expertId: id,
-        visibilityPeriod,
-        revenuePeriod,
-        profileSummary: [
-          { label: 'Profession', value: profile.profession },
-          { label: 'Role', value: profile.role },
-          { label: 'Rating', value: profile.rating },
-          { label: 'Badge', value: profile.badge },
-          { label: 'Account Status', value: profile.accountStatus },
-          { label: 'Last Active', value: profile.lastActive },
-          { label: 'Services Listed', value: profile.servicesListed },
-          { label: 'Consultations Listed', value: profile.consultationsListed },
-          { label: 'Orders Completed', value: profile.ordersCompleted },
-          { label: 'Revenue', value: profile.revenue },
-        ],
-        serviceAnalytics: serviceAnalyticsCards,
-        visibilityMetrics,
-        expertListings: expertListingsMetrics,
-        ticketingInsights,
-        mostActiveTime: hasMostActiveTime ? mostActiveTime : [],
-        topViewsByLocation,
-        topViewsByRole,
-        conversionFunnel: hasConversionFunnel ? conversionFunnel : [],
-        revenueTrend: hasRevenueTrend ? revenueTrend : [],
-      })
-      toast.success('Export downloaded')
+      await exportExpertProfileAnalyticsToExcel(
+        {
+          expertName: profile.name,
+          expertId: id,
+          visibilityPeriod,
+          revenuePeriod,
+          profileSummary: [
+            { label: 'Profession', value: profile.profession },
+            { label: 'Role', value: profile.role },
+            { label: 'Rating', value: profile.rating },
+            { label: 'Badge', value: profile.badge },
+            { label: 'Account Status', value: profile.accountStatus },
+            { label: 'Last Active', value: profile.lastActive },
+            { label: 'Services Listed', value: profile.servicesListed },
+            { label: 'Consultations Listed', value: profile.consultationsListed },
+            { label: 'Orders Completed', value: profile.ordersCompleted },
+            { label: 'Revenue', value: profile.revenue },
+          ],
+          serviceAnalytics: serviceAnalyticsCards,
+          visibilityMetrics,
+          expertListings: expertListingsMetrics,
+          ticketingInsights,
+          mostActiveTime: hasMostActiveTime ? mostActiveTime : [],
+          topViewsByLocation,
+          topViewsByRole,
+          conversionFunnel: hasConversionFunnel ? conversionFunnel : [],
+          revenueTrend: hasRevenueTrend ? revenueTrend : [],
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
     } catch (error) {
       if (error instanceof Error && error.message === 'NO_RECORDS') {
         toast.error('No analytics data available to export')
@@ -391,6 +396,8 @@ export function ExpertProfileAnalyticsPage() {
     topViewsByRole,
     visibilityMetrics,
     visibilityPeriod,
+    exportFormat,
+    fileFormat,
   ])
 
   return (

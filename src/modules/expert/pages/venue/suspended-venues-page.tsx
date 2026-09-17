@@ -28,6 +28,7 @@ import { Button } from '@/shared/components/ui/button'
 import {
   VENUE_SUSPENDED_MODULE_KEY,
   DEFAULT_VENUE_SUSPENDED_VISIBLE_COLUMN_IDS,
+  VENUE_SUSPENDED_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { ExpertListHeader } from '../experts/expert-list-shared'
 
@@ -43,6 +44,8 @@ export function VenueSuspendedPage() {
     sortFieldMap: VENUE_SUSPENDED_SORT_FIELDS,
     exportFileName: 'suspended_venues_export',
     exportColumnMap: VENUE_SUSPENDED_EXPORT_COLUMN_MAP,
+    defaultVisibleColumnIds: DEFAULT_VENUE_SUSPENDED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: VENUE_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
   const handleActivate = useCallback(

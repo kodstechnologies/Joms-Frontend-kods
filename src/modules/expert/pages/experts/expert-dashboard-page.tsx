@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -13,14 +13,17 @@ import {
   YAxis,
 } from 'recharts'
 import { RotateCw, Star } from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { fetchExpertDashboardAnalytics } from '../../api/expert-api'
 import { EXPERT_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { exportExpertDashboardToFile } from '../../utils/export-expert-dashboard'
 import { cn } from '@/shared/lib/cn'
 import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
 import { useExpertAccountControls } from '@/modules/settings/hooks/use-expert-public-settings'
@@ -206,6 +209,7 @@ function RevenueGrowthTooltip({
 export const ExpertDashboardPage = () => {
   const navigate = useNavigate()
   const { allowNewAccounts } = useExpertAccountControls()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [growthRange, setGrowthRange] = useState('3')
 
   const {
@@ -259,6 +263,58 @@ export const ExpertDashboardPage = () => {
     [revCatData],
   )
 
+  const handleExportData = useCallback(async () => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (
+      visibleMetrics.length === 0 &&
+      expertsCatData.length === 0 &&
+      revCatData.length === 0 &&
+      growthData.length === 0 &&
+      topHostsList.length === 0
+    ) {
+      toast.error('No data available to export')
+      return
+    }
+
+    const rangeLabel =
+      growthRange === '3'
+        ? 'Last 3 Months'
+        : growthRange === '6'
+          ? 'Last 6 Months'
+          : 'Last 12 Months'
+
+    try {
+      await exportExpertDashboardToFile(
+        {
+          rangeLabel,
+          metrics: visibleMetrics,
+          expertsByCategory: expertsCatData,
+          revenueByCategory: revCatData,
+          revenueGrowth: growthData,
+          topHosts: topHostsList,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export expert dashboard'))
+    }
+  }, [
+    expertsCatData,
+    exportFormat,
+    fileFormat,
+    growthData,
+    growthRange,
+    isLoading,
+    revCatData,
+    topHostsList,
+    visibleMetrics,
+  ])
+
   return (
     <div className="space-y-7">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -278,6 +334,11 @@ export const ExpertDashboardPage = () => {
           >
             <ManageMetricsIcon />
             Manage Metrics
+          </Button>
+
+          <Button type="button" className="ui-export-data" onClick={() => void handleExportData()}>
+            <ExportDataIcon className="size-5 shrink-0" />
+            Export Data
           </Button>
 
           {allowNewAccounts ? (

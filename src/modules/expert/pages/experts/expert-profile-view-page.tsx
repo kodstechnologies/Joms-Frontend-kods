@@ -9,6 +9,7 @@ import editIcon from '@/assets/JOMS_ICONS-2/edit-text.svg'
 import notepadIcon from '@/assets/JOMS_ICONS-2/icons8-notepad-24.svg'
 import bagSolidIcon from '@/assets/JOMS_ICONS-2/basil-bag-solid.svg'
 import { toast } from 'sonner'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import {
   AlertOctagon,
   ArrowLeft,
@@ -1313,6 +1314,7 @@ function ServicesSubTab({
   fallbackServices?: ExpertService[]
 }) {
   const navigate = useNavigate()
+  const { fileFormat } = useDefaultExportFormat()
   const [searchQuery, setSearchQuery] = useState('')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -1553,12 +1555,12 @@ function ServicesSubTab({
         String(service.priceStarts ?? 'N/A'),
         service.submittedAt ? new Date(service.submittedAt).toLocaleDateString() : 'N/A',
       ])
-      exportDataToFile(headers, rows, 'excel', 'expert_selected_services_export')
+      exportDataToFile(headers, rows, fileFormat, 'expert_selected_services_export')
       toast.success(`Exported ${selectedServices.length} selected service(s)`)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
     }
-  }, [expertId, selectedServices])
+  }, [expertId, fileFormat, selectedServices])
 
   const handleBulkNotify = useCallback(() => {
     if (!expertId) {
@@ -2681,6 +2683,7 @@ function HealthTab({
 export function ExpertProfileViewPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { id } = useParams<{ id: string }>()
   const { allowNewServiceListings, allowNewConsultationListings } = useServiceListingControls()
   const canCreateListings = allowNewServiceListings || allowNewConsultationListings
@@ -2901,10 +2904,10 @@ export function ExpertProfileViewPage() {
             exportCell((profile.adminTags || []).join(', ')),
           ],
         ],
-        'excel',
+        fileFormat,
         `expert_${expertCode}_profile`,
       )
-      toast.success('Profile exported')
+      toast.success(`Profile exported as ${exportFormat}`)
     } catch (error: unknown) {
       const message =
         error instanceof Error && error.message === 'NO_RECORDS'
@@ -2912,7 +2915,7 @@ export function ExpertProfileViewPage() {
           : 'Failed to export profile'
       toast.error(message)
     }
-  }, [analyticsRes?.data, id, profile])
+  }, [analyticsRes?.data, exportFormat, fileFormat, id, profile])
 
   const handlePasswordSubmit = useCallback(
     async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {

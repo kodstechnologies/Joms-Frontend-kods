@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import {
   PlatformHealthMetricCard,
@@ -578,6 +579,7 @@ function LoadBar({ value }: { value: number }) {
 
 export function PlatformHealthPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [selectedRange, setSelectedRange] = useState<string>('Last 3 Months')
   const [serviceStatus, setServiceStatus] = useState('')
 
@@ -735,27 +737,34 @@ export function PlatformHealthPage() {
         }
       }
 
-      const exportMetrics =
-        visibleMetrics.length > 0
-          ? visibleMetrics
-          : buildPlatformHealthMetricCards(dashboard.metrics)
+      const exportMetrics = visibleMetrics
 
       if (!exportMetrics.length && !dashboard) {
         toast.error('No data available to export')
         return
       }
 
-      await exportPlatformHealthToExcel({
-        rangeLabel: selectedRange,
-        serviceStatusFilter: serviceStatus || 'All statuses',
-        metrics: exportMetrics,
-        dashboard,
-      })
-      toast.success('Exported as Excel')
+      if (!exportMetrics.length) {
+        toast.error('No dashboard metrics selected in Manage Metrics')
+        return
+      }
+
+      await exportPlatformHealthToExcel(
+        {
+          rangeLabel: selectedRange,
+          serviceStatusFilter: serviceStatus || 'All statuses',
+          metrics: exportMetrics,
+          dashboard,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export platform health data'))
     }
   }, [
+    exportFormat,
+    fileFormat,
     infrastructureFilters,
     infrastructureQuery.isLoading,
     metricsQuery.isLoading,

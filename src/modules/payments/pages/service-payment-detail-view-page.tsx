@@ -15,8 +15,8 @@ import {
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
 import {
-  downloadKeyValueReport,
   flattenExportPairs,
+  useDownloadKeyValueReport,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
@@ -37,6 +37,7 @@ const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
 export function ServicePaymentDetailViewPage() {
   const navigate = useNavigate()
+  const downloadKeyValueReport = useDownloadKeyValueReport()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
@@ -87,9 +88,7 @@ export function ServicePaymentDetailViewPage() {
       startDate: formatDate(payment.createdAt),
       endDate: formatDate(payment.updatedAt || payment.createdAt),
       completionStatus: (status === 'Paid' ? 'Completed' : 'Pending') as
-        | 'Completed'
-        | 'In Progress'
-        | 'Pending',
+        'Completed' | 'In Progress' | 'Pending',
       paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
     },
     timelineInformation: {

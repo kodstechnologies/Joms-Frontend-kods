@@ -31,13 +31,16 @@ import { Button } from '@/shared/components/ui/button'
 import {
   VENUE_DELETED_MODULE_KEY,
   DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS,
+  VENUE_DELETED_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { ExpertListHeader } from '../experts/expert-list-shared'
 
 export function VenueDeletedPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
   const restoreVenueMutation = useRestoreVenue()
+  const { fileFormat } = useDefaultExportFormat()
 
   const list = useVenueStatusList({
     preferencesKey: VENUE_DELETED_MODULE_KEY,
@@ -46,6 +49,8 @@ export function VenueDeletedPage() {
     sortFieldMap: VENUE_DELETED_SORT_FIELDS,
     exportFileName: 'deleted_venues_export',
     exportColumnMap: VENUE_DELETED_EXPORT_COLUMN_MAP,
+    defaultVisibleColumnIds: DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: VENUE_DELETED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
   const handleExportVenueRow = useCallback(
@@ -58,7 +63,7 @@ export function VenueDeletedPage() {
         await exportMappedItemsToFile(
           VENUE_DELETED_EXPORT_COLUMN_MAP,
           [venue],
-          'excel',
+          fileFormat,
           `deleted_venue_${getVenueDisplayId(venue)}`,
           {
             columnIds: visibleIds,
@@ -70,7 +75,7 @@ export function VenueDeletedPage() {
         toast.error(getApiErrorMessage(error, 'Failed to export venue'))
       }
     },
-    [list.tableColumnPreferencesQuery.data],
+    [fileFormat, list.tableColumnPreferencesQuery.data],
   )
 
   const handleRestore = useCallback(

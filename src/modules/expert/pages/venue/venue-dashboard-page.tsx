@@ -23,6 +23,7 @@ import {
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueDashboard } from '../../hooks/use-venue-dashboard'
 import { exportVenueDashboardToExcel } from '../../utils/export-venue-dashboard'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -299,6 +300,7 @@ const attachMetricTrends = (
 
 export const VenueDashboardPage = () => {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [selectedRange, setSelectedRange] = useState<string>('3')
 
   const dashboardQuery = useVenueDashboard({
@@ -492,17 +494,20 @@ export const VenueDashboardPage = () => {
           : 'Last 12 Months'
 
     try {
-      await exportVenueDashboardToExcel({
-        rangeLabel,
-        metrics: visibleMetrics,
-        trendPoints: trendData,
-        topVenues,
-      })
-      toast.success('Exported as Excel')
+      await exportVenueDashboardToExcel(
+        {
+          rangeLabel,
+          metrics: visibleMetrics,
+          trendPoints: trendData,
+          topVenues,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export venue dashboard'))
     }
-  }, [isLoading, selectedRange, topVenues, trendData, visibleMetrics])
+  }, [exportFormat, fileFormat, isLoading, selectedRange, topVenues, trendData, visibleMetrics])
 
   return (
     <div className="space-y-6">

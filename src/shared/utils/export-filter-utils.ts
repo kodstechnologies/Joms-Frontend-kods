@@ -13,6 +13,32 @@ export type ExportHandlerOptions = {
   catalogOrder?: string[]
 }
 
+function kebabToCamel(id: string): string {
+  return id.replace(/-([a-z0-9])/gi, (_, char: string) => char.toUpperCase())
+}
+
+/** Match Manage Metrics catalog ids (`booking-id`, `users-fullname`) to export map keys. */
+export function resolveExportColumnMapKey<T>(
+  columnMap: ExportColumnMap<T>,
+  id: string,
+  seen: Set<string> = new Set(),
+): string | undefined {
+  if (!id || seen.has(id)) return undefined
+  seen.add(id)
+
+  if (Object.prototype.hasOwnProperty.call(columnMap, id)) return id
+
+  const camel = kebabToCamel(id)
+  if (camel !== id && Object.prototype.hasOwnProperty.call(columnMap, camel)) return camel
+
+  const hyphen = id.indexOf('-')
+  if (hyphen > 0) {
+    return resolveExportColumnMapKey(columnMap, id.slice(hyphen + 1), seen)
+  }
+
+  return undefined
+}
+
 export function pickExportColumns<T>(
   columnMap: ExportColumnMap<T>,
   options?: ExportHandlerOptions,
@@ -22,14 +48,23 @@ export function pickExportColumns<T>(
     return Object.values(columnMap)
   }
 
-  const ordered = options?.catalogOrder?.length
+  const sourceIds = options?.catalogOrder?.length
     ? sortIdsByCatalogOrder(
-        columnIds.filter((id) => columnMap[id]),
+        columnIds.filter((id) => Boolean(id)),
         options.catalogOrder,
       )
-    : columnIds.filter((id) => columnMap[id])
+    : columnIds
 
-  return ordered.map((id) => columnMap[id])
+  const orderedKeys: string[] = []
+  const seenKeys = new Set<string>()
+  for (const id of sourceIds) {
+    const key = resolveExportColumnMapKey(columnMap, id)
+    if (!key || seenKeys.has(key) || !columnMap[key]) continue
+    seenKeys.add(key)
+    orderedKeys.push(key)
+  }
+
+  return orderedKeys.map((id) => columnMap[id])
 }
 
 export function resolveVisibleExportColumnIds({
@@ -60,11 +95,8 @@ export function resolveVisibleExportColumnIds({
 
   const fromPrefs = normalize(visibleColumnIds ?? [])
   const fallback = normalize(defaultColumnIds)
-  const minColumns = Math.min(3, fallback.length)
-  const useFallback =
-    fromPrefs.length === 0 || (fromPrefs.length < minColumns && fallback.length > fromPrefs.length)
 
-  return sortIdsByCatalogOrder(useFallback ? fallback : fromPrefs, [...catalogColumnIds])
+  return sortIdsByCatalogOrder(fromPrefs.length ? fromPrefs : fallback, [...catalogColumnIds])
 }
 
 export function buildExportColumnMapFromCatalog<T>(
@@ -154,6 +186,10 @@ async function exportMappedRows<T>(
   }
 
   const exportCols = pickExportColumns(columnMap, options)
+  if (exportCols.length === 0) {
+    throw new Error('NO_VISIBLE_COLUMNS')
+  }
+
   await exportDataToFile(
     exportCols.map((col) => col.header),
     items.map((item) => exportCols.map((col) => col.accessor(item))),

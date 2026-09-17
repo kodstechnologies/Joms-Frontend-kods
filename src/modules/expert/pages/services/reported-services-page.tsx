@@ -6,7 +6,10 @@ import { useNavigate } from 'react-router-dom'
 import { fetchServiceReports } from '../../api/service-api'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { SERVICE_REPORTED_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import {
+  DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS,
+  SERVICE_REPORTED_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-management-table-columns.config'
 import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -42,27 +45,33 @@ const EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (item: ServiceReportItem) => string }
 > = {
-  reportId: { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
-  serviceId: { header: 'Listing ID', accessor: (item) => exportDisplayValue(item.serviceId) },
-  serviceTitle: {
+  'report-id': { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
+  'listing-id': { header: 'Listing ID', accessor: (item) => exportDisplayValue(item.serviceId) },
+  'listing-name': {
     header: 'Listing Name',
     accessor: (item) => exportDisplayValue(item.serviceTitle),
   },
-  reportedAt: {
+  'reported-at': {
     header: 'Reported At',
     accessor: (item) => formatExportDateTime(item.submittedAt || item.createdAt),
   },
-  issueType: { header: 'Report Reason', accessor: (item) => exportDisplayValue(item.issueType) },
-  reporterType: {
+  'report-reason': {
+    header: 'Report Reason',
+    accessor: (item) => exportDisplayValue(item.issueType),
+  },
+  'reported-by': {
     header: 'Reported By',
     accessor: (item) => exportDisplayValue(item.reporterType),
   },
-  reporterId: { header: 'Reporter ID', accessor: (item) => exportDisplayValue(item.reporterId) },
-  status: {
+  'reporter-id': {
+    header: 'Reporter ID',
+    accessor: (item) => exportDisplayValue(item.reporterId),
+  },
+  'case-status': {
     header: 'Case Status',
     accessor: (item) => exportDisplayValue(item.investigationStatus || 'New'),
   },
-  assignedAdmin: {
+  'assigned-admin': {
     header: 'Assigned Admin',
     accessor: (item) => exportDisplayValue(item.investigatingAdmin),
   },
@@ -96,6 +105,8 @@ export function ServiceReportedServicesPage() {
     exportColumnMap: EXPORT_COLUMN_MAP,
     fetchReports: fetchServiceReports,
     parseResponse: defaultParseResponse<ServiceReportItem>,
+    defaultVisibleColumnIds: DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: SERVICE_REPORTED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
   const columns = useMemo<ColumnDef<ServiceReportItem>[]>(() => {

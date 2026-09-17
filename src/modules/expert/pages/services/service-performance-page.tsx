@@ -153,60 +153,88 @@ export function ServicePerformancePage() {
         return
       }
 
-      const headers = [
-        'Order ID',
-        'Client ID',
-        'Client Name',
-        'Order Status',
-        'Ordered At',
-        'Start Date',
-        'End Date',
-        'Delivery Duration',
-        'Price',
-        'Payment ID',
-        'Payment Method',
-        'Transaction ID',
-        'Rating',
-        'Payout Status',
-        'Disputed',
-        'Dispute Raised At',
-        'Dispute End Date',
-        'Dispute / Ticket ID',
-        'Refund Issued',
-        'Refund Amount',
-        'Refund Status',
-        'Refunded At',
-      ]
+      const catalogIds = SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+      const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+        ? tableColumnPreferencesQuery.data.visibleColumnIds
+        : DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS
+      const visibleIds = sortIdsByCatalogOrder(
+        [
+          ...new Set(
+            rawIds
+              .map((id) => SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP[id] ?? id)
+              .filter((id) => catalogIds.includes(id)),
+          ),
+        ],
+        catalogIds,
+      )
+      const exportCols = SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.filter((column) =>
+        visibleIds.includes(column.id),
+      )
 
-      const rows = orders.map((order) => [
-        order.orderId,
-        order.clientId,
-        order.clientName || DASH,
-        titleCase(order.orderStatus),
-        formatDate(order.orderedAt),
-        formatDate(order.startDate),
-        formatDate(order.endDate),
-        order.deliveryDuration || DASH,
-        String(order.price),
-        order.paymentId || DASH,
-        order.paymentMethod || DASH,
-        order.transactionId || DASH,
-        order.rating === null ? DASH : String(order.rating),
-        order.payoutStatusLabel || DASH,
-        order.disputed ? 'Yes' : 'No',
-        formatDate(order.disputeRaisedAt),
-        formatDate(order.disputeEndDate),
-        order.disputeId || order.supportTicketId || DASH,
-        order.refundIssued ? 'Yes' : 'No',
-        order.refundAmount === null ? DASH : String(order.refundAmount),
-        order.refundStatus || DASH,
-        formatDate(order.refundedAt),
-      ])
+      const headers = exportCols.map((column) => column.label)
+      const rows = orders.map((order) =>
+        exportCols.map((column) => {
+          switch (column.id) {
+            case 'order-id':
+              return order.orderId
+            case 'client-id':
+              return formatClientCode(order.clientId)
+            case 'client-name':
+              return order.clientName || DASH
+            case 'client-source':
+              return order.clientSource || DASH
+            case 'client-phone':
+              return order.clientPhone || DASH
+            case 'order-status':
+              return titleCase(order.orderStatus)
+            case 'ordered-at':
+              return formatDate(order.orderedAt)
+            case 'start-date':
+              return formatDate(order.startDate)
+            case 'end-date':
+              return formatDate(order.endDate)
+            case 'delivery-duration':
+              return order.deliveryDuration || DASH
+            case 'price':
+              return String(order.price)
+            case 'payment-id':
+              return order.paymentId || DASH
+            case 'payment-method':
+              return order.paymentMethod || DASH
+            case 'transaction-id':
+              return order.transactionId || DASH
+            case 'rating':
+              return order.rating === null ? DASH : String(order.rating)
+            case 'payout-status':
+              return order.payoutStatusLabel || DASH
+            case 'disputed':
+              return order.disputed ? 'Yes' : 'No'
+            case 'dispute-end-date':
+              return formatDate(order.disputeEndDate)
+            case 'dispute-raised-at':
+              return formatDate(order.disputeRaisedAt)
+            case 'dispute-ticket-id':
+              return order.disputeId || order.supportTicketId || DASH
+            case 'refund-issued':
+              return order.refundIssued ? 'Yes' : 'No'
+            case 'refund-amount':
+              return order.refundAmount === null ? DASH : String(order.refundAmount)
+            case 'refund-status':
+              return order.refundStatus || DASH
+            case 'refunded-at':
+              return formatDate(order.refundedAt)
+            case 'listing-type':
+              return listingTypeLabel(order)
+            default:
+              return DASH
+          }
+        }),
+      )
 
       exportDataToFile(headers, rows, format, 'service_orders_export')
       toast.success(`Exported ${orders.length} order(s)`)
     },
-    [orders],
+    [orders, tableColumnPreferencesQuery.data?.visibleColumnIds],
   )
 
   const dataColumnsById = useMemo<Record<string, ColumnDef<ServiceOrderRow>>>(

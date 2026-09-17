@@ -12,6 +12,7 @@ import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
   DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
   MEMBERSHIPS_MODULE_KEY,
+  MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
 } from '../config/membership-metrics.config'
 import { EXPERT_MEMBERSHIP_SORT_FIELD_MAP } from '../config/membership-table-sort-fields'
 import {
@@ -26,6 +27,7 @@ import { buildMembershipDataColumnsById } from '../utils/membership-preference-c
 import { submitMembershipPlanChangeForApproval } from '../utils/submit-membership-plan-change-approval'
 import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { Button } from '@/shared/components/ui/button'
@@ -176,6 +178,15 @@ export function ExpertMembershipsPage() {
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
   const tableColumnPreferencesQuery = useTableColumnPreferences(MEMBERSHIPS_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const extendMutation = useExtendSubscription()
   const cancelMutation = useCancelSubscription()
@@ -202,8 +213,9 @@ export function ExpertMembershipsPage() {
       EXPORT_COLUMN_MAP,
       'expert_memberships_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,

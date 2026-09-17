@@ -19,6 +19,11 @@ import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { FINANCE_MEMBERSHIP_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import {
+  DEFAULT_FINANCE_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+  FINANCE_MEMBERSHIPS_MODULE_KEY,
+  FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-memberships-table-columns.config'
 import { FINANCE_MEMBERSHIP_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -35,6 +40,9 @@ import {
 import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
 import { FINANCE_DATA_TABLE_CLASS } from '@/modules/payments/constants/finance-table-styles'
 import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
+import { assembleFinanceTableColumns } from '@/modules/payments/utils/finance-table-column-utils'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 
 const PAGE_SIZE = 10
 
@@ -44,20 +52,32 @@ const EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: FinanceMembershipRow) => string }
 > = {
-  subscriptionId: {
+  'subscription-id': {
     header: 'Subscription ID',
     accessor: (row) => exportDisplayValue(row.subscriptionId),
   },
   name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
-  planName: { header: 'Plan Name', accessor: (row) => exportDisplayValue(row.planName) },
+  'plan-name': { header: 'Plan Name', accessor: (row) => exportDisplayValue(row.planName) },
   amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
-  billingCycle: {
+  'billing-cycle': {
     header: 'Billing Cycle',
     accessor: (row) => exportDisplayValue(row.billingCycle),
   },
-  startDate: { header: 'Start Date', accessor: (row) => exportDisplayValue(row.startDate) },
-  nextBilling: { header: 'Next Billing', accessor: (row) => exportDisplayValue(row.nextBilling) },
+  'start-date': { header: 'Start Date', accessor: (row) => exportDisplayValue(row.startDate) },
+  'next-billing': {
+    header: 'Next Billing',
+    accessor: (row) => exportDisplayValue(row.nextBilling),
+  },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
+
+const MEMBERSHIP_COLUMN_LEGACY_ID_MAP: Record<string, string> = {
+  'membership-id': 'subscription-id',
+  'member-name': 'name',
+  'membership-tier': 'plan-name',
+  'amount-paid': 'amount',
+  'plan-duration': 'billing-cycle',
+  'next-billing-date': 'next-billing',
 }
 
 const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }> = [
@@ -79,6 +99,17 @@ export function MembershipManagementPage() {
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_MEMBERSHIPS_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: MEMBERSHIP_COLUMN_LEGACY_ID_MAP,
+  })
 
   const listQueryParams = useMemo(() => {
     const params = buildFinanceMembershipsListQueryParams(appliedFilters, {
@@ -127,8 +158,9 @@ export function MembershipManagementPage() {
         search: enhancedSearch.globalSearch || undefined,
         status: statusFilter === 'all' ? undefined : statusFilter,
       },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch, statusFilter])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds, statusFilter])
 
   const {
     onAdvancedFilter,
@@ -163,108 +195,113 @@ export function MembershipManagementPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<FinanceMembershipRow>[]>(
-    () =>
-      withServerSortMeta(
-        [
-          {
-            id: 'select',
-            header: () => (
-              <input
-                type="checkbox"
-                aria-label="Select all subscriptions"
-                checked={allVisibleSelected}
-                ref={(input) => {
-                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-                }}
-                onChange={toggleVisibleRows}
-                className="ui-table-checkbox"
-              />
-            ),
-            cell: ({ row }) => (
-              <input
-                type="checkbox"
-                aria-label={`Select ${row.original.name}`}
-                checked={selectedRowIds.includes(row.original.id)}
-                onChange={() => toggleRowSelection(row.original.id)}
-                onClick={(event) => event.stopPropagation()}
-                className="ui-table-checkbox"
-              />
-            ),
-            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-          },
-          {
-            accessorKey: 'subscriptionId',
-            header: 'Subscription ID',
-            cell: ({ row }) => (
-              <FinanceTableCellText className="font-mono uppercase">
-                {row.original.subscriptionId}
-              </FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'name',
-            header: 'Name',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.name}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'planName',
-            header: 'Plan Name',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.planName}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'amount',
-            header: 'Amount',
-            cell: ({ row }) => (
-              <FinanceTableCellText className="font-semibold">
-                {row.original.amount}
-              </FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'billingCycle',
-            header: 'Billing Cycle',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.billingCycle}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'startDate',
-            header: 'Start Date',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.startDate}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'nextBilling',
-            header: 'Next Billing',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.nextBilling}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
-          },
-          {
-            id: 'actions',
-            header: 'Actions',
-            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => renderActions(row.original),
-          },
-        ],
-        SORT_FIELD_MAP,
+  const columns = useMemo<ColumnDef<FinanceMembershipRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceMembershipRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all subscriptions"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="ui-table-checkbox"
+        />
       ),
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.name}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="ui-table-checkbox"
+        />
+      ),
+      meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceMembershipRow>> = {
+      'subscription-id': {
+        id: 'subscription-id',
+        accessorKey: 'subscriptionId',
+        header: 'Subscription ID',
+        cell: ({ row }) => (
+          <FinanceTableCellText className="font-mono uppercase">
+            {row.original.subscriptionId}
+          </FinanceTableCellText>
+        ),
+      },
+      name: {
+        id: 'name',
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.name}</FinanceTableCellText>,
+      },
+      'plan-name': {
+        id: 'plan-name',
+        accessorKey: 'planName',
+        header: 'Plan Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.planName}</FinanceTableCellText>,
+      },
+      amount: {
+        id: 'amount',
+        accessorKey: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => (
+          <FinanceTableCellText className="font-semibold">
+            {row.original.amount}
+          </FinanceTableCellText>
+        ),
+      },
+      'billing-cycle': {
+        id: 'billing-cycle',
+        accessorKey: 'billingCycle',
+        header: 'Billing Cycle',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.billingCycle}</FinanceTableCellText>,
+      },
+      'start-date': {
+        id: 'start-date',
+        accessorKey: 'startDate',
+        header: 'Start Date',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.startDate}</FinanceTableCellText>,
+      },
+      'next-billing': {
+        id: 'next-billing',
+        accessorKey: 'nextBilling',
+        header: 'Next Billing',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.nextBilling}</FinanceTableCellText>,
+      },
+      status: {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
+      },
+    }
+
+    return withServerSortMeta(
+      assembleFinanceTableColumns(selectColumn, dataColumnsById, {
+        catalogIds: catalogColumnIds,
+        visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+        defaultColumnIds: DEFAULT_FINANCE_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+        legacyColumnIdMap: MEMBERSHIP_COLUMN_LEGACY_ID_MAP,
+        renderActions,
+      }),
+      SORT_FIELD_MAP,
+    )
+  }, [
+    allVisibleSelected,
+    catalogColumnIds,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data?.visibleColumnIds,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">

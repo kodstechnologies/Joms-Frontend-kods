@@ -27,8 +27,8 @@ import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
-  downloadKeyValueReport,
   flattenExportPairs,
+  useDownloadKeyValueReport,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeVenuePaymentStatusClass } from '@/modules/payments/utils/finance-status-tones'
@@ -39,6 +39,7 @@ const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
 export function VenuePaymentDetailViewPage() {
   const navigate = useNavigate()
+  const downloadKeyValueReport = useDownloadKeyValueReport()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
@@ -212,9 +213,7 @@ export function VenuePaymentDetailViewPage() {
         (snapshot.spaceId || moduleData.spaceId ? '—' : 'No space on booking'),
       location,
       approvedStatus: (status === 'Paid' ? 'Approved' : 'Pending') as
-        | 'Approved'
-        | 'Pending'
-        | 'Rejected',
+        'Approved' | 'Pending' | 'Rejected',
     },
     parties: {
       clientId,

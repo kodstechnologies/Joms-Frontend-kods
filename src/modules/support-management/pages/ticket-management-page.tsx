@@ -9,6 +9,7 @@ import notepadIcon from '@/assets/JOMS_ICONS-2/icons8-notepad-24.svg'
 import escalateIcon from '@/assets/JOMS_ICONS-2/icons8-external-link-24.svg'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { EscalateTicketModal } from '../components/reassign-ticket-modal'
@@ -219,6 +220,7 @@ function TicketMetricCard({
 
 export function TicketManagementPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { currentPage, setCurrentPage, activeTab, setActiveTab, setSelectedTicketId } =
     useSupportStore()
 
@@ -374,14 +376,14 @@ export function TicketManagementPage() {
         formatTrendPercent(stat.percentage, stat.direction),
       ])
       const date = new Date().toISOString().slice(0, 10)
-      await exportDataToFile(headers, rows, 'excel', `ticket_management_metrics_${date}`)
-      toast.success('Ticket metrics exported to Excel')
+      await exportDataToFile(headers, rows, fileFormat, `ticket_management_metrics_${date}`)
+      toast.success(`Ticket metrics exported as ${exportFormat}`)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export ticket metrics'))
     } finally {
       setIsExportingMetrics(false)
     }
-  }, [isExportingMetrics, stats])
+  }, [exportFormat, fileFormat, isExportingMetrics, stats])
 
   const renderActions = useCallback(
     (record: SupportTicket) => {

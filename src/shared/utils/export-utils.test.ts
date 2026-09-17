@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { exportDataToFile, exportDisplayValue } from './export-utils'
+import { exportDataToFile, exportDisplayValue, toPdfExportText } from './export-utils'
 
 describe('export-utils', () => {
   const clicks: string[] = []
@@ -34,5 +34,10 @@ describe('export-utils', () => {
     await expect(exportDataToFile(['A'], [], 'csv', 'empty')).rejects.toThrow('NO_RECORDS')
     await exportDataToFile(['Name'], [['Ada']], 'csv', 'people')
     expect(clicks.some((name) => name.endsWith('.csv'))).toBe(true)
+  })
+
+  it('keeps rupee amounts readable in PDF text', () => {
+    expect(toPdfExportText('₹1150.5K')).toBe('Rs.1150.5K')
+    expect(toPdfExportText('Revenue (₹)')).toBe('Revenue (Rs.)')
   })
 })

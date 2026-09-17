@@ -69,10 +69,11 @@ import {
   getVenueDisplaySpaceId,
   getVenuePartnerId,
 } from '../../utils/venue-list'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildVenueListQueryParams,
   createVenueFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 import { getListingStatusDisplay } from '../../utils/management-status'
@@ -105,6 +106,7 @@ import {
   VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
@@ -265,6 +267,7 @@ export const VenueManagementPage = () => {
     defaultColumnIds: DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
   })
+  const { fileFormat } = useDefaultExportFormat()
 
   const confirmBulkDelete = useCallback(() => {
     if (selectedVenueIds.length === 0) return
@@ -469,34 +472,21 @@ export const VenueManagementPage = () => {
     }
 
     try {
-      const headers = [
-        'Venue ID',
-        'Venue Name',
-        'Space ID',
-        'Partner / Expert',
-        'Partner ID',
-        'Category',
-        'City',
-        'Status',
-        'Created At',
-      ]
-      const rows = selectedVenues.map((venue) => [
-        getVenueDisplayId(venue),
-        venue.venueName || 'N/A',
-        getVenueDisplaySpaceId(venue),
-        venue.expertName || venue.partnerName || 'N/A',
-        getVenuePartnerId(venue) || 'N/A',
-        venue.venueCategory || 'N/A',
-        venue.city || 'N/A',
-        venue.status || 'N/A',
-        venue.createdAt ? new Date(venue.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, 'excel', 'selected_venues_export')
-      toast.success(`Exported ${selectedVenues.length} selected venue(s)`)
+      void exportMappedItemsToFile(
+        EXPORT_COLUMN_MAP,
+        selectedVenues,
+        fileFormat,
+        'selected_venues_export',
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      )
+        .then(() => toast.success(`Exported ${selectedVenues.length} selected venue(s)`))
+        .catch((error) => {
+          toast.error(getApiErrorMessage(error, 'Failed to export selected venues.'))
+        })
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export selected venues.'))
     }
-  }, [selectedVenueCount, selectedVenues])
+  }, [catalogColumnIds, exportColumnIds, fileFormat, selectedVenueCount, selectedVenues])
 
   const handleBulkNotify = useCallback(() => {
     if (selectedPartnerIds.length === 0) {

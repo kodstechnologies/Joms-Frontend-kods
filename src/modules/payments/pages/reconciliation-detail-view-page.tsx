@@ -12,8 +12,8 @@ import {
 } from '@/modules/payments/hooks/use-finance'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import {
-  downloadKeyValueReport,
   flattenExportPairs,
+  useDownloadKeyValueReport,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
@@ -38,6 +38,7 @@ const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
 export function ReconciliationDetailViewPage() {
   const navigate = useNavigate()
+  const downloadKeyValueReport = useDownloadKeyValueReport()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinanceReconciliationDetail(id)
   const noteMutation = useAddFinanceNote()

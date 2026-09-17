@@ -29,11 +29,13 @@ import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 export function ExpertDeletedExpertsPage() {
   const navigate = useNavigate()
   const restoreExpertMutation = useRestoreExpert()
   const catalogColumnIds = DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS
+  const { fileFormat } = useDefaultExportFormat()
 
   const list = useExpertStatusList({
     moduleKey: EXPERT_DELETED_MODULE_KEY,
@@ -49,7 +51,7 @@ export function ExpertDeletedExpertsPage() {
         await exportMappedItemsToFile(
           EXPERT_EXPORT_COLUMN_MAP,
           [expert],
-          'excel',
+          fileFormat,
           `deleted_expert_${expert.expertId || expert.id}`,
           {
             columnIds: list.visibleColumnIds,
@@ -61,7 +63,7 @@ export function ExpertDeletedExpertsPage() {
         toast.error(getApiErrorMessage(error, 'Failed to export expert'))
       }
     },
-    [list.visibleColumnIds],
+    [fileFormat, list.visibleColumnIds],
   )
 
   const columns = useMemo<ColumnDef<Expert>[]>(() => {

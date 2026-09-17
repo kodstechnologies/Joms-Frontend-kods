@@ -30,6 +30,7 @@ import {
   RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG,
 } from '../config/rbac-hub-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { UpdatePasswordModal } from '../components/update-password-modal'
 import {
@@ -75,48 +76,61 @@ const EXPORT_USER_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (u: SubAdmin) => string }
 > = {
-  adminCode: { header: 'User ID', accessor: (u) => exportDisplayValue(u.adminCode || u.id) },
-  fullname: { header: 'Username', accessor: (u) => exportDisplayValue(u.fullname) },
-  roleCode: {
+  'users-admin-code': {
+    header: 'User ID',
+    accessor: (u) => exportDisplayValue(u.adminCode || u.id),
+  },
+  'users-fullname': { header: 'Username', accessor: (u) => exportDisplayValue(u.fullname) },
+  'users-email': { header: 'Email ID', accessor: (u) => exportDisplayValue(u.email) },
+  'users-role-id': {
     header: 'Role ID',
     accessor: (u) => exportDisplayValue(u.roles.map((r) => r.roleCode).join(', ')),
   },
-  roleName: {
-    header: 'RoleName',
+  'users-role-name': {
+    header: 'Role Name',
     accessor: (u) => exportDisplayValue(u.roles.map((r) => r.name).join(', ')),
   },
-  scopes: { header: 'Scope', accessor: (u) => exportDisplayValue(u.scopes.join(', ')) },
-  permissions: {
+  'users-scope': { header: 'Scope', accessor: (u) => exportDisplayValue(u.scopes.join(', ')) },
+  'users-permissions': {
     header: 'Permissions',
     accessor: (u) => exportDisplayValue(formatPermissions(u.permissions)),
   },
-  mfaEnabled: { header: 'MFA Enabled', accessor: (u) => exportDisplayValue(u.mfaEnabled) },
-  status: { header: 'Status', accessor: (u) => exportDisplayValue(u.status) },
-  lastActionAt: {
+  'users-mfa-enabled': {
+    header: 'MFA Enabled',
+    accessor: (u) => exportDisplayValue(u.mfaEnabled),
+  },
+  'users-status': { header: 'Status', accessor: (u) => exportDisplayValue(u.status) },
+  'users-last-action-at': {
     header: 'Last action performed',
     accessor: (u) => exportDisplayValue(formatDateTime(u.lastActionAt)),
   },
 }
 
 const EXPORT_ROLE_COLUMN_MAP: Record<string, { header: string; accessor: (r: Role) => string }> = {
-  roleCode: { header: 'Role ID', accessor: (r) => exportDisplayValue(r.roleCode || r.id) },
-  name: { header: 'Role Name', accessor: (r) => exportDisplayValue(r.name) },
-  description: { header: 'Description', accessor: (r) => exportDisplayValue(r.description) },
-  scopes: { header: 'Scope', accessor: (r) => exportDisplayValue(r.scopes.join(', ')) },
-  permissions: {
+  'roles-role-id': { header: 'Role ID', accessor: (r) => exportDisplayValue(r.roleCode || r.id) },
+  'roles-name': { header: 'Role Name', accessor: (r) => exportDisplayValue(r.name) },
+  'roles-description': {
+    header: 'Description',
+    accessor: (r) => exportDisplayValue(r.description),
+  },
+  'roles-scope': { header: 'Scope', accessor: (r) => exportDisplayValue(r.scopes.join(', ')) },
+  'roles-permissions': {
     header: 'Permissions',
     accessor: (r) => exportDisplayValue(formatPermissions(r.permissions)),
   },
-  riskLevel: {
+  'roles-risk-level': {
     header: 'Risk level',
     accessor: (r) => exportDisplayValue(r.riskLevel.replace('_', ' ')),
   },
-  mfaRequired: { header: 'MFA Required', accessor: (r) => exportDisplayValue(r.mfaRequired) },
-  status: {
+  'roles-mfa-required': {
+    header: 'MFA Required',
+    accessor: (r) => exportDisplayValue(r.mfaRequired),
+  },
+  'roles-status': {
     header: 'Status',
     accessor: (r) => exportDisplayValue(r.status === 'active' ? 'Active' : 'Disabled'),
   },
-  userCount: {
+  'roles-user-count': {
     header: 'Users (No.)',
     accessor: (r) => exportDisplayValue(String(r.userCount).padStart(2, '0')),
   },
@@ -240,6 +254,28 @@ export function RbacHubPage() {
   const deleteSubAdminMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
   const tableColumnPreferencesQuery = useTableColumnPreferences(RBAC_HUB_MODULE_KEY)
+  const usersCatalogColumnIds = useMemo(
+    () => RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const rolesCatalogColumnIds = useMemo(
+    () => RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const usersExportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds?.filter((id) =>
+      id.startsWith(RBAC_HUB_USERS_COLUMN_PREFIX),
+    ),
+    defaultColumnIds: DEFAULT_RBAC_HUB_USERS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: usersCatalogColumnIds,
+  })
+  const rolesExportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds?.filter((id) =>
+      id.startsWith(RBAC_HUB_ROLES_COLUMN_PREFIX),
+    ),
+    defaultColumnIds: DEFAULT_RBAC_HUB_ROLES_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: rolesCatalogColumnIds,
+  })
 
   const roles = useMemo(() => rolesData?.data ?? [], [rolesData?.data])
   const rolesMeta = rolesData?.meta
@@ -273,6 +309,7 @@ export function RbacHubPage() {
         EXPORT_USER_COLUMN_MAP,
         'rbac_users_export',
         { search: enhancedSearch.globalSearch || undefined },
+        { columnIds: usersExportColumnIds, catalogOrder: usersCatalogColumnIds },
       )
     }
     return createRbacFilteredExportHandler(
@@ -280,8 +317,17 @@ export function RbacHubPage() {
       EXPORT_ROLE_COLUMN_MAP,
       'rbac_roles_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: rolesExportColumnIds, catalogOrder: rolesCatalogColumnIds },
     )
-  }, [activeTab, enhancedSearch.globalSearch, roleFilterId])
+  }, [
+    activeTab,
+    enhancedSearch.globalSearch,
+    roleFilterId,
+    rolesCatalogColumnIds,
+    rolesExportColumnIds,
+    usersCatalogColumnIds,
+    usersExportColumnIds,
+  ])
 
   const {
     onAdvancedFilter,

@@ -25,7 +25,12 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { FINANCE_INVOICES_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-invoices-table-columns.config'
+import {
+  DEFAULT_FINANCE_INVOICES_VISIBLE_COLUMN_IDS,
+  FINANCE_INVOICES_METRICS_CATALOG,
+  FINANCE_INVOICES_MODULE_KEY,
+  FINANCE_INVOICES_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-invoices-table-columns.config'
 import { FINANCE_INVOICE_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
 import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_INVOICES_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -49,6 +54,13 @@ import {
   FINANCE_TABLE_CELL_CLASS,
 } from '@/modules/payments/constants/finance-table-styles'
 import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
+import { assembleFinanceTableColumns } from '@/modules/payments/utils/finance-table-column-utils'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 
 const PAGE_SIZE = 10
 
@@ -59,14 +71,24 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: InvoiceRow) => string }> =
   {
-    invoiceId: { header: 'Invoice ID', accessor: (row) => exportDisplayValue(row.invoiceId) },
-    clientName: { header: 'Client Name', accessor: (row) => exportDisplayValue(row.clientName) },
+    'invoice-id': { header: 'Invoice ID', accessor: (row) => exportDisplayValue(row.invoiceId) },
+    'client-name': { header: 'Client Name', accessor: (row) => exportDisplayValue(row.clientName) },
     amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
-    issueDate: { header: 'Issue Date', accessor: (row) => exportDisplayValue(row.issueDate) },
-    dueDate: { header: 'Due Date', accessor: (row) => exportDisplayValue(row.dueDate) },
+    'issue-date': { header: 'Issue Date', accessor: (row) => exportDisplayValue(row.issueDate) },
+    'due-date': { header: 'Due Date', accessor: (row) => exportDisplayValue(row.dueDate) },
     description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
     status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
   }
+
+const INVOICE_COLUMN_LEGACY_ID_MAP: Record<string, string> = {
+  'invoice-date': 'issue-date',
+  'invoice-status': 'status',
+  'payment-status': 'status',
+}
+
+const DEFAULT_INVOICE_METRIC_IDS = FINANCE_INVOICES_METRICS_CATALOG.filter(
+  (metric) => metric.defaultActive,
+).map((metric) => metric.id)
 
 function SummaryCard({
   label,
@@ -110,6 +132,21 @@ export function InvoicesBillingPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [reminderTarget, setReminderTarget] = useState<InvoiceRow | null>(null)
   const addNoteMutation = useAddFinanceNote()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_INVOICES_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => FINANCE_INVOICES_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_INVOICES_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: INVOICE_COLUMN_LEGACY_ID_MAP,
+  })
+  const activeMetricIds = useActiveMetricIds(
+    FINANCE_INVOICES_MODULE_KEY,
+    DEFAULT_INVOICE_METRIC_IDS,
+  )
 
   useEffect(() => {
     const due = listDueInvoiceReminders()
@@ -163,8 +200,9 @@ export function InvoicesBillingPage() {
       EXPORT_COLUMN_MAP,
       'finance_invoices_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -175,36 +213,50 @@ export function InvoicesBillingPage() {
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
-  const invoiceSummaryMetrics = [
-    {
-      label: 'Total Invoices',
-      value: String(meta?.total ?? 0),
-      change: '—',
-      changeNote: 'all invoices',
-    },
-    {
-      label: 'Amount Paid',
-      value: formatInr(
-        rows
-          .filter((r) => r.status === 'Paid')
-          .reduce((sum, r) => sum + (Number(String(r.amount).replace(/[^\d.]/g, '')) || 0), 0),
+  const invoiceSummaryMetrics = useMemo(
+    () =>
+      orderByActiveMetricIds(
+        [
+          {
+            id: 'total-invoices',
+            label: 'Total Invoices',
+            value: String(meta?.total ?? 0),
+            change: '—',
+            changeNote: 'all invoices',
+          },
+          {
+            id: 'amount-paid',
+            label: 'Amount Paid',
+            value: formatInr(
+              rows
+                .filter((r) => r.status === 'Paid')
+                .reduce(
+                  (sum, r) => sum + (Number(String(r.amount).replace(/[^\d.]/g, '')) || 0),
+                  0,
+                ),
+            ),
+            change: '—',
+            changeNote: 'this page',
+          },
+          {
+            id: 'pending',
+            label: 'Pending',
+            value: String(rows.filter((r) => r.status === 'Pending').length),
+            change: '—',
+            changeNote: 'this page',
+          },
+          {
+            id: 'overdue',
+            label: 'Overdue',
+            value: String(rows.filter((r) => r.status === 'Overdue').length),
+            change: '—',
+            changeNote: 'this page',
+          },
+        ],
+        activeMetricIds,
       ),
-      change: '—',
-      changeNote: 'this page',
-    },
-    {
-      label: 'Pending',
-      value: String(rows.filter((r) => r.status === 'Pending').length),
-      change: '—',
-      changeNote: 'this page',
-    },
-    {
-      label: 'Overdue',
-      value: String(rows.filter((r) => r.status === 'Overdue').length),
-      change: '—',
-      changeNote: 'this page',
-    },
-  ]
+    [activeMetricIds, meta?.total, rows],
+  )
 
   const renderActions = useCallback(
     (record: InvoiceRow) => (
@@ -261,103 +313,107 @@ export function InvoicesBillingPage() {
     [activeDropdownId, logoUrl, navigate],
   )
 
-  const columns = useMemo<ColumnDef<InvoiceRow>[]>(
-    () =>
-      withServerSortMeta(
-        [
-          {
-            id: 'select',
-            header: () => (
-              <input
-                type="checkbox"
-                aria-label="Select all invoices"
-                checked={allVisibleSelected}
-                ref={(input) => {
-                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-                }}
-                onChange={toggleVisibleRows}
-                className="ui-table-checkbox"
-              />
-            ),
-            cell: ({ row }) => (
-              <input
-                type="checkbox"
-                aria-label={`Select ${row.original.clientName}`}
-                checked={selectedRowIds.includes(row.original.id)}
-                onChange={() => toggleRowSelection(row.original.id)}
-                onClick={(event) => event.stopPropagation()}
-                className="ui-table-checkbox"
-              />
-            ),
-            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-          },
-          {
-            accessorKey: 'invoiceId',
-            header: 'Invoice ID',
-            cell: ({ row }) => (
-              <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
-                {row.original.invoiceId}
-              </span>
-            ),
-          },
-          {
-            accessorKey: 'clientName',
-            header: 'Client Name',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.clientName}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'amount',
-            header: 'Amount',
-            cell: ({ row }) => (
-              <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
-                {row.original.amount}
-              </span>
-            ),
-          },
-          {
-            accessorKey: 'issueDate',
-            header: 'Issue Date',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.issueDate}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'dueDate',
-            header: 'Due Date',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.dueDate}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'description',
-            header: 'Description',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.description}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
-          },
-          {
-            id: 'actions',
-            header: 'Actions',
-            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => renderActions(row.original),
-          },
-        ],
-        SORT_FIELD_MAP,
+  const columns = useMemo<ColumnDef<InvoiceRow>[]>(() => {
+    const selectColumn: ColumnDef<InvoiceRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all invoices"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="ui-table-checkbox"
+        />
       ),
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.clientName}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="ui-table-checkbox"
+        />
+      ),
+      meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<InvoiceRow>> = {
+      'invoice-id': {
+        id: 'invoice-id',
+        accessorKey: 'invoiceId',
+        header: 'Invoice ID',
+        cell: ({ row }) => (
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-mono uppercase')}>
+            {row.original.invoiceId}
+          </span>
+        ),
+      },
+      'client-name': {
+        id: 'client-name',
+        accessorKey: 'clientName',
+        header: 'Client Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.clientName}</FinanceTableCellText>,
+      },
+      amount: {
+        id: 'amount',
+        accessorKey: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => (
+          <span className={cn(FINANCE_TABLE_CELL_CLASS, 'font-semibold')}>
+            {row.original.amount}
+          </span>
+        ),
+      },
+      'issue-date': {
+        id: 'issue-date',
+        accessorKey: 'issueDate',
+        header: 'Issue Date',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.issueDate}</FinanceTableCellText>,
+      },
+      'due-date': {
+        id: 'due-date',
+        accessorKey: 'dueDate',
+        header: 'Due Date',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.dueDate}</FinanceTableCellText>,
+      },
+      description: {
+        id: 'description',
+        accessorKey: 'description',
+        header: 'Description',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.description}</FinanceTableCellText>,
+      },
+      status: {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
+      },
+    }
+
+    return withServerSortMeta(
+      assembleFinanceTableColumns(selectColumn, dataColumnsById, {
+        catalogIds: catalogColumnIds,
+        visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+        defaultColumnIds: DEFAULT_FINANCE_INVOICES_VISIBLE_COLUMN_IDS,
+        legacyColumnIdMap: INVOICE_COLUMN_LEGACY_ID_MAP,
+        renderActions,
+      }),
+      SORT_FIELD_MAP,
+    )
+  }, [
+    allVisibleSelected,
+    catalogColumnIds,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data?.visibleColumnIds,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -389,7 +445,7 @@ export function InvoicesBillingPage() {
                 className="h-[130px] w-full max-w-[280px] rounded-[10px] border-0 bg-[#141414]"
               />
             ))
-          : invoiceSummaryMetrics.map((metric) => <SummaryCard key={metric.label} {...metric} />)}
+          : invoiceSummaryMetrics.map(({ id, ...metric }) => <SummaryCard key={id} {...metric} />)}
       </div>
 
       {isError ? <p className="text-body-sm text-brand-danger">Failed to load invoices.</p> : null}

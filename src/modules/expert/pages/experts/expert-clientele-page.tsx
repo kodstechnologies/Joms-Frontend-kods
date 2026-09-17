@@ -19,6 +19,7 @@ import {
 } from '../../config/expert-clientele-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { buildExpertClienteleMetricCards } from '../../utils/expert-clientele-metrics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
@@ -257,6 +258,17 @@ export function ExpertClientelePage() {
     setPage(1)
   }, [])
 
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_CLIENTELE_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_EXPERT_CLIENTELE_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
+
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchExpertClientele(expertId, params)
@@ -267,8 +279,9 @@ export function ExpertClientelePage() {
       CLIENTELE_EXPORT_COLUMN_MAP,
       'expert_clientele_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch, expertId])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, expertId, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -280,7 +293,6 @@ export function ExpertClientelePage() {
     onExportData: handleExportData,
   })
 
-  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_CLIENTELE_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(EXPERT_CLIENTELE_MODULE_KEY, [
     ...DEFAULT_EXPERT_CLIENTELE_METRIC_IDS,
   ])

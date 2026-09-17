@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
   Area,
   Bar,
@@ -15,7 +15,9 @@ import {
   YAxis,
 } from 'recharts'
 import { RotateCcw } from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { toast } from 'sonner'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   ensureTrendChangeSign,
   TrendBadge as MetricTrendBadge,
@@ -49,6 +51,8 @@ import {
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { exportFinanceDashboardToFile } from '@/modules/payments/utils/export-finance-dashboard'
 import { StatCardSkeleton, ChartSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 
@@ -356,6 +360,7 @@ function formatCurrency(value: number) {
 
 export function FinanceDashboardPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { data, isLoading, isError, refetch, isRefetching } = useFinanceDashboard()
   const summary = data?.data
   const totalEscrowAmount = summary?.totalInEscrow ?? 0
@@ -414,6 +419,36 @@ export function FinanceDashboardPage() {
     [summary],
   )
 
+  const handleExportData = useCallback(async () => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (visibleMetricCards.length === 0 && keyFinancialMetrics.length === 0) {
+      toast.error('No data available to export')
+      return
+    }
+
+    try {
+      await exportFinanceDashboardToFile(
+        {
+          metrics: visibleMetricCards,
+          keyFinancialMetrics,
+          revenueFeeTrends: revenueFeeTrendSeries,
+          revenueByCategory: revenueByCategorySeries,
+          monthlyComparison: monthlyComparisonSeries,
+          escrowStatus: escrowStatusBreakdown,
+          weeklyPayouts: weeklyPayoutSeries,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export finance dashboard'))
+    }
+  }, [exportFormat, fileFormat, isLoading, keyFinancialMetrics, visibleMetricCards])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -423,13 +458,17 @@ export function FinanceDashboardPage() {
             Track revenue, payouts, and financial performance
           </p>
         </div>
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             className="ui-manage-metrics"
             onClick={() => navigate('/metrics/finance-dashboard')}
           >
             <ManageMetricsIcon />
             Manage Metrics
+          </Button>
+          <Button className="ui-export-data" onClick={() => void handleExportData()}>
+            <ExportDataIcon className="size-5 shrink-0" />
+            Export Data
           </Button>
         </div>
       </div>

@@ -108,8 +108,8 @@ export async function fetchAllMembershipPlansForExport(params: {
   return plans
 }
 
-export async function exportMembershipPlansToExcel(plans: MembershipPlan[]) {
+export async function exportMembershipPlansToExcel(plans: MembershipPlan[], format = 'excel') {
   const { headers, rows } = buildMembershipPlanExportTable(plans)
   const date = new Date().toISOString().slice(0, 10)
-  await exportDataToFile(headers, rows, 'excel', `membership_plans_${date}`)
+  await exportDataToFile(headers, rows, format, `membership_plans_${date}`)
 }

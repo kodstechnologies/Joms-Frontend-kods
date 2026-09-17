@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import {
   createFilteredExportHandler,
   buildExpertListQueryParams,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -84,7 +85,6 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
 import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { ExpertReportSubmitModal } from '../../components/expert-report-submit-modal'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
@@ -95,14 +95,9 @@ import {
 } from '@/modules/settings/hooks/use-templates'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { useUpdateExpertAdminNotes } from '../../hooks/use-expert-profile'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
-
-const displayValue = (value: unknown): string => {
-  if (value === null || value === undefined) return 'N/A'
-  if (typeof value === 'string' && value.trim() === '') return 'N/A'
-  return String(value)
-}
 
 const DEFAULT_VISIBLE_IDS = DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS
 
@@ -144,6 +139,7 @@ export const ExpertManagementPage = () => {
     defaultColumnIds: DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
   })
+  const { fileFormat } = useDefaultExportFormat()
   const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useExpertStore()
   const serverSort = useServerTableSort({
     sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
@@ -363,32 +359,21 @@ export const ExpertManagementPage = () => {
     }
 
     try {
-      const headers = [
-        'Expert ID',
-        'Name',
-        'Email ID',
-        'Profession',
-        'Status',
-        'Service Type',
-        'Created At',
-        'Last Login',
-      ]
-      const rows = selectedExperts.map((e) => [
-        displayValue(e.expertId),
-        displayValue(e.name),
-        displayValue(e.email),
-        displayValue(e.profession),
-        displayValue(e.status),
-        displayValue(e.serviceType),
-        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
-        e.lastActive ? new Date(e.lastActive).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, 'excel', 'selected_experts_export')
-      toast.success(`Exported ${selectedExperts.length} selected expert(s)`)
+      void exportMappedItemsToFile(
+        EXPERT_EXPORT_COLUMN_MAP,
+        selectedExperts,
+        fileFormat,
+        'selected_experts_export',
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      )
+        .then(() => toast.success(`Exported ${selectedExperts.length} selected expert(s)`))
+        .catch((error) => {
+          toast.error(getApiErrorMessage(error, 'Failed to export selected experts.'))
+        })
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export selected experts.'))
     }
-  }, [selectedExpertCount, selectedExperts])
+  }, [catalogColumnIds, exportColumnIds, fileFormat, selectedExpertCount, selectedExperts])
 
   const handleEscalateSubmit = useCallback(() => {
     const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds

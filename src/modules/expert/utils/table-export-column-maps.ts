@@ -2,9 +2,13 @@ import type { ColumnDef } from '@tanstack/react-table'
 
 import {
   EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+  EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
   EXPERT_REPORTED_TABLE_COLUMNS_CATALOG,
 } from '../config/expert-management-table-columns.config'
-import { SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '../config/service-management-table-columns.config'
+import {
+  SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+  SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
+} from '../config/service-management-table-columns.config'
 import { SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '../config/service-category-management-table-columns.config'
 import { VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '../config/venue-category-management-table-columns.config'
 import {
@@ -42,6 +46,12 @@ export const EXPERT_EXPORT_COLUMN_MAP: ExportColumnMap<Expert> = buildExportColu
   EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 )
 
+export const EXPERT_PENDING_EXPORT_COLUMN_MAP: ExportColumnMap<Expert> =
+  buildExportColumnMapFromColumnDefs(
+    buildExpertDataColumnsById(),
+    EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
+  )
+
 export const EXPERT_REPORTED_EXPORT_COLUMN_MAP: ExportColumnMap<ExpertReportItem> =
   buildExportColumnMapFromColumnDefs(
     buildExpertReportDataColumnsById(),
@@ -52,6 +62,12 @@ export const SERVICE_EXPORT_COLUMN_MAP: ExportColumnMap<Service> =
   buildExportColumnMapFromColumnDefs(
     buildServiceDataColumnsById(),
     SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+  )
+
+export const SERVICE_PENDING_EXPORT_COLUMN_MAP: ExportColumnMap<Service> =
+  buildExportColumnMapFromColumnDefs(
+    buildServiceDataColumnsById(),
+    SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
   )
 
 export const SERVICE_CATEGORY_EXPORT_COLUMN_MAP: ExportColumnMap<Category> =

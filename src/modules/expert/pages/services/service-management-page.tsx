@@ -68,14 +68,15 @@ import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   buildServiceListQueryParams,
   createServiceFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 import { SERVICE_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -273,6 +274,7 @@ export const ServiceManagementPage = () => {
     defaultColumnIds: DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
   })
+  const { fileFormat } = useDefaultExportFormat()
 
   const navigate = useNavigate()
   const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useServiceStore()
@@ -381,34 +383,21 @@ export const ServiceManagementPage = () => {
     }
 
     try {
-      const headers = [
-        'Service ID',
-        'Title',
-        'Expert',
-        'Partner ID',
-        'Category',
-        'Service Type',
-        'Status',
-        'Pricing',
-        'Created At',
-      ]
-      const rows = selectedServices.map((service) => [
-        service.serviceid || service._id,
-        service.title || 'N/A',
-        service.expertName || service.partnerName || 'N/A',
-        service.partnerId || 'N/A',
-        service.categoryName || 'N/A',
-        service.serviceType || 'N/A',
-        service.status || 'N/A',
-        String(service.pricing ?? 'N/A'),
-        service.createdAt ? new Date(service.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, 'excel', 'selected_services_export')
-      toast.success(`Exported ${selectedServices.length} selected service(s)`)
+      void exportMappedItemsToFile(
+        SERVICE_EXPORT_COLUMN_MAP,
+        selectedServices,
+        fileFormat,
+        'selected_services_export',
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      )
+        .then(() => toast.success(`Exported ${selectedServices.length} selected service(s)`))
+        .catch((error) => {
+          toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
+        })
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
     }
-  }, [selectedServiceCount, selectedServices])
+  }, [catalogColumnIds, exportColumnIds, fileFormat, selectedServiceCount, selectedServices])
 
   const handleBulkNotify = useCallback(() => {
     if (selectedPartnerIds.length === 0) {
@@ -480,8 +469,7 @@ export const ServiceManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }

@@ -15,6 +15,7 @@ import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import type {
   MarketplaceMetric,
@@ -36,7 +37,7 @@ import type {
   MarketplaceDashboardData,
   MetricTrend,
 } from '@/modules/services/types/marketplace-dashboard.types'
-import { exportServiceMarketplaceExcel } from './service-marketplace-export'
+import { exportServiceMarketplace } from './service-marketplace-export'
 
 const formatCount = (value?: number | null) => (value ?? 0).toLocaleString('en-IN')
 const formatPct = (value?: number | null) => `${value ?? 0}%`
@@ -488,6 +489,7 @@ const buildTrendBucket = (date: string, aggregateByMonth: boolean) => {
 
 export function ServiceMarketplacePage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [selectedRange, setSelectedRange] = useState<string>('last-3-months')
 
   const dateRangePreset: DateRangePreset = RANGE_PRESETS_MAP[selectedRange] || 'last30days'
@@ -607,17 +609,28 @@ export function ServiceMarketplacePage() {
     }
 
     try {
-      exportServiceMarketplaceExcel({
-        serviceMetrics: visibleServiceMetrics,
-        consultationMetrics: visibleConsultationMetrics,
-        trendPoints,
-        rangeLabel: RANGE_LABELS[selectedRange] ?? selectedRange,
-      })
-      toast.success('Exported as Excel')
+      void exportServiceMarketplace(
+        {
+          serviceMetrics: visibleServiceMetrics,
+          consultationMetrics: visibleConsultationMetrics,
+          trendPoints,
+          rangeLabel: RANGE_LABELS[selectedRange] ?? selectedRange,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export data'))
     }
-  }, [isLoading, visibleServiceMetrics, visibleConsultationMetrics, trendPoints, selectedRange])
+  }, [
+    exportFormat,
+    fileFormat,
+    isLoading,
+    visibleServiceMetrics,
+    visibleConsultationMetrics,
+    trendPoints,
+    selectedRange,
+  ])
 
   return (
     <div className="space-y-6">

@@ -56,3 +56,7 @@ export const BACKUP_HISTORY_COLUMNS_CATALOG: BackupColumnCatalogItem[] = [
   col('size', 'Size', 'Text', 'Backup file size'),
   col('status', 'Status', 'Status', 'Backup job status'),
 ]
+
+export const DEFAULT_BACKUP_HISTORY_VISIBLE_COLUMN_IDS = BACKUP_HISTORY_COLUMNS_CATALOG.filter(
+  (column) => column.defaultVisible,
+).map((column) => column.id)

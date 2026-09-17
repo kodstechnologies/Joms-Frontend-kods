@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FilterValues, ModuleFilterKey } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
@@ -32,6 +33,8 @@ type UseReportedListArgs<T> = {
     total: number
     totalPages: number
   }
+  defaultVisibleColumnIds?: string[]
+  catalogColumnIds?: string[]
 }
 
 function defaultParseResponse<T = unknown>(
@@ -64,6 +67,8 @@ export function useReportedList<T>({
   exportColumnMap,
   fetchReports,
   parseResponse,
+  defaultVisibleColumnIds,
+  catalogColumnIds,
 }: UseReportedListArgs<T>) {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -80,6 +85,13 @@ export function useReportedList<T>({
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: resetPage })
   const tableColumnPreferencesQuery = useTableColumnPreferences(preferencesKey ?? moduleKey)
+  const catalogIds = catalogColumnIds ?? Object.keys(exportColumnMap)
+  const defaultColumnIds = defaultVisibleColumnIds ?? catalogIds
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds,
+    catalogColumnIds: catalogIds,
+  })
 
   const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
   const searchParams = useMemo(
@@ -142,8 +154,17 @@ export function useReportedList<T>({
         {
           search: enhancedSearch.globalSearch.trim() || undefined,
         },
+        { columnIds: exportColumnIds, catalogOrder: catalogIds },
       ),
-    [enhancedSearch.globalSearch, exportColumnMap, exportFileName, fetchReports, parseResponse],
+    [
+      catalogIds,
+      enhancedSearch.globalSearch,
+      exportColumnIds,
+      exportColumnMap,
+      exportFileName,
+      fetchReports,
+      parseResponse,
+    ],
   )
 
   const {

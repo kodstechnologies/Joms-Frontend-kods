@@ -20,6 +20,7 @@ import {
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
 import { exportVenueProfileAnalyticsToExcel } from '../../utils/export-venue-profile-analytics'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -46,6 +47,7 @@ const TABS: { key: AnalyticsTabKey; label: string }[] = [
 
 export function VenueProfileAnalyticsPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { venueId } = useParams<{ venueId: string }>()
   const { data } = useVenueFullView(venueId ?? '')
   const [activeTab, setActiveTab] = useState<AnalyticsTabKey>('overview')
@@ -74,8 +76,7 @@ export function VenueProfileAnalyticsPage() {
 
   const venueAnalyticsCards = useMemo(() => {
     const venueAnalytics = data?.data?.profile as
-      | ({ analytics?: Record<string, unknown> } & Record<string, unknown>)
-      | undefined
+      ({ analytics?: Record<string, unknown> } & Record<string, unknown>) | undefined
     const allCards = buildVenueProfileAnalyticsMetricCards(
       analyticsData,
       venueAnalytics?.analytics ?? null,
@@ -96,13 +97,16 @@ export function VenueProfileAnalyticsPage() {
     }
 
     try {
-      await exportVenueProfileAnalyticsToExcel({
-        venueName,
-        venueId,
-        metricCards: venueAnalyticsCards,
-        analytics: analyticsData,
-      })
-      toast.success('Export downloaded')
+      await exportVenueProfileAnalyticsToExcel(
+        {
+          venueName,
+          venueId,
+          metricCards: venueAnalyticsCards,
+          analytics: analyticsData,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
     } catch (error) {
       if (error instanceof Error && error.message === 'NO_RECORDS') {
         toast.error('No analytics data available to export')
@@ -110,7 +114,15 @@ export function VenueProfileAnalyticsPage() {
       }
       toast.error(getApiErrorMessage(error, 'Failed to export analytics data'))
     }
-  }, [analyticsData, analyticsQuery.isLoading, venueAnalyticsCards, venueId, venueName])
+  }, [
+    analyticsData,
+    analyticsQuery.isLoading,
+    exportFormat,
+    fileFormat,
+    venueAnalyticsCards,
+    venueId,
+    venueName,
+  ])
 
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5">

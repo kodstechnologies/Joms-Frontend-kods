@@ -29,6 +29,7 @@ import { Button } from '@/shared/components/ui/button'
 import {
   VENUE_PENDING_APPROVALS_MODULE_KEY,
   DEFAULT_VENUE_PENDING_APPROVALS_VISIBLE_COLUMN_IDS,
+  VENUE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 
 export function VenuePendingApprovalsPage() {
@@ -42,6 +43,8 @@ export function VenuePendingApprovalsPage() {
     sortFieldMap: VENUE_PENDING_SORT_FIELDS,
     exportFileName: 'pending_venues_export',
     exportColumnMap: VENUE_PENDING_EXPORT_COLUMN_MAP,
+    defaultVisibleColumnIds: DEFAULT_VENUE_PENDING_APPROVALS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: VENUE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
   const columns = useMemo<ColumnDef<Venue>[]>(() => {

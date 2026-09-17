@@ -22,8 +22,8 @@ import {
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import {
-  downloadKeyValueReport,
   flattenExportPairs,
+  useDownloadKeyValueReport,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -61,6 +61,7 @@ function latestPlainNote(notes: Array<{ adminNote?: string | null }> = []) {
 
 export function TaxComplianceDetailViewPage() {
   const navigate = useNavigate()
+  const downloadKeyValueReport = useDownloadKeyValueReport()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError, refetch } = useFinanceTaxDetail(id)
   const noteMutation = useAddFinanceNote()

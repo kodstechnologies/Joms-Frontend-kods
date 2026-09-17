@@ -19,13 +19,15 @@ import {
   ManageMetricsIcon,
   SortOutlineIcon,
 } from '@/shared/components/icons/action-button-icons'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { exportDataToFile } from '@/shared/utils/export-utils'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { getExportFormatLabel } from '@/modules/settings/utils/export-format'
 
 import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-2-medal.png'
 import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-3-medal.png'
@@ -620,7 +622,7 @@ function FiltersPanel({
   onExport?: (format: string) => void
   isExporting?: boolean
 }) {
-  const [selectedFormat, setSelectedFormat] = useState('csv')
+  const { fileFormat, label } = useDefaultExportFormat()
 
   if (!open) return null
 
@@ -637,17 +639,16 @@ function FiltersPanel({
         </div>
 
         {isExport && (
-          <div className="mb-4">
-            <label className="mb-1.5 block text-sm font-medium text-white">Export Format</label>
-            <select
-              value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="csv">CSV Document (.csv)</option>
-              <option value="excel">Excel Document (.xlsx)</option>
-              <option value="pdf">PDF Document (.pdf)</option>
-            </select>
+          <div className="mb-4 rounded-md border border-white/10 bg-black/30 px-3 py-2">
+            <p className="text-sm font-medium text-white">Export Format</p>
+            <p className="mt-1 text-sm text-white/80">{label}</p>
+            <p className="mt-1 text-xs text-white/55">
+              Uses Default Export Format from{' '}
+              <Link to="/settings/main" className="text-blue-400 hover:underline">
+                Main Settings
+              </Link>
+              .
+            </p>
           </div>
         )}
 
@@ -773,7 +774,7 @@ function FiltersPanel({
               <Button
                 className="ui-export-data"
                 disabled={isExporting}
-                onClick={() => onExport?.(selectedFormat)}
+                onClick={() => onExport?.(fileFormat)}
               >
                 <ExportDataIcon className="size-5 shrink-0" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
@@ -1006,7 +1007,7 @@ export const LeaderboardPage = () => {
           format,
           isVenueLeaderboard ? 'venue-leaderboard' : 'expert-leaderboard',
         )
-        toast.success(`Exported as ${format.toUpperCase()}`)
+        toast.success(`Exported as ${getExportFormatLabel(format)}`)
         setExportOpen(false)
       } catch (error) {
         toast.error(getApiErrorMessage(error, 'Failed to export leaderboard'))

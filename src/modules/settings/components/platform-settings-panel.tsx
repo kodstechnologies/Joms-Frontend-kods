@@ -20,6 +20,7 @@ import {
 } from '../hooks/use-settings'
 import {
   dateFormatOptions,
+  exportFormatOptionLabels,
   exportFormatOptions,
   languageOptions,
   refreshIntervalOptions,
@@ -284,7 +285,7 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           >
             {exportFormatOptions.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {exportFormatOptionLabels[option]}
               </option>
             ))}
           </SettingsSelectField>

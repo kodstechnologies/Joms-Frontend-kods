@@ -1,12 +1,5 @@
 export type SettingsModule =
-  | 'platform'
-  | 'security'
-  | 'notifications'
-  | 'finance'
-  | 'backup'
-  | 'expert'
-  | 'venue'
-  | 'service'
+  'platform' | 'security' | 'notifications' | 'finance' | 'backup' | 'expert' | 'venue' | 'service'
 
 export type PlatformSettings = {
   applicationSettings: {
@@ -22,7 +15,7 @@ export type PlatformSettings = {
   }
   generalSettings: {
     autoRefreshInterval: string
-    defaultExportFormat: 'CSV' | 'PDF'
+    defaultExportFormat: 'CSV' | 'Excel' | 'PDF'
     maintenanceMode: boolean
     customErrorMessage: string
     adminNotes: string

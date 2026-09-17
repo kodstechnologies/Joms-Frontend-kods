@@ -27,6 +27,7 @@ import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 const formatExportDateTime = (value?: string | null) =>
   value
@@ -63,6 +64,7 @@ export function DeletedServicesPage() {
   const navigate = useNavigate()
   const restoreServiceMutation = useRestoreService()
   const catalogColumnIds = DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
+  const { fileFormat } = useDefaultExportFormat()
 
   const list = useServiceStatusList({
     moduleKey: SERVICE_DELETED_MODULE_KEY,
@@ -79,7 +81,7 @@ export function DeletedServicesPage() {
         await exportMappedItemsToFile(
           EXPORT_COLUMN_MAP,
           [service],
-          'excel',
+          fileFormat,
           `deleted_service_${service.serviceid || service._id}`,
           {
             columnIds: list.visibleColumnIds,
@@ -91,7 +93,7 @@ export function DeletedServicesPage() {
         toast.error(getApiErrorMessage(error, 'Failed to export service'))
       }
     },
-    [list.visibleColumnIds],
+    [fileFormat, list.visibleColumnIds],
   )
 
   const handleRestore = useCallback(

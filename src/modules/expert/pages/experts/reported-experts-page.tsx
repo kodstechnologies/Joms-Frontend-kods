@@ -7,6 +7,7 @@ import { fetchExpertReports } from '../../api/expert-api'
 import {
   DEFAULT_EXPERT_REPORTED_VISIBLE_COLUMN_IDS,
   EXPERT_REPORTED_MODULE_KEY,
+  EXPERT_REPORTED_TABLE_COLUMNS_CATALOG,
 } from '../../config/expert-management-table-columns.config'
 import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
 import {
@@ -41,6 +42,8 @@ export function ExpertReportedExpertsPage() {
     exportColumnMap: EXPERT_REPORTED_EXPORT_COLUMN_MAP,
     fetchReports: fetchExpertReports,
     parseResponse: defaultParseResponse<ExpertReportItem>,
+    defaultVisibleColumnIds: DEFAULT_EXPERT_REPORTED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: EXPERT_REPORTED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
   useEffect(() => {

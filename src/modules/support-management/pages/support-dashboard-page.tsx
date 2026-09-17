@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -13,23 +13,22 @@ import {
   SUPPORT_DASHBOARD_METRIC_ID_SET,
   SUPPORT_DASHBOARD_MODULE_KEY,
 } from '../config/support-dashboard-metrics.config'
-import {
-  useExportSupportTickets,
-  useLiveSupportUpdates,
-  useSupportStats,
-} from '../hooks/use-support'
+import { useLiveSupportUpdates, useSupportStats } from '../hooks/use-support'
 import { buildSupportDashboardMetricCards } from '../utils/support-dashboard-metrics'
-import { downloadBlob, getApiErrorMessage } from '../utils/support-format'
+import { exportSupportDashboard } from '../utils/export-support-dashboard'
+import { getApiErrorMessage } from '../utils/support-format'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 export function SupportDashboardPage() {
   const navigate = useNavigate()
   const { data, isLoading } = useSupportStats()
-  const exportMutation = useExportSupportTickets()
+  const { fileFormat, label: exportFormatLabel } = useDefaultExportFormat()
+  const [isExporting, setIsExporting] = useState(false)
   const activeMetricIds = useActiveMetricIds(SUPPORT_DASHBOARD_MODULE_KEY, [
     ...DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS,
   ])
@@ -52,12 +51,18 @@ export function SupportDashboardPage() {
   }, [data?.data?.cards, filteredActiveMetricIds])
 
   const handleExport = async () => {
+    if (stats.length === 0) {
+      toast.error('No records found to export')
+      return
+    }
+    setIsExporting(true)
     try {
-      const blob = await exportMutation.mutateAsync({})
-      downloadBlob(blob, 'support-tickets.csv')
-      toast.success('Export downloaded')
+      await exportSupportDashboard(stats, fileFormat)
+      toast.success(`Exported Support Dashboard as ${exportFormatLabel}`)
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to export tickets'))
+      toast.error(getApiErrorMessage(err, 'Failed to export dashboard'))
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -76,11 +81,11 @@ export function SupportDashboardPage() {
           <button
             type="button"
             onClick={handleExport}
-            disabled={exportMutation.isPending}
+            disabled={isExporting}
             className="ui-export-data ui-cta ui-cta-primary"
           >
             <ExportDataIcon />
-            Export Data
+            {isExporting ? 'Exporting...' : 'Export Data'}
           </button>
           <button
             type="button"
