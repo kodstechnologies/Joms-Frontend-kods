@@ -137,6 +137,18 @@ function RolePill({ label }: { label: string }) {
   return <span className="rbac-role-name-pill">{label}</span>
 }
 
+function RolePills({ labels }: { labels: string[] }) {
+  const names = labels.map((label) => label.trim()).filter(Boolean)
+  if (!names.length) return <span>—</span>
+  return (
+    <span className="inline-flex flex-wrap gap-1.5">
+      {names.map((name) => (
+        <RolePill key={name} label={name} />
+      ))}
+    </span>
+  )
+}
+
 export function AdminDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -173,7 +185,10 @@ export function AdminDetailPage() {
   const subAdmin = subAdminData?.data
   const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
   const logsMeta = logsData?.meta
-  const roleLabel = subAdmin?.roles.map((role) => role.name).join(', ') || '—'
+  const roleNames = useMemo(
+    () => subAdmin?.roles.map((role) => role.name).filter(Boolean) ?? [],
+    [subAdmin?.roles],
+  )
 
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
 
@@ -223,7 +238,9 @@ export function AdminDetailPage() {
           {
             accessorKey: 'changedTo',
             header: 'Changed To',
-            cell: ({ row }) => <RolePill label={row.original.changedTo} />,
+            cell: ({ row }) => (
+              <RolePills labels={row.original.changedTo.split(',').map((part) => part.trim())} />
+            ),
           },
           {
             accessorKey: 'changedOn',
@@ -403,7 +420,7 @@ export function AdminDetailPage() {
               <DetailField label="First Name">{subAdmin.firstName || '—'}</DetailField>
               <DetailField label="Last Name">{subAdmin.lastName || '—'}</DetailField>
               <DetailField label="Role">
-                <RolePill label={roleLabel} />
+                <RolePills labels={roleNames} />
               </DetailField>
               <DetailField label="Last Active">
                 {formatOverviewDate(subAdmin.lastActionAt || subAdmin.updatedAt)}

@@ -67,6 +67,17 @@ export type FinancePayment = {
   platformReceivedAmount?: number | null
   settlementStatus?: string | null
   complianceStatus?: string | null
+  refundAmount?: number | null
+  discountAmount?: number | null
+  taxAmount?: number | null
+  netRevenue?: number | null
+  platformCommission?: number | null
+  platformCommissionPercent?: number | null
+  gatewayCharges?: number | null
+  partnerPayout?: number | null
+  netProfit?: number | null
+  invoiceNumber?: string | null
+  settlementDate?: string | null
   createdAt?: string
   updatedAt?: string
 }

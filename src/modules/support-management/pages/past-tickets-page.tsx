@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -33,10 +33,6 @@ import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SUPPORT_TICKET_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
-import {
-  TableActionsDropdown,
-  TableActionsItem,
-} from '@/shared/components/table/table-actions-dropdown'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -146,26 +142,6 @@ export function PastTicketsPage() {
   const pageSize = meta?.limit ?? 10
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
-
-  const renderActions = useCallback(
-    (record: SupportTicket) => (
-      <TableActionsDropdown
-        label="Open ticket actions"
-        isOpen={false}
-        onOpenChange={() => {}}
-        menuWidth={180}
-      >
-        <TableActionsItem
-          icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
-          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-          onClick={() => navigate(`/support/tickets/${record.id}`)}
-        >
-          View Details
-        </TableActionsItem>
-      </TableActionsDropdown>
-    ),
-    [navigate],
-  )
 
   const columns = useMemo<ColumnDef<SupportTicket>[]>(() => {
     const nowrap = {
@@ -314,18 +290,8 @@ export function PastTicketsPage() {
       .map((id) => dataColumnsById[id])
       .filter(Boolean)
 
-    const actionsColumn: ColumnDef<SupportTicket> = {
-      id: 'actions',
-      header: 'Actions',
-      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-      cell: ({ row }) => renderActions(row.original),
-    }
-
-    return withServerSortMeta(
-      [selectColumn, ...preferenceColumns, actionsColumn],
-      PAST_TICKET_SORT_FIELD_MAP,
-    )
-  }, [renderActions, tableColumnPreferencesQuery.data])
+    return withServerSortMeta([selectColumn, ...preferenceColumns], PAST_TICKET_SORT_FIELD_MAP)
+  }, [tableColumnPreferencesQuery.data])
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {

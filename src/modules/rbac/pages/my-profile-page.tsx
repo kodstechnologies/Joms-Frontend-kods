@@ -119,6 +119,18 @@ function RolePill({ label }: { label: string }) {
   return <span className="rbac-role-name-pill">{label}</span>
 }
 
+function RolePills({ labels }: { labels: string[] }) {
+  const names = labels.map((label) => label.trim()).filter(Boolean)
+  if (!names.length) return <span>—</span>
+  return (
+    <span className="inline-flex flex-wrap gap-1.5">
+      {names.map((name) => (
+        <RolePill key={name} label={name} />
+      ))}
+    </span>
+  )
+}
+
 function TwoFactorStatus({ enabled }: { enabled?: boolean }) {
   return (
     <span className={cn('ad-2fa-pill', enabled ? 'is-enabled' : 'is-pending')}>
@@ -210,7 +222,13 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
               <DetailField label="First Name">{profile.firstName || '—'}</DetailField>
               <DetailField label="Last Name">{profile.lastName || '—'}</DetailField>
               <DetailField label="Role">
-                <RolePill label={profile.roleLabel || 'Super Admin'} />
+                <RolePills
+                  labels={
+                    profile.roleLabel
+                      ? profile.roleLabel.split(',').map((part) => part.trim())
+                      : ['Super Admin']
+                  }
+                />
               </DetailField>
               <DetailField label="Job title">{profile.jobTitle || '—'}</DetailField>
             </div>
@@ -319,7 +337,10 @@ function SubAdminProfileView() {
   const subAdmin = profileData?.data.profile
   const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
   const logsMeta = logsData?.meta
-  const roleLabel = subAdmin?.roles.map((role) => role.name).join(', ') || '—'
+  const roleNames = useMemo(
+    () => subAdmin?.roles.map((role) => role.name).filter(Boolean) ?? [],
+    [subAdmin?.roles],
+  )
   const isActive = subAdmin?.status === 'active'
 
   const passwordUpdatedAt = useMemo(() => {
@@ -359,7 +380,9 @@ function SubAdminProfileView() {
           {
             accessorKey: 'changedTo',
             header: 'Changed To',
-            cell: ({ row }) => <RolePill label={row.original.changedTo} />,
+            cell: ({ row }) => (
+              <RolePills labels={row.original.changedTo.split(',').map((part) => part.trim())} />
+            ),
           },
           { accessorKey: 'changedOn', header: 'Changed On' },
           { accessorKey: 'changedBy', header: 'Changed BY' },
@@ -474,7 +497,7 @@ function SubAdminProfileView() {
               <DetailField label="First Name">{subAdmin.firstName || '—'}</DetailField>
               <DetailField label="Last Name">{subAdmin.lastName || '—'}</DetailField>
               <DetailField label="Role">
-                <RolePill label={roleLabel} />
+                <RolePills labels={roleNames} />
               </DetailField>
               <DetailField label="Job title">{subAdmin.jobTitle || '—'}</DetailField>
             </div>

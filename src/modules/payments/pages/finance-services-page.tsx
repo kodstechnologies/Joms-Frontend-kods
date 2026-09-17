@@ -355,12 +355,16 @@ export function FinanceServicesPage() {
       'transaction-id': {
         id: 'transaction-id',
         header: 'Transaction ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.transactionId || '—'}</FinanceTableCellText>
+        ),
       },
       module: {
         id: 'module',
         header: 'Module',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.module || '—'}</FinanceTableCellText>
+        ),
       },
       'related-entity-id': {
         id: 'related-entity-id',
@@ -370,7 +374,9 @@ export function FinanceServicesPage() {
       'client-id': {
         id: 'client-id',
         header: 'Client ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.clientId || '—'}</FinanceTableCellText>
+        ),
       },
       'client-name': {
         id: 'client-name',
@@ -380,7 +386,9 @@ export function FinanceServicesPage() {
       'partner-id': {
         id: 'partner-id',
         header: 'Partner ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.partnerId || '—'}</FinanceTableCellText>
+        ),
       },
       'partner-name': {
         id: 'partner-name',
@@ -390,7 +398,9 @@ export function FinanceServicesPage() {
       'transaction-date': {
         id: 'transaction-date',
         header: 'Transaction Date',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.transactionDate || '—'}</FinanceTableCellText>
+        ),
       },
       'gross-amount': {
         id: 'gross-amount',
@@ -400,53 +410,77 @@ export function FinanceServicesPage() {
       discount: {
         id: 'discount',
         header: 'Discount',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.discount || '—'}</FinanceTableCellText>
+        ),
       },
-      tax: { id: 'tax', header: 'Tax', cell: () => <FinanceTableCellText>—</FinanceTableCellText> },
+      tax: {
+        id: 'tax',
+        header: 'Tax',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.tax || '—'}</FinanceTableCellText>,
+      },
       'gateway-charges': {
         id: 'gateway-charges',
         header: 'Gateway Charges',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.gatewayCharges || '—'}</FinanceTableCellText>
+        ),
       },
       'platform-commission-pct': {
         id: 'platform-commission-pct',
         header: 'Platform Commission %',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.platformCommissionPct || '—'}</FinanceTableCellText>
+        ),
       },
       'platform-commission': {
         id: 'platform-commission',
         header: 'Platform Commission',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.platformCommission || '—'}</FinanceTableCellText>
+        ),
       },
       'partner-payout': {
         id: 'partner-payout',
         header: 'Partner Payout',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.partnerPayout || '—'}</FinanceTableCellText>
+        ),
       },
       'refund-amount': {
         id: 'refund-amount',
         header: 'Refund Amount',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.refundAmount || '—'}</FinanceTableCellText>
+        ),
       },
       'net-revenue': {
         id: 'net-revenue',
         header: 'Net Revenue',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.netRevenue || '—'}</FinanceTableCellText>
+        ),
       },
       'net-profit': {
         id: 'net-profit',
         header: 'Net Profit',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.netProfit || '—'}</FinanceTableCellText>
+        ),
       },
       'payment-method': {
         id: 'payment-method',
         header: 'Payment Method',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.paymentMethod || '—'}</FinanceTableCellText>
+        ),
       },
       gateway: {
         id: 'gateway',
         header: 'Gateway',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.gateway || '—'}</FinanceTableCellText>
+        ),
       },
       'transaction-status': {
         id: 'transaction-status',
@@ -456,17 +490,23 @@ export function FinanceServicesPage() {
       'settlement-status': {
         id: 'settlement-status',
         header: 'Settlement Status',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.settlementStatus || '—'}</FinanceTableCellText>
+        ),
       },
       'settlement-date': {
         id: 'settlement-date',
         header: 'Settlement Date',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.settlementDate || '—'}</FinanceTableCellText>
+        ),
       },
       'invoice-id': {
         id: 'invoice-id',
         header: 'Invoice ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.invoiceId || '—'}</FinanceTableCellText>
+        ),
       },
     }
 

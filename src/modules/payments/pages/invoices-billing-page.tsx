@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Bell, Download, Eye } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -10,9 +10,16 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { useBranding } from '@/app/providers/use-branding'
 import type { InvoiceRow } from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceInvoiceById, fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
-import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
+import { useAddFinanceNote, useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { formatInr, mapInvoiceToRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  clearInvoiceReminder,
+  formatReminderDateTime,
+  listDueInvoiceReminders,
+  saveInvoiceReminder,
+} from '@/modules/payments/utils/invoice-reminders'
+import { SetInvoiceReminderModal } from '@/modules/payments/components/set-invoice-reminder-modal'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -101,6 +108,20 @@ export function InvoicesBillingPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const [reminderTarget, setReminderTarget] = useState<InvoiceRow | null>(null)
+  const addNoteMutation = useAddFinanceNote()
+
+  useEffect(() => {
+    const due = listDueInvoiceReminders()
+    if (!due.length) return
+    for (const reminder of due) {
+      toast.message(`Invoice reminder: ${reminder.invoiceNumber}`, {
+        description: `${formatReminderDateTime(reminder.remindAt)} · ${reminder.message}`,
+        duration: 8000,
+      })
+      clearInvoiceReminder(reminder.invoiceId)
+    }
+  }, [])
 
   const listQueryParams = useMemo(
     () =>
@@ -230,7 +251,7 @@ export function InvoicesBillingPage() {
           className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
           onClick={() => {
             setActiveDropdownId(null)
-            toast.message('Reminder set (static preview)')
+            setReminderTarget(record)
           }}
         >
           Set Reminder
@@ -405,6 +426,40 @@ export function InvoicesBillingPage() {
       />
 
       {exportFilterModals}
+
+      <SetInvoiceReminderModal
+        open={Boolean(reminderTarget)}
+        invoiceNumber={reminderTarget?.invoiceId || ''}
+        clientName={reminderTarget?.clientName || ''}
+        isSubmitting={addNoteMutation.isPending}
+        onClose={() => {
+          if (addNoteMutation.isPending) return
+          setReminderTarget(null)
+        }}
+        onSubmit={async ({ remindAt, message }) => {
+          if (!reminderTarget) return
+          try {
+            const whenLabel = formatReminderDateTime(remindAt)
+            await addNoteMutation.mutateAsync({
+              id: reminderTarget.id,
+              resourceType: 'Invoice',
+              adminNote: `Reminder set for ${whenLabel}. ${message}`.trim(),
+            })
+            saveInvoiceReminder({
+              invoiceId: reminderTarget.id,
+              invoiceNumber: reminderTarget.invoiceId,
+              clientName: reminderTarget.clientName,
+              remindAt,
+              message,
+              createdAt: new Date().toISOString(),
+            })
+            toast.success(`Reminder set for ${whenLabel}`)
+            setReminderTarget(null)
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to set reminder'))
+          }
+        }}
+      />
     </div>
   )
 }

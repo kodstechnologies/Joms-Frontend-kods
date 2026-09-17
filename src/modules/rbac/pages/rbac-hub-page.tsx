@@ -1,24 +1,23 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Clock, Shield, UserCheck } from 'lucide-react'
 import {
-  AccessChangeRoleIcon,
-  AccessDisableRoleIcon,
-  AccessEditPermissionIcon,
-  AccessEditScopeIcon,
-  AccessPasswordResetIcon,
-  AccessRemoveRoleIcon,
-  AccessRemoveUserIcon,
-  AccessSuspendUserIcon,
-  AccessViewUserIcon,
-  AccessViewUserLogsIcon,
-  ManageMetricsIcon,
-} from '@/shared/components/icons/action-button-icons'
+  CircleX,
+  Clock,
+  FileText,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+  Shield,
+  ShieldOff,
+  UserCheck,
+  UserMinus,
+  UserPlus,
+  Waypoints,
+} from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createNewRoleIcon from '@/assets/JOMS_ICONS-2/create-new-role.svg'
-import assignUserIcon from '@/assets/JOMS_ICONS-2/assign-user.svg'
-import userLogsIcon from '@/assets/JOMS_ICONS-2/user-logs.svg'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { RbacStatsBar } from '../components/rbac-stats-bar'
 import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
@@ -528,52 +527,78 @@ export function RbacHubPage() {
           label="Open role actions"
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
-          menuWidth={168}
-          menuClassName="ui-table-actions-menu-access"
+          menuWidth={180}
         >
           <TableActionsItem
-            icon={<AccessEditPermissionIcon />}
-            onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
+            icon={<Pencil className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/settings/access/roles/${row.original.id}/edit`)
+            }}
           >
             Edit permission
           </TableActionsItem>
           <TableActionsItem
             className="ui-table-actions-item-danger"
-            icon={<AccessRemoveRoleIcon />}
-            onClick={() => handleDeleteRole(row.original.id)}
+            icon={<CircleX className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              handleDeleteRole(row.original.id)
+            }}
           >
             Remove Role
           </TableActionsItem>
           {row.original.status === 'active' ? (
             <TableActionsItem
-              icon={<AccessDisableRoleIcon />}
-              onClick={() => handleDisableRole(row.original.id)}
+              icon={<ShieldOff className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                handleDisableRole(row.original.id)
+              }}
             >
               Disable Role
             </TableActionsItem>
           ) : (
             <TableActionsItem
-              icon={<Shield className="text-brand-success size-3.5" />}
-              onClick={() => handleEnableRole(row.original.id)}
+              icon={
+                <Shield
+                  className="text-brand-success size-4"
+                  strokeWidth={1.85}
+                  aria-hidden="true"
+                />
+              }
+              onClick={() => {
+                setActiveDropdownId(null)
+                handleEnableRole(row.original.id)
+              }}
             >
               <span className="text-brand-success">Enable Role</span>
             </TableActionsItem>
           )}
           <TableActionsItem
-            icon={<AccessEditScopeIcon />}
-            onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
+            icon={<Pencil className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/settings/access/roles/${row.original.id}/edit`)
+            }}
           >
             Edit scope
           </TableActionsItem>
           <TableActionsItem
-            icon={<img src={assignUserIcon} alt="" className="size-3.5" aria-hidden="true" />}
-            onClick={() => navigate('/settings/access/users/create')}
+            icon={<UserPlus className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate('/settings/access/users/create')
+            }}
           >
             Assign new user
           </TableActionsItem>
           <TableActionsItem
-            icon={<img src={userLogsIcon} alt="" className="size-3.5" aria-hidden="true" />}
-            onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
+            icon={<FileText className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/settings/access/roles/${row.original.id}/logs`)
+            }}
           >
             View Logs
           </TableActionsItem>
@@ -703,29 +728,37 @@ export function RbacHubPage() {
           label="Open user actions"
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
-          menuWidth={155}
-          menuClassName="ui-table-actions-menu-access"
+          menuWidth={180}
         >
           <TableActionsItem
-            icon={<AccessViewUserIcon />}
-            onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
+            icon={<FileText className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/settings/access/users/${row.original.id}`)
+            }}
           >
             View user
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessChangeRoleIcon />}
-            onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
+            icon={<RefreshCw className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/settings/access/users/create?edit=${row.original.id}`)
+            }}
           >
             Change role
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessViewUserLogsIcon />}
-            onClick={() => navigate(`/settings/access/users/${row.original.id}/logs`)}
+            icon={<Waypoints className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/settings/access/users/${row.original.id}/logs`)
+            }}
           >
             View user logs
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessPasswordResetIcon />}
+            icon={<RotateCcw className="size-4" strokeWidth={1.85} aria-hidden="true" />}
             onClick={() => {
               setPasswordResetUser(row.original)
               setActiveDropdownId(null)
@@ -734,23 +767,38 @@ export function RbacHubPage() {
             Password reset
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessRemoveUserIcon />}
-            onClick={() => handleDeleteUser(row.original.id)}
+            icon={<UserMinus className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              handleDeleteUser(row.original.id)
+            }}
           >
             Remove User
           </TableActionsItem>
           {row.original.status === 'active' ? (
             <TableActionsItem
               className="ui-table-actions-item-danger"
-              icon={<AccessSuspendUserIcon />}
-              onClick={() => handleSuspendUser(row.original.id)}
+              icon={<CircleX className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                handleSuspendUser(row.original.id)
+              }}
             >
               Suspend user
             </TableActionsItem>
           ) : (
             <TableActionsItem
-              icon={<UserCheck className="text-brand-success size-3.5" strokeWidth={1.75} />}
-              onClick={() => handleReactivateUser(row.original.id)}
+              icon={
+                <UserCheck
+                  className="text-brand-success size-4"
+                  strokeWidth={1.85}
+                  aria-hidden="true"
+                />
+              }
+              onClick={() => {
+                setActiveDropdownId(null)
+                handleReactivateUser(row.original.id)
+              }}
             >
               <span className="text-brand-success">Reactivate user</span>
             </TableActionsItem>

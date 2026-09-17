@@ -262,7 +262,21 @@ export const buildVenuePartnerProfileFormData = (form: VenueOnboardingFormData):
   return formData
 }
 
-export const buildLocationFormData = (form: VenueOnboardingFormData): FormData => {
+const urlToVenueImageFile = async (url: string, index: number): Promise<File> => {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to load venue image ${index + 1}`)
+  }
+  const blob = await response.blob()
+  const extensionFromType = blob.type?.split('/')[1]?.split(';')[0]
+  const extensionFromUrl = url.split('?')[0]?.split('.').pop()?.toLowerCase()
+  const extension = extensionFromType || extensionFromUrl || 'jpg'
+  return new File([blob], `venue-image-${index + 1}.${extension}`, {
+    type: blob.type || 'image/jpeg',
+  })
+}
+
+export const buildLocationFormData = async (form: VenueOnboardingFormData): Promise<FormData> => {
   const formData = new FormData()
 
   const location: Record<string, string | number> = {
@@ -280,7 +294,13 @@ export const buildLocationFormData = (form: VenueOnboardingFormData): FormData =
   formData.append('location', JSON.stringify(location))
   formData.append('parkingAvailable', form.parkingAvailable ? 'true' : 'false')
   formData.append('accessibility', form.accessibility ? 'true' : 'false')
-  form.venueImages.forEach((file) => formData.append('venueImages', file))
+
+  // Re-upload whatever is currently shown: saved URLs + newly picked files.
+  const existingFiles = await Promise.all(
+    form.venueImageUrls.filter(Boolean).map((url, index) => urlToVenueImageFile(url, index)),
+  )
+  const allImages = [...existingFiles, ...form.venueImages].slice(0, 3)
+  allImages.forEach((file) => formData.append('venueImages', file))
 
   return formData
 }

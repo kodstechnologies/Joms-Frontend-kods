@@ -2,15 +2,26 @@ export type RevenueOverviewStatus = 'Paid' | 'Pending' | 'Failed'
 
 export type RevenueOverviewRow = {
   id: string
+  transactionId?: string
   module: string
   entityType: string
   entityId: string
   entityName: string
   category: string
+  subCategory?: string
   ownerType: string
   ownerName: string
   grossAmount: string
+  discounts?: string
+  refundAmount?: string
+  taxAmount?: string
+  netRevenue?: string
+  platformCommission?: string
+  netProfit?: string
   status: RevenueOverviewStatus
+  settlementStatus?: string
+  complianceStatus?: string
+  lastUpdated?: string
 }
 
 export type FinanceVenueStatus = 'Completed' | 'Pending' | 'Cancelled'
@@ -24,6 +35,26 @@ export type FinanceVenueRow = {
   bookingTitle: string
   status: FinanceVenueStatus
   revenue: string
+  transactionId?: string
+  module?: string
+  clientId?: string
+  clientName?: string
+  partnerId?: string
+  transactionDate?: string
+  discount?: string
+  tax?: string
+  gatewayCharges?: string
+  platformCommissionPct?: string
+  platformCommission?: string
+  partnerPayout?: string
+  refundAmount?: string
+  netRevenue?: string
+  netProfit?: string
+  paymentMethod?: string
+  gateway?: string
+  settlementStatus?: string
+  settlementDate?: string
+  invoiceId?: string
 }
 
 export type FinanceServiceTab = 'all' | 'escrow' | 'by-service' | 'by-consultation'
@@ -40,6 +71,25 @@ export type FinanceServiceRow = {
   userName: string
   status: FinanceServiceStatus
   revenue: string
+  transactionId?: string
+  module?: string
+  clientId?: string
+  partnerId?: string
+  transactionDate?: string
+  discount?: string
+  tax?: string
+  gatewayCharges?: string
+  platformCommissionPct?: string
+  platformCommission?: string
+  partnerPayout?: string
+  refundAmount?: string
+  netRevenue?: string
+  netProfit?: string
+  paymentMethod?: string
+  gateway?: string
+  settlementStatus?: string
+  settlementDate?: string
+  invoiceId?: string
 }
 
 export type TaxComplianceStatus = 'Completed' | 'Pending' | 'Filed'

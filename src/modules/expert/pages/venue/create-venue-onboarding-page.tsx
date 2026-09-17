@@ -125,7 +125,14 @@ export function CreateVenueOnboardingPage() {
         longitude: venue.location?.longitude ?? prev.longitude,
         parkingAvailable: venue.parkingAvailable ?? prev.parkingAvailable,
         accessibility: venue.accessibility ?? prev.accessibility,
-        venueImageUrls: venue.venueImages || prev.venueImageUrls,
+        // Prefer saved URLs; drop local File[] once the server has images so
+        // Next → Previous does not show uploaded files twice.
+        venueImageUrls:
+          Array.isArray(venue.venueImages) && venue.venueImages.length > 0
+            ? venue.venueImages
+            : prev.venueImageUrls,
+        venueImages:
+          Array.isArray(venue.venueImages) && venue.venueImages.length > 0 ? [] : prev.venueImages,
         idType: kyc?.governmentId?.idType || prev.idType,
         idNumber: kyc?.governmentId?.idNumber || prev.idNumber,
         hasGST: kyc?.businessKyc?.hasGST ?? prev.hasGST,
@@ -213,10 +220,19 @@ export function CreateVenueOnboardingPage() {
       }
 
       if (currentStep === 2 && venueId) {
-        await saveLocation.mutateAsync({
+        const response = await saveLocation.mutateAsync({
           venueId,
-          payload: buildLocationFormData(formData),
+          payload: await buildLocationFormData(formData),
         })
+        const savedImages = response?.data?.venueImages
+        setFormData((prev) => ({
+          ...prev,
+          venueImages: [],
+          venueImageUrls:
+            Array.isArray(savedImages) && savedImages.length > 0
+              ? savedImages
+              : prev.venueImageUrls,
+        }))
         setCurrentStep(3)
         return
       }

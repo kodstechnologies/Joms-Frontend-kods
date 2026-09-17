@@ -58,6 +58,8 @@ const buildFallbackUrl = ({
       return venueId ? `/venues/management/profile/${venueId}/space/${entityId}` : null
     case 'refund':
       return `/settings/refund-details/${entityId}`
+    case 'finance':
+      return `/finance/escalations/${entityId}?kind=resource`
     case 'membership_upgrade':
       return `/settings/membership-upgrade-details/${entityId}`
     case 'support_ticket':
@@ -80,6 +82,8 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
     else return null
   } else if (target.entityType === 'consultation' || target.entityType === 'service') {
     resolved = canonical || storedOrEmpty || null
+  } else if (target.entityType === 'finance') {
+    resolved = storedOrEmpty || canonical || null
   } else if (target.entityType === 'partner' && target.serviceType === 'venue') {
     const storedKycId = getVenueKycIdFromUrl(storedOrEmpty)
     if (storedKycId && storedKycId !== target.entityId) resolved = storedOrEmpty

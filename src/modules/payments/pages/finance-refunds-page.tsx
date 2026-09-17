@@ -6,7 +6,6 @@ import {
   Eye,
   GitMerge,
   SlidersHorizontal,
-  SquarePen,
   Tag,
   Trash2,
 } from 'lucide-react'
@@ -314,13 +313,6 @@ export function FinanceRefundsPage() {
             }}
           >
             View Details
-          </TableActionsItem>
-          <TableActionsItem
-            icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Edit ticket coming soon')}
-          >
-            Edit Ticket
           </TableActionsItem>
           <TableActionsItem
             icon={<ArrowLeftRight className="size-3.5 text-slate-700" aria-hidden="true" />}
