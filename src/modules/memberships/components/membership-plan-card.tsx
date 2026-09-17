@@ -1,9 +1,8 @@
 import {
-  Ban,
-  CalendarRange,
   Check,
   CircleArrowDown,
   CircleArrowUp,
+  CircleX,
   ClipboardList,
   Image,
   MoreVertical,
@@ -13,7 +12,8 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import cancelIcon from '@/assets/JOMS_ICONS-2/Cancel_error.svg'
+import setPlanValidityIcon from '@/assets/JOMS_ICONS-2/set-plan-validity.svg'
+import deactivatePlanIcon from '@/assets/JOMS_ICONS-2/deactivate-plan.svg'
 
 import type { MembershipPlan } from '../types/membership'
 import {
@@ -176,7 +176,9 @@ export function MembershipPlanCard({
                   />
                   <MenuButton
                     label="Set Plan validity"
-                    icon={<CalendarRange className="size-4" strokeWidth={1.85} />}
+                    icon={
+                      <img src={setPlanValidityIcon} alt="" className="size-4" aria-hidden="true" />
+                    }
                     onClick={() => runAction(onSetValidity)}
                   />
                   {plan.status === 'active' ? (
@@ -204,14 +206,21 @@ export function MembershipPlanCard({
                   {plan.status === 'active' ? (
                     <MenuButton
                       label="Deactivate Plan"
-                      icon={<Ban className="size-4" strokeWidth={1.85} />}
+                      icon={
+                        <img
+                          src={deactivatePlanIcon}
+                          alt=""
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                      }
                       onClick={() => runAction(onDeactivate)}
                       danger
                     />
                   ) : null}
                   <MenuButton
                     label="Delete Plan"
-                    icon={<img src={cancelIcon} alt="" className="size-4" aria-hidden="true" />}
+                    icon={<CircleX className="size-4" strokeWidth={1.85} />}
                     onClick={() => runAction(onDelete)}
                     danger
                   />

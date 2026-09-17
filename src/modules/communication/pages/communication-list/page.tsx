@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import createIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
