@@ -1,22 +1,10 @@
 import ExcelJS from 'exceljs'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
-export function exportDisplayValue(value: unknown): string {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'string' && value.trim() === '') return ''
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-  return String(value)
-}
+import { exportDisplayValue } from './export-display'
+import { toPdfExportText, writeExportPdf } from './export-pdf'
 
-/** PDF built-in fonts cannot draw ₹, which otherwise renders as spaced-out garbage. */
-export function toPdfExportText(value: unknown): string {
-  return exportDisplayValue(value)
-    .replaceAll('\u20B9', 'Rs.')
-    .replaceAll('\u00A0', ' ')
-    .replace(/[\u2012\u2013\u2014\u2212]/g, '-')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-}
+export { exportDisplayValue } from './export-display'
+export { toPdfExportText } from './export-pdf'
 
 function normalizeExportFormat(format: string) {
   const value = String(format || 'csv')
@@ -31,25 +19,6 @@ function excelBufferToBlob(buffer: ExcelJS.Buffer) {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer as ArrayBuffer)
   return new Blob([bytes], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  })
-}
-
-const PDF_TABLE_STYLES = {
-  styles: { font: 'helvetica' as const, fontSize: 8, cellPadding: 2 },
-  headStyles: { fillColor: [33, 33, 33] as [number, number, number] },
-}
-
-function writePdfTable(
-  doc: jsPDF,
-  headers: string[],
-  rows: (string | number)[][],
-  startY?: number,
-) {
-  autoTable(doc, {
-    ...(startY != null ? { startY } : {}),
-    head: [headers.map((header) => toPdfExportText(header))],
-    body: rows.map((row) => row.map((cell) => toPdfExportText(cell))),
-    ...PDF_TABLE_STYLES,
   })
 }
 
@@ -96,11 +65,10 @@ export async function exportDataToFile(
   }
 
   if (normalizedFormat === 'pdf') {
-    const doc = new jsPDF({
-      orientation: headers.length > 6 ? 'landscape' : 'portrait',
+    writeExportPdf({
+      fileNamePrefix,
+      sheets: [{ headers, rows }],
     })
-    writePdfTable(doc, headers, rows)
-    doc.save(`${fileNamePrefix}.pdf`)
     return
   }
 
@@ -126,19 +94,7 @@ export async function exportSheetsToFile(
   const normalizedFormat = normalizeExportFormat(format)
 
   if (normalizedFormat === 'pdf') {
-    const doc = new jsPDF({
-      orientation: validSheets.some((sheet) => sheet.headers.length > 6) ? 'landscape' : 'portrait',
-    })
-
-    validSheets.forEach((sheetData, index) => {
-      if (index > 0) doc.addPage()
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(12)
-      doc.text(toPdfExportText(sheetData.name), 14, 16)
-      writePdfTable(doc, sheetData.headers, sheetData.rows, 22)
-    })
-
-    doc.save(`${fileNamePrefix}.pdf`)
+    writeExportPdf({ fileNamePrefix, sheets: validSheets })
     return
   }
 

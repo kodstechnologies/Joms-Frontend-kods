@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { Filter, RotateCcw } from 'lucide-react'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
@@ -93,7 +92,7 @@ export function ExportDataModal({
   isExporting = false,
 }: ExportDataModalProps) {
   const exportSections = config.exportSections ?? config.sections
-  const { fileFormat, label } = useDefaultExportFormat()
+  const { fileFormat } = useDefaultExportFormat()
 
   return (
     <FilterPanelShell
@@ -128,18 +127,6 @@ export function ExportDataModal({
           Select the data dimensions to include in your export. Expand each section to configure
           filters.
         </p>
-
-        <div className="mb-4 rounded-md border border-white/10 bg-slate-900/50 px-3 py-2">
-          <p className="text-sm font-medium text-white">Export Format</p>
-          <p className="mt-1 text-sm text-white/80">{label}</p>
-          <p className="mt-1 text-xs text-white/55">
-            Uses Default Export Format from{' '}
-            <Link to="/settings/main" className="text-blue-400 hover:underline">
-              Main Settings
-            </Link>
-            .
-          </p>
-        </div>
 
         {exportSections.map((section) => (
           <FilterSectionAccordion

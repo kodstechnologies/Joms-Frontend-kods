@@ -622,7 +622,7 @@ function FiltersPanel({
   onExport?: (format: string) => void
   isExporting?: boolean
 }) {
-  const { fileFormat, label } = useDefaultExportFormat()
+  const { fileFormat } = useDefaultExportFormat()
 
   if (!open) return null
 
@@ -637,20 +637,6 @@ function FiltersPanel({
             <X className="size-5" />
           </button>
         </div>
-
-        {isExport && (
-          <div className="mb-4 rounded-md border border-white/10 bg-black/30 px-3 py-2">
-            <p className="text-sm font-medium text-white">Export Format</p>
-            <p className="mt-1 text-sm text-white/80">{label}</p>
-            <p className="mt-1 text-xs text-white/55">
-              Uses Default Export Format from{' '}
-              <Link to="/settings/main" className="text-blue-400 hover:underline">
-                Main Settings
-              </Link>
-              .
-            </p>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-xs text-white/70">
