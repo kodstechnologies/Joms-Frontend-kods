@@ -42,6 +42,8 @@ describe('phone helpers', () => {
     expect(normalizeImportedMobileNumber('+91 98765-43210')).toBe('9876543210')
     expect(normalizeImportedMobileNumber('09876543210')).toBe('9876543210')
     expect(normalizeImportedMobileNumber('9876543210')).toBe('9876543210')
+    expect(normalizeImportedMobileNumber('9.87E+09')).toBe('9870000000')
+    expect(normalizeImportedMobileNumber('9.876543210E+9')).toBe('9876543210')
   })
 })
 

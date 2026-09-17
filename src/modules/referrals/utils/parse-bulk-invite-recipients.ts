@@ -1,6 +1,11 @@
-import { normalizeImportedMobileNumber } from '@/shared/lib/phone'
+import { isScientificPhoneValue, normalizeImportedMobileNumber } from '@/shared/lib/phone'
 
 export type BulkInviteRecipient = { name: string; email?: string; phone?: string }
+
+export type BulkInviteParseResult = {
+  recipients: BulkInviteRecipient[]
+  warnings: string[]
+}
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const HEADER_NAME_PATTERN =
@@ -49,21 +54,29 @@ const detectDelimiter = (headerLine: string): string => {
   return ranked[0][1] > 0 ? ranked[0][0] : ','
 }
 
+const numberToDigitString = (value: number) => {
+  if (!Number.isFinite(value)) return ''
+  return String(Math.round(Math.abs(value)))
+}
+
 const excelCellToString = (value: unknown): string => {
   if (value == null || value === '') return ''
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return Number.isInteger(value) ? String(value) : String(value)
+    return numberToDigitString(value)
   }
   if (typeof value === 'boolean') return value ? 'true' : 'false'
   if (value instanceof Date) return value.toISOString()
   if (typeof value === 'object') {
     const record = value as Record<string, unknown>
-    if (record.text != null) return String(record.text).trim()
+    if (typeof record.result === 'number') return numberToDigitString(record.result)
     if (record.result != null) return excelCellToString(record.result)
+    if (record.text != null) return String(record.text).trim()
     if (Array.isArray(record.richText)) {
       return record.richText.map((part) => String((part as { text?: string }).text || '')).join('')
     }
-    if (record.hyperlink != null) return String(record.hyperlink)
+    if (typeof record.hyperlink === 'string') {
+      return record.hyperlink.replace(/^mailto:/i, '').trim()
+    }
   }
   return String(value).trim()
 }
@@ -96,59 +109,101 @@ const extractRecipient = (cols: string[]): BulkInviteRecipient | null => {
   return { name, email, phone }
 }
 
-export const parseRecipientRows = (rows: string[][]): BulkInviteRecipient[] => {
-  const seen = new Set<string>()
+export const parseRecipientRowsWithMeta = (rows: string[][]): BulkInviteParseResult => {
+  const seenEmails = new Set<string>()
   const recipients: BulkInviteRecipient[] = []
+  const warnings: string[] = []
+  const duplicateNames: string[] = []
+  let scientificPhones = 0
+  let skippedInvalid = 0
 
   for (const cols of rows) {
+    if (!cols.some((cell) => String(cell || '').trim())) continue
+    if (cols.some((cell) => isScientificPhoneValue(String(cell || '')))) {
+      scientificPhones += 1
+    }
+
     const item = extractRecipient(cols)
-    if (!item?.name || !item.email || !item.phone) continue
-    const key = `${item.email}|${item.phone}|${item.name.toLowerCase()}`
-    if (seen.has(key)) continue
-    seen.add(key)
+    if (!item?.name || !item.email || !item.phone) {
+      const looksLikeHeader = cols.every((cell) => !isValidBulkInviteEmail(String(cell || '')))
+      if (!looksLikeHeader) skippedInvalid += 1
+      continue
+    }
+
+    if (seenEmails.has(item.email)) {
+      duplicateNames.push(item.name)
+      continue
+    }
+    seenEmails.add(item.email)
     recipients.push(item)
   }
 
-  return recipients
+  if (scientificPhones > 0) {
+    warnings.push(
+      'Excel showed phones as 9.87E+09. Invites were still created from the stored numbers. For SMS accuracy, set the phone column to Text before typing numbers.',
+    )
+  }
+  if (duplicateNames.length) {
+    warnings.push(
+      `Same email is used more than once. Only the first row was kept; skipped ${duplicateNames.join(', ')}. Each expert needs a unique email.`,
+    )
+  }
+  if (skippedInvalid > 0 && recipients.length) {
+    warnings.push(`${skippedInvalid} row(s) were skipped because email was missing or invalid.`)
+  }
+
+  return { recipients, warnings }
 }
 
-export const parseCsvRecipients = (text: string): BulkInviteRecipient[] => {
+export const parseRecipientRows = (rows: string[][]): BulkInviteRecipient[] =>
+  parseRecipientRowsWithMeta(rows).recipients
+
+export const parseCsvRecipientsWithMeta = (text: string): BulkInviteParseResult => {
   const lines = text
     .replace(/^\uFEFF/, '')
     .split(/\r\n|\n|\r/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
 
-  if (!lines.length) return []
+  if (!lines.length) return { recipients: [], warnings: [] }
 
   const delimiter = detectDelimiter(lines[0])
   const rows = lines.map((line) => parseCsvLine(line, delimiter))
-  return parseRecipientRows(rows)
+  return parseRecipientRowsWithMeta(rows)
 }
 
-export const parseXlsxRecipients = async (file: File): Promise<BulkInviteRecipient[]> => {
+export const parseCsvRecipients = (text: string): BulkInviteRecipient[] =>
+  parseCsvRecipientsWithMeta(text).recipients
+
+export const parseXlsxRecipientsWithMeta = async (file: File): Promise<BulkInviteParseResult> => {
   const excelModule = await import('exceljs')
   const ExcelJS = excelModule.default ?? excelModule
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(await file.arrayBuffer())
   const sheet = workbook.worksheets[0]
-  if (!sheet) return []
+  if (!sheet) return { recipients: [], warnings: [] }
 
   const rows: string[][] = []
   sheet.eachRow((row) => {
-    const values = Array.isArray(row.values) ? row.values.slice(1) : []
-    rows.push(values.map((cell) => excelCellToString(cell)))
+    const cells: string[] = []
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      while (cells.length < colNumber - 1) cells.push('')
+      const value = cell.value
+      cells[colNumber - 1] =
+        typeof value === 'number' ? numberToDigitString(value) : excelCellToString(value)
+    })
+    rows.push(cells)
   })
-  return parseRecipientRows(rows)
+  return parseRecipientRowsWithMeta(rows)
 }
 
-export const parseBulkInviteFile = async (file: File): Promise<BulkInviteRecipient[]> => {
+export const parseBulkInviteFile = async (file: File): Promise<BulkInviteParseResult> => {
   const lower = file.name.toLowerCase()
   if (lower.endsWith('.xls') && !lower.endsWith('.xlsx')) {
     throw new Error('Legacy .xls is not supported. Save the sheet as .xlsx or .csv.')
   }
   if (lower.endsWith('.xlsx')) {
-    return parseXlsxRecipients(file)
+    return parseXlsxRecipientsWithMeta(file)
   }
-  return parseCsvRecipients(await file.text())
+  return parseCsvRecipientsWithMeta(await file.text())
 }

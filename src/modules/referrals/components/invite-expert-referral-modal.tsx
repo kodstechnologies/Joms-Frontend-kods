@@ -46,6 +46,7 @@ export function InviteExpertReferralModal({
   const [fileName, setFileName] = useState<string | null>(null)
   const [recipients, setRecipients] = useState<BulkInviteRecipient[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
+  const [parseWarnings, setParseWarnings] = useState<string[]>([])
 
   if (!open) return null
 
@@ -58,6 +59,7 @@ export function InviteExpertReferralModal({
     setFileName(null)
     setRecipients([])
     setParseError(null)
+    setParseWarnings([])
   }
 
   const handleClose = () => {
@@ -70,22 +72,29 @@ export function InviteExpertReferralModal({
 
     try {
       const parsed = await parseBulkInviteFile(file)
-      if (!parsed.length) {
+      if (!parsed.recipients.length) {
         setFileName(null)
         setRecipients([])
+        setParseWarnings([])
         setParseError(
-          'No valid rows found. File needs name, email, and a 10-digit phone on each expert row.',
+          parsed.warnings[0] ||
+            'No valid rows found. File needs a unique email and a 10-digit phone on each expert row. If phones show as 9.87E+09 in Excel, set that column to Text.',
         )
         toast.error('No valid recipients found in the file')
         return
       }
 
       setParseError(null)
-      setRecipients(parsed)
+      setParseWarnings(parsed.warnings)
+      setRecipients(parsed.recipients)
       setFileName(file.name)
+      if (parsed.warnings.length) {
+        toast.warning(parsed.warnings[0])
+      }
     } catch {
       setFileName(null)
       setRecipients([])
+      setParseWarnings([])
       setParseError(
         'Could not read that file. Upload a CSV or Excel sheet with name, email, and phone.',
       )
@@ -141,7 +150,7 @@ export function InviteExpertReferralModal({
 
   const downloadTemplate = () => {
     const csv =
-      'name,email,phone\nJane Doe,jane@example.com,9876543210\nJohn Smith,john@example.com,9876543211\n'
+      'name,email,phone\nJane Doe,jane@example.com,="9876543210"\nJohn Smith,john@example.com,="9876543211"\n'
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
@@ -244,6 +253,7 @@ export function InviteExpertReferralModal({
                           setFileName(null)
                           setRecipients([])
                           setParseError(null)
+                          setParseWarnings([])
                         }}
                         className="text-brand-danger"
                       >
@@ -254,8 +264,10 @@ export function InviteExpertReferralModal({
                       {recipients.length} expert{recipients.length === 1 ? '' : 's'} parsed
                     </p>
                     <ul className="text-muted mt-2 max-h-24 w-full space-y-0.5 overflow-y-auto text-left text-xs">
-                      {recipients.map((recipient) => (
-                        <li key={`${recipient.email}|${recipient.phone}`}>
+                      {recipients.map((recipient, index) => (
+                        <li
+                          key={`${recipient.email}|${recipient.phone}|${recipient.name}|${index}`}
+                        >
                           {recipient.name}
                           {recipient.email ? ` · ${recipient.email}` : ''}
                         </li>
@@ -266,7 +278,8 @@ export function InviteExpertReferralModal({
                   <>
                     <CloudUpload className="text-muted mb-2 size-8" />
                     <p className="text-muted text-body-md">
-                      Upload CSV or Excel with name, email, and 10-digit phone
+                      Upload CSV or Excel with unique emails and 10-digit phones. Format the phone
+                      column as Text so Excel does not show 9.87E+09.
                     </p>
                   </>
                 )}
@@ -282,6 +295,11 @@ export function InviteExpertReferralModal({
                 />
               </label>
               {parseError ? <p className="mt-2 text-xs text-rose-300">{parseError}</p> : null}
+              {parseWarnings.map((warning) => (
+                <p key={warning} className="mt-2 text-xs text-amber-300">
+                  {warning}
+                </p>
+              ))}
             </Field>
           )}
 
