@@ -456,10 +456,14 @@ export function UpdateContactInformationPage() {
                 <button
                   type="button"
                   onClick={handleOpenPhoneVerify}
-                  disabled={isCheckingPhone || isPhoneVerified}
+                  disabled={isCheckingPhone || isPhoneVerified || isPhoneVerifyModalOpen}
                   className={cn(isPhoneVerified ? VERIFY_DONE_BTN_CLASS : VERIFY_BTN_CLASS)}
                 >
-                  {isCheckingPhone ? 'Checking…' : isPhoneVerified ? 'Verified ✓' : 'Verify'}
+                  {isCheckingPhone || isPhoneVerifyModalOpen
+                    ? 'Checking…'
+                    : isPhoneVerified
+                      ? 'Verified ✓'
+                      : 'Verify'}
                 </button>
               </div>
               {isPhoneVerified ? (

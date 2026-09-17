@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -26,6 +26,8 @@ import {
   type ExpertOnboardingFormData,
 } from '../../utils/expert-onboarding-form'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { useExpertAccountControls } from '@/modules/settings/hooks/use-expert-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
 
 const STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -40,6 +42,7 @@ export const CreateExpertPage = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const expertIdParam = searchParams.get('expertId')
   const isEditMode = searchParams.get('mode') === 'edit' && Boolean(expertIdParam)
+  const { allowNewAccounts, isLoading: controlsLoading } = useExpertAccountControls()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [expertId, setExpertId] = useState<string | null>(expertIdParam)
@@ -63,6 +66,14 @@ export const CreateExpertPage = () => {
     saveGallery,
     submitApplication,
   } = useExpertOnboardingMutations()
+
+  useEffect(() => {
+    if (controlsLoading || isEditMode) return
+    if (!allowNewAccounts) {
+      toast.error(RESTRICTION_MESSAGES.expertCreate)
+      navigate('/experts/management', { replace: true })
+    }
+  }, [allowNewAccounts, controlsLoading, isEditMode, navigate])
 
   if (isEditMode && profileResponse?.data && profileResponse.data._id !== lastSyncedProfileId) {
     setLastSyncedProfileId(profileResponse.data._id)
@@ -92,6 +103,10 @@ export const CreateExpertPage = () => {
             payload: buildBasicProfileFormData(formData),
           })
         } else {
+          if (!allowNewAccounts) {
+            toast.error(RESTRICTION_MESSAGES.expertCreate)
+            return
+          }
           const response = await saveBasicProfile.mutateAsync(buildBasicProfileFormData(formData))
           const newId = response.data._id
           setExpertId(newId)
@@ -194,6 +209,14 @@ export const CreateExpertPage = () => {
     if (currentStep === 5) return isEditMode ? 'Save Changes' : 'Create Account'
     return 'Save & Continue'
   })()
+
+  if (!isEditMode && (controlsLoading || !allowNewAccounts)) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
 
   if (isEditMode && isProfileLoading) {
     return (

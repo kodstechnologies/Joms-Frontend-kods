@@ -77,6 +77,8 @@ import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-ap
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { buildExpertProfileServicesQueryParams } from '@/shared/utils/export-filter-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useServiceListingControls } from '@/modules/settings/hooks/use-service-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
 import {
   useExpertAnalytics,
   useExpertAvailability,
@@ -2679,6 +2681,8 @@ export function ExpertProfileViewPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { id } = useParams<{ id: string }>()
+  const { allowNewServiceListings, allowNewConsultationListings } = useServiceListingControls()
+  const canCreateListings = allowNewServiceListings || allowNewConsultationListings
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [listingSubTab, setListingSubTab] = useState<ListingSubTab>('services')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -2764,8 +2768,12 @@ export function ExpertProfileViewPage() {
 
   const navigateToCreateListing = useCallback(() => {
     if (!id) return
+    if (!canCreateListings) {
+      toast.error(RESTRICTION_MESSAGES.listingsCreate)
+      return
+    }
     navigate(`/services/management/create?partnerId=${encodeURIComponent(id)}`)
-  }, [id, navigate])
+  }, [canCreateListings, id, navigate])
 
   const closeSuspendModal = useCallback(() => {
     setSuspendModalOpen(false)
@@ -3112,11 +3120,15 @@ export function ExpertProfileViewPage() {
     expertRank != null && Number(expertRank) > 0 ? `# ${expertRank} Ranking` : 'Unranked'
 
   const headerActions = [
-    {
-      label: 'Create Listings',
-      icon: Plus,
-      onClick: navigateToCreateListing,
-    },
+    ...(canCreateListings
+      ? [
+          {
+            label: 'Create Listings',
+            icon: Plus,
+            onClick: navigateToCreateListing,
+          },
+        ]
+      : []),
     {
       label: 'Add Notes',
       icon: FileText,

@@ -282,21 +282,16 @@ export function RejectedVenuesPage() {
             <ManageMetricsIcon />
             Manage Metrics
           </Button>
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            onClick={() => {
-              if (!allowAddVenues) {
-                toast.error('Creating venues is turned off in Venue Management settings')
-                return
-              }
-              navigate('/venues/management/onboarding')
-            }}
-            disabled={!allowAddVenues}
-          >
-            <img src={createIcon} alt="create" className="size-4" />
-            Create Account
-          </Button>
+          {allowAddVenues ? (
+            <Button
+              type="button"
+              className="h-9 w-full md:w-auto"
+              onClick={() => navigate('/venues/management/onboarding')}
+            >
+              <img src={createIcon} alt="create" className="size-4" />
+              Create Account
+            </Button>
+          ) : null}
         </div>
       </div>
 

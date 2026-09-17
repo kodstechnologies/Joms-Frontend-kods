@@ -18,6 +18,7 @@ import {
 } from '@/modules/expert/hooks/use-venue-onboarding'
 import { useVenueDocumentRules } from '@/modules/expert/hooks/use-venue-kyc'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
 import type { VenueCategory } from '@/modules/expert/type/venue'
 import {
   buildBasicProfileFormData,
@@ -76,7 +77,7 @@ export function CreateVenueOnboardingPage() {
   useEffect(() => {
     if (controlsLoading) return
     if (!allowAddVenues && !venueIdParam) {
-      toast.error('Creating venues is turned off in Venue Management settings')
+      toast.error(RESTRICTION_MESSAGES.venueCreate)
       navigate('/venues/management', { replace: true })
     }
   }, [allowAddVenues, controlsLoading, navigate, venueIdParam])
@@ -177,6 +178,10 @@ export function CreateVenueOnboardingPage() {
         let activePartnerId = partnerId || reviewData?.data?.venue?.ownerId || ''
 
         if (!venueId) {
+          if (!allowAddVenues) {
+            toast.error(RESTRICTION_MESSAGES.venueCreate)
+            return
+          }
           if (!activePartnerId) {
             setIsCreatingPartner(true)
             const partnerResponse = await createExpertBasicProfile(
@@ -276,6 +281,14 @@ export function CreateVenueOnboardingPage() {
     return 'Next'
   })()
 
+  if (!venueIdParam && (controlsLoading || !allowAddVenues)) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <CreateListingWizard
       title="Venue Profile Creation"
@@ -294,7 +307,11 @@ export function CreateVenueOnboardingPage() {
       }}
     >
       {currentStep === 1 && (
-        <VenueOnboardingBasicProfileStep formData={formData} setFormData={setFormData} />
+        <VenueOnboardingBasicProfileStep
+          formData={formData}
+          setFormData={setFormData}
+          excludePartnerId={partnerId || reviewData?.data?.venue?.ownerId || null}
+        />
       )}
       {currentStep === 2 && (
         <VenueOnboardingLocationStep formData={formData} setFormData={setFormData} />

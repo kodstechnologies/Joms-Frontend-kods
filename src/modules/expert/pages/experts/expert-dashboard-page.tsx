@@ -23,6 +23,7 @@ import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
+import { useExpertAccountControls } from '@/modules/settings/hooks/use-expert-public-settings'
 
 type Metric = {
   id: string
@@ -204,6 +205,7 @@ function RevenueGrowthTooltip({
 
 export const ExpertDashboardPage = () => {
   const navigate = useNavigate()
+  const { allowNewAccounts } = useExpertAccountControls()
   const [growthRange, setGrowthRange] = useState('3')
 
   const {
@@ -278,17 +280,19 @@ export const ExpertDashboardPage = () => {
             Manage Metrics
           </Button>
 
-          <Button type="button" onClick={() => navigate('/experts/management/create')}>
-            <img
-              src={createAccountIcon}
-              alt=""
-              width={20}
-              height={20}
-              className="size-5 shrink-0"
-              aria-hidden="true"
-            />
-            Create Expert Account
-          </Button>
+          {allowNewAccounts ? (
+            <Button type="button" onClick={() => navigate('/experts/management/create')}>
+              <img
+                src={createAccountIcon}
+                alt=""
+                width={20}
+                height={20}
+                className="size-5 shrink-0"
+                aria-hidden="true"
+              />
+              Create Expert Account
+            </Button>
+          ) : null}
         </div>
       </div>
 

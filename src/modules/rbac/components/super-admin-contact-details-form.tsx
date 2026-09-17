@@ -192,6 +192,7 @@ export function SuperAdminContactDetailsForm() {
   }
 
   const handleOpenPhoneVerify = () => {
+    if (isPhoneVerified || isPhoneVerifyModalOpen) return
     const trimmed = phone.trim()
     if (!trimmed) {
       toast.error('Please enter a phone number to verify.')
@@ -434,9 +435,10 @@ export function SuperAdminContactDetailsForm() {
                 <button
                   type="button"
                   onClick={handleOpenPhoneVerify}
+                  disabled={isPhoneVerified || isPhoneVerifyModalOpen}
                   className={cn(isPhoneVerified ? VERIFY_DONE_BTN_CLASS : VERIFY_BTN_CLASS)}
                 >
-                  {isPhoneVerified ? 'Verified' : 'Verify'}
+                  {isPhoneVerified ? 'Verified' : isPhoneVerifyModalOpen ? 'Checking…' : 'Verify'}
                 </button>
               </div>
             </div>

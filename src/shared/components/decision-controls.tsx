@@ -12,6 +12,7 @@ export type DecisionControlButtonsProps = {
   onEscalate?: () => void
   onReject: () => void
   showEscalate?: boolean
+  showApprove?: boolean
   approveDisabled?: boolean
   requestChangesDisabled?: boolean
   escalateDisabled?: boolean
@@ -25,6 +26,7 @@ export function DecisionControlButtons({
   onEscalate,
   onReject,
   showEscalate = true,
+  showApprove = true,
   approveDisabled = false,
   requestChangesDisabled = false,
   escalateDisabled = false,
@@ -33,15 +35,17 @@ export function DecisionControlButtons({
 }: DecisionControlButtonsProps) {
   return (
     <div className={cn('flex flex-nowrap items-center gap-2.5 overflow-x-auto', className)}>
-      <button
-        type="button"
-        onClick={onApprove}
-        disabled={approveDisabled}
-        className={cn(decisionBtnClass, 'w-[97px] bg-[#00A63E] text-white hover:bg-[#009437]')}
-      >
-        Approve
-        <BadgeCheck className="size-4 shrink-0" aria-hidden="true" />
-      </button>
+      {showApprove ? (
+        <button
+          type="button"
+          onClick={onApprove}
+          disabled={approveDisabled}
+          className={cn(decisionBtnClass, 'w-[97px] bg-[#00A63E] text-white hover:bg-[#009437]')}
+        >
+          Approve
+          <BadgeCheck className="size-4 shrink-0" aria-hidden="true" />
+        </button>
+      ) : null}
 
       <button
         type="button"

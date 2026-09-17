@@ -59,6 +59,7 @@ import { cn } from '@/shared/lib/cn'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { CreateListingWizard } from '@/modules/expert/components'
 import { useServiceListingControls } from '@/modules/settings/hooks/use-service-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
 import { useSettingsModule } from '@/modules/settings/hooks/use-settings'
 
 type UploadedImage = {
@@ -252,6 +253,7 @@ export const CreateServiceListingPage = () => {
     displayAiPriceRecommendation: publicDisplayAi,
     maxListingDiscountPercent,
     maxConsultationFollowUpDays,
+    isReady: listingControlsReady,
   } = useServiceListingControls()
 
   // Admin create flow: prefer live admin module settings (same source as Settings tab).
@@ -265,6 +267,34 @@ export const CreateServiceListingPage = () => {
     typeof adminAiFlag === 'boolean'
       ? adminAiFlag === true
       : publicDisplayAi === true
+
+  useEffect(() => {
+    if (isEditMode || !listingControlsReady) return
+    if (!allowNewServiceListings && !allowNewConsultationListings) {
+      toast.error(RESTRICTION_MESSAGES.listingsCreate)
+      navigate(partnerId ? `/experts/management/profile/${partnerId}` : '/services/management', {
+        replace: true,
+      })
+      return
+    }
+    if (allowNewServiceListings && !allowNewConsultationListings) {
+      setSelectedType('service')
+      if (currentStep === 1) setCurrentStep(2)
+      return
+    }
+    if (!allowNewServiceListings && allowNewConsultationListings) {
+      setSelectedType('consultation')
+      if (currentStep === 1) setCurrentStep(2)
+    }
+  }, [
+    allowNewConsultationListings,
+    allowNewServiceListings,
+    currentStep,
+    isEditMode,
+    listingControlsReady,
+    navigate,
+    partnerId,
+  ])
 
   const [pricingTypePreference, setPricingType] = useState<'fixed' | 'custom' | 'tiered'>('fixed')
   const [selectedDiscountPreference, setSelectedDiscount] = useState<string>('10%')
@@ -671,9 +701,18 @@ export const CreateServiceListingPage = () => {
     if (currentStep < 5) setCurrentStep(currentStep + 1)
   }
 
+  const onlyOneListingTypeAllowed =
+    listingControlsReady &&
+    allowNewServiceListings !== allowNewConsultationListings &&
+    (allowNewServiceListings || allowNewConsultationListings)
+
   const handleBack = () => {
     if (isEditMode && currentStep <= 2) {
       navigate(partnerId ? `/experts/management/profile/${partnerId}` : '/services/management')
+      return
+    }
+    if (currentStep === 2 && !isEditMode && onlyOneListingTypeAllowed) {
+      navigateBackOrFallback(navigate, '/services/management')
       return
     }
     if (currentStep > 1) setCurrentStep(currentStep - 1)
@@ -782,6 +821,14 @@ export const CreateServiceListingPage = () => {
 
   const handlePrimaryAction = async () => {
     if (currentStep === 1) {
+      if (selectedType === 'service' && !allowNewServiceListings) {
+        toast.error(RESTRICTION_MESSAGES.serviceCreate)
+        return
+      }
+      if (selectedType === 'consultation' && !allowNewConsultationListings) {
+        toast.error(RESTRICTION_MESSAGES.consultationCreate)
+        return
+      }
       handleNext()
       return
     }
@@ -793,7 +840,7 @@ export const CreateServiceListingPage = () => {
       if (selectedType === 'service') {
         if (currentStep === 2) {
           if (!listingId && !allowNewServiceListings) {
-            toast.error('Creating new service listings is disabled by admin settings.')
+            toast.error(RESTRICTION_MESSAGES.serviceCreate)
             return
           }
           if (!serviceTitle.trim()) {
@@ -830,7 +877,7 @@ export const CreateServiceListingPage = () => {
           let serviceId = listingId
           if (!serviceId) {
             if (!allowNewServiceListings) {
-              toast.error('Creating new service listings is disabled by admin settings.')
+              toast.error(RESTRICTION_MESSAGES.serviceCreate)
               return
             }
             const response = await createServiceMutation.mutateAsync({
@@ -941,7 +988,7 @@ export const CreateServiceListingPage = () => {
           }
 
           if (!listingId && !allowNewConsultationListings) {
-            toast.error('Creating new consultation listings is disabled by admin settings.')
+            toast.error(RESTRICTION_MESSAGES.consultationCreate)
             return
           }
 
@@ -1811,6 +1858,17 @@ export const CreateServiceListingPage = () => {
       'Save & Continue'
     )
 
+  if (
+    !isEditMode &&
+    (!listingControlsReady || (!allowNewServiceListings && !allowNewConsultationListings))
+  ) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <CreateListingWizard
       title={isEditMode ? 'Edit Consultation' : 'Create Service Listing'}
@@ -1844,83 +1902,89 @@ export const CreateServiceListingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <button
-              onClick={() => setSelectedType('service')}
-              className={cn(
-                'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
-                selectedType === 'service'
-                  ? 'bg-brand-accent border-brand-accent text-brand-text-dark shadow-lg'
-                  : 'text-muted border-white/5 bg-black hover:border-white/10',
-              )}
-            >
-              <div
+            {allowNewServiceListings ? (
+              <button
+                type="button"
+                onClick={() => setSelectedType('service')}
                 className={cn(
-                  'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                  'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
                   selectedType === 'service'
-                    ? 'bg-black text-white'
-                    : 'bg-brand-surface text-white',
+                    ? 'bg-brand-accent border-brand-accent text-brand-text-dark shadow-lg'
+                    : 'text-muted border-white/5 bg-black hover:border-white/10',
                 )}
               >
-                <Briefcase className="size-5" />
-              </div>
-              <div className="space-y-2">
-                <h3
+                <div
                   className={cn(
-                    'text-[13px] font-bold tracking-tight',
-                    selectedType === 'service' ? 'text-black' : 'text-white',
+                    'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                    selectedType === 'service'
+                      ? 'bg-black text-white'
+                      : 'bg-brand-surface text-white',
                   )}
                 >
-                  Service
-                </h3>
-                <p
-                  className={cn(
-                    'text-body-sm max-w-[260px] leading-relaxed font-semibold',
-                    selectedType === 'service' ? 'text-black/80' : 'text-muted',
-                  )}
-                >
-                  Best for clearly defined offerings with deliverables, pricing, and timelines
-                </p>
-              </div>
-            </button>
+                  <Briefcase className="size-5" />
+                </div>
+                <div className="space-y-2">
+                  <h3
+                    className={cn(
+                      'text-[13px] font-bold tracking-tight',
+                      selectedType === 'service' ? 'text-black' : 'text-white',
+                    )}
+                  >
+                    Service
+                  </h3>
+                  <p
+                    className={cn(
+                      'text-body-sm max-w-[260px] leading-relaxed font-semibold',
+                      selectedType === 'service' ? 'text-black/80' : 'text-muted',
+                    )}
+                  >
+                    Best for clearly defined offerings with deliverables, pricing, and timelines
+                  </p>
+                </div>
+              </button>
+            ) : null}
 
-            <button
-              onClick={() => setSelectedType('consultation')}
-              className={cn(
-                'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
-                selectedType === 'consultation'
-                  ? 'border-white bg-white text-black shadow-lg'
-                  : 'text-muted border-white/5 bg-black hover:border-white/10',
-              )}
-            >
-              <div
+            {allowNewConsultationListings ? (
+              <button
+                type="button"
+                onClick={() => setSelectedType('consultation')}
                 className={cn(
-                  'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                  'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
                   selectedType === 'consultation'
-                    ? 'bg-black text-white'
-                    : 'bg-brand-surface text-white',
+                    ? 'border-white bg-white text-black shadow-lg'
+                    : 'text-muted border-white/5 bg-black hover:border-white/10',
                 )}
               >
-                <MessageCircle className="size-5" />
-              </div>
-              <div className="space-y-2">
-                <h3
+                <div
                   className={cn(
-                    'text-[13px] font-bold tracking-tight',
-                    selectedType === 'consultation' ? 'text-black' : 'text-white',
+                    'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                    selectedType === 'consultation'
+                      ? 'bg-black text-white'
+                      : 'bg-brand-surface text-white',
                   )}
                 >
-                  Consultation
-                </h3>
-                <p
-                  className={cn(
-                    'text-body-sm max-w-[260px] leading-relaxed font-medium',
-                    selectedType === 'consultation' ? 'text-black' : 'text-muted',
-                  )}
-                >
-                  Best for time-based or advisory sessions without fixed deliverables
-                </p>
-              </div>
-            </button>
+                  <MessageCircle className="size-5" />
+                </div>
+                <div className="space-y-2">
+                  <h3
+                    className={cn(
+                      'text-[13px] font-bold tracking-tight',
+                      selectedType === 'consultation' ? 'text-black' : 'text-white',
+                    )}
+                  >
+                    Consultation
+                  </h3>
+                  <p
+                    className={cn(
+                      'text-body-sm max-w-[260px] leading-relaxed font-medium',
+                      selectedType === 'consultation' ? 'text-black' : 'text-muted',
+                    )}
+                  >
+                    Best for time-based or advisory sessions without fixed deliverables
+                  </p>
+                </div>
+              </button>
+            ) : null}
           </div>
         </div>
       ) : selectedType === 'consultation' ? (

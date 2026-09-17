@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchAmenityMasters } from '../api/venue-api'
 import type { VenueFormData } from '../utils/venue-form'
 import { rebuildVenueGalleryPreviewsFromForm } from '../utils/venue-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 type AmenitySubCategory = {
   _id: string
@@ -279,7 +280,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="mb-2 text-xs font-medium text-white">Venue Cover Image</p>
+              <p className="mb-2 text-xs font-medium text-white">
+                Venue Cover Image <RequiredMark />
+              </p>
               <input
                 ref={coverImageRef}
                 type="file"
@@ -323,7 +326,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-medium text-white">Venue Image</p>
+              <p className="mb-2 text-xs font-medium text-white">
+                Venue Image <RequiredMark />
+              </p>
               <input
                 ref={venueImageRef}
                 type="file"
@@ -368,7 +373,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
           </div>
 
           <div className="mt-4">
-            <p className="mb-2 text-xs font-medium text-white">Photo Gallery</p>
+            <p className="mb-2 text-xs font-medium text-white">
+              Photo Gallery <RequiredMark />
+            </p>
             <input
               ref={galleryRef}
               type="file"

@@ -79,9 +79,14 @@ export const ExpertBasicProfileStep = ({
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [])
 
-  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+
+  const isPhoneVerifyBusy = isCheckingPhone || (verifyModal.open && verifyModal.type === 'phone')
+  const isEmailVerifyBusy = isCheckingEmail || (verifyModal.open && verifyModal.type === 'email')
 
   const handleOpenPhoneVerify = async () => {
+    if (formData.isPhoneVerified || isPhoneVerifyBusy) return
     const error = validateMobileNumber(formData.phoneNumber)
     if (error) {
       toast.error(error)
@@ -89,7 +94,7 @@ export const ExpertBasicProfileStep = ({
     }
 
     try {
-      setIsCheckingAvailability(true)
+      setIsCheckingPhone(true)
       await checkPartnerAvailability({
         phone: formData.phoneNumber.trim(),
         excludePartnerId: excludePartnerId || undefined,
@@ -98,7 +103,7 @@ export const ExpertBasicProfileStep = ({
       toast.error(apiErrorMessage(err, 'Phone number is already using'))
       return
     } finally {
-      setIsCheckingAvailability(false)
+      setIsCheckingPhone(false)
     }
 
     setVerifyModal({
@@ -109,6 +114,7 @@ export const ExpertBasicProfileStep = ({
   }
 
   const handleOpenEmailVerify = async () => {
+    if (formData.isEmailVerified || isEmailVerifyBusy) return
     if (!formData.email.trim()) {
       toast.error('Please enter an email ID before verifying.')
       return
@@ -120,7 +126,7 @@ export const ExpertBasicProfileStep = ({
     }
 
     try {
-      setIsCheckingAvailability(true)
+      setIsCheckingEmail(true)
       await checkPartnerAvailability({
         email: formData.email.trim(),
         excludePartnerId: excludePartnerId || undefined,
@@ -129,7 +135,7 @@ export const ExpertBasicProfileStep = ({
       toast.error(apiErrorMessage(err, 'Email is already using'))
       return
     } finally {
-      setIsCheckingAvailability(false)
+      setIsCheckingEmail(false)
     }
 
     setVerifyModal({
@@ -814,7 +820,7 @@ export const ExpertBasicProfileStep = ({
                     <button
                       type="button"
                       onClick={() => void handleOpenPhoneVerify()}
-                      disabled={isCheckingAvailability || formData.isPhoneVerified}
+                      disabled={formData.isPhoneVerified || isPhoneVerifyBusy}
                       className={cn(
                         'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                         formData.isPhoneVerified
@@ -824,7 +830,7 @@ export const ExpertBasicProfileStep = ({
                     >
                       {formData.isPhoneVerified
                         ? 'Verified ✓'
-                        : isCheckingAvailability
+                        : isPhoneVerifyBusy
                           ? 'Checking…'
                           : 'Verify'}
                     </button>
@@ -853,7 +859,7 @@ export const ExpertBasicProfileStep = ({
                     <button
                       type="button"
                       onClick={() => void handleOpenEmailVerify()}
-                      disabled={isCheckingAvailability || formData.isEmailVerified}
+                      disabled={formData.isEmailVerified || isEmailVerifyBusy}
                       className={cn(
                         'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                         formData.isEmailVerified
@@ -863,7 +869,7 @@ export const ExpertBasicProfileStep = ({
                     >
                       {formData.isEmailVerified
                         ? 'Verified ✓'
-                        : isCheckingAvailability
+                        : isEmailVerifyBusy
                           ? 'Checking…'
                           : 'Verify'}
                     </button>
