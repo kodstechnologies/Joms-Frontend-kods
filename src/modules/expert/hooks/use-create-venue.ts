@@ -103,7 +103,6 @@ export const useVenueStepMutations = () => {
       spaceId: string
       venueData: VenueFormData
     }) => {
-      // Group amenities by categoryId for backend [{categoryId, subCategoryIds}]
       const groupedAmenities = Object.values(
         venueData.amenities.reduce(
           (
@@ -162,7 +161,8 @@ export const useVenueStepMutations = () => {
   })
 
   const submitVenueListing = useMutation({
-    mutationFn: (venueId: string) => submitAdminVenue(venueId),
+    mutationFn: ({ venueId, spaceId }: { venueId: string; spaceId?: string | null }) =>
+      submitAdminVenue(venueId, spaceId),
     onSuccess: invalidateDraft,
   })
 

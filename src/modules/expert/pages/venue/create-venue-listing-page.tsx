@@ -78,6 +78,7 @@ type DraftPricing = {
 type DraftVenueSpace = {
   _id?: string
   name?: string
+  status?: string
   spaceType?: string
   capacityMode?: string
   capacityRange?: string | number
@@ -182,7 +183,6 @@ const toImageUrl = (img: unknown): string => {
 }
 
 const resolveGalleryUrls = (space?: DraftVenueSpace) => {
-  // Only use this space's gallery — never fall back to venue-level / other-space images.
   const venueCoverImageUrl = toImageUrl(space?.venueCoverImages?.[0]) || ''
   const venueImageUrl = toImageUrl(space?.spaceCoverImages?.[0]) || ''
   const spaceGalleryImgs = (space?.galleryImages || []).map(toImageUrl).filter(Boolean)
@@ -269,21 +269,27 @@ export const CreateVenueListingPage = () => {
         const response = await fetchAdminDraftVenue(venueId)
         const venue = response?.data as DraftVenue | undefined
         const spaces = venue?.spaces || []
-        const space = spaces[0]
-        const galleryUrls = resolveGalleryUrls(space)
-        const pricing = isEditMode ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
+        const inProgressSpace =
+          spaces.find((item) => {
+            const status = String(item.status || '').toLowerCase()
+            return status === 'preview' || status === 'draft'
+          }) || null
+        const space = isEditMode ? spaces[0] : inProgressSpace
+        const hydrateSpace = Boolean(space)
+        const galleryUrls = resolveGalleryUrls(space || undefined)
+        const pricing = hydrateSpace ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
         const terms = venue?.terms
 
         const defaultDays = createDefaultWeeklyAvailability()
-        const savedWeekly = isEditMode ? (space?.availability?.weeklyAvailability ?? []) : []
+        const savedWeekly = hydrateSpace ? (space?.availability?.weeklyAvailability ?? []) : []
         const weeklyAvailability = defaultDays.map((entry) => {
-          if (!isEditMode) return entry
+          if (!hydrateSpace) return entry
           const match = savedWeekly.find((d) => d.day === entry.day)
           return match
             ? { ...entry, from: match.from || entry.from, to: match.to || entry.to, enabled: true }
             : { ...entry, enabled: savedWeekly.length === 0 ? entry.enabled : false }
         })
-        const blockedDates = isEditMode
+        const blockedDates = hydrateSpace
           ? (space?.availability?.blockedDates ?? []).map((d) => ({
               date: d.date ? String(d.date).slice(0, 10) : '',
               from: d.from || '',
@@ -313,64 +319,66 @@ export const CreateVenueListingPage = () => {
           longitude: venue?.location?.longitude ?? null,
           parkingAvailable: venue?.parkingAvailable ?? false,
           accessibility: venue?.accessibility ?? false,
-          spaceName: isEditMode ? space?.name || '' : '',
-          spaceType: isEditMode ? mapSpaceTypeFromApi(space?.spaceType) : '',
-          capacityType: isEditMode ? space?.capacityMode || 'seated' : 'seated',
-          guestCount: isEditMode && space?.capacityRange != null ? String(space.capacityRange) : '',
-          seatingType: isEditMode ? space?.seatingStyle || '' : '',
-          areaSqFt: isEditMode && space?.areaSqFeet != null ? String(space.areaSqFeet) : '',
-          locationType: isEditMode && space?.isSameAsVenueLocation === false ? 'different' : 'same',
+          spaceName: hydrateSpace ? space?.name || '' : '',
+          spaceType: hydrateSpace ? mapSpaceTypeFromApi(space?.spaceType) : '',
+          capacityType: hydrateSpace ? space?.capacityMode || 'seated' : 'seated',
+          guestCount:
+            hydrateSpace && space?.capacityRange != null ? String(space.capacityRange) : '',
+          seatingType: hydrateSpace ? space?.seatingStyle || '' : '',
+          areaSqFt: hydrateSpace && space?.areaSqFeet != null ? String(space.areaSqFeet) : '',
+          locationType:
+            hydrateSpace && space?.isSameAsVenueLocation === false ? 'different' : 'same',
           spaceAddress:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? String(space?.location?.address || '')
               : '',
           spaceLandmark:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? String(space?.location?.landmark || '')
               : '',
           spaceCity:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? String(space?.location?.city || '')
               : '',
           spacePincode:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? String(space?.location?.pincode || '')
               : '',
           spaceState:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? String(space?.location?.state || '')
               : '',
           spaceCountry:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? String(space?.location?.country || '')
               : '',
           spaceLatitude:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? (space?.location?.latitude ?? null)
               : null,
           spaceLongitude:
-            isEditMode && space?.isSameAsVenueLocation === false
+            hydrateSpace && space?.isSameAsVenueLocation === false
               ? (space?.location?.longitude ?? null)
               : null,
           seatedCapacity:
-            isEditMode && space?.capacityMode === 'seated' && space?.capacityRange != null
+            hydrateSpace && space?.capacityMode === 'seated' && space?.capacityRange != null
               ? String(space.capacityRange)
               : '',
           standingCapacity:
-            isEditMode && space?.capacityMode === 'standing' && space?.capacityRange != null
+            hydrateSpace && space?.capacityMode === 'standing' && space?.capacityRange != null
               ? String(space.capacityRange)
               : '',
-          inHouseCatering: isEditMode ? (space?.inHouseCatering ?? false) : false,
-          decorationAvailable: isEditMode ? (space?.decorationAvailable ?? false) : false,
+          inHouseCatering: hydrateSpace ? (space?.inHouseCatering ?? false) : false,
+          decorationAvailable: hydrateSpace ? (space?.decorationAvailable ?? false) : false,
 
-          amenities: isEditMode
+          amenities: hydrateSpace
             ? mapVenueAmenitySelections(
                 (space?.amenities as Record<string, unknown> | undefined) ||
                   (venue?.amenities as Record<string, unknown> | undefined),
               )
             : [],
 
-          ...(isEditMode
+          ...(hydrateSpace
             ? {
                 venueCoverImageUrl: galleryUrls.venueCoverImageUrl || '',
                 venueImageUrl: galleryUrls.venueImageUrl || '',
@@ -492,11 +500,7 @@ export const CreateVenueListingPage = () => {
           }))
         }
 
-        toast.success(
-          isEditMode && !creatingNewSpace
-            ? 'Space updated successfully'
-            : 'Space created successfully',
-        )
+        toast.success('Space details saved')
       }
 
       if (currentStep === 4) {
@@ -575,8 +579,13 @@ export const CreateVenueListingPage = () => {
           return
         }
 
-        await submitVenueListing.mutateAsync(venueId)
-        toast.success('Venue submitted successfully')
+        if (!spaceId) {
+          toast.error('Please complete all space steps before publishing.')
+          return
+        }
+
+        await submitVenueListing.mutateAsync({ venueId, spaceId })
+        toast.success('Venue listing published successfully')
 
         navigate('/venues/management')
 
@@ -623,7 +632,7 @@ export const CreateVenueListingPage = () => {
 
   const primaryLabel = (() => {
     if (isLoading) return 'Saving…'
-    if (currentStep === 7) return isEditMode ? 'Save Changes' : 'Submit'
+    if (currentStep === 7) return isEditMode ? 'Save Changes' : 'Publish'
     return 'Next'
   })()
 

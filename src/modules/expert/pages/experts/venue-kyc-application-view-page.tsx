@@ -81,6 +81,95 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'banking', label: 'Banking Details' },
 ]
 
+const extractDocumentUrl = (value: unknown): string | null => {
+  if (value == null || value === '') return null
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        return extractDocumentUrl(JSON.parse(trimmed))
+      } catch {
+        return trimmed
+      }
+    }
+    return trimmed
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const url = extractDocumentUrl(item)
+      if (url) return url
+    }
+    return null
+  }
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return extractDocumentUrl(
+      record.url ??
+        record.fileUrl ??
+        record.secure_url ??
+        record.documentUrl ??
+        record.path ??
+        record.uri ??
+        record.href,
+    )
+  }
+  return null
+}
+
+const asDocumentUrlList = (value: unknown): string[] => {
+  if (value == null || value === '') return []
+  if (Array.isArray(value)) {
+    const urls: string[] = []
+    const seen = new Set<string>()
+    for (const item of value) {
+      const url = extractDocumentUrl(item)
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      urls.push(url)
+    }
+    return urls
+  }
+  if (typeof value === 'object') {
+    const direct = extractDocumentUrl(value)
+    if (direct) return [direct]
+    const urls: string[] = []
+    const seen = new Set<string>()
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      const url = extractDocumentUrl(item)
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      urls.push(url)
+    }
+    return urls
+  }
+  const url = extractDocumentUrl(value)
+  return url ? [url] : []
+}
+
+const isFileDocumentUrl = (url?: string | null) => {
+  if (!url) return false
+  const clean = url.split('?')[0]?.toLowerCase() || ''
+  return (
+    /^https?:\/\//i.test(url) ||
+    url.startsWith('//') ||
+    url.startsWith('data:') ||
+    clean.includes('cloudinary') ||
+    clean.includes('/kyc/') ||
+    clean.includes('/uploads/') ||
+    /\.(pdf|png|jpe?g|webp|gif|heic|bmp|svg|avif|doc|docx)$/i.test(clean)
+  )
+}
+
+const humanizeDocumentKey = (key: string) => {
+  const spaced = key
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim()
+  if (!spaced) return 'Other Document'
+  return spaced.replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
 const displayValue = (value?: string | number | null) => {
   if (value === null || value === undefined) return 'N/A'
   if (typeof value === 'string' && !value.trim()) return 'N/A'
@@ -606,10 +695,13 @@ export function VenueKycApplicationViewPage() {
   const { header, overview, kycDetails, bankingDetails } = application
   const applicant = overview.applicant
   const venue = overview.venue
-  const documents = kycDetails.documents
+  const documents = (kycDetails.documents || {}) as ApplicationKycDocuments
   const compliance = kycDetails.compliance
   const account = bankingDetails.account
-  const otherCertificates = documents?.otherCertificates || []
+  const otherCertificates = [
+    ...asDocumentUrlList(documents?.otherCertificates),
+    ...asDocumentUrlList(documents?.otherDocuments),
+  ].filter((url, index, list) => isFileDocumentUrl(url) && list.indexOf(url) === index)
   const venueImages = overview.venueImages || []
 
   const applicantName = header.applicantName || applicant?.fullName || 'Venue Partner'
@@ -624,7 +716,7 @@ export function VenueKycApplicationViewPage() {
   const uploadedDocuments = primaryDocDefs
     .map((def) => {
       const docKey = def.key as keyof ApplicationKycDocuments
-      const url = documents?.[docKey] as string | undefined
+      const url = extractDocumentUrl(documents?.[docKey])
       return {
         label: def.label,
         key: def.key,
@@ -680,8 +772,8 @@ export function VenueKycApplicationViewPage() {
 
   categoryDocDefs.forEach((def) => {
     const docKey = def.key as keyof ApplicationKycDocuments
-    const url = documents?.[docKey] as string | undefined
-    if (url) {
+    const url = extractDocumentUrl(documents?.[docKey])
+    if (url && isFileDocumentUrl(url)) {
       otherDocuments.push({
         label: def.label,
         key: def.key,
@@ -692,13 +784,45 @@ export function VenueKycApplicationViewPage() {
     }
   })
 
+  const handledOtherKeys = new Set([
+    'panCard',
+    'gstCertificate',
+    'businessRegistration',
+    'otherCertificates',
+    'otherDocuments',
+    ...categoryDocDefs.map((def) => def.key),
+  ])
+  const seenOtherUrls = new Set(
+    otherDocuments.map((document) => document.url).filter((url): url is string => Boolean(url)),
+  )
+
   otherCertificates.forEach((certUrl, index) => {
+    if (!certUrl || seenOtherUrls.has(certUrl)) return
+    seenOtherUrls.add(certUrl)
     otherDocuments.push({
       label: `Other Certificate ${index + 1}`,
       key: 'otherCertificates',
       url: certUrl,
       reviewStatus: (kycDetails.documentReviews?.otherCertificates?.status ||
         null) as DocumentReviewStatus | null,
+    })
+  })
+
+  Object.entries(documents || {}).forEach(([key, value]) => {
+    if (handledOtherKeys.has(key)) return
+    const urls = asDocumentUrlList(value).filter(
+      (url) => isFileDocumentUrl(url) && !seenOtherUrls.has(url),
+    )
+    urls.forEach((url, index) => {
+      seenOtherUrls.add(url)
+      otherDocuments.push({
+        label:
+          urls.length > 1 ? `${humanizeDocumentKey(key)} ${index + 1}` : humanizeDocumentKey(key),
+        key,
+        url,
+        reviewStatus: (kycDetails.documentReviews?.[key]?.status ||
+          null) as DocumentReviewStatus | null,
+      })
     })
   })
 
@@ -974,16 +1098,20 @@ export function VenueKycApplicationViewPage() {
             icon={<FileText className="text-brand-accent size-4" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {otherDocuments.map((document) => (
-                <ReviewableDocumentCard
-                  key={document.label}
-                  label={document.label}
-                  url={document.url}
-                  reviewStatus={document.reviewStatus}
-                  uploadedAt={header.submittedAt || header.appliedAt}
-                  onView={() => openDocumentViewer(document)}
-                />
-              ))}
+              {otherDocuments.length > 0 ? (
+                otherDocuments.map((document) => (
+                  <ReviewableDocumentCard
+                    key={`${document.key}-${document.label}`}
+                    label={document.label}
+                    url={document.url}
+                    reviewStatus={document.reviewStatus}
+                    uploadedAt={header.submittedAt || header.appliedAt}
+                    onView={() => openDocumentViewer(document)}
+                  />
+                ))
+              ) : (
+                <p className="text-body-sm text-muted">No other documents uploaded.</p>
+              )}
             </div>
           </SectionCard>
         </div>

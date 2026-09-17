@@ -350,8 +350,11 @@ export const submitVenue = async (venueId: string) => {
   return response.data
 }
 
-export const submitAdminVenue = async (venueId: string) => {
-  const response = await venueApiClient.post(`/venues/admin/submit/${venueId}`)
+export const submitAdminVenue = async (venueId: string, spaceId?: string | null) => {
+  const response = await venueApiClient.post(
+    `/venues/admin/submit/${venueId}`,
+    spaceId ? { spaceId } : {},
+  )
 
   return response.data
 }

@@ -66,6 +66,8 @@ export interface ApplicationKycDocuments {
   fssaiLicense?: string | null
   gstUndertakingDocument?: string | null
   otherCertificates?: string[]
+  otherDocuments?: string[]
+  [key: string]: unknown
 }
 
 export type VenueDocumentReviewEntry = {

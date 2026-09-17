@@ -75,7 +75,6 @@ export function CreateVenueOnboardingPage() {
 
   useEffect(() => {
     if (controlsLoading) return
-    // Allow continuing an in-progress onboarding (existing venueId), block brand-new creates only.
     if (!allowAddVenues && !venueIdParam) {
       toast.error('Creating venues is turned off in Venue Management settings')
       navigate('/venues/management', { replace: true })

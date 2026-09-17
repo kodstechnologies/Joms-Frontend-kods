@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MapPin, ParkingCircle, Accessibility, Wifi, Camera, X } from 'lucide-react'
 
+import { BaseModal } from '@/shared/components/modal/base-modal'
 import type { BlockedDateEntry, VenueFormData, WeeklyAvailabilityEntry } from '../utils/venue-form'
 
 interface FinalCheckStepProps {
@@ -43,8 +44,24 @@ const GalleryPreviewModal = ({
   </div>
 )
 
+const cancellationPolicyLabel = (policy?: string) => {
+  if (policy === '7days') return '7 days before the event'
+  if (policy === '48hrs') return '48 hours before the event'
+  if (policy === '24hrs') return '24 hours before the event'
+  if (policy === '12hrs') return '12 hours before the event'
+  return policy?.trim() || 'Not set'
+}
+
 export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
   const [previewItem, setPreviewItem] = useState<{ url: string; title: string } | null>(null)
+  const [termsOpen, setTermsOpen] = useState(false)
+  const termLines = (venueData.terms || '')
+    .split('\n')
+    .map((term) => term.trim())
+    .filter(Boolean)
+  const faqItems = (venueData.faqs || []).filter(
+    (faq) => faq.question?.trim() || faq.answer?.trim(),
+  )
   const services = [
     {
       label: 'Parking Available',
@@ -102,6 +119,68 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
           onClose={() => setPreviewItem(null)}
         />
       )}
+
+      <BaseModal
+        open={termsOpen}
+        title="Terms & Conditions"
+        onClose={() => setTermsOpen(false)}
+        className="w-full max-w-2xl"
+        bodyClassName="max-h-[70vh] space-y-5 overflow-auto"
+      >
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-white">Venue Terms</h3>
+          {termLines.length > 0 ? (
+            <div className="space-y-3">
+              {termLines.map((term, index) => (
+                <div key={`${term}-${index}`} className="text-muted flex items-start gap-2 text-sm">
+                  <div className="bg-brand-positive mt-1.5 h-2 w-2 shrink-0 rounded-full" />
+                  <p className="leading-6 whitespace-pre-wrap">{term}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted text-sm">No terms added.</p>
+          )}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border border-white/10 bg-black p-4">
+            <p className="text-muted mb-1 text-xs">Cancellation policy</p>
+            <p className="text-sm font-medium text-white">
+              {cancellationPolicyLabel(venueData.cancellationPolicy)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-black p-4">
+            <p className="text-muted mb-1 text-xs">Refund after free window</p>
+            <p className="text-sm font-medium text-white">
+              {venueData.refundPercentage ? `${venueData.refundPercentage}%` : 'Not set'}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-white">FAQs</h3>
+          {faqItems.length > 0 ? (
+            <div className="space-y-3">
+              {faqItems.map((faq, index) => (
+                <div
+                  key={`${faq.question}-${index}`}
+                  className="rounded-lg border border-white/10 bg-black p-4"
+                >
+                  <p className="text-sm font-medium text-white">
+                    {faq.question || 'Untitled question'}
+                  </p>
+                  <p className="text-muted mt-2 text-sm leading-6 whitespace-pre-wrap">
+                    {faq.answer || 'No answer provided.'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted text-sm">No FAQs added.</p>
+          )}
+        </div>
+      </BaseModal>
 
       <div className="mx-auto w-full max-w-[1140px] space-y-6">
         <div className="bg-brand-surface overflow-hidden rounded-xl border border-white/10">
@@ -305,20 +384,25 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
             <h3 className="mb-5 text-sm font-semibold text-white">Terms & Conditions</h3>
 
             <div className="text-muted flex flex-wrap items-center gap-6 text-xs">
-              {(venueData.terms || '')
-                .split('\n')
-                .filter(Boolean)
-                .map((term: string, index: number) => (
-                  <div key={index} className="flex items-center gap-2">
+              {termLines.length > 0 ? (
+                termLines.map((term: string, index: number) => (
+                  <div key={`${term}-${index}`} className="flex items-center gap-2">
                     <div className="bg-brand-positive h-2 w-2 rounded-full" />
 
                     <span>{term}</span>
                   </div>
-                ))}
+                ))
+              ) : (
+                <p>No terms added.</p>
+              )}
             </div>
 
             <div className="mt-5 text-center">
-              <button type="button" className="text-muted text-xs underline">
+              <button
+                type="button"
+                onClick={() => setTermsOpen(true)}
+                className="text-brand-accent text-xs underline underline-offset-2 hover:text-white"
+              >
                 View Full Terms & Conditions
               </button>
             </div>
