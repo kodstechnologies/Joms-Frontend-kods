@@ -1,13 +1,23 @@
 import { useRef } from 'react'
+
 import { Upload } from 'lucide-react'
 
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 import { requiredLabel } from '@/shared/components/form/required-label'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import {
+  GOVERNMENT_ID_META,
+  GOVERNMENT_ID_TYPES,
+  isGovernmentIdType,
+  sanitizeGovernmentIdInput,
+  sanitizeGstInput,
+  sanitizePanInput,
+  validateGovernmentIdNumber,
+  validateGstNumber,
+  validatePanNumber,
+} from '@/shared/lib/partner-field-validation'
 
 const fieldClass = 'ui-input'
-
-const ID_TYPE_OPTIONS = ['Aadhaar', 'PAN', 'Passport', 'Driving License', 'Voter ID']
 
 type Props = {
   formData: ExpertOnboardingFormData
@@ -16,6 +26,14 @@ type Props = {
 
 type DocFieldKey = 'panCardFile' | 'certificateFile' | 'gstCertificateFile'
 type DocNameKey = 'panCardFileName' | 'certificateFileName' | 'gstCertificateFileName'
+
+function FieldMessage({ error, hint }: { error?: string | null; hint?: string }) {
+  if (error) {
+    return <p className="text-brand-danger mt-1 text-[10px]">{error}</p>
+  }
+  if (!hint) return null
+  return <p className="text-muted mt-1 text-[10px]">{hint}</p>
+}
 
 function DocumentUploadField({
   label,
@@ -57,6 +75,18 @@ function DocumentUploadField({
 }
 
 export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props) => {
+  const selectedIdMeta = isGovernmentIdType(formData.idType)
+    ? GOVERNMENT_ID_META[formData.idType]
+    : null
+  const idNumberError = formData.idNumber.trim()
+    ? validateGovernmentIdNumber(formData.idType, formData.idNumber)
+    : null
+  const panError = formData.panNumber.trim() ? validatePanNumber(formData.panNumber) : null
+  const gstError =
+    formData.gstAvailable && formData.gstNumber.trim()
+      ? validateGstNumber(formData.gstNumber)
+      : null
+
   const handleFileChange = (fileKey: DocFieldKey, nameKey: DocNameKey, file: File | null) => {
     setFormData((prev) => ({
       ...prev,
@@ -82,11 +112,18 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
             </label>
             <select
               value={formData.idType}
-              onChange={(e) => setFormData((prev) => ({ ...prev, idType: e.target.value }))}
+              onChange={(e) => {
+                const nextType = e.target.value
+                setFormData((prev) => ({
+                  ...prev,
+                  idType: nextType,
+                  idNumber: sanitizeGovernmentIdInput(nextType, prev.idNumber),
+                }))
+              }}
               className={`${fieldClass} appearance-none`}
             >
               <option value="">Choose ID type</option>
-              {ID_TYPE_OPTIONS.map((option) => (
+              {GOVERNMENT_ID_TYPES.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -100,11 +137,21 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
             </label>
             <input
               value={formData.idNumber}
-              onChange={(e) => setFormData((prev) => ({ ...prev, idNumber: e.target.value }))}
-              placeholder="ABC0E123F"
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  idNumber: sanitizeGovernmentIdInput(prev.idType, e.target.value),
+                }))
+              }
+              placeholder={selectedIdMeta?.placeholder || 'Enter ID number'}
+              maxLength={selectedIdMeta?.maxLength}
+              inputMode={selectedIdMeta?.inputMode}
               className={fieldClass}
             />
-            <p className="text-muted mt-1 text-[10px]">Format: ABC0E1234F</p>
+            <FieldMessage
+              error={idNumberError}
+              hint={selectedIdMeta?.formatHint || 'Select an ID type to see the expected format'}
+            />
           </div>
         </div>
 
@@ -141,12 +188,13 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
               <input
                 value={formData.gstNumber}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, gstNumber: e.target.value.toUpperCase() }))
+                  setFormData((prev) => ({ ...prev, gstNumber: sanitizeGstInput(e.target.value) }))
                 }
                 placeholder="22AAAAA0000A1Z5"
+                maxLength={15}
                 className={fieldClass}
               />
-              <p className="text-muted mt-1 text-[10px]">Format: 22AAAAA0000A1Z5</p>
+              <FieldMessage error={gstError} hint="Format: 22AAAAA0000A1Z5" />
             </div>
           )}
 
@@ -157,12 +205,13 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
             <input
               value={formData.panNumber}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, panNumber: e.target.value.toUpperCase() }))
+                setFormData((prev) => ({ ...prev, panNumber: sanitizePanInput(e.target.value) }))
               }
               placeholder="ABCDE1234F"
+              maxLength={10}
               className={fieldClass}
             />
-            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
+            <FieldMessage error={panError} hint="Format: ABCDE1234F" />
           </div>
         </div>
 

@@ -702,7 +702,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
   const spaces = useMemo(() => {
     return data.spaces.filter((space) => {
       const listingStatus = (space.status || '').toLowerCase()
-      if (listingStatus !== 'approved') return false
+      if (listingStatus === 'draft' || listingStatus === 'preview') return false
 
       if (search.trim()) {
         const query = search.toLowerCase().trim()

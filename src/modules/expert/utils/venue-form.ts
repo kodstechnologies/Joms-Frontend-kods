@@ -36,6 +36,19 @@ export type VenueAmenitySelection = {
   image: string
 }
 
+export type AmenityMediaFields = {
+  image?: string | null
+  icon?: string | null
+  icon3D?: string | null
+  vectorIcon?: string | null
+  name?: string | null
+  _id?: string
+  id?: string
+}
+
+export const resolveAmenityMediaUrl = (item?: AmenityMediaFields | null) =>
+  item?.image || item?.icon || item?.icon3D || item?.vectorIcon || null
+
 const toAmenityId = (value: unknown) => {
   if (value == null) return ''
   if (typeof value === 'object' && value && '_id' in value) {
@@ -59,7 +72,7 @@ export const mapVenueAmenitySelections = (
           categoryId,
           subCategoryId: toAmenityId(item._id),
           name: String(item.name || ''),
-          image: String(item.image || item.icon || ''),
+          image: String(resolveAmenityMediaUrl(item as AmenityMediaFields) || ''),
         }))
       }
 
@@ -71,7 +84,7 @@ export const mapVenueAmenitySelections = (
             categoryId,
             subCategoryId: toAmenityId(rec._id),
             name: String(rec.name || ''),
-            image: String(rec.image || rec.icon || ''),
+            image: String(resolveAmenityMediaUrl(rec as AmenityMediaFields) || ''),
           }
         }
         return {
