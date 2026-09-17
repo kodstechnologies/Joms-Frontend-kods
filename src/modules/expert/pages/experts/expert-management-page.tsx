@@ -5,7 +5,7 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
-import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   AlertCircle,
@@ -1054,7 +1054,7 @@ export const ExpertManagementPage = () => {
             className="h-9 w-full md:w-auto"
             onClick={() => navigate('/experts/management/create')}
           >
-            <img src={createIcon} alt="create" className="size-4" />
+            <img src={createAccountIcon} alt="" className="size-4 shrink-0" aria-hidden="true" />
             Create Expert
           </Button>
         </div>

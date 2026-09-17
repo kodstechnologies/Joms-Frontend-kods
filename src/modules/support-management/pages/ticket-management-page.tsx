@@ -1,16 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useNavigate } from 'react-router-dom'
-import {
-  AlertTriangle,
-  ArrowLeftRight,
-  Eye,
-  MessageSquarePlus,
-  Pencil,
-  SlidersHorizontal,
-  Tag,
-  Trash2,
-} from 'lucide-react'
+import { AlertTriangle, Eye, MessageSquarePlus, Tag, Trash2 } from 'lucide-react'
+import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
+import changeStatusIcon from '@/assets/JOMS_ICONS-2/change-status.svg'
+import changePriorityIcon from '@/assets/JOMS_ICONS-2/change-priority.svg'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 
@@ -410,7 +404,7 @@ export function TicketManagementPage() {
             View Details
           </TableActionsItem>
           <TableActionsItem
-            icon={<Pencil className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<img src={editIcon} alt="" className="size-3.5" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -421,7 +415,7 @@ export function TicketManagementPage() {
             Edit Ticket
           </TableActionsItem>
           <TableActionsItem
-            icon={<ArrowLeftRight className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<img src={changeStatusIcon} alt="" className="size-3.5" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={async () => {
               setActiveDropdownId(null)
@@ -437,7 +431,7 @@ export function TicketManagementPage() {
             Change Status
           </TableActionsItem>
           <TableActionsItem
-            icon={<SlidersHorizontal className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<img src={changePriorityIcon} alt="" className="size-3.5" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={async () => {
               setActiveDropdownId(null)

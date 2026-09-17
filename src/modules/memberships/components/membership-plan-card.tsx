@@ -4,7 +4,6 @@ import {
   Check,
   CircleArrowDown,
   CircleArrowUp,
-  CircleX,
   ClipboardList,
   Image,
   MoreVertical,
@@ -14,6 +13,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import cancelIcon from '@/assets/JOMS_ICONS-2/Cancel_error.svg'
 
 import type { MembershipPlan } from '../types/membership'
 import {
@@ -211,7 +211,7 @@ export function MembershipPlanCard({
                   ) : null}
                   <MenuButton
                     label="Delete Plan"
-                    icon={<CircleX className="size-4" strokeWidth={1.85} />}
+                    icon={<img src={cancelIcon} alt="" className="size-4" aria-hidden="true" />}
                     onClick={() => runAction(onDelete)}
                     danger
                   />

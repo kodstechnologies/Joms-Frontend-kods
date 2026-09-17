@@ -1,5 +1,6 @@
-import { BadgeCheck, CircleArrowOutUpRight, Gavel, RotateCcw, XCircle } from 'lucide-react'
+import { BadgeCheck, CircleArrowOutUpRight, RotateCcw, XCircle } from 'lucide-react'
 
+import decisionControlIcon from '@/assets/JOMS_ICONS-2/decision-control.svg'
 import { cn } from '@/shared/lib/cn'
 
 const decisionBtnClass =
@@ -86,7 +87,12 @@ export function DecisionControlsHeader({
 }) {
   return (
     <div className={cn('flex h-6 items-center gap-2', className)}>
-      <Gavel className="size-5 shrink-0 text-white" aria-hidden="true" />
+      <img
+        src={decisionControlIcon}
+        alt=""
+        className="size-5 shrink-0 brightness-0 invert"
+        aria-hidden="true"
+      />
       <h3 className="text-[20px] leading-6 font-semibold tracking-normal text-white">{title}</h3>
     </div>
   )

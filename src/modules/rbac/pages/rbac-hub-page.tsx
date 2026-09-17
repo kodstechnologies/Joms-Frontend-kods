@@ -2,8 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Clock, Shield, UserCheck } from 'lucide-react'
 import {
-  AccessAssignUserIcon,
-  AccessChangeRoleIcon,
   AccessDisableRoleIcon,
   AccessEditPermissionIcon,
   AccessEditScopeIcon,
@@ -11,7 +9,6 @@ import {
   AccessRemoveRoleIcon,
   AccessRemoveUserIcon,
   AccessSuspendUserIcon,
-  AccessViewLogsIcon,
   AccessViewUserIcon,
   AccessViewUserLogsIcon,
   ManageMetricsIcon,
@@ -19,6 +16,10 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import createNewRoleIcon from '@/assets/JOMS_ICONS-2/create-new-role.svg'
+import assignUserIcon from '@/assets/JOMS_ICONS-2/assign-user.svg'
+import userLogsIcon from '@/assets/JOMS_ICONS-2/user-logs.svg'
+import changeRoleIcon from '@/assets/JOMS_ICONS-2/change-role.svg'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { RbacStatsBar } from '../components/rbac-stats-bar'
 import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
@@ -566,13 +567,13 @@ export function RbacHubPage() {
             Edit scope
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessAssignUserIcon />}
+            icon={<img src={assignUserIcon} alt="" className="size-3.5" aria-hidden="true" />}
             onClick={() => navigate('/settings/access/users/create')}
           >
             Assign new user
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessViewLogsIcon />}
+            icon={<img src={userLogsIcon} alt="" className="size-3.5" aria-hidden="true" />}
             onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
           >
             View Logs
@@ -713,7 +714,14 @@ export function RbacHubPage() {
             View user
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessChangeRoleIcon />}
+            icon={
+              <img
+                src={changeRoleIcon}
+                alt=""
+                className="size-3.5 brightness-0 invert"
+                aria-hidden="true"
+              />
+            }
             onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
           >
             Change role
@@ -796,7 +804,12 @@ export function RbacHubPage() {
               )
             }
           >
-            <img src={createIcon} alt="" className="size-4" aria-hidden="true" />
+            <img
+              src={isRolesTab ? createNewRoleIcon : createIcon}
+              alt=""
+              className="size-4"
+              aria-hidden="true"
+            />
             {isRolesTab ? 'Create New Role' : 'Add New User'}
           </Button>
         </div>

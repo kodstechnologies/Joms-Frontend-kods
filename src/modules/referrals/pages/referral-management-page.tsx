@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ClipboardList, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
@@ -683,7 +683,7 @@ export function ReferralManagementPage() {
           </Button>
 
           <Button type="button" className="w-full md:w-auto" onClick={() => setInviteOpen(true)}>
-            <img src={createIcon} alt="create" className="size-4" />
+            <img src={createAccountIcon} alt="" className="size-4 shrink-0" aria-hidden="true" />
             Invite New Expert
           </Button>
         </div>
