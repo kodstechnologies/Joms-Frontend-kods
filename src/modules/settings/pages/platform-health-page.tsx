@@ -104,6 +104,7 @@ const PLATFORM_TREND_UPTIME_TICKS = [99, 99.25, 99.5, 99.75, 100]
 const SYSTEM_PERF_LEFT_TICKS = [0, 25, 50, 75, 100]
 const SYSTEM_PERF_RIGHT_MAX = 3200
 const SYSTEM_PERF_RIGHT_TICKS = [0, 800, 1600, 2400, 3200]
+const SYSTEM_PERF_POINT_WIDTH = 56
 const SECURITY_TICKS = [0, 2, 4, 6, 8]
 
 const PLATFORM_TREND_BAR_SIZE = 70
@@ -675,6 +676,11 @@ export function PlatformHealthPage() {
     platformTrendData.length * PLATFORM_TREND_CATEGORY_WIDTH + 80,
   )
 
+  const systemPerfChartMinWidth = Math.max(
+    720,
+    systemPerformanceData.length * SYSTEM_PERF_POINT_WIDTH + 80,
+  )
+
   const refresh = () => {
     refetchAll()
   }
@@ -785,7 +791,9 @@ export function PlatformHealthPage() {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/metrics/platform-health?section=table')}
+            onClick={() =>
+              navigate('/metrics/platform-health?section=all&returnTo=/settings/health')
+            }
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
             <ManageMetricsIcon />
@@ -933,130 +941,132 @@ export function PlatformHealthPage() {
         isLoading={systemPerformanceQuery.isLoading}
         trendTypography
       >
-        <div className="platform-health-trends-chart h-[420px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={systemPerformanceData}
-              margin={{ left: 12, right: 28, top: 8, bottom: 4 }}
-            >
-              <defs>
-                <linearGradient id="sysPerfMemoryFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.memory} stopOpacity={0.4} />
-                  <stop offset="100%" stopColor={CHART_COLORS.memory} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="sysPerfCpuFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.cpu} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={CHART_COLORS.cpu} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="sysPerfRequestsFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.requests} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={CHART_COLORS.requests} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                stroke="rgba(255,255,255,0.08)"
-                strokeDasharray="3 3"
-                horizontal
-                vertical
-              />
-              <XAxis
-                dataKey="time"
-                interval="preserveStartEnd"
-                minTickGap={36}
-                tickLine={false}
-                axisLine={false}
-                tick={renderPlatformTrendAxisTick}
-                height={32}
-              />
-              <YAxis
-                yAxisId="left"
-                domain={[0, 100]}
-                ticks={SYSTEM_PERF_LEFT_TICKS}
-                tickLine={false}
-                axisLine={false}
-                tick={renderPlatformTrendAxisTick}
-                width={40}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                domain={systemPerfRightAxis.domain}
-                ticks={systemPerfRightAxis.ticks}
-                tickLine={false}
-                axisLine={false}
-                tick={renderSystemPerfRightAxisTick}
-                width={52}
-              />
-              <Tooltip
-                contentStyle={{
-                  ...tooltipStyle,
-                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: '20px',
-                }}
-                labelStyle={{
-                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: '20px',
-                }}
-                itemStyle={{
-                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: '20px',
-                }}
-              />
-              <Legend content={<SystemPerfChartLegend />} />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="memory"
-                name="Memory usage"
-                stroke={CHART_COLORS.memory}
-                fill="url(#sysPerfMemoryFill)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: CHART_COLORS.memory, stroke: '#ffffff', strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="cpu"
-                name="CPU Usage"
-                stroke={CHART_COLORS.cpu}
-                fill="url(#sysPerfCpuFill)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: CHART_COLORS.cpu, stroke: '#ffffff', strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
-              <Area
-                yAxisId="right"
-                type="monotone"
-                dataKey="requestsPerMin"
-                name="Request/min"
-                stroke={CHART_COLORS.requests}
-                fill="url(#sysPerfRequestsFill)"
-                strokeWidth={2}
-                dot={{
-                  r: 4,
-                  fill: CHART_COLORS.requests,
-                  stroke: '#ffffff',
-                  strokeWidth: 2,
-                }}
-                activeDot={{
-                  r: 5,
-                  fill: CHART_COLORS.requests,
-                  stroke: '#ffffff',
-                  strokeWidth: 2,
-                }}
-                isAnimationActive={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <div className="platform-health-trends-chart w-full overflow-x-auto">
+          <div className="h-[420px]" style={{ minWidth: systemPerfChartMinWidth }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={systemPerformanceData}
+                margin={{ left: 12, right: 28, top: 8, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="sysPerfMemoryFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.memory} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={CHART_COLORS.memory} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="sysPerfCpuFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.cpu} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={CHART_COLORS.cpu} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="sysPerfRequestsFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.requests} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={CHART_COLORS.requests} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeDasharray="3 3"
+                  horizontal
+                  vertical
+                />
+                <XAxis
+                  dataKey="time"
+                  interval="preserveStartEnd"
+                  minTickGap={36}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderPlatformTrendAxisTick}
+                  height={32}
+                />
+                <YAxis
+                  yAxisId="left"
+                  domain={[0, 100]}
+                  ticks={SYSTEM_PERF_LEFT_TICKS}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderPlatformTrendAxisTick}
+                  width={40}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  domain={systemPerfRightAxis.domain}
+                  ticks={systemPerfRightAxis.ticks}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderSystemPerfRightAxisTick}
+                  width={52}
+                />
+                <Tooltip
+                  contentStyle={{
+                    ...tooltipStyle,
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                  labelStyle={{
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                  itemStyle={{
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                />
+                <Legend content={<SystemPerfChartLegend />} />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="memory"
+                  name="Memory usage"
+                  stroke={CHART_COLORS.memory}
+                  fill="url(#sysPerfMemoryFill)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: CHART_COLORS.memory, stroke: '#ffffff', strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="cpu"
+                  name="CPU Usage"
+                  stroke={CHART_COLORS.cpu}
+                  fill="url(#sysPerfCpuFill)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: CHART_COLORS.cpu, stroke: '#ffffff', strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+                <Area
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="requestsPerMin"
+                  name="Request/min"
+                  stroke={CHART_COLORS.requests}
+                  fill="url(#sysPerfRequestsFill)"
+                  strokeWidth={2}
+                  dot={{
+                    r: 4,
+                    fill: CHART_COLORS.requests,
+                    stroke: '#ffffff',
+                    strokeWidth: 2,
+                  }}
+                  activeDot={{
+                    r: 5,
+                    fill: CHART_COLORS.requests,
+                    stroke: '#ffffff',
+                    strokeWidth: 2,
+                  }}
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </ChartPanel>
 

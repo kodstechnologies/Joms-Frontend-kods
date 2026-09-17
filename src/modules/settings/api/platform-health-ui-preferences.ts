@@ -1,6 +1,7 @@
 import { createDashboardMetricPreferenceApi } from '@/modules/expert/api/dashboard-metric-preference-handlers'
 import {
   DEFAULT_PLATFORM_HEALTH_METRIC_IDS,
+  PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP,
   PLATFORM_HEALTH_METRICS_CATALOG,
   PLATFORM_HEALTH_METRIC_IDS,
   PLATFORM_HEALTH_MODULE_KEY,
@@ -11,6 +12,7 @@ const prefs = createDashboardMetricPreferenceApi({
   catalog: PLATFORM_HEALTH_METRICS_CATALOG,
   catalogIds: PLATFORM_HEALTH_METRIC_IDS,
   defaultIds: DEFAULT_PLATFORM_HEALTH_METRIC_IDS,
+  legacyIdMap: PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP,
 })
 
 export const fetchPlatformHealthDashboardMetricPreferences = prefs.fetch

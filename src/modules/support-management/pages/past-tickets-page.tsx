@@ -43,7 +43,17 @@ import {
   createSupportTicketsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
-const PAST_TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(PAST_TICKETS_TABLE_COLUMNS_CATALOG)
+const PAST_TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(PAST_TICKETS_TABLE_COLUMNS_CATALOG, {
+  'ticket-id': 'ticketId',
+  'assigned-to': 'assignedToName',
+  'assigned-by': 'assignedByName',
+  'assigned-on': 'assignedAt',
+  'resolved-at': 'resolvedAt',
+  'resolved-by': 'resolvedByName',
+  'last-updated-at': 'updatedAt',
+  'sla-timer': null,
+  'resolution-time': null,
+})
 
 const EXPORT_COLUMN_MAP: Record<
   string,

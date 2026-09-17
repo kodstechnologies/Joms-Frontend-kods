@@ -32,6 +32,7 @@ import {
   updateRole,
   updateSubAdmin,
   updateSubAdminPassword,
+  updateMyPassword,
 } from '../api/rbac-api'
 import type {
   CompleteContactSetupPayload,
@@ -398,6 +399,17 @@ export function useUpdateSubAdminPassword() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateSubAdminPasswordPayload }) =>
       updateSubAdminPassword(id, payload),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useUpdateMyPassword() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: UpdateSubAdminPasswordPayload) => updateMyPassword(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.me })
       queryClient.invalidateQueries({ queryKey: rbacKeys.all })
     },
   })

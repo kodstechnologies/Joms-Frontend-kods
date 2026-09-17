@@ -56,9 +56,7 @@ const PAGE_SIZE = 10
 const MODULE_TABS: Array<{ key: string; label: string }> = [
   { key: 'platform', label: 'Platform Controls' },
   { key: 'security', label: 'Security & Access' },
-  { key: 'user', label: 'User Application' },
   { key: 'expert', label: 'Expert Application' },
-  { key: 'event', label: 'Event Management' },
   { key: 'venue', label: 'Venue Management' },
   { key: 'service', label: 'Service Marketplace' },
   { key: 'backup', label: 'Backup' },

@@ -182,6 +182,14 @@ export const updateSubAdminPassword = async (
   return response.data
 }
 
+export const updateMyPassword = async (payload: UpdateSubAdminPasswordPayload) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: { id: string; updated: boolean }
+  }>('/admin/rbac/me/password', payload)
+  return response.data
+}
+
 export const fetchSubAdminLogs = async (id: string, params?: ListParams) => {
   const response = await adminApiClient.get<{
     success: boolean

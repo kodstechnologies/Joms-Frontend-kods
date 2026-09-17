@@ -312,25 +312,26 @@ export function InviteExpertReferralModal({
             />
           </Field>
 
-          <div className="invite-modal-actions-block">
-            <p className="invite-modal-note">
-              Note: The users will get referral code to their email ID &amp; notified through
-              SMS/WhatsApp.
-            </p>
-            <hr className="invite-modal-body-divider" />
-            <div className="invite-modal-footer-actions">
-              <button type="button" className="invite-modal-btn-cancel" onClick={handleClose}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="invite-modal-btn-submit"
-                onClick={() => void handleSubmit()}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Sending...' : 'Send Invite'}
-              </button>
-            </div>
+          <p className="invite-modal-note">
+            Note: The users will get referral code to their email ID &amp; notified through
+            SMS/WhatsApp.
+          </p>
+        </div>
+
+        <div className="invite-modal-actions-block">
+          <hr className="invite-modal-body-divider" />
+          <div className="invite-modal-footer-actions">
+            <button type="button" className="invite-modal-btn-cancel" onClick={handleClose}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="invite-modal-btn-submit"
+              onClick={() => void handleSubmit()}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Sending...' : 'Send Invite'}
+            </button>
           </div>
         </div>
       </div>

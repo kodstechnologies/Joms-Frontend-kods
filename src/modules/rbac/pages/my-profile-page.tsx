@@ -9,6 +9,7 @@ import {
   useContactSetupProfile,
   useMySubAdminLogs,
   useRbacMe,
+  useUpdateMyPassword,
   useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
 import { fetchMySubAdminLogs } from '../api/rbac-api'
@@ -145,10 +146,24 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
   const updateUser = useAuthStore((state) => state.updateUser)
   const authenticator = useAuthenticatorSetupModal()
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
+  const updatePasswordMutation = useUpdateMyPassword()
   const isActive = profile.status === 'active'
   const phoneDisplay = profile.phone
     ? `${profile.countryCode || '+91'} ${profile.phone}`.trim()
     : '—'
+
+  const handlePasswordUpdate = useCallback(
+    async (data: UpdateSubAdminPasswordPayload) => {
+      try {
+        await updatePasswordMutation.mutateAsync(data)
+        toast.success('Password updated successfully')
+        setPasswordModalOpen(false)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to update password'))
+      }
+    },
+    [updatePasswordMutation],
+  )
 
   return (
     <div className="ad-page">
@@ -306,10 +321,9 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
       <UpdatePasswordModal
         open={passwordModalOpen}
         userName={profile.fullname}
+        isSubmitting={updatePasswordMutation.isPending}
         onClose={() => setPasswordModalOpen(false)}
-        onSubmit={() => {
-          toast.error('Password updates for Super Admin are not available from this screen yet.')
-        }}
+        onSubmit={handlePasswordUpdate}
       />
     </div>
   )

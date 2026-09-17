@@ -8847,8 +8847,7 @@ select::-ms-expand {
   display: flex;
   width: 632px;
   max-width: min(632px, calc(100vw - 32px));
-  height: 647px;
-  max-height: min(647px, 90vh);
+  max-height: min(647px, calc(100vh - 32px));
   flex-direction: column;
   overflow: hidden;
   border: none;
@@ -8890,8 +8889,10 @@ select::-ms-expand {
   min-height: 0;
   flex-direction: column;
   gap: 14px;
-  overflow: hidden;
-  padding: 16px 18px 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px 18px 12px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .invite-modal-tabs {
@@ -9020,21 +9021,18 @@ select::-ms-expand {
 .invite-modal-actions-block {
   box-sizing: border-box;
   display: flex;
-  width: 596px;
+  width: 100%;
   max-width: 100%;
-  height: 128px;
   flex-shrink: 0;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 0;
-  margin-top: 0;
+  gap: 12px;
+  padding: 0 18px 20px;
 }
 
 .invite-modal-note {
   box-sizing: border-box;
-  width: 580px;
+  width: 100%;
   max-width: 100%;
-  height: 24px;
   flex-shrink: 0;
   margin: 0;
   padding: 0;
@@ -9044,9 +9042,6 @@ select::-ms-expand {
   font-weight: 600;
   line-height: 24px;
   letter-spacing: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .invite-modal-footer-actions {
