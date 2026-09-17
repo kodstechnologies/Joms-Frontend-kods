@@ -157,6 +157,9 @@ export function LoginPage() {
         permissions: normalizeUserPermissions(profile.permissions ?? sessionUser.permissions),
         requiresContactSetup: Boolean(profile.requiresContactSetup),
         contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+        mfaEnabled: Boolean(
+          profile.mfaEnabled ?? profile.profile?.mfaEnabled ?? sessionUser.mfaEnabled,
+        ),
         fullname: profile.name || sessionUser.fullname,
       })
 
@@ -166,6 +169,9 @@ export function LoginPage() {
         permissions: normalizeUserPermissions(profile.permissions ?? sessionUser.permissions),
         requiresContactSetup: Boolean(profile.requiresContactSetup),
         contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+        mfaEnabled: Boolean(
+          profile.mfaEnabled ?? profile.profile?.mfaEnabled ?? sessionUser.mfaEnabled,
+        ),
       }
 
       if (profile.requiresContactSetup) {

@@ -13,6 +13,7 @@ import { PageContainer } from '@/shared/components/responsive/page-container'
 import { useMediaQuery } from '@/shared/hooks/use-media-query'
 import { uiTokens } from '@/shared/lib/design-tokens'
 import { useSyncSubAdminPermissions } from '@/modules/auth/hooks/use-sync-sub-admin-permissions'
+import { AuthenticatorSetupGate } from '@/modules/rbac/components/authenticator-setup-gate'
 import { usePushNotifications } from '@/modules/notifications'
 import { SidebarShellProvider } from '@/app/layouts/sidebar-shell-context'
 
@@ -99,6 +100,7 @@ export function DashboardLayout() {
           onClose={() => setIsNotificationsOpen(false)}
         />
         <AlertsPanel open={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
+        <AuthenticatorSetupGate />
 
         <div
           className={cn(

@@ -15,6 +15,7 @@ import { fetchMySubAdminLogs } from '../api/rbac-api'
 import { RbacLoader } from '../components/rbac-loader'
 import { AuthenticatorSetupModal } from '../components/authenticator-setup-modal'
 import { UpdatePasswordModal } from '../components/update-password-modal'
+import { useAuthenticatorSetupModal } from '../hooks/use-authenticator-setup-modal'
 import type { AuditLog, SuperAdminSelfProfile, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -142,7 +143,7 @@ function TwoFactorStatus({ enabled }: { enabled?: boolean }) {
 function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) {
   const navigate = useNavigate()
   const updateUser = useAuthStore((state) => state.updateUser)
-  const [authenticatorOpen, setAuthenticatorOpen] = useState(false)
+  const authenticator = useAuthenticatorSetupModal()
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const isActive = profile.status === 'active'
   const phoneDisplay = profile.phone
@@ -154,7 +155,10 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
       <div className="ad-header">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
+          onClick={() => {
+            authenticator.close()
+            navigateBackOrFallback(navigate, '/settings/access')
+          }}
           className="ad-back"
         >
           <ArrowLeft className="size-5" aria-hidden="true" />
@@ -171,7 +175,7 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
           <button
             type="button"
             className="ad-btn ad-btn-auth"
-            onClick={() => setAuthenticatorOpen(true)}
+            onClick={() => authenticator.setOpen(true)}
           >
             <Shield className="size-4" aria-hidden="true" />
             {profile.mfaEnabled ? 'Authenticator App' : 'Set Up Authenticator App'}
@@ -293,8 +297,8 @@ function SuperAdminProfileView({ profile }: { profile: SuperAdminSelfProfile }) 
         </div>
       </section>
       <AuthenticatorSetupModal
-        open={authenticatorOpen}
-        onClose={() => setAuthenticatorOpen(false)}
+        open={authenticator.open}
+        onClose={authenticator.close}
         onEnrolled={() => {
           updateUser({ mfaEnabled: true })
         }}
@@ -349,7 +353,7 @@ function SubAdminProfileView() {
   }, [logs])
 
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
-  const [authenticatorOpen, setAuthenticatorOpen] = useState(false)
+  const authenticator = useAuthenticatorSetupModal()
   const updatePasswordMutation = useUpdateSubAdminPassword()
 
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
@@ -427,7 +431,10 @@ function SubAdminProfileView() {
       <div className="ad-header">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
+          onClick={() => {
+            authenticator.close()
+            navigateBackOrFallback(navigate, '/settings/access')
+          }}
           className="ad-back"
         >
           <ArrowLeft className="size-5" aria-hidden="true" />
@@ -444,7 +451,7 @@ function SubAdminProfileView() {
           <button
             type="button"
             className="ad-btn ad-btn-auth"
-            onClick={() => setAuthenticatorOpen(true)}
+            onClick={() => authenticator.setOpen(true)}
           >
             <Shield className="size-4" aria-hidden="true" />
             {subAdmin.mfaEnabled ? 'Authenticator App' : 'Set Up Authenticator App'}
@@ -611,8 +618,8 @@ function SubAdminProfileView() {
       />
 
       <AuthenticatorSetupModal
-        open={authenticatorOpen}
-        onClose={() => setAuthenticatorOpen(false)}
+        open={authenticator.open}
+        onClose={authenticator.close}
         onEnrolled={() => {
           updateUser({ mfaEnabled: true })
         }}
