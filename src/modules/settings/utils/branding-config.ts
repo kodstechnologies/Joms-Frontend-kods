@@ -78,8 +78,10 @@ export const mergeWithDefaults = <T>(defaults: T, incoming: unknown): T => {
   if (incoming == null) return defaults
   if (!isRecord(defaults) || !isRecord(incoming)) return (incoming as T) ?? defaults
 
+  // Only keep keys defined on defaults so stale DB fields cannot round-trip into saves.
   const merged: Record<string, unknown> = { ...defaults }
-  for (const [key, value] of Object.entries(incoming)) {
+  for (const key of Object.keys(defaults)) {
+    const value = incoming[key]
     if (value == null) continue
     const defaultValue = merged[key]
     merged[key] =
