@@ -64,7 +64,9 @@ export type EscalateAdminEntityPayload = {
   adminNotes?: string
   sourceApp?: string
   username?: string
-  changeType?: 'upgrade' | 'downgrade' | string
+  changeType?: 'upgrade' | 'downgrade' | 'extend' | string
+  endDate?: string
+  currentExpiresAt?: string
 }
 
 export type EscalationListItem = {

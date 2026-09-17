@@ -32,7 +32,19 @@ export function MembershipUpgradeDetails() {
   )
   const changeType = String(metadata.changeType || 'upgrade').toLowerCase()
   const isDowngrade = changeType === 'downgrade'
-  const actionLabel = isDowngrade ? 'Downgrade' : 'Upgrade'
+  const isExtend = changeType === 'extend'
+  const actionLabel = isExtend ? 'Extend' : isDowngrade ? 'Downgrade' : 'Upgrade'
+
+  const formatEndDate = (value: unknown) => {
+    if (!value) return '—'
+    const date = new Date(String(value))
+    if (Number.isNaN(date.getTime())) return String(value)
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
 
   useEffect(() => {
     if (!id || !escalation || escalation.escalationStatus !== 'assigned') return
@@ -76,6 +88,8 @@ export function MembershipUpgradeDetails() {
   const sourceApp = String(metadata.sourceApp || 'User App')
   const currentPlan = String(metadata.currentPlanName || '—')
   const targetPlan = String(metadata.newPlanName || '—')
+  const requestedEndDate = formatEndDate(metadata.endDate)
+  const currentExpiresAt = formatEndDate(metadata.currentExpiresAt)
   const reasons = Array.isArray(metadata.reasons)
     ? (metadata.reasons as string[]).join(', ')
     : String(metadata.reasons || escalation.escalationNote || '—')
@@ -164,11 +178,24 @@ export function MembershipUpgradeDetails() {
             </div>
             <div>
               <p className="text-sm text-slate-400">
-                {isDowngrade ? 'Downgrading Plan' : 'Upgrading Plan'}
+                {isExtend
+                  ? 'Requested End Date'
+                  : isDowngrade
+                    ? 'Downgrading Plan'
+                    : 'Upgrading Plan'}
               </p>
-              <p className="mt-2 text-sm font-medium text-white">{targetPlan}</p>
+              <p className="mt-2 text-sm font-medium text-white">
+                {isExtend ? requestedEndDate : targetPlan}
+              </p>
             </div>
           </div>
+
+          {isExtend ? (
+            <div className="mt-8">
+              <p className="text-sm text-slate-400">Current Expiry</p>
+              <p className="mt-2 text-sm font-medium text-white">{currentExpiresAt}</p>
+            </div>
+          ) : null}
 
           <div className="mt-8">
             <p className="text-sm text-slate-400">Escalated by</p>

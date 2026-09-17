@@ -7,13 +7,12 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipHistoryModal } from '../components/membership-history-modal'
-import {
-  useCancelSubscription,
-  useExtendSubscription,
-  useSubscription,
-} from '../hooks/use-membership-subscriptions'
+import { useCancelSubscription, useSubscription } from '../hooks/use-membership-subscriptions'
 import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
-import { submitMembershipPlanChangeForApproval } from '../utils/submit-membership-plan-change-approval'
+import {
+  submitMembershipExtendForApproval,
+  submitMembershipPlanChangeForApproval,
+} from '../utils/submit-membership-plan-change-approval'
 import { useBranding } from '@/app/providers/use-branding'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -36,7 +35,6 @@ export function MembershipDetailsPage() {
   const { data, isLoading } = useSubscription(id)
   const subscription = data?.data
 
-  const extendMutation = useExtendSubscription()
   const cancelMutation = useCancelSubscription()
 
   if (isLoading) {
@@ -224,9 +222,7 @@ export function MembershipDetailsPage() {
         subscription={subscription}
         action={actionType}
         onClose={() => setActionType(null)}
-        isSubmitting={
-          isPlanChangeSubmitting || extendMutation.isPending || cancelMutation.isPending
-        }
+        isSubmitting={isPlanChangeSubmitting || cancelMutation.isPending}
         onUpgrade={async (payload) => {
           setIsPlanChangeSubmitting(true)
           try {
@@ -256,15 +252,17 @@ export function MembershipDetailsPage() {
           }
         }}
         onExtend={async (payload) => {
+          setIsPlanChangeSubmitting(true)
           try {
-            await extendMutation.mutateAsync({
-              id: subscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Membership extended')
+            await submitMembershipExtendForApproval(subscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Extend sent for approval — check My Tasks')
             setActionType(null)
           } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to extend membership'))
+            toast.error(getApiErrorMessage(error, 'Failed to send extend for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onCancel={async (payload) => {

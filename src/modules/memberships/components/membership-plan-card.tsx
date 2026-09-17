@@ -160,7 +160,7 @@ export function MembershipPlanCard({
               {menuOpen ? (
                 <div className="ui-table-actions-menu absolute right-0 z-30 mt-2">
                   <MenuButton
-                    label="View users"
+                    label="View Details"
                     icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
                     onClick={() => runAction(onViewDetails ?? onEdit)}
                   />

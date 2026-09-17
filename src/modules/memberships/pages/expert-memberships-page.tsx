@@ -18,13 +18,15 @@ import { EXPERT_MEMBERSHIP_SORT_FIELD_MAP } from '../config/membership-table-sor
 import {
   useCancelSubscription,
   useExpertSubscriptions,
-  useExtendSubscription,
 } from '../hooks/use-membership-subscriptions'
 import { useExpertMembershipStore } from '../store/expert-membership-store'
 import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
 import { buildMembershipDataColumnsById } from '../utils/membership-preference-columns'
-import { submitMembershipPlanChangeForApproval } from '../utils/submit-membership-plan-change-approval'
+import {
+  submitMembershipExtendForApproval,
+  submitMembershipPlanChangeForApproval,
+} from '../utils/submit-membership-plan-change-approval'
 import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
@@ -188,7 +190,6 @@ export function ExpertMembershipsPage() {
     catalogColumnIds,
   })
 
-  const extendMutation = useExtendSubscription()
   const cancelMutation = useCancelSubscription()
 
   const subscriptions = data?.data?.subscriptions ?? []
@@ -375,9 +376,7 @@ export function ExpertMembershipsPage() {
         subscription={selectedSubscription}
         action={actionType}
         onClose={closeAction}
-        isSubmitting={
-          isPlanChangeSubmitting || extendMutation.isPending || cancelMutation.isPending
-        }
+        isSubmitting={isPlanChangeSubmitting || cancelMutation.isPending}
         onUpgrade={async (payload) => {
           if (!selectedSubscription) return
           setIsPlanChangeSubmitting(true)
@@ -410,15 +409,17 @@ export function ExpertMembershipsPage() {
         }}
         onExtend={async (payload) => {
           if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
           try {
-            await extendMutation.mutateAsync({
-              id: selectedSubscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Extension request submitted')
+            await submitMembershipExtendForApproval(selectedSubscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Extend sent for approval — check My Tasks')
             closeAction()
           } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to extend membership'))
+            toast.error(getApiErrorMessage(error, 'Failed to send extend for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onCancel={async (payload) => {
