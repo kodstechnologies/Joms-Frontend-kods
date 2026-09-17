@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 
 import type { VenueFormData } from '../utils/venue-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import {
   resolveRefundPercentageFromSettings,
   useVenueBookingRules,
@@ -90,7 +91,9 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
 
         <p className="mb-4 text-[11px] text-slate-500">Terms & Condition</p>
 
-        <label className="mb-2 block text-xs text-white">Terms & Condition</label>
+        <label className="mb-2 block text-xs text-white">
+          Terms & Condition <RequiredMark />
+        </label>
 
         <textarea
           rows={6}
@@ -107,7 +110,9 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
 
         <div className="mt-6 grid grid-cols-2 gap-8 border-t border-slate-800 pt-5">
           <div>
-            <h3 className="mb-1 text-sm font-medium text-white">Cancellation policy</h3>
+            <h3 className="mb-1 text-sm font-medium text-white">
+              Cancellation policy <RequiredMark />
+            </h3>
 
             <p className="mb-3 text-[10px] text-slate-500">
               Choose how long before the event guests can cancel without any charges.
@@ -158,7 +163,9 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
       </div>
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
-        <h3 className="mb-4 text-sm font-semibold text-white">FAQ's</h3>
+        <h3 className="mb-4 text-sm font-semibold text-white">
+          FAQ's <RequiredMark />
+        </h3>
 
         {faqs.map((faq: FAQ, index: number) => (
           <div key={index} className="relative mb-5 rounded-lg border border-slate-800 p-4">
@@ -172,7 +179,9 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
               </button>
             )}
 
-            <label className="mb-2 block text-xs text-white">Question</label>
+            <label className="mb-2 block text-xs text-white">
+              Question <RequiredMark />
+            </label>
 
             <input
               value={faq.question}
@@ -181,7 +190,9 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
               className="mb-3 h-10 w-full rounded-md border border-slate-700 bg-black px-3 text-xs text-white outline-none"
             />
 
-            <label className="mb-2 block text-xs text-white">Answer</label>
+            <label className="mb-2 block text-xs text-white">
+              Answer <RequiredMark />
+            </label>
 
             <textarea
               rows={2}

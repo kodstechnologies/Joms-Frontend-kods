@@ -1104,21 +1104,19 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
             >
               <EyeOff className="size-3.5" aria-hidden="true" />
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!allowDisableVenues) {
-                  toast.error('Disabling venues is turned off in Venue Management settings')
-                  return
-                }
-                resetBulkVisibilityModal()
-                setIsBulkSuspendModalOpen(true)
-              }}
-              title="Suspend selected spaces"
-              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
-            >
-              <PauseCircle className="size-3.5" aria-hidden="true" />
-            </button>
+            {allowDisableVenues ? (
+              <button
+                type="button"
+                onClick={() => {
+                  resetBulkVisibilityModal()
+                  setIsBulkSuspendModalOpen(true)
+                }}
+                title="Suspend selected spaces"
+                className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+              >
+                <PauseCircle className="size-3.5" aria-hidden="true" />
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={handleBulkNotify}
@@ -2123,20 +2121,18 @@ export function VenueProfileViewPage() {
           >
             Logout User
           </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Ban className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              if (!allowDisableVenues) {
-                toast.error('Disabling venues is turned off in Venue Management settings')
-                return
-              }
-              setSuspendModalOpen(true)
-            }}
-          >
-            Suspend User
-          </TableActionsItem>
+          {allowDisableVenues ? (
+            <TableActionsItem
+              tone="light"
+              icon={<Ban className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                setSuspendModalOpen(true)
+              }}
+            >
+              Suspend User
+            </TableActionsItem>
+          ) : null}
           <TableActionsItem
             tone="light"
             icon={<CircleMinus className="size-3.5" />}

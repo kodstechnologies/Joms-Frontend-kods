@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
@@ -34,7 +33,7 @@ import {
 
 export function VenuePendingApprovalsPage() {
   const navigate = useNavigate()
-  const { allowAddVenues } = useVenueManagementControls()
+  const { allowAddVenues, allowApproveVenues } = useVenueManagementControls()
 
   const list = useVenueStatusList({
     preferencesKey: VENUE_PENDING_APPROVALS_MODULE_KEY,
@@ -98,15 +97,17 @@ export function VenuePendingApprovalsPage() {
                 >
                   View Application
                 </TableActionsItem>
-                <TableActionsItem
-                  icon={<CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden="true" />}
-                  onClick={() => {
-                    list.setActiveDropdownId(null)
-                    navigate(`/venues/management/application/${getVenueApiId(venue)}`)
-                  }}
-                >
-                  Approve Application
-                </TableActionsItem>
+                {allowApproveVenues ? (
+                  <TableActionsItem
+                    icon={<CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden="true" />}
+                    onClick={() => {
+                      list.setActiveDropdownId(null)
+                      navigate(`/venues/management/application/${getVenueApiId(venue)}`)
+                    }}
+                  >
+                    Approve Application
+                  </TableActionsItem>
+                ) : null}
               </TableActionsDropdown>
             )
           },
@@ -114,7 +115,7 @@ export function VenuePendingApprovalsPage() {
       ],
       VENUE_PENDING_SORT_FIELDS,
     )
-  }, [list, navigate])
+  }, [allowApproveVenues, list, navigate])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -149,21 +150,16 @@ export function VenuePendingApprovalsPage() {
             <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            disabled={!allowAddVenues}
-            onClick={() => {
-              if (!allowAddVenues) {
-                toast.error('Creating venues is turned off in Venue Management settings')
-                return
-              }
-              navigate('/venues/management/onboarding')
-            }}
-          >
-            <img src={createIcon} alt="create" className="size-4" />
-            Create Account
-          </Button>
+          {allowAddVenues ? (
+            <Button
+              type="button"
+              className="h-9 w-full md:w-auto"
+              onClick={() => navigate('/venues/management/onboarding')}
+            >
+              <img src={createIcon} alt="create" className="size-4" />
+              Create Account
+            </Button>
+          ) : null}
         </div>
       </div>
 

@@ -606,7 +606,8 @@ export function ApplicationDetailsPage() {
             onEscalate={() => openModal('escalate')}
             onReject={() => openModal('reject')}
             showEscalate
-            approveDisabled={spaceStatusMutation.isPending || !space?._id || !allowApproveVenues}
+            showApprove={allowApproveVenues}
+            approveDisabled={spaceStatusMutation.isPending || !space?._id}
             requestChangesDisabled={spaceStatusMutation.isPending || !space?._id}
             escalateDisabled={escalateDisabled}
             rejectDisabled={spaceStatusMutation.isPending || !space?._id}

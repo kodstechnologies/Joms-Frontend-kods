@@ -2,11 +2,13 @@ import { useRef, useState } from 'react'
 import { Search, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { checkPartnerAvailability } from '@/modules/auth/api/auth-api'
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import { type VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
+import { apiErrorMessage } from '@/shared/lib/api-error'
 import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass = 'ui-input'
@@ -14,11 +16,18 @@ const fieldClass = 'ui-input'
 type Props = {
   formData: VenueOnboardingFormData
   setFormData: React.Dispatch<React.SetStateAction<VenueOnboardingFormData>>
+  excludePartnerId?: string | null
 }
 
-export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props) => {
+export const VenueOnboardingBasicProfileStep = ({
+  formData,
+  setFormData,
+  excludePartnerId,
+}: Props) => {
   const profileInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
   const [verifyModal, setVerifyModal] = useState<{
     open: boolean
     type: 'phone' | 'email'
@@ -29,12 +38,30 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
     targetValue: '',
   })
 
-  const handleOpenPhoneVerify = () => {
+  const isPhoneVerifyBusy = isCheckingPhone || (verifyModal.open && verifyModal.type === 'phone')
+  const isEmailVerifyBusy = isCheckingEmail || (verifyModal.open && verifyModal.type === 'email')
+
+  const handleOpenPhoneVerify = async () => {
+    if (formData.isPhoneVerified || isPhoneVerifyBusy) return
     const error = validateMobileNumber(formData.phone)
     if (error) {
       toast.error(error)
       return
     }
+
+    try {
+      setIsCheckingPhone(true)
+      await checkPartnerAvailability({
+        phone: formData.phone.trim(),
+        excludePartnerId: excludePartnerId || undefined,
+      })
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Phone number is already using'))
+      return
+    } finally {
+      setIsCheckingPhone(false)
+    }
+
     setVerifyModal({
       open: true,
       type: 'phone',
@@ -42,7 +69,8 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
     })
   }
 
-  const handleOpenEmailVerify = () => {
+  const handleOpenEmailVerify = async () => {
+    if (formData.isEmailVerified || isEmailVerifyBusy) return
     if (!formData.email.trim()) {
       toast.error('Please enter an email ID before verifying.')
       return
@@ -52,6 +80,20 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
       toast.error('Please enter a valid email address.')
       return
     }
+
+    try {
+      setIsCheckingEmail(true)
+      await checkPartnerAvailability({
+        email: formData.email.trim(),
+        excludePartnerId: excludePartnerId || undefined,
+      })
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Email is already using'))
+      return
+    } finally {
+      setIsCheckingEmail(false)
+    }
+
     setVerifyModal({
       open: true,
       type: 'email',
@@ -273,15 +315,20 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               />
               <button
                 type="button"
-                onClick={handleOpenPhoneVerify}
+                onClick={() => void handleOpenPhoneVerify()}
+                disabled={formData.isPhoneVerified || isPhoneVerifyBusy}
                 className={cn(
-                  'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                  'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                   formData.isPhoneVerified
                     ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
                     : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
                 )}
               >
-                {formData.isPhoneVerified ? 'Verified ✓' : 'Verify'}
+                {formData.isPhoneVerified
+                  ? 'Verified ✓'
+                  : isPhoneVerifyBusy
+                    ? 'Checking…'
+                    : 'Verify'}
               </button>
             </div>
           </div>
@@ -306,15 +353,20 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               />
               <button
                 type="button"
-                onClick={handleOpenEmailVerify}
+                onClick={() => void handleOpenEmailVerify()}
+                disabled={formData.isEmailVerified || isEmailVerifyBusy}
                 className={cn(
-                  'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                  'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                   formData.isEmailVerified
                     ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
                     : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
                 )}
               >
-                {formData.isEmailVerified ? 'Verified ✓' : 'Verify'}
+                {formData.isEmailVerified
+                  ? 'Verified ✓'
+                  : isEmailVerifyBusy
+                    ? 'Checking…'
+                    : 'Verify'}
               </button>
             </div>
           </div>

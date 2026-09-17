@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -8,6 +9,7 @@ import {
   verifyPartnerPhoneOtp,
 } from '@/modules/auth/api/auth-api'
 import { OtpInput } from '@/shared/components/form/otp-input'
+import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 type VerificationOtpModalProps = {
@@ -33,78 +35,81 @@ export function VerificationOtpModal({
 }: VerificationOtpModalProps) {
   const [otp, setOtp] = useState('')
   const [timer, setTimer] = useState(30)
-  const [prevOpen, setPrevOpen] = useState(open)
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  const sendOtpRef = useRef(sendOtp)
 
-  if (open !== prevOpen) {
-    setPrevOpen(open)
-    if (open) {
-      setOtp('')
-      setTimer(30)
-    }
-  }
+  onCloseRef.current = onClose
+  sendOtpRef.current = sendOtp
+
+  const isVisible = open && otpSent
+  useDialogFocusTrap(isVisible, onClose, dialogRef)
 
   const requestOtp = useCallback(async () => {
-    if (!targetValue?.trim()) return
+    const value = targetValue.trim()
+    if (!value) return false
+
     setIsSending(true)
     try {
-      if (sendOtp) {
-        await sendOtp(targetValue.trim())
+      if (sendOtpRef.current) {
+        await sendOtpRef.current(value)
       } else if (type === 'phone') {
-        await sendPartnerPhoneOtp(targetValue.trim())
+        await sendPartnerPhoneOtp(value)
       } else {
-        await sendPartnerEmailOtp(targetValue.trim())
+        await sendPartnerEmailOtp(value)
       }
-      toast.success(`OTP sent to ${targetValue}`)
+      toast.success(`OTP sent to ${value}`)
+      setOtpSent(true)
+      setTimer(30)
+      return true
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string }; status?: number } }
-      const msg = getApiErrorMessage(error, 'Failed to send OTP. Please check the backend service.')
-      toast.error(msg)
-      if (
-        error?.response?.status === 409 ||
-        /already using|already registered|already exists/i.test(msg)
-      ) {
-        onClose()
-      }
+      toast.error(getApiErrorMessage(err, 'Failed to send OTP. Please check the backend service.'))
+      return false
     } finally {
       setIsSending(false)
     }
-  }, [onClose, sendOtp, targetValue, type])
+  }, [targetValue, type])
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setOtp('')
+      setTimer(30)
+      setOtpSent(false)
+      setIsSending(false)
+      setIsVerifying(false)
+      return
+    }
 
-    const sendId = window.setTimeout(() => {
-      void requestOtp()
-    }, 0)
-
-    const interval = setInterval(() => {
-      setTimer((prev) => (prev > 0 ? prev - 1 : 0))
-    }, 1000)
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    let cancelled = false
+    void requestOtp().then((ok) => {
+      if (cancelled || ok) return
+      onCloseRef.current()
+    })
 
     return () => {
-      window.clearTimeout(sendId)
-      clearInterval(interval)
-      document.body.style.overflow = previousOverflow
+      cancelled = true
     }
   }, [open, requestOtp])
 
-  if (!open) return null
+  useEffect(() => {
+    if (!isVisible) return
+
+    const interval = window.setInterval(() => {
+      setTimer((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [isVisible])
+
+  if (typeof document === 'undefined' || !isVisible) return null
 
   const handleResend = async () => {
     if (isSending) return
-    setIsSending(true)
-    try {
-      setTimer(30)
-      setOtp('')
-      await requestOtp()
-    } finally {
-      setIsSending(false)
-    }
+    setOtp('')
+    await requestOtp()
   }
 
   const handleVerify = async () => {
@@ -129,9 +134,7 @@ export function VerificationOtpModal({
       onVerified()
       onClose()
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      const msg = error?.response?.data?.message || 'Invalid or expired OTP. Please try again.'
-      toast.error(msg)
+      toast.error(getApiErrorMessage(err, 'Invalid or expired OTP. Please try again.'))
     } finally {
       setIsVerifying(false)
     }
@@ -140,13 +143,14 @@ export function VerificationOtpModal({
   const title = type === 'email' ? 'Verify Email ID' : 'Verify Phone Number'
   const subtitle = `Enter the ${length}-digit OTP sent to ${targetValue || (type === 'email' ? 'your email' : 'your phone number')}`
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#050505]/80 px-4 py-6"
+      className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-[#050505]/80 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="verification-otp-modal-title"
@@ -189,7 +193,7 @@ export function VerificationOtpModal({
               <button
                 type="button"
                 disabled={isSending}
-                onClick={handleResend}
+                onClick={() => void handleResend()}
                 className="text-xs font-semibold text-[#F6CB86] transition-colors hover:underline disabled:opacity-50"
               >
                 {isSending ? 'Sending OTP…' : 'Resend OTP'}
@@ -209,7 +213,7 @@ export function VerificationOtpModal({
           <button
             type="button"
             disabled={isVerifying}
-            onClick={handleVerify}
+            onClick={() => void handleVerify()}
             className="inline-flex h-11 w-[238px] flex-1 items-center justify-center gap-2 rounded-xl bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-xs font-semibold text-[#050505] transition-all hover:brightness-95 disabled:opacity-60"
           >
             <span>{isVerifying ? 'Verifying…' : 'Verify OTP'}</span>
@@ -219,6 +223,7 @@ export function VerificationOtpModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

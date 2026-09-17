@@ -663,7 +663,7 @@ export function SpaceDetailsPage() {
           >
             Analytics
           </TableActionsItem>
-          {!isSuspended && (
+          {!isSuspended && allowDisableVenues ? (
             <TableActionsItem
               tone="light"
               icon={<AlertOctagon className="size-3.5" />}
@@ -671,7 +671,7 @@ export function SpaceDetailsPage() {
             >
               Suspend Space
             </TableActionsItem>
-          )}
+          ) : null}
         </TableActionsDropdown>
       </header>
 
@@ -932,7 +932,8 @@ export function SpaceDetailsPage() {
             onEscalate={() => openDecisionModal('escalate')}
             onReject={() => openDecisionModal('reject')}
             showEscalate
-            approveDisabled={decisionDisabled || !allowApproveVenues}
+            showApprove={allowApproveVenues}
+            approveDisabled={decisionDisabled}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}

@@ -464,6 +464,24 @@ export const CreateVenueListingPage = () => {
         return 'Space address is required when location is different from the venue.'
       }
     }
+    if (step === 4) {
+      const hasCover = Boolean(venueData.venueCoverImage || venueData.venueCoverImageUrl?.trim())
+      const hasVenueImage = Boolean(venueData.venueImage || venueData.venueImageUrl?.trim())
+      const hasGallery = venueData.galleryImages.length > 0 || venueData.galleryImageUrls.length > 0
+      if (!hasCover) return 'Venue cover image is required.'
+      if (!hasVenueImage) return 'Venue image is required.'
+      if (!hasGallery) return 'At least one photo gallery image is required.'
+    }
+    if (step === 6) {
+      if (!venueData.terms?.trim()) return 'Terms & conditions are required.'
+      if (!['7days', '48hrs', '24hrs', '12hrs'].includes(venueData.cancellationPolicy)) {
+        return 'Cancellation policy is required.'
+      }
+      const hasCompleteFaq = (venueData.faqs || []).some(
+        (faq) => faq.question.trim() && faq.answer.trim(),
+      )
+      if (!hasCompleteFaq) return 'At least one FAQ with question and answer is required.'
+    }
     return null
   }
 

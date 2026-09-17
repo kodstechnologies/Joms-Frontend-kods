@@ -56,6 +56,7 @@ import {
   pickPreferenceColumns,
 } from '../../utils/expert-preference-columns'
 import { useExpertStore } from '../../store/expert-store'
+import { useExpertAccountControls } from '@/modules/settings/hooks/use-expert-public-settings'
 import type { Expert } from '../../type/expert'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
@@ -122,6 +123,7 @@ export const ExpertManagementPage = () => {
   const [notesExpertTarget, setNotesExpertTarget] = useState<Expert | null>(null)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
   const navigate = useNavigate()
+  const { allowNewAccounts } = useExpertAccountControls()
   const authUser = useAuthStore((state) => state.user)
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
@@ -1049,14 +1051,16 @@ export const ExpertManagementPage = () => {
             Manage Metrics
           </Button>
 
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            onClick={() => navigate('/experts/management/create')}
-          >
-            <img src={createAccountIcon} alt="" className="size-4 shrink-0" aria-hidden="true" />
-            Create Expert
-          </Button>
+          {allowNewAccounts ? (
+            <Button
+              type="button"
+              className="h-9 w-full md:w-auto"
+              onClick={() => navigate('/experts/management/create')}
+            >
+              <img src={createAccountIcon} alt="" className="size-4 shrink-0" aria-hidden="true" />
+              Create Expert
+            </Button>
+          ) : null}
         </div>
       </div>
 
