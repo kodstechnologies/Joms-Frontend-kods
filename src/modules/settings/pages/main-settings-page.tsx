@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { BackupRestorePanel } from '../components/backup-restore-panel'
 import { ExpertSettingsPanel } from '../components/expert-settings-panel'
@@ -46,7 +45,13 @@ export function MainSettingsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState<SettingsTab>('platform')
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    const fromQuery = searchParams.get('tab')
+    if (isSettingsTab(fromQuery)) return fromQuery
+    const fromState = (location.state as { settingsTab?: SettingsTab } | null)?.settingsTab
+    if (fromState && isSettingsTab(fromState)) return fromState
+    return 'platform'
+  })
   const [hydratedLocationState, setHydratedLocationState] = useState(location.state)
   const [hydratedTabQuery, setHydratedTabQuery] = useState(searchParams.get('tab'))
 
@@ -136,12 +141,9 @@ export function MainSettingsPage() {
 
   const persistSecuritySettings = async (config: typeof securityConfig) => {
     const normalizedSecurity = normalizeSecuritySettings(config)
-    if (
-      normalizedSecurity.mfa.requireForAllSubAdmins &&
-      countEnabledMfaMethods(normalizedSecurity.mfa) !== 1
-    ) {
-      toast.error('Select exactly one MFA method before saving')
-      throw new Error('Select exactly one MFA method before saving')
+    if (countEnabledMfaMethods(normalizedSecurity.mfa) === 0) {
+      toast.error('Enable at least one MFA method before saving')
+      throw new Error('At least one MFA method must be enabled')
     }
     await updateSecurity.mutateAsync(normalizedSecurity)
     setSecurityConfig(normalizedSecurity)
@@ -170,8 +172,8 @@ export function MainSettingsPage() {
         await updateService.mutateAsync(serviceConfig)
       }
       toast.success(`${SETTINGS_TABS.find((t) => t.key === activeTab)?.label} settings saved`)
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Failed to save settings'))
+    } catch {
+      toast.error('Failed to save settings')
     }
   }
 
@@ -205,8 +207,8 @@ export function MainSettingsPage() {
         setServiceConfig(result.config)
       }
       toast.success('Settings reset to defaults')
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Failed to reset settings'))
+    } catch {
+      toast.error('Failed to reset settings')
     }
   }
 
