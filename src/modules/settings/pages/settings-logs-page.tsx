@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, RotateCcw, UserRound } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
-import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   useRestoreSettingsLog,
@@ -62,14 +61,16 @@ const MODULE_TABS: Array<{ key: string; label: string }> = [
   { key: 'event', label: 'Event Management' },
   { key: 'venue', label: 'Venue Management' },
   { key: 'service', label: 'Service Marketplace' },
+  { key: 'backup', label: 'Backup' },
 ]
 
-const SETTINGS_LOG_SORT_FIELD_MAP = {
-  ...buildDefaultTableSortFieldMap(['created-at', 'module', 'status', 'performed-by', 'role']),
-  'changed-settings': null,
-  'old-values': null,
-  'new-values': null,
-}
+const SETTINGS_LOG_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'createdAt',
+  'module',
+  'status',
+  'performedBy',
+  'role',
+])
 
 const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
   string,
@@ -155,8 +156,14 @@ function UserIdCell({ name }: { name: string }) {
 
 export function SettingsLogsPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const initialModule =
+    typeof (location.state as { module?: string } | null)?.module === 'string' &&
+    MODULE_TABS.some((tab) => tab.key === (location.state as { module?: string }).module)
+      ? (location.state as { module: string }).module
+      : 'service'
   const [page, setPage] = useState(1)
-  const [activeModuleTab, setActiveModuleTab] = useState<string>('service')
+  const [activeModuleTab, setActiveModuleTab] = useState<string>(initialModule)
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
   const [versionHistoryModule, setVersionHistoryModule] = useState<SettingsModule | null>(null)
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
@@ -164,7 +171,7 @@ export function SettingsLogsPage() {
 
   const serverSort = useServerTableSort({
     sortFieldMap: SETTINGS_LOG_SORT_FIELD_MAP,
-    defaultSortBy: 'created-at',
+    defaultSortBy: 'createdAt',
     onPageReset: () => setPage(1),
   })
   const [isExporting, setIsExporting] = useState(false)
@@ -229,8 +236,8 @@ export function SettingsLogsPage() {
     try {
       await exportHandler({}, 'csv')
       toast.success('Settings logs exported')
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Failed to export settings logs'))
+    } catch {
+      toast.error('Failed to export settings logs')
     } finally {
       setIsExporting(false)
     }
@@ -243,8 +250,8 @@ export function SettingsLogsPage() {
         toast.success('Previous settings version restored')
         setSelectedLogId(null)
         void refetch()
-      } catch (error) {
-        toast.error(getApiErrorMessage(error, 'Failed to restore previous version'))
+      } catch {
+        toast.error('Failed to restore previous version')
       }
     },
     [refetch, restoreMutation],
@@ -385,17 +392,17 @@ export function SettingsLogsPage() {
             type="button"
             onClick={() => void handleHeaderExport()}
             disabled={isExporting}
-            className="ui-export-data ui-cta ui-cta-primary disabled:opacity-60"
+            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4 disabled:opacity-60"
           >
-            <ExportDataIcon />
+            <ExportDataIcon className="size-5 shrink-0" />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/metrics/settings-logs?returnTo=/settings/logs&section=all')}
-            className="ui-manage-metrics ui-cta ui-cta-primary"
+            className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
-            <ManageMetricsIcon />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </button>
         </div>

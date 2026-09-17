@@ -39,10 +39,15 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 const PAGE_SIZE = 10
 
-const BACKUP_SORT_FIELD_MAP = {
-  ...buildDefaultTableSortFieldMap(['name', 'type', 'scope', 'createdBy', 'size', 'status']),
-  timestamp: 'createdAt',
-}
+const BACKUP_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'name',
+  'type',
+  'scope',
+  'createdBy',
+  'timestamp',
+  'size',
+  'status',
+])
 
 const BACKUP_EXPORT_COLUMN_MAP: Record<
   string,
@@ -104,7 +109,6 @@ export function BackupRestorePanel() {
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: BACKUP_SORT_FIELD_MAP,
-    defaultSortBy: 'timestamp',
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
@@ -152,6 +156,11 @@ export function BackupRestorePanel() {
           if (result && typeof result === 'object' && 'rdsError' in result && result.rdsError) {
             toast.success('Local backup created (cloud unavailable)')
             toast.warning(String(result.rdsError))
+            return
+          }
+          const status = result && typeof result === 'object' ? String(result.status || '') : ''
+          if (status === 'Completed') {
+            toast.success('Backup completed')
             return
           }
           toast.success('Backup started')
@@ -313,7 +322,9 @@ export function BackupRestorePanel() {
           </Button>
           <Button
             className="backup-configure-btn inline-flex items-center gap-2"
-            onClick={() => navigate('/settings/backup/configure')}
+            onClick={() =>
+              navigate('/settings/backup/configure', { state: { settingsTab: 'backup' } })
+            }
           >
             <Settings2 className="size-4 shrink-0" />
             Configure Backup

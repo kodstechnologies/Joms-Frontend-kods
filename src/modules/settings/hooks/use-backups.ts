@@ -24,6 +24,10 @@ export const useBackups = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: backupKeys.list(params),
     queryFn: () => fetchBackups(params),
+    refetchInterval: (query) => {
+      const rows = query.state.data?.data ?? []
+      return rows.some((row) => row.status === 'Pending') ? 5000 : false
+    },
   })
 
 export const useRunBackup = () => {
