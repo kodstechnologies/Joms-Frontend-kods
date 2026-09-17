@@ -30,6 +30,7 @@ import { exportDataToFile } from '@/shared/utils/export-utils'
 import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-2-medal.png'
 import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-3-medal.png'
 import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-1-trophy.png'
+import totalRevenueIcon from '@/assets/JOMS_ICONS-2/icons8-money-bag-rupee-24.svg'
 
 import { fetchExpertLeaderboard } from '../../api/leaderboard-api'
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
@@ -547,7 +548,7 @@ function ExpertProfileModal({
                   {
                     label: 'Total Revenue',
                     value: profile.totalRevenueLabel || '₹0',
-                    icon: Trophy,
+                    iconSrc: totalRevenueIcon,
                   },
                   {
                     label: 'Performance Score',
@@ -557,7 +558,16 @@ function ExpertProfileModal({
                 ].map((card) => (
                   <div key={card.label} className="rounded-[10px] bg-[#050505] px-3 py-3">
                     <div className="flex items-center gap-2">
-                      <card.icon className="size-4 text-white/70" />
+                      {'iconSrc' in card && card.iconSrc ? (
+                        <img
+                          src={card.iconSrc}
+                          alt=""
+                          className="size-4 shrink-0 opacity-70 brightness-0 invert"
+                          aria-hidden="true"
+                        />
+                      ) : 'icon' in card && card.icon ? (
+                        <card.icon className="size-4 text-white/70" />
+                      ) : null}
                       <p className="text-[12px] leading-4 font-medium text-white/70">
                         {card.label}
                       </p>

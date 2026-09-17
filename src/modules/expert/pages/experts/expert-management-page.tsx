@@ -6,7 +6,8 @@ import {
 import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
 import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
-import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import exportSelectedIcon from '@/assets/JOMS_ICONS-2/icons8-download-24.svg'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   AlertCircle,
   Ban,
@@ -1123,7 +1124,12 @@ export const ExpertManagementPage = () => {
                 className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
               >
                 {action.label.toLowerCase().includes('export') ? (
-                  <ExportDataIcon className="size-3.5" />
+                  <img
+                    src={exportSelectedIcon}
+                    alt=""
+                    className="size-3.5 shrink-0 invert"
+                    aria-hidden="true"
+                  />
                 ) : (
                   <action.icon className="size-3.5" aria-hidden="true" />
                 )}

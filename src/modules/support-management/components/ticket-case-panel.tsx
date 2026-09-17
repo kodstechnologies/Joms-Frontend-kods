@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ChevronDown, Clock, User } from 'lucide-react'
+import { ChevronDown, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import pastTicketsIcon from '@/assets/JOMS_ICONS-2/icons8-delivery-time-24.svg'
 
 import {
   CaseEscalationIcon,
@@ -131,7 +132,12 @@ export function TicketCasePanel({
                 type="button"
                 className="bg-brand-accent flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-black transition-opacity hover:opacity-90"
               >
-                <Clock className="size-3.5 shrink-0" />
+                <img
+                  src={pastTicketsIcon}
+                  alt=""
+                  className="size-3.5 shrink-0"
+                  aria-hidden="true"
+                />
                 <span className="truncate">Past Tickets</span>
                 <span className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-black/20 text-[9px] font-bold">
                   {pastTicketsCount}

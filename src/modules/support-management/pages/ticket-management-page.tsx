@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Eye, MessageSquarePlus, Tag, Trash2 } from 'lucide-react'
-import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
-import changeStatusIcon from '@/assets/JOMS_ICONS-2/change-status.svg'
+import { Eye, Tag, Trash2 } from 'lucide-react'
+import editIcon from '@/assets/JOMS_ICONS-2/edit-text.svg'
+import changeStatusIcon from '@/assets/JOMS_ICONS-2/icons8-data-transfer-24.svg'
 import changePriorityIcon from '@/assets/JOMS_ICONS-2/change-priority.svg'
+import notepadIcon from '@/assets/JOMS_ICONS-2/icons8-notepad-24.svg'
+import escalateIcon from '@/assets/JOMS_ICONS-2/icons8-external-link-24.svg'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 
@@ -447,7 +449,7 @@ export function TicketManagementPage() {
             Change Priority
           </TableActionsItem>
           <TableActionsItem
-            icon={<MessageSquarePlus className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<img src={notepadIcon} alt="" className="size-3.5" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -469,7 +471,7 @@ export function TicketManagementPage() {
             Add Tags
           </TableActionsItem>
           <TableActionsItem
-            icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<img src={escalateIcon} alt="" className="size-3.5" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)

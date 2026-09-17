@@ -5,7 +5,8 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
-import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
+import editIcon from '@/assets/JOMS_ICONS-2/edit-text.svg'
+import notepadIcon from '@/assets/JOMS_ICONS-2/icons8-notepad-24.svg'
 import bagSolidIcon from '@/assets/JOMS_ICONS-2/basil-bag-solid.svg'
 import { toast } from 'sonner'
 import {
@@ -3316,6 +3317,8 @@ export function ExpertProfileViewPage() {
               >
                 {action.label.toLowerCase().includes('export') ? (
                   <ExportDataIcon className="size-3 shrink-0" />
+                ) : action.label.toLowerCase().includes('notes') ? (
+                  <img src={notepadIcon} alt="" className="size-3 shrink-0" aria-hidden="true" />
                 ) : (
                   <action.icon className="size-3 shrink-0" strokeWidth={2.25} />
                 )}

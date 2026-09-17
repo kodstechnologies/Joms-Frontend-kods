@@ -1,6 +1,7 @@
-import { BadgeCheck, CircleArrowOutUpRight, RotateCcw, XCircle } from 'lucide-react'
+import { BadgeCheck, RotateCcw, XCircle } from 'lucide-react'
 
 import decisionControlIcon from '@/assets/JOMS_ICONS-2/decision-control.svg'
+import escalateIcon from '@/assets/JOMS_ICONS-2/icons8-external-link-24.svg'
 import { cn } from '@/shared/lib/cn'
 
 const decisionBtnClass =
@@ -65,7 +66,12 @@ export function DecisionControlButtons({
           className={cn(decisionBtnClass, 'bg-[#155DFC] text-white hover:bg-[#1248d4]')}
         >
           Escalate
-          <CircleArrowOutUpRight className="size-4 shrink-0" aria-hidden="true" />
+          <img
+            src={escalateIcon}
+            alt=""
+            className="size-4 shrink-0 brightness-0 invert"
+            aria-hidden="true"
+          />
         </button>
       ) : null}
 

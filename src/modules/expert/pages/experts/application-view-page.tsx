@@ -4,16 +4,9 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
-import {
-  ArrowLeft,
-  Banknote,
-  CircleUserRound,
-  FileText,
-  History,
-  ShieldCheck,
-  User,
-} from 'lucide-react'
+import { ArrowLeft, Banknote, CircleUserRound, FileText, History, ShieldCheck } from 'lucide-react'
 import digilockerVerifiedIcon from '@/assets/digilocker-verified.png'
+import applicantIcon from '@/assets/JOMS_ICONS-2/icons8-test-account-24.svg'
 
 import {
   useEscalateExpertApplication,
@@ -716,7 +709,14 @@ export function ExpertApplicationViewPage() {
       {activeTab === 'overview' && (
         <SectionCard
           title="Applicant Information"
-          icon={<User className="text-brand-accent size-4" />}
+          icon={
+            <img
+              src={applicantIcon}
+              alt=""
+              className="size-4 shrink-0 brightness-0 invert"
+              aria-hidden="true"
+            />
+          }
         >
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
             <InfoField label="Full Name" value={application.expert?.fullname} />

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
+import lockUserIcon from '@/assets/JOMS_ICONS-2/lock-user.svg'
 
 const ClarityEyeShowSolidIcon = ({ className }: { className?: string }) => (
   <svg
@@ -57,9 +58,12 @@ const InstagramIcon = () => (
 )
 
 const AccountLockIcon = () => (
-  <svg viewBox="0 0 24 24" className="size-6 text-white" fill="currentColor" aria-hidden="true">
-    <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14M18,16A2,2 0 0,1 20,18V19H21V23H15V19H16V18A2,2 0 0,1 18,16M18,17A1,1 0 0,0 17,18V19H19V18A1,1 0 0,0 18,17Z" />
-  </svg>
+  <img
+    src={lockUserIcon}
+    alt=""
+    className="size-6 shrink-0 brightness-0 invert"
+    aria-hidden="true"
+  />
 )
 
 import type { AdminSessionUser } from '@/modules/auth/api/auth-api'
