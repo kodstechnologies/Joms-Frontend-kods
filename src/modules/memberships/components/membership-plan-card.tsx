@@ -57,6 +57,28 @@ type MembershipPlanCardProps = {
   onViewFeatures?: (plan: MembershipPlan) => void
   onViewVersions?: (plan: MembershipPlan) => void
   onSetValidity?: (plan: MembershipPlan) => void
+  onViewSubscribers?: (plan: MembershipPlan, billingCycleName?: string) => void
+}
+
+function classifyBillingCycle(billingCycleName = ''): 'weekly' | 'threeMonths' | 'sixMonths' | '' {
+  const value = billingCycleName.toLowerCase().replace(/\s+/g, ' ').trim()
+  if (!value) return ''
+  const compact = value.replace(/[\s-]+/g, '')
+  if (compact.includes('week')) return 'weekly'
+  if (compact.includes('quarter') || compact.includes('3month')) return 'threeMonths'
+  if (compact.includes('halfyear') || compact.includes('6month')) return 'sixMonths'
+  return ''
+}
+
+function billingCycleForStat(
+  plan: MembershipPlan,
+  bucket: 'weekly' | 'threeMonths' | 'sixMonths',
+  fallback: string,
+) {
+  return (
+    plan.pricing.find((item) => classifyBillingCycle(item.billingCycleName) === bucket)
+      ?.billingCycleName || fallback
+  )
 }
 
 export function MembershipPlanCard({
@@ -71,6 +93,7 @@ export function MembershipPlanCard({
   onViewFeatures,
   onViewVersions,
   onSetValidity,
+  onViewSubscribers,
 }: MembershipPlanCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -302,10 +325,39 @@ export function MembershipPlanCard({
           Subscription Stats
         </p>
         <div className="grid grid-cols-4 gap-2">
-          <StatPill label="Total" value={stats?.total ?? 0} />
-          <StatPill label="Weekly" value={stats?.weekly ?? 0} />
-          <StatPill label="3 Months" value={stats?.threeMonths ?? 0} />
-          <StatPill label="6 Months" value={stats?.sixMonths ?? 0} />
+          <StatPill
+            label="Total"
+            value={stats?.total ?? 0}
+            onClick={onViewSubscribers ? () => onViewSubscribers(plan) : undefined}
+          />
+          <StatPill
+            label="Weekly"
+            value={stats?.weekly ?? 0}
+            onClick={
+              onViewSubscribers
+                ? () => onViewSubscribers(plan, billingCycleForStat(plan, 'weekly', 'Weekly'))
+                : undefined
+            }
+          />
+          <StatPill
+            label="3 Months"
+            value={stats?.threeMonths ?? 0}
+            onClick={
+              onViewSubscribers
+                ? () =>
+                    onViewSubscribers(plan, billingCycleForStat(plan, 'threeMonths', '3 Months'))
+                : undefined
+            }
+          />
+          <StatPill
+            label="6 Months"
+            value={stats?.sixMonths ?? 0}
+            onClick={
+              onViewSubscribers
+                ? () => onViewSubscribers(plan, billingCycleForStat(plan, 'sixMonths', '6 Months'))
+                : undefined
+            }
+          />
         </div>
       </div>
 
@@ -376,12 +428,40 @@ export function MembershipPlanCard({
   )
 }
 
-function StatPill({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex h-[66px] min-w-0 flex-col items-center justify-center rounded-[8px] bg-[#050505] px-1 text-center">
+function StatPill({
+  label,
+  value,
+  onClick,
+}: {
+  label: string
+  value: number
+  onClick?: () => void
+}) {
+  const className =
+    'flex h-[66px] min-w-0 flex-col items-center justify-center rounded-[8px] bg-[#050505] px-1 text-center'
+  const content = (
+    <>
       <p className={cn('text-[10px] leading-[14px] font-medium', MUTE)}>{label}</p>
       <p className="mt-1 text-[14px] leading-5 font-semibold text-white tabular-nums">{value}</p>
-    </div>
+    </>
+  )
+
+  if (!onClick) {
+    return <div className={className}>{content}</div>
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        className,
+        'transition-colors hover:bg-[#1a1a1a] focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:outline-none',
+      )}
+      aria-label={`View ${label.toLowerCase()} subscribers`}
+    >
+      {content}
+    </button>
   )
 }
 

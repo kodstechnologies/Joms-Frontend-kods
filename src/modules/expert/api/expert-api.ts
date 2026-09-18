@@ -265,6 +265,7 @@ export type BulkActionPayload = {
   planId?: string
   newMembershipPlanId?: string
   billingCycleName?: string
+  changeType?: 'upgrade' | 'downgrade' | 'auto'
   isPremium?: boolean
   verificationStatus?: string
   ticketSubject?: string

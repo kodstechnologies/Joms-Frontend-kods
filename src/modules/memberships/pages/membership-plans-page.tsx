@@ -484,6 +484,12 @@ export function MembershipPlansPage({
         <PlanSection
           title={fixedStatus ? undefined : 'Expert Membership Plans'}
           plans={expertPlans}
+          onViewSubscribers={(plan, billingCycleName) => {
+            const params = new URLSearchParams()
+            params.set('planName', plan.planName)
+            if (billingCycleName) params.set('billingCycleName', billingCycleName)
+            navigate(`/memberships/experts?${params.toString()}`)
+          }}
           onViewDetails={(plan) => navigate(`/memberships/plans/${plan._id}/view`)}
           onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
           onPause={(plan) => openModal(plan, 'pause')}

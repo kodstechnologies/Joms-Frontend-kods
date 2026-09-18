@@ -14,6 +14,7 @@ import {
   Ban,
   Bell,
   CheckSquare,
+  CircleArrowDown,
   Hourglass,
   Mail,
   PauseCircle,
@@ -315,6 +316,9 @@ export const ExpertManagementPage = () => {
   const bulkEscalateMutation = useBulkEscalateExperts()
 
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false)
+  const [bulkMembershipAction, setBulkMembershipAction] = useState<'upgrade' | 'downgrade'>(
+    'upgrade',
+  )
   const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
@@ -635,7 +639,12 @@ export const ExpertManagementPage = () => {
         openDeleteModal()
       } else if (actionLabel.includes('Suspend')) {
         openSuspendModal()
-      } else if (actionLabel.includes('Membership') || actionLabel.includes('Upgrade')) {
+      } else if (
+        actionLabel.includes('Membership') ||
+        actionLabel.includes('Upgrade') ||
+        actionLabel.includes('Downgrade')
+      ) {
+        const nextAction = actionLabel.toLowerCase().includes('downgrade') ? 'downgrade' : 'upgrade'
         void (async () => {
           try {
             const response = await fetchExpertSubscriptions({
@@ -671,6 +680,7 @@ export const ExpertManagementPage = () => {
               return
             }
 
+            setBulkMembershipAction(nextAction)
             setIsMembershipModalOpen(true)
           } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } }
@@ -1015,6 +1025,7 @@ export const ExpertManagementPage = () => {
     { label: 'Export selected experts', icon: Upload },
     { label: 'Escalate selected experts', icon: FileText },
     { label: 'Update Membership', icon: Gem },
+    { label: 'Downgrade Membership', icon: CircleArrowDown },
     { label: 'Notify selected experts', icon: Bell },
     { label: 'Message selected experts', icon: Mail },
     { label: 'Suspend selected experts', icon: PauseCircle },
@@ -1245,7 +1256,7 @@ export const ExpertManagementPage = () => {
               status: 'active',
             } as unknown as MembershipSubscription
           }
-          action="upgrade"
+          action={bulkMembershipAction}
           onClose={() => setIsMembershipModalOpen(false)}
           onUpgrade={(payload) => {
             const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
@@ -1257,21 +1268,46 @@ export const ExpertManagementPage = () => {
                 billingCycleName: payload.billingCycleName,
                 adminNotes: payload.adminNotes,
                 reasons: payload.reasons,
+                changeType: 'upgrade',
               },
               {
                 onSuccess: () => {
-                  toast.success(`Membership plan updated for ${ids.length} expert(s)`)
+                  toast.success(`Membership upgraded for ${ids.length} expert(s)`)
                   setSelectedExpertIds([])
                   setIsMembershipModalOpen(false)
                 },
                 onError: (err: unknown) => {
                   const error = err as { response?: { data?: { message?: string } } }
-                  toast.error(getApiErrorMessage(error, 'Failed to update membership.'))
+                  toast.error(getApiErrorMessage(error, 'Failed to upgrade membership.'))
                 },
               },
             )
           }}
-          onDowngrade={() => {}}
+          onDowngrade={(payload) => {
+            const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+            bulkUpdateMembershipMutation.mutate(
+              {
+                partnerIds: ids,
+                planId: payload.newMembershipPlanId,
+                newMembershipPlanId: payload.newMembershipPlanId,
+                billingCycleName: payload.billingCycleName,
+                adminNotes: payload.adminNotes,
+                reasons: payload.reasons,
+                changeType: 'downgrade',
+              },
+              {
+                onSuccess: () => {
+                  toast.success(`Membership downgraded for ${ids.length} expert(s)`)
+                  setSelectedExpertIds([])
+                  setIsMembershipModalOpen(false)
+                },
+                onError: (err: unknown) => {
+                  const error = err as { response?: { data?: { message?: string } } }
+                  toast.error(getApiErrorMessage(error, 'Failed to downgrade membership.'))
+                },
+              },
+            )
+          }}
           onExtend={() => {}}
           onCancel={() => {}}
           isSubmitting={bulkUpdateMembershipMutation.isPending}

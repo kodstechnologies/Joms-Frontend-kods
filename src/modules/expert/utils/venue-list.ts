@@ -9,7 +9,18 @@ export const getVenueDisplayId = (venue: Pick<Venue, 'venueid' | 'venueId' | '_i
 export const getVenuePartnerId = (venue: Pick<Venue, 'ownerId' | 'partnerId'>) =>
   venue.ownerId || venue.partnerId || ''
 
-export const getVenueDisplaySpaceId = (venue: Pick<Venue, 'spaceid'>) => venue.spaceid || '—'
+export const formatVenueSpaceCode = (spaceObjectId?: string | null) => {
+  if (!spaceObjectId) return null
+  const hex = String(spaceObjectId).replace(/[^0-9a-fA-F]/g, '')
+  const parsed = hex ? Number.parseInt(hex.slice(-6) || hex, 16) : Number.NaN
+  if (!Number.isFinite(parsed)) return null
+  return `SP${String(parsed % 1000).padStart(3, '0')}`
+}
+
+export const getVenueDisplaySpaceId = (venue: Pick<Venue, 'spaceid' | 'spaceId'>) => {
+  if (venue.spaceid && venue.spaceid !== 'SPNaN') return venue.spaceid
+  return formatVenueSpaceCode(venue.spaceId) || '—'
+}
 
 export const getVenueApiSpaceId = (venue: Pick<Venue, 'spaceId'>) => venue.spaceId || null
 

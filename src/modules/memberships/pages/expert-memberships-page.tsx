@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { CircleArrowDown, CircleArrowUp, CircleX, ClipboardList, Waypoints } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -149,6 +149,7 @@ const EXPORT_COLUMN_MAP: Record<
 
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
@@ -166,17 +167,31 @@ export function ExpertMembershipsPage() {
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const urlPlanName = searchParams.get('planName')?.trim() || ''
+  const urlBillingCycleName = searchParams.get('billingCycleName')?.trim() || ''
 
-  const listQueryParams = useMemo(
-    () =>
-      buildExpertMembershipsListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...enhancedSearch.buildSearchParams(),
-        ...serverSort.sortParams,
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
+  const listQueryParams = useMemo(() => {
+    const params = buildExpertMembershipsListQueryParams(appliedFilters, {
+      page: currentPage,
+      limit: 10,
+      ...enhancedSearch.buildSearchParams(),
+      ...serverSort.sortParams,
+    })
+
+    if (urlPlanName && params.planName == null) params.planName = urlPlanName
+    if (urlBillingCycleName && params.billingCycleName == null) {
+      params.billingCycleName = urlBillingCycleName
+    }
+
+    return params
+  }, [
+    appliedFilters,
+    currentPage,
+    enhancedSearch,
+    serverSort.sortParams,
+    urlPlanName,
+    urlBillingCycleName,
+  ])
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
   const tableColumnPreferencesQuery = useTableColumnPreferences(MEMBERSHIPS_MODULE_KEY)

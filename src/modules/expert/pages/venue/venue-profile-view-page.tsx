@@ -2041,7 +2041,8 @@ export function VenueProfileViewPage() {
     {
       label: 'Create Space',
       icon: Plus,
-      onClick: () => navigate(`/venues/management/create?venueId=${resolvedVenueId}`),
+      onClick: () =>
+        navigate(`/venues/management/create?venueId=${resolvedVenueId}&mode=add-space`),
     },
     { label: 'Add Notes', icon: FileText, onClick: () => setNotesModalOpen(true) },
     {

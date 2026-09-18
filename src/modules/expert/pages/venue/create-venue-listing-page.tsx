@@ -56,6 +56,82 @@ const clearSpaceGalleryFields = (): Pick<
   galleryPreviews: [],
 })
 
+const clearSpaceFields = (): Pick<
+  VenueFormData,
+  | 'spaceName'
+  | 'spaceType'
+  | 'capacity'
+  | 'areaSqFt'
+  | 'guestCount'
+  | 'seatingType'
+  | 'locationType'
+  | 'spaceAddress'
+  | 'spaceLandmark'
+  | 'spaceCity'
+  | 'spacePincode'
+  | 'spaceState'
+  | 'spaceCountry'
+  | 'spaceLatitude'
+  | 'spaceLongitude'
+  | 'capacityType'
+  | 'seatedCapacity'
+  | 'standingCapacity'
+  | 'inHouseCatering'
+  | 'decorationAvailable'
+  | 'amenities'
+  | 'serviceType'
+  | 'setDays'
+  | 'weekdayPrice'
+  | 'weekendPrice'
+  | 'discount'
+  | 'reservationFee'
+  | 'contacts'
+  | 'venueCoverImage'
+  | 'venueImage'
+  | 'galleryImages'
+  | 'venueCoverImageUrl'
+  | 'venueImageUrl'
+  | 'galleryImageUrls'
+  | 'galleryPreviews'
+  | 'weeklyAvailability'
+  | 'blockedDates'
+> => {
+  const empty = createEmptyVenueFormData()
+  return {
+    spaceName: empty.spaceName,
+    spaceType: empty.spaceType,
+    capacity: empty.capacity,
+    areaSqFt: empty.areaSqFt,
+    guestCount: empty.guestCount,
+    seatingType: empty.seatingType,
+    locationType: empty.locationType,
+    spaceAddress: empty.spaceAddress,
+    spaceLandmark: empty.spaceLandmark,
+    spaceCity: empty.spaceCity,
+    spacePincode: empty.spacePincode,
+    spaceState: empty.spaceState,
+    spaceCountry: empty.spaceCountry,
+    spaceLatitude: empty.spaceLatitude,
+    spaceLongitude: empty.spaceLongitude,
+    capacityType: empty.capacityType,
+    seatedCapacity: empty.seatedCapacity,
+    standingCapacity: empty.standingCapacity,
+    inHouseCatering: empty.inHouseCatering,
+    decorationAvailable: empty.decorationAvailable,
+    amenities: empty.amenities,
+    serviceType: empty.serviceType,
+    setDays: empty.setDays,
+    weekdayPrice: empty.weekdayPrice,
+    weekendPrice: empty.weekendPrice,
+    discount: empty.discount,
+    reservationFee: empty.reservationFee,
+    contacts: empty.contacts,
+    ...clearSpaceGalleryFields(),
+    weeklyAvailability: empty.weeklyAvailability,
+    blockedDates: empty.blockedDates,
+  }
+}
+
 type DraftWeeklyAvailabilityEntry = { day: string; from?: string; to?: string; enabled?: boolean }
 type DraftBlockedDate = { date?: string; from?: string; to?: string }
 type DraftAmenitySubCategory = { _id?: string; name?: string; image?: string } | string
@@ -228,6 +304,7 @@ export const CreateVenueListingPage = () => {
   const partnerId = searchParams.get('partnerId') || ''
   const isViewMode = searchParams.get('view') === 'true'
   const isEditMode = searchParams.get('mode') === 'edit' && Boolean(venueId)
+  const isAddSpaceMode = searchParams.get('mode') === 'add-space' && Boolean(venueId)
 
   const [currentStep, setCurrentStep] = useState(1)
   const [spaceId, setSpaceId] = useState<string | null>(null)
@@ -274,7 +351,7 @@ export const CreateVenueListingPage = () => {
             const status = String(item.status || '').toLowerCase()
             return status === 'preview' || status === 'draft'
           }) || null
-        const space = isEditMode ? spaces[0] : inProgressSpace
+        const space = isAddSpaceMode ? null : isEditMode ? spaces[0] : inProgressSpace
         const hydrateSpace = Boolean(space)
         const galleryUrls = resolveGalleryUrls(space || undefined)
         const pricing = hydrateSpace ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
@@ -293,7 +370,7 @@ export const CreateVenueListingPage = () => {
 
         if (space?._id) {
           setSpaceId(String(space._id))
-        } else {
+        } else if (!isAddSpaceMode) {
           setSpaceId(null)
         }
 
@@ -385,7 +462,7 @@ export const CreateVenueListingPage = () => {
                 contacts: galleryUrls.contacts ?? prev.contacts,
               }
             : {
-                ...clearSpaceGalleryFields(),
+                ...clearSpaceFields(),
                 contacts: prev.contacts,
               }),
           venueCoverImage: null,
@@ -426,7 +503,7 @@ export const CreateVenueListingPage = () => {
     }
 
     loadVenue()
-  }, [venueId, isEditMode])
+  }, [venueId, isEditMode, isAddSpaceMode])
 
   const validateListingStep = (step: number): string | null => {
     if (step === 1) {
@@ -532,7 +609,7 @@ export const CreateVenueListingPage = () => {
           const refreshedVenue = refreshed?.data as DraftVenue | undefined
           const refreshedSpace =
             refreshedVenue?.spaces?.find((s) => String(s._id) === String(spaceId)) ||
-            refreshedVenue?.spaces?.[0]
+            (!spaceId ? refreshedVenue?.spaces?.[0] : undefined)
           const refreshedGalleryUrls = resolveGalleryUrls(refreshedSpace)
 
           setVenueData((prev) => ({
@@ -597,9 +674,11 @@ export const CreateVenueListingPage = () => {
         }
 
         await submitVenueListing.mutateAsync({ venueId, spaceId })
-        toast.success('Venue listing published successfully')
+        toast.success(
+          isAddSpaceMode ? 'Space published successfully' : 'Venue listing published successfully',
+        )
 
-        navigate('/venues/management')
+        navigate(isAddSpaceMode ? `/venues/management/profile/${venueId}` : '/venues/management')
 
         return
       }
@@ -619,15 +698,22 @@ export const CreateVenueListingPage = () => {
 
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep((prev) => prev - 1)
-    else if (isEditMode && venueId) navigate(`/venues/management/profile/${venueId}`)
-    else navigateBackOrFallback(navigate, '/venues/management')
+    else if ((isEditMode || isAddSpaceMode) && venueId) {
+      navigate(`/venues/management/profile/${venueId}`)
+    } else navigateBackOrFallback(navigate, '/venues/management')
   }
 
   const breadcrumbs = [
     { label: 'Venue Management', to: '/venues/management' },
     { label: 'Manage Venues', to: '/venues/management' },
     {
-      label: isViewMode ? 'View Venue' : isEditMode ? 'Edit Venue' : 'Create Venue',
+      label: isViewMode
+        ? 'View Venue'
+        : isEditMode
+          ? 'Edit Venue'
+          : isAddSpaceMode
+            ? 'Create Space'
+            : 'Create Venue',
       isActive: true,
     },
   ]
@@ -650,7 +736,15 @@ export const CreateVenueListingPage = () => {
 
   return (
     <CreateListingWizard
-      title={isViewMode ? 'View Venue' : isEditMode ? 'Edit Venue Listing' : 'Create Venue Listing'}
+      title={
+        isViewMode
+          ? 'View Venue'
+          : isEditMode
+            ? 'Edit Venue Listing'
+            : isAddSpaceMode
+              ? 'Create Space'
+              : 'Create Venue Listing'
+      }
       breadcrumbs={breadcrumbs}
       steps={venueSteps}
       currentStep={currentStep}

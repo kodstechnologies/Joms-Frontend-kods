@@ -76,7 +76,12 @@ export const useUpdateSupportTicket = () => {
               ...current,
               data: {
                 ...current.data,
-                ticket: { ...current.data.ticket, ...updated },
+                ticket: {
+                  ...current.data.ticket,
+                  ...updated,
+                  pastTicketsCount:
+                    updated.pastTicketsCount ?? current.data.ticket.pastTicketsCount ?? 0,
+                },
                 queueItem: current.data.queueItem
                   ? { ...current.data.queueItem, ...updated }
                   : current.data.queueItem,
@@ -85,7 +90,9 @@ export const useUpdateSupportTicket = () => {
           },
         )
       }
+      queryClient.invalidateQueries({ queryKey: ['support-ticket', vars.id] })
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+      queryClient.invalidateQueries({ queryKey: ['support-past-tickets'] })
     },
   })
 }
@@ -210,6 +217,7 @@ export const useLiveSupportUpdates = () => {
         if (ticketId) {
           queryClient.invalidateQueries({ queryKey: ['support-ticket', ticketId] })
           queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+          queryClient.invalidateQueries({ queryKey: ['support-past-tickets'] })
           return
         }
         refresh()
