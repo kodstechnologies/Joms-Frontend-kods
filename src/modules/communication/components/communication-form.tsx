@@ -318,7 +318,11 @@ function CommunicationFormFields({
     if (isEditMode) {
       onUpdate(editId, payload, {
         onSuccess: () => {
-          toast.success('Communication updated')
+          toast.success(
+            deliveryType === 'schedule'
+              ? 'Communication updated and scheduled'
+              : 'Communication updated and sent',
+          )
           navigate('/communication/management')
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
