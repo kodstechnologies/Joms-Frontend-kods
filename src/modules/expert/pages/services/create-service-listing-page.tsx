@@ -31,6 +31,7 @@ import {
   useUpdateConsultationAdditionalInfo,
   useUpdateConsultationBasic,
   useUpdateConsultationPricing,
+  useUpdateServiceBasic,
   useUpdateServiceGallery,
   useUpdateServicePricing,
 } from '@/modules/expert/hooks/use-create-listing'
@@ -115,6 +116,37 @@ const DEFAULT_CONSULTATION_PRICING_SLOT: ConsultationPricingSlot = {
   price: '',
 }
 
+const listingRecordId = (record?: { _id?: string; id?: string } | null) =>
+  String(record?._id || record?.id || '').trim()
+
+const toFormTimelineUnit = (unit?: string) => {
+  const normalized = normalizeTimelineUnit(unit || 'days')
+  if (normalized === 'weeks') return 'Weeks'
+  if (normalized === 'months') return 'Months'
+  return 'Days'
+}
+
+const resolveListingCategoryId = (service: { category?: unknown; categoryId?: unknown }) => {
+  const category = service.category
+  if (category && typeof category === 'object' && !Array.isArray(category)) {
+    return getCategoryApiId(category as { _id?: string; id?: string })
+  }
+  if (typeof category === 'string' && category && category !== '[object Object]') {
+    return category
+  }
+  const categoryId = service.categoryId
+  if (categoryId && typeof categoryId === 'object' && !Array.isArray(categoryId)) {
+    return getCategoryApiId(categoryId as { _id?: string; id?: string })
+  }
+  return typeof categoryId === 'string' ? categoryId : ''
+}
+
+const formatMoneyInput = (value?: number | string | null) => {
+  if (value == null || value === '') return ''
+  const numeric = typeof value === 'number' ? value : parsePrice(String(value))
+  return Number.isFinite(numeric) ? `₹${numeric}` : ''
+}
+
 const formatConsultationFeeLabel = (slot: ConsultationPricingSlot) => {
   if (slot.pricingType === 'free') return 'Free'
   const trimmed = slot.price.trim()
@@ -150,6 +182,8 @@ export const CreateServiceListingPage = () => {
   const [listingId, setListingId] = useState<string | null>(
     isConsultationEditMode ? consultationIdParam : isServiceEditMode ? serviceIdParam : null,
   )
+  const [resolvedPartnerId, setResolvedPartnerId] = useState(partnerId)
+  const [listingStatus, setListingStatus] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasPrefill, setHasPrefill] = useState(false)
 
@@ -204,6 +238,7 @@ export const CreateServiceListingPage = () => {
   }, [subcategoriesResponse?.data, selectedCategory])
 
   const createServiceMutation = useCreateService()
+  const updateServiceBasicMutation = useUpdateServiceBasic()
   const updateServicePricingMutation = useUpdateServicePricing()
   const updateServiceGalleryMutation = useUpdateServiceGallery()
   const publishServiceMutation = usePublishService()
@@ -471,176 +506,240 @@ export const CreateServiceListingPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const MAX_IMAGES = 5
 
-  if (isConsultationEditMode && !hasPrefill && consultationEditResponse?.data) {
-    const consultation = consultationEditResponse.data
-    setListingId(consultation._id)
-    setSelectedType('consultation')
-    setConsultationTitle(consultation.title || '')
+  useEffect(() => {
+    if (hasPrefill) return
 
-    const rawTopics =
-      (consultation as unknown as { topics?: unknown[] }).topics ||
-      (consultation as unknown as { topicIds?: unknown[] }).topicIds ||
-      []
-    const normalizedTopics: ConsultationTopic[] = rawTopics.map((t: unknown) => {
-      if (typeof t === 'string') return { _id: t, name: t }
-      const obj = t as Record<string, unknown>
-      return {
-        _id: String(obj._id || obj.id || obj.name || ''),
-        name: String(obj.name || obj.title || obj._id || ''),
-      }
-    })
-    setTopics(normalizedTopics)
-
-    setSessionOutline(consultation.sessionOutline || '')
-    setWhoItsFor(
-      consultation.whoItsFor ||
-        (consultation as unknown as { whoIsItFor?: string }).whoIsItFor ||
-        '',
-    )
-    const langs = (consultation as unknown as { languages?: string[] | string }).languages
-    setLanguages(Array.isArray(langs) ? langs.join(', ') : typeof langs === 'string' ? langs : '')
-    setHasPreSessionRequirement(Boolean(consultation.hasPreSessionRequirement))
-    setPreSessionRequirement(consultation.preSessionRequirement || '')
-    setHasPostSessionMessage(Boolean(consultation.hasPostSessionMessage))
-    setPostSessionMessage(consultation.postSessionMessage || '')
-    setHasFollowUp(Boolean(consultation.hasFollowUp))
-    setFollowUpDays(consultation.followUpDays != null ? String(consultation.followUpDays) : '7')
-
-    const savedPricing =
-      consultation.pricingOptions ||
-      (
-        consultation as unknown as {
-          pricing?: Array<{
-            durationMinutes?: number
-            pricingType?: 'free' | 'paid'
-            price?: number
-          }>
-        }
-      ).pricing ||
-      []
-    if (savedPricing.length > 0) {
-      setConsultationPricingSlots(
-        savedPricing.slice(0, MAX_CONSULTATION_PRICING_SLOTS).map((option) => {
-          const pricingType = option.pricingType === 'free' ? 'free' : 'paid'
-          return {
-            durationMinutes: option.durationMinutes || '',
-            pricingType,
-            price: pricingType === 'paid' && option.price != null ? String(option.price) : '',
-          }
-        }),
+    if (isConsultationEditMode && consultationEditResponse?.data) {
+      const consultation = consultationEditResponse.data
+      const consultationId = listingRecordId(consultation)
+      setListingId(consultationId || consultationIdParam)
+      setListingStatus(String(consultation.status || '').toLowerCase())
+      const consultationPartnerId = listingRecordId(
+        consultation.partnerId as unknown as { _id?: string; id?: string },
       )
+      if (consultationPartnerId) setResolvedPartnerId(consultationPartnerId)
+      else if (typeof consultation.partnerId === 'string' && consultation.partnerId) {
+        setResolvedPartnerId(consultation.partnerId)
+      }
+      setSelectedType('consultation')
+      setConsultationTitle(consultation.title || '')
+
+      const rawTopics =
+        (consultation as unknown as { topics?: unknown[] }).topics ||
+        (consultation as unknown as { topicIds?: unknown[] }).topicIds ||
+        []
+      const normalizedTopics: ConsultationTopic[] = rawTopics.map((t: unknown) => {
+        if (typeof t === 'string') return { _id: t, name: t }
+        const obj = t as Record<string, unknown>
+        return {
+          _id: String(obj._id || obj.id || obj.name || ''),
+          name: String(obj.name || obj.title || obj._id || ''),
+        }
+      })
+      setTopics(normalizedTopics)
+
+      setSessionOutline(consultation.sessionOutline || '')
+      setWhoItsFor(
+        consultation.whoItsFor ||
+          (consultation as unknown as { whoIsItFor?: string }).whoIsItFor ||
+          '',
+      )
+      const langs = (consultation as unknown as { languages?: string[] | string }).languages
+      setLanguages(Array.isArray(langs) ? langs.join(', ') : typeof langs === 'string' ? langs : '')
+      setHasPreSessionRequirement(Boolean(consultation.hasPreSessionRequirement))
+      setPreSessionRequirement(consultation.preSessionRequirement || '')
+      setHasPostSessionMessage(Boolean(consultation.hasPostSessionMessage))
+      setPostSessionMessage(consultation.postSessionMessage || '')
+      setHasFollowUp(Boolean(consultation.hasFollowUp))
+      setFollowUpDays(consultation.followUpDays != null ? String(consultation.followUpDays) : '7')
+
+      const savedPricing =
+        consultation.pricingOptions ||
+        (
+          consultation as unknown as {
+            pricing?: Array<{
+              durationMinutes?: number
+              pricingType?: 'free' | 'paid'
+              price?: number
+            }>
+          }
+        ).pricing ||
+        []
+      if (savedPricing.length > 0) {
+        setConsultationPricingSlots(
+          savedPricing.slice(0, MAX_CONSULTATION_PRICING_SLOTS).map((option) => {
+            const pricingType = option.pricingType === 'free' ? 'free' : 'paid'
+            return {
+              durationMinutes: option.durationMinutes || '',
+              pricingType,
+              price: pricingType === 'paid' && option.price != null ? String(option.price) : '',
+            }
+          }),
+        )
+      }
+
+      setHasPrefill(true)
+      return
     }
 
-    setHasPrefill(true)
-  } else if (isServiceEditMode && !hasPrefill && serviceEditResponse?.data) {
-    const service = serviceEditResponse.data
-    setListingId(service._id)
-    setSelectedType('service')
-    setServiceTitle(service.title || '')
-    setSelectedCategoryId(
-      typeof (service as unknown as { categoryId?: unknown }).categoryId === 'object'
-        ? String((service as unknown as { categoryId?: { _id?: string } }).categoryId?._id || '')
-        : String(
-            (service as unknown as { categoryId?: string; category?: string }).categoryId ||
-              (service as unknown as { category?: string }).category ||
-              '',
-          ),
-    )
-    const rawSubCategories =
-      (
-        service as unknown as {
-          subCategoryIds?: unknown[]
-          subCategories?: unknown[]
-          subCategory?: unknown[]
-        }
-      ).subCategoryIds ||
-      (service as unknown as { subCategories?: unknown[] }).subCategories ||
-      (service as unknown as { subCategory?: unknown[] }).subCategory ||
-      []
-    setSelectedSubCategoryIds(
-      rawSubCategories
-        .map((s: unknown) =>
-          typeof s === 'object' && s !== null
-            ? String((s as { _id?: string; id?: string })._id || (s as { id?: string }).id || '')
-            : String(s),
-        )
-        .filter(Boolean),
-    )
-    setDescription(service.description || '')
-    setDeliverables(service.deliverables || '')
+    if (isServiceEditMode && serviceEditResponse?.data) {
+      const service = serviceEditResponse.data
+      const serviceId = listingRecordId(service)
+      setListingId(serviceId || serviceIdParam)
+      setListingStatus(String(service.status || '').toLowerCase())
+      const servicePartnerId = listingRecordId(
+        service.partnerId as unknown as { _id?: string; id?: string },
+      )
+      if (servicePartnerId) setResolvedPartnerId(servicePartnerId)
+      else if (typeof service.partnerId === 'string' && service.partnerId) {
+        setResolvedPartnerId(service.partnerId)
+      }
+      setSelectedType('service')
+      setServiceTitle(service.title || '')
+      setSelectedCategoryId(resolveListingCategoryId(service))
+      const rawSubCategories =
+        (
+          service as unknown as {
+            subCategoryIds?: unknown[]
+            subCategories?: unknown[]
+            subCategory?: unknown[]
+          }
+        ).subCategoryIds ||
+        (service as unknown as { subCategories?: unknown[] }).subCategories ||
+        (service as unknown as { subCategory?: unknown[] }).subCategory ||
+        []
+      setSelectedSubCategoryIds(
+        rawSubCategories
+          .map((s: unknown) =>
+            typeof s === 'object' && s !== null
+              ? String((s as { _id?: string; id?: string })._id || (s as { id?: string }).id || '')
+              : String(s),
+          )
+          .filter(Boolean),
+      )
+      setDescription(service.description || '')
+      setDeliverables(service.deliverables || '')
 
-    const sData = service as unknown as {
-      pricingType?: 'fixed' | 'custom' | 'tiered'
-      price?: number
-      timelineValue?: number | string
-      timelineUnit?: string
-      timelineMin?: number | string
-      timelineMax?: number | string
-      tiers?: Array<{
-        name: TierName
-        description?: string
+      const sData = service as unknown as {
+        pricingType?: 'fixed' | 'custom' | 'tiered'
         price?: number
         timelineValue?: number | string
         timelineUnit?: string
-      }>
-    }
-
-    if (sData.pricingType) {
-      setPricingType(sData.pricingType)
-    }
-    if (sData.price != null) {
-      const formatted = `₹${sData.price}`
-      setFixedPrice(formatted)
-      setCustomPrice(formatted)
-    }
-    if (sData.timelineValue != null) {
-      setFixedTimeline(String(sData.timelineValue))
-    }
-    if (sData.timelineUnit) {
-      setFixedTimelineUnit(sData.timelineUnit)
-      setCustomTimelineUnit(sData.timelineUnit)
-    }
-    if (sData.timelineMin != null) {
-      setCustomTimelineMin(String(sData.timelineMin))
-    }
-    if (sData.timelineMax != null) {
-      setCustomTimelineMax(String(sData.timelineMax))
-    }
-
-    if (Array.isArray(sData.tiers) && sData.tiers.length > 0) {
-      const loadedTiers: ServiceTierForm[] = DEFAULT_SERVICE_TIERS.map((defTier) => {
-        const matched = sData.tiers?.find((t) => t.name === defTier.name)
-        if (!matched) return defTier
-        return {
-          name: defTier.name,
-          description: matched.description || '',
-          price: matched.price != null ? `₹${matched.price}` : '',
-          timelineValue: matched.timelineValue != null ? String(matched.timelineValue) : '',
-          timelineUnit: matched.timelineUnit || 'Days',
+        timelineMin?: number | string
+        timelineMax?: number | string
+        discountPercent?: number
+        fixedPricing?: {
+          price?: number
+          discountPercent?: number
+          timelineValue?: number | string
+          timelineUnit?: string
         }
-      })
-      setTiers(loadedTiers)
-    }
+        customPricing?: {
+          minPrice?: number
+          maxPrice?: number
+          durationType?: string
+          timelineFrom?: number | string
+          timelineTo?: number | string
+          timelineUnit?: string
+        }
+        tieredPricing?: {
+          tiers?: Array<{
+            name: TierName
+            description?: string
+            price?: number
+            timelineValue?: number | string
+            timelineUnit?: string
+          }>
+        }
+        tiers?: Array<{
+          name: TierName
+          description?: string
+          price?: number
+          timelineValue?: number | string
+          timelineUnit?: string
+        }>
+      }
 
-    const existingImages = Array.isArray(service.images)
-      ? service.images
-          .map((url) => String(url || '').trim())
-          .filter(Boolean)
-          .slice(0, MAX_IMAGES)
-      : []
-    if (existingImages.length > 0) {
-      setUploadedImages(
-        existingImages.map((url, index) => ({
-          id: `existing-${index}-${url}`,
-          url,
-          name: `Gallery image ${index + 1}`,
-        })),
-      )
-      setGalleryPreviewIndex(0)
-    }
+      const pricingType = sData.pricingType
+      if (pricingType) setPricingType(pricingType)
 
-    setHasPrefill(true)
-  }
+      const fixed = sData.fixedPricing
+      const custom = sData.customPricing
+      const tieredTiers = sData.tieredPricing?.tiers || sData.tiers || []
+
+      const fixedPriceValue = formatMoneyInput(fixed?.price ?? sData.price)
+      if (fixedPriceValue) {
+        setFixedPrice(fixedPriceValue)
+        setCustomPrice(fixedPriceValue)
+      }
+      const customPriceValue = formatMoneyInput(custom?.minPrice ?? custom?.maxPrice)
+      if (customPriceValue) setCustomPrice(customPriceValue)
+
+      const discountPct = fixed?.discountPercent ?? sData.discountPercent
+      if (discountPct != null) setSelectedDiscount(formatDiscountChip(Number(discountPct) || 0))
+
+      const timelineValue = fixed?.timelineValue ?? sData.timelineValue
+      if (timelineValue != null) setFixedTimeline(String(timelineValue))
+
+      const timelineUnit = fixed?.timelineUnit ?? custom?.timelineUnit ?? sData.timelineUnit
+      if (timelineUnit) {
+        const formUnit = toFormTimelineUnit(String(timelineUnit))
+        setFixedTimelineUnit(formUnit)
+        setCustomTimelineUnit(formUnit)
+      }
+
+      if (custom?.durationType === 'short_term') setTimelineType('short')
+      else if (custom?.durationType === 'long_term') setTimelineType('long')
+
+      const timelineFrom = custom?.timelineFrom ?? sData.timelineMin
+      const timelineTo = custom?.timelineTo ?? sData.timelineMax
+      if (timelineFrom != null) setCustomTimelineMin(String(timelineFrom))
+      if (timelineTo != null) setCustomTimelineMax(String(timelineTo))
+
+      if (Array.isArray(tieredTiers) && tieredTiers.length > 0) {
+        setTiers(
+          DEFAULT_SERVICE_TIERS.map((defTier) => {
+            const matched = tieredTiers.find((t) => t.name === defTier.name)
+            if (!matched) return defTier
+            return {
+              name: defTier.name,
+              description: matched.description || '',
+              price: matched.price != null ? formatMoneyInput(matched.price) : '',
+              timelineValue: matched.timelineValue != null ? String(matched.timelineValue) : '',
+              timelineUnit: toFormTimelineUnit(matched.timelineUnit),
+            }
+          }),
+        )
+      }
+
+      const existingImages = Array.isArray(service.images)
+        ? service.images
+            .map((url) => String(url || '').trim())
+            .filter(Boolean)
+            .slice(0, MAX_IMAGES)
+        : []
+      if (existingImages.length > 0) {
+        setUploadedImages(
+          existingImages.map((url, index) => ({
+            id: `existing-${index}-${url}`,
+            url,
+            name: `Gallery image ${index + 1}`,
+          })),
+        )
+        setGalleryPreviewIndex(0)
+      }
+
+      setHasPrefill(true)
+    }
+  }, [
+    consultationEditResponse?.data,
+    consultationIdParam,
+    hasPrefill,
+    isConsultationEditMode,
+    isServiceEditMode,
+    serviceEditResponse?.data,
+    serviceIdParam,
+  ])
 
   const handleFilesAdded = useCallback(
     (files: FileList | null) => {
@@ -708,7 +807,11 @@ export const CreateServiceListingPage = () => {
 
   const handleBack = () => {
     if (isEditMode && currentStep <= 2) {
-      navigate(partnerId ? `/experts/management/profile/${partnerId}` : '/services/management')
+      navigate(
+        resolvedPartnerId
+          ? `/experts/management/profile/${resolvedPartnerId}`
+          : '/services/management',
+      )
       return
     }
     if (currentStep === 2 && !isEditMode && onlyOneListingTypeAllowed) {
@@ -812,11 +915,33 @@ export const CreateServiceListingPage = () => {
   }
 
   const requirePartnerId = () => {
-    if (!partnerId) {
+    if (!resolvedPartnerId) {
       toast.error('Partner ID is required. Open this page with ?partnerId=<id> in the URL.')
       return false
     }
     return true
+  }
+
+  // Partner submissions stay in preview until submit/approve.
+  // Admin create also stays preview until this publish step. Never publish live/in-review/rejected.
+  const shouldPublishListing = listingStatus === 'preview' || (!isEditMode && listingStatus === '')
+
+  const finishListing = (kind: 'service' | 'consultation') => {
+    const published = shouldPublishListing
+    toast.success(
+      published
+        ? kind === 'consultation'
+          ? 'Consultation published successfully'
+          : 'Service published successfully'
+        : kind === 'consultation'
+          ? 'Consultation updated successfully'
+          : 'Service updated successfully',
+    )
+    navigate(
+      isEditMode && resolvedPartnerId
+        ? `/experts/management/profile/${resolvedPartnerId}`
+        : '/services/management',
+    )
   }
 
   const handlePrimaryAction = async () => {
@@ -852,6 +977,34 @@ export const CreateServiceListingPage = () => {
             return
           }
 
+          const basicPayload = {
+            title: serviceTitle.trim(),
+            category: selectedCategoryId,
+            subCategory: selectedSubCategoryIds,
+            description: description.trim() || undefined,
+            deliverables: deliverables.trim() || undefined,
+          }
+
+          if (listingId) {
+            await updateServiceBasicMutation.mutateAsync({
+              id: listingId,
+              payload: basicPayload,
+            })
+            toast.success('Service details updated successfully')
+          } else {
+            const response = await createServiceMutation.mutateAsync({
+              partnerId: resolvedPartnerId,
+              ...basicPayload,
+            })
+            const newId = listingRecordId(response.data)
+            if (!newId) {
+              toast.error('Service was created but no ID was returned.')
+              return
+            }
+            setListingId(newId)
+            setListingStatus('preview')
+            toast.success('Service created successfully')
+          }
           handleNext()
           return
         }
@@ -874,34 +1027,16 @@ export const CreateServiceListingPage = () => {
             }
           }
 
-          let serviceId = listingId
-          if (!serviceId) {
-            if (!allowNewServiceListings) {
-              toast.error(RESTRICTION_MESSAGES.serviceCreate)
-              return
-            }
-            const response = await createServiceMutation.mutateAsync({
-              partnerId,
-              title: serviceTitle.trim(),
-              category: selectedCategoryId,
-              subCategory: selectedSubCategoryIds,
-              description: description.trim() || undefined,
-              deliverables: deliverables.trim() || undefined,
-            })
-            serviceId = response.data._id
-            setListingId(serviceId)
-          }
-
-          if (!serviceId) {
+          if (!listingId) {
             toast.error('Service ID is missing. Go back and complete service details.')
             return
           }
 
           await updateServicePricingMutation.mutateAsync({
-            id: serviceId,
+            id: listingId,
             payload: buildServicePricingPayload(),
           })
-          toast.success(listingId ? 'Pricing updated successfully' : 'Service created successfully')
+          toast.success('Pricing updated successfully')
           handleNext()
           return
         }
@@ -961,9 +1096,10 @@ export const CreateServiceListingPage = () => {
             toast.error('At least one gallery image is required before publishing.')
             return
           }
-          await publishServiceMutation.mutateAsync(listingId)
-          toast.success('Service published successfully')
-          navigate('/services/management')
+          if (shouldPublishListing) {
+            await publishServiceMutation.mutateAsync(listingId)
+          }
+          finishListing('service')
         }
         return
       }
@@ -1016,7 +1152,7 @@ export const CreateServiceListingPage = () => {
                 },
               })
             : await createConsultationMutation.mutateAsync({
-                partnerId,
+                partnerId: resolvedPartnerId,
                 title: consultationTitle.trim(),
                 topics: topicPayload,
                 sessionOutline: sessionOutline.trim(),
@@ -1024,7 +1160,13 @@ export const CreateServiceListingPage = () => {
               })
 
           if (!listingId) {
-            setListingId(response.data?._id || null)
+            const newId = listingRecordId(response.data)
+            if (!newId) {
+              toast.error('Consultation was created but no ID was returned.')
+              return
+            }
+            setListingId(newId)
+            setListingStatus('preview')
           }
           toast.success(
             listingId
@@ -1137,17 +1279,10 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 5) {
-          await publishConsultationMutation.mutateAsync(listingId)
-          toast.success(
-            isEditMode
-              ? 'Consultation updated successfully'
-              : 'Consultation published successfully',
-          )
-          navigate(
-            isEditMode && partnerId
-              ? `/experts/management/profile/${partnerId}`
-              : '/services/management',
-          )
+          if (shouldPublishListing) {
+            await publishConsultationMutation.mutateAsync(listingId)
+          }
+          finishListing('consultation')
         }
       }
     } catch (error) {
@@ -1835,28 +1970,36 @@ export const CreateServiceListingPage = () => {
     currentStep === 1 ? (
       'Next'
     ) : currentStep === 5 ? (
-      selectedType === 'consultation' ? (
-        isEditMode ? (
-          'Save Changes'
-        ) : (
+      shouldPublishListing ? (
+        selectedType === 'consultation' ? (
           'Publish Consultation'
+        ) : (
+          <span className="flex items-center gap-2">
+            Publish service
+            <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </span>
         )
       ) : (
-        <span className="flex items-center gap-2">
-          Publish service
-          <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2.5}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </span>
+        'Save Changes'
       )
     ) : (
       'Save & Continue'
     )
+
+  if (isEditMode && isEditLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
 
   if (
     !isEditMode &&
@@ -1871,7 +2014,13 @@ export const CreateServiceListingPage = () => {
 
   return (
     <CreateListingWizard
-      title={isEditMode ? 'Edit Consultation' : 'Create Service Listing'}
+      title={
+        isEditMode
+          ? selectedType === 'consultation'
+            ? 'Edit Consultation'
+            : 'Edit Service'
+          : 'Create Service Listing'
+      }
       breadcrumbs={breadcrumbs}
       steps={activeSteps}
       currentStep={currentStep}

@@ -14,6 +14,7 @@ import {
   Info,
   Languages,
   Loader2,
+  Pencil,
   Phone,
   X,
 } from 'lucide-react'
@@ -1165,15 +1166,35 @@ export const ServiceViewPage = () => {
             <h2 className="text-2xl font-bold text-white">{expertName}</h2>
             <p className="text-body-sm text-muted mt-1">{formatAppliedAgo(submittedAt)}</p>
           </div>
-          {profilePartnerId && (
-            <button
-              type="button"
-              onClick={() => navigate(`/experts/management/profile/${profilePartnerId}`)}
-              className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
-            >
-              <Eye className="size-3.5" aria-hidden="true" />
-              View Profile
-            </button>
+          {(profilePartnerId || resolvedServiceId) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {profilePartnerId && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/experts/management/profile/${profilePartnerId}`)}
+                  className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
+                >
+                  <Eye className="size-3.5" aria-hidden="true" />
+                  View Profile
+                </button>
+              )}
+              {profilePartnerId && resolvedServiceId && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(
+                      isConsultation
+                        ? `/services/management/create?partnerId=${encodeURIComponent(profilePartnerId)}&consultationId=${encodeURIComponent(resolvedServiceId)}&mode=edit`
+                        : `/services/management/create?partnerId=${encodeURIComponent(profilePartnerId)}&serviceId=${encodeURIComponent(resolvedServiceId)}&mode=edit`,
+                    )
+                  }
+                  className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
+                >
+                  <Pencil className="size-3.5" aria-hidden="true" />
+                  {isConsultation ? 'Edit Consultation' : 'Edit Service'}
+                </button>
+              )}
+            </div>
           )}
         </div>
 

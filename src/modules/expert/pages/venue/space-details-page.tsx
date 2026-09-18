@@ -633,11 +633,13 @@ export function SpaceDetailsPage() {
             icon={<img src={editIcon} alt="edit" className="size-3.5" />}
             onClick={() => {
               setActionsOpen(false)
-              if (!venueId) {
+              if (!venueId || !spaceId) {
                 toast.error('Venue ID is missing.')
                 return
               }
-              navigate(`/venues/management/create?venueId=${venueId}&mode=edit`)
+              navigate(
+                `/venues/management/create?venueId=${venueId}&spaceId=${encodeURIComponent(spaceId)}&mode=edit`,
+              )
             }}
           >
             Edit Profile

@@ -1970,6 +1970,23 @@ function ServiceListCard({
             </p>
           </div>
         )}
+        <button
+          type="button"
+          aria-label="Edit service"
+          onClick={(event) => {
+            event.stopPropagation()
+            if (!service._id) {
+              toast.error('Service ID is missing.')
+              return
+            }
+            navigate(
+              `/services/management/create?partnerId=${encodeURIComponent(expertId)}&serviceId=${encodeURIComponent(service._id)}&mode=edit`,
+            )
+          }}
+          className="text-muted hover:text-white"
+        >
+          <Pencil className="size-4" />
+        </button>
         <ChevronRight className="size-4 text-white/50" />
       </div>
     </div>

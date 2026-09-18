@@ -18,6 +18,8 @@ import type {
   UpdateConsultationAdditionalInfoPayload,
   UpdateConsultationPricingPayload,
   UpdateConsultationStatusPayload,
+  UpdateServiceBasicPayload,
+  UpdateServiceBasicResponse,
   UpdateServicePricingPayload,
   UpdateServiceStatusPayload,
 } from '../type/service'
@@ -70,6 +72,14 @@ export const fetchServiceById = async (id: string) => {
 
 export const createService = async (payload: CreateServicePayload) => {
   const response = await expertApiClient.post<CreateServiceResponse>('/api/admin/services', payload)
+  return response.data
+}
+
+export const updateServiceBasic = async (id: string, payload: UpdateServiceBasicPayload) => {
+  const response = await expertApiClient.patch<UpdateServiceBasicResponse>(
+    `/api/admin/services/${id}/basic`,
+    payload,
+  )
   return response.data
 }
 

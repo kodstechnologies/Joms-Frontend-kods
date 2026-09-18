@@ -302,12 +302,13 @@ export const CreateVenueListingPage = () => {
   const navigate = useNavigate()
   const venueId = searchParams.get('venueId')
   const partnerId = searchParams.get('partnerId') || ''
+  const spaceIdParam = searchParams.get('spaceId') || ''
   const isViewMode = searchParams.get('view') === 'true'
   const isEditMode = searchParams.get('mode') === 'edit' && Boolean(venueId)
   const isAddSpaceMode = searchParams.get('mode') === 'add-space' && Boolean(venueId)
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [spaceId, setSpaceId] = useState<string | null>(null)
+  const [spaceId, setSpaceId] = useState<string | null>(spaceIdParam || null)
 
   const {
     saveVenueDetails,
@@ -351,7 +352,17 @@ export const CreateVenueListingPage = () => {
             const status = String(item.status || '').toLowerCase()
             return status === 'preview' || status === 'draft'
           }) || null
-        const space = isAddSpaceMode ? null : isEditMode ? spaces[0] : inProgressSpace
+        const space = isAddSpaceMode
+          ? null
+          : isEditMode
+            ? (spaceIdParam
+                ? spaces.find(
+                    (item) =>
+                      String(item._id) === String(spaceIdParam) ||
+                      String((item as { id?: string }).id) === String(spaceIdParam),
+                  )
+                : null) || spaces[0]
+            : inProgressSpace
         const hydrateSpace = Boolean(space)
         const galleryUrls = resolveGalleryUrls(space || undefined)
         const pricing = hydrateSpace ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
@@ -503,7 +514,7 @@ export const CreateVenueListingPage = () => {
     }
 
     loadVenue()
-  }, [venueId, isEditMode, isAddSpaceMode])
+  }, [venueId, isEditMode, isAddSpaceMode, spaceIdParam])
 
   const validateListingStep = (step: number): string | null => {
     if (step === 1) {

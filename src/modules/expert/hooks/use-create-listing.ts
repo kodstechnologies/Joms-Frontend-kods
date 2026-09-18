@@ -8,6 +8,7 @@ import {
   updateConsultationAdditionalInfo,
   updateConsultationBasic,
   updateConsultationPricing,
+  updateServiceBasic,
   updateServiceGallery,
   updateServicePricing,
 } from '../api/service-api'
@@ -16,12 +17,19 @@ import type {
   CreateServicePayload,
   UpdateConsultationAdditionalInfoPayload,
   UpdateConsultationPricingPayload,
+  UpdateServiceBasicPayload,
   UpdateServicePricingPayload,
 } from '../type/service'
 
 export const useCreateService = () =>
   useMutation({
     mutationFn: (payload: CreateServicePayload) => createService(payload),
+  })
+
+export const useUpdateServiceBasic = () =>
+  useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateServiceBasicPayload }) =>
+      updateServiceBasic(id, payload),
   })
 
 export const useUpdateServicePricing = () =>

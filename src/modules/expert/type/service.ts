@@ -291,7 +291,15 @@ export interface CreateServicePayload {
 export interface CreateServiceResponse {
   success: boolean
   message: string
-  data: { _id: string }
+  data: { _id: string; id?: string }
+}
+
+export type UpdateServiceBasicPayload = Omit<CreateServicePayload, 'partnerId'>
+
+export interface UpdateServiceBasicResponse {
+  success: boolean
+  message: string
+  data: ServiceDetail
 }
 
 export type UpdateServicePricingPayload =
