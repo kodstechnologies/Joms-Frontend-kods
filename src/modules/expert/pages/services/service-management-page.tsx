@@ -628,6 +628,11 @@ export const ServiceManagementPage = () => {
       return
     }
 
+    if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
+      toast.error('End date must be on or after the start date.')
+      return
+    }
+
     if (!suspendAdminNotes.trim()) {
       toast.error('Admin notes are required.')
       return
@@ -737,6 +742,8 @@ export const ServiceManagementPage = () => {
       cell: ({ row }) => {
         const service = row.original
         const isOpen = activeDropdownId === service._id
+        const isSuspended = Boolean(service.isSuspend) || service.status === 'suspended'
+        const isDeleted = Boolean(service.isDeleted) || service.status === 'deleted'
 
         return (
           <TableActionsDropdown
@@ -754,33 +761,39 @@ export const ServiceManagementPage = () => {
             >
               View Details
             </TableActionsItem>
-            <TableActionsItem
-              icon={<Tag className="size-3.5" aria-hidden="true" />}
-              onClick={() => {
-                setActiveDropdownId(null)
-                openTagModal(service._id)
-              }}
-            >
-              Add Tags
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
-              onClick={() => {
-                setActiveDropdownId(null)
-                openSuspendModal(service)
-              }}
-            >
-              Suspend Service
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Trash2 className="size-3.5" aria-hidden="true" />}
-              onClick={() => {
-                setActiveDropdownId(null)
-                openDeleteModal(service)
-              }}
-            >
-              Delete Service
-            </TableActionsItem>
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={<Tag className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openTagModal(service._id)
+                }}
+              >
+                Add Tags
+              </TableActionsItem>
+            ) : null}
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openSuspendModal(service)
+                }}
+              >
+                Suspend Service
+              </TableActionsItem>
+            ) : null}
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openDeleteModal(service)
+                }}
+              >
+                Delete Service
+              </TableActionsItem>
+            ) : null}
           </TableActionsDropdown>
         )
       },

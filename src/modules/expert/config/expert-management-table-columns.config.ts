@@ -52,8 +52,8 @@ export const EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIt
     id: 'category',
     label: 'Category',
     type: 'Text',
-    description: 'Marketplace category',
-    defaultVisible: false,
+    description: 'Core category selected for the expert',
+    defaultVisible: true,
   },
   {
     id: 'service-type',
@@ -373,8 +373,8 @@ export const EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: ExpertTableColumnCa
     id: 'category',
     label: 'Category',
     type: 'Text',
-    description: 'Marketplace category',
-    defaultVisible: false,
+    description: 'Core category selected for the expert',
+    defaultVisible: true,
   },
   {
     id: 'service-type',
@@ -658,8 +658,8 @@ export const EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIte
     id: 'category',
     label: 'Category',
     type: 'Text',
-    description: 'Marketplace category',
-    defaultVisible: false,
+    description: 'Core category selected for the expert',
+    defaultVisible: true,
   },
   {
     id: 'suspension-status',

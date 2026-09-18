@@ -1145,54 +1145,56 @@ function ConsultationDetailCard({
             </div>
           )}
         </div>
-        <TableActionsDropdown
-          label={`Open actions for ${consultation.title || 'consultation'}`}
-          isOpen={menuOpen}
-          onOpenChange={onMenuOpenChange}
-          menuWidth={200}
-          tone="light"
-        >
-          <TableActionsItem
+        {!isSuspended ? (
+          <TableActionsDropdown
+            label={`Open actions for ${consultation.title || 'consultation'}`}
+            isOpen={menuOpen}
+            onOpenChange={onMenuOpenChange}
+            menuWidth={200}
             tone="light"
-            icon={<RotateCw className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onRequestChanges()
-            }}
           >
-            Request Changes
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<PauseCircle className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onPause()
-            }}
-          >
-            Pause Consultation
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Trash2 className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onDelete()
-            }}
-          >
-            Delete Consultation
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Pencil className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onEdit()
-            }}
-          >
-            Edit Consultation
-          </TableActionsItem>
-        </TableActionsDropdown>
+            <TableActionsItem
+              tone="light"
+              icon={<RotateCw className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onRequestChanges()
+              }}
+            >
+              Request Changes
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<PauseCircle className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onPause()
+              }}
+            >
+              Pause Consultation
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Trash2 className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onDelete()
+              }}
+            >
+              Delete Consultation
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Pencil className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onEdit()
+              }}
+            >
+              Edit Consultation
+            </TableActionsItem>
+          </TableActionsDropdown>
+        ) : null}
       </div>
 
       {outlineItems.length > 0 && (
@@ -1970,23 +1972,25 @@ function ServiceListCard({
             </p>
           </div>
         )}
-        <button
-          type="button"
-          aria-label="Edit service"
-          onClick={(event) => {
-            event.stopPropagation()
-            if (!service._id) {
-              toast.error('Service ID is missing.')
-              return
-            }
-            navigate(
-              `/services/management/create?partnerId=${encodeURIComponent(expertId)}&serviceId=${encodeURIComponent(service._id)}&mode=edit`,
-            )
-          }}
-          className="text-muted hover:text-white"
-        >
-          <Pencil className="size-4" />
-        </button>
+        {!isSuspended && !isDeleted ? (
+          <button
+            type="button"
+            aria-label="Edit service"
+            onClick={(event) => {
+              event.stopPropagation()
+              if (!service._id) {
+                toast.error('Service ID is missing.')
+                return
+              }
+              navigate(
+                `/services/management/create?partnerId=${encodeURIComponent(expertId)}&serviceId=${encodeURIComponent(service._id)}&mode=edit`,
+              )
+            }}
+            className="text-muted hover:text-white"
+          >
+            <Pencil className="size-4" />
+          </button>
+        ) : null}
         <ChevronRight className="size-4 text-white/50" />
       </div>
     </div>

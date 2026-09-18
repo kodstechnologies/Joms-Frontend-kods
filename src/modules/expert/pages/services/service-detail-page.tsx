@@ -270,6 +270,10 @@ export const ServiceDetailPage = () => {
         toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
         return
       }
+      if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
+        toast.error('End date must be on or after the start date.')
+        return
+      }
       if (!adminNotes.trim()) {
         toast.error('Admin notes are required.')
         return
@@ -334,6 +338,9 @@ export const ServiceDetailPage = () => {
 
   const pricing = service.pricing
   const expertName = service.expert?.name || 'Expert'
+  const isSuspended = Boolean(
+    service.isSuspend || service.displayStatus === 'suspended' || service.suspension?.isSuspended,
+  )
 
   const modalConfig =
     activeAction === 'pause'
@@ -475,47 +482,57 @@ export const ServiceDetailPage = () => {
               Version History
             </span>
           </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => (service.isPaused ? handleUnpause() : openModal('pause'))}
-            disabled={pauseMutation.isPending || unpauseMutation.isPending}
-          >
-            {service.isPaused ? (
-              <Play className="size-5 shrink-0 text-white" aria-hidden="true" />
-            ) : (
-              <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
-            )}
-            {service.isPaused ? 'Resume Service' : 'Pause Service'}
-          </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => openModal('requestChanges')}
-          >
-            <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
-            Request Changes
-          </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => (service.isFlagged ? handleUnflag() : openModal('flag'))}
-            disabled={flagMutation.isPending || unflagMutation.isPending}
-          >
-            <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
-            {service.isFlagged ? 'Remove Flag' : 'Flag for Review'}
-          </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => openModal('suspend')}
-            disabled={service.isSuspend}
-          >
-            <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
-            Suspend Service
-          </Button>
+          {!isSuspended ? (
+            <>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => (service.isPaused ? handleUnpause() : openModal('pause'))}
+                disabled={pauseMutation.isPending || unpauseMutation.isPending}
+              >
+                {service.isPaused ? (
+                  <Play className="size-5 shrink-0 text-white" aria-hidden="true" />
+                ) : (
+                  <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                )}
+                {service.isPaused ? 'Resume Service' : 'Pause Service'}
+              </Button>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => openModal('requestChanges')}
+              >
+                <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                Request Changes
+              </Button>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => (service.isFlagged ? handleUnflag() : openModal('flag'))}
+                disabled={flagMutation.isPending || unflagMutation.isPending}
+              >
+                <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                {service.isFlagged ? 'Remove Flag' : 'Flag for Review'}
+              </Button>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => openModal('suspend')}
+              >
+                <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                Suspend Service
+              </Button>
+            </>
+          ) : null}
         </div>
       </header>
+
+      {isSuspended ? (
+        <p className="rounded-[10px] bg-[#AF52DE]/15 px-4 py-3 text-sm font-medium text-[#E0C3FF]">
+          This service is suspended. It is hidden from the marketplace and cannot be edited, paused,
+          or approved until it is reactivated.
+        </p>
+      ) : null}
 
       <div className="grid grid-cols-1 items-start gap-8 @min-[980px]/main:grid-cols-[minmax(0,438px)_minmax(0,1fr)]">
         <div className="flex w-full max-w-[438px] flex-col gap-5">

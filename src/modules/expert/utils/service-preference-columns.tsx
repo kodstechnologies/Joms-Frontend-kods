@@ -144,8 +144,8 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
       accessorFn: (row) => row.status ?? '',
       cell: ({ row }) => {
         const { label, className } = getListingStatusDisplay(row.original.status, {
-          isSuspend: row.original.isSuspend,
-          isDeleted: row.original.status === 'deleted',
+          isSuspend: row.original.isSuspend || row.original.status === 'suspended',
+          isDeleted: Boolean(row.original.isDeleted) || row.original.status === 'deleted',
         })
         return <span className={className}>{label}</span>
       },

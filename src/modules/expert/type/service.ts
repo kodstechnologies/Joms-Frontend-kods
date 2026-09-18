@@ -16,6 +16,7 @@ export interface Service {
     | 'rejected'
   serviceStatus?: ServiceRawStatus
   isSuspend?: boolean
+  isDeleted?: boolean
   createdAt: string
   serviceType: string
   categoryName: string

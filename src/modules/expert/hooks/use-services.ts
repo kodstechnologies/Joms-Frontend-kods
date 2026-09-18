@@ -71,8 +71,12 @@ export const useSuspendService = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: SuspendServicePayload }) =>
       suspendService(id, payload),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['service', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['consultation', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-service-detail', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-service-revisions', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
       queryClient.invalidateQueries({ queryKey: ['expert-services'] })
     },
@@ -84,8 +88,14 @@ export const useActivateService = () => {
 
   return useMutation({
     mutationFn: (id: string) => activateService(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['service', id] })
+      queryClient.invalidateQueries({ queryKey: ['consultation', id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-service-detail', id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-service-revisions', id] })
+      queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
     },
   })
 }

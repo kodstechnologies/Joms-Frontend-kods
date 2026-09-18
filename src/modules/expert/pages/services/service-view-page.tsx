@@ -6,6 +6,7 @@ import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import axios from 'axios'
 import {
   ArrowLeft,
+  Ban,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -68,6 +69,8 @@ type ServiceViewDetail = Partial<ServiceDetail> &
     partnerId: string
     title: string
     status: string
+    isSuspend?: boolean
+    isDeleted?: boolean
     createdAt: string
     updatedAt: string
     serviceType?: string
@@ -424,6 +427,10 @@ export const ServiceViewPage = () => {
         toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
         return
       }
+      if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
+        toast.error('End date must be on or after the start date.')
+        return
+      }
       if (!decisionAdminNotes.trim()) {
         toast.error('Admin notes are required.')
         return
@@ -658,7 +665,9 @@ export const ServiceViewPage = () => {
       value: assignee.id,
     })) || []
   const isEscalateFlow = activeDecisionAction === 'escalate'
-  const statusBadge = getReviewStatusBadge(service.status)
+  const isListingSuspended = Boolean(service.isSuspend) || service.status === 'suspended'
+  const isListingDeleted = Boolean(service.isDeleted) || service.status === 'deleted'
+  const statusBadge = getReviewStatusBadge(isListingSuspended ? 'suspended' : service.status)
   const submittedAt = service.submittedAt || service.createdAt
   const profilePartnerId = resolvedPartnerId || service.partnerId
   const pageTitle = isConsultation ? 'Consultation View' : 'Service View'
@@ -1178,7 +1187,7 @@ export const ServiceViewPage = () => {
                   View Profile
                 </button>
               )}
-              {profilePartnerId && resolvedServiceId && (
+              {profilePartnerId && resolvedServiceId && !isListingSuspended && !isListingDeleted ? (
                 <button
                   type="button"
                   onClick={() =>
@@ -1193,7 +1202,17 @@ export const ServiceViewPage = () => {
                   <Pencil className="size-3.5" aria-hidden="true" />
                   {isConsultation ? 'Edit Consultation' : 'Edit Service'}
                 </button>
-              )}
+              ) : null}
+              {resolvedServiceId && !isListingSuspended && !isListingDeleted ? (
+                <button
+                  type="button"
+                  onClick={() => openDecisionModal('suspend')}
+                  className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
+                >
+                  <Ban className="size-3.5" aria-hidden="true" />
+                  Suspend Service
+                </button>
+              ) : null}
             </div>
           )}
         </div>
@@ -1251,15 +1270,22 @@ export const ServiceViewPage = () => {
               onEscalate={() => openDecisionModal('escalate')}
               onReject={() => openDecisionModal('reject')}
               showEscalate
-              approveDisabled={!showApprovalControls || isUpdatingStatus}
-              requestChangesDisabled={!showApprovalControls || isUpdatingStatus}
-              escalateDisabled={escalateDisabled}
-              rejectDisabled={!showApprovalControls || isUpdatingStatus}
+              approveDisabled={isListingSuspended || !showApprovalControls || isUpdatingStatus}
+              requestChangesDisabled={
+                isListingSuspended || !showApprovalControls || isUpdatingStatus
+              }
+              escalateDisabled={isListingSuspended || escalateDisabled}
+              rejectDisabled={isListingSuspended || !showApprovalControls || isUpdatingStatus}
             />
           </div>
         </div>
       </div>
-      {!showApprovalControls ? (
+      {isListingSuspended ? (
+        <p className="text-body-sm text-muted mt-3 rounded-[10px] bg-[#050505] px-3 py-2 font-medium">
+          This listing is currently <span className="font-bold text-white">Suspended</span>.
+          Marketplace and admin actions are disabled until it is reactivated.
+        </p>
+      ) : !showApprovalControls ? (
         <p className="text-body-sm text-muted mt-3 rounded-[10px] bg-[#050505] px-3 py-2 font-medium">
           This listing is currently{' '}
           <span className="font-bold text-white">{service.status || '—'}</span>. Approve and reject
