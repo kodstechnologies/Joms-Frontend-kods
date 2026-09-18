@@ -20,8 +20,8 @@ import { fetchAdminDraftVenue } from '../../api/venue-api'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { useVenuePublicSettings } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
-  createDefaultWeeklyAvailability,
   createEmptyVenueFormData,
+  hydrateWeeklyAvailability,
   buildVenueGalleryPreviewsFromUrls,
   mapHoursToCancellationPolicy,
   mapSpaceTypeFromApi,
@@ -280,15 +280,9 @@ export const CreateVenueListingPage = () => {
         const pricing = hydrateSpace ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
         const terms = venue?.terms
 
-        const defaultDays = createDefaultWeeklyAvailability()
-        const savedWeekly = hydrateSpace ? (space?.availability?.weeklyAvailability ?? []) : []
-        const weeklyAvailability = defaultDays.map((entry) => {
-          if (!hydrateSpace) return entry
-          const match = savedWeekly.find((d) => d.day === entry.day)
-          return match
-            ? { ...entry, from: match.from || entry.from, to: match.to || entry.to, enabled: true }
-            : { ...entry, enabled: savedWeekly.length === 0 ? entry.enabled : false }
-        })
+        const weeklyAvailability = hydrateWeeklyAvailability(
+          hydrateSpace ? (space?.availability?.weeklyAvailability ?? []) : [],
+        )
         const blockedDates = hydrateSpace
           ? (space?.availability?.blockedDates ?? []).map((d) => ({
               date: d.date ? String(d.date).slice(0, 10) : '',

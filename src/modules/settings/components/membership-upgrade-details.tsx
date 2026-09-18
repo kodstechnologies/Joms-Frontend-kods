@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Check, ExternalLink, X } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
@@ -10,6 +10,7 @@ import {
   fetchAdminEscalation,
   startAdminEscalationReview,
 } from '@/modules/my-tasks/api/escalation-api'
+import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { apiErrorMessage } from '@/modules/payments/utils/finance-mappers'
 
@@ -160,9 +161,14 @@ export function MembershipUpgradeDetails() {
               <div className="mt-2 flex items-center gap-2">
                 <span className="text-sm font-medium text-white">{username}</span>
                 {partnerId ? (
-                  <Link to={`/experts/management/profile/${partnerId}`}>
+                  <button
+                    type="button"
+                    onClick={() => void openPartnerProfile({ id: partnerId }, navigate)}
+                    className="inline-flex"
+                    aria-label="Open partner profile"
+                  >
                     <ExternalLink className="h-4 w-4 text-white" />
-                  </Link>
+                  </button>
                 ) : (
                   <ExternalLink className="h-4 w-4 text-white/40" />
                 )}

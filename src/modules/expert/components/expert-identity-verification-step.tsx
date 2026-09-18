@@ -1,14 +1,13 @@
 import { useRef } from 'react'
-
 import { Upload } from 'lucide-react'
 
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 import { requiredLabel } from '@/shared/components/form/required-label'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import {
-  GOVERNMENT_ID_META,
   GOVERNMENT_ID_TYPES,
-  isGovernmentIdType,
+  getGovernmentIdMeta,
+  normalizeGovernmentIdType,
   sanitizeGovernmentIdInput,
   sanitizeGstInput,
   sanitizePanInput,
@@ -75,9 +74,8 @@ function DocumentUploadField({
 }
 
 export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props) => {
-  const selectedIdMeta = isGovernmentIdType(formData.idType)
-    ? GOVERNMENT_ID_META[formData.idType]
-    : null
+  const panFieldRef = useRef<HTMLDivElement>(null)
+  const selectedIdMeta = getGovernmentIdMeta(formData.idType)
   const idNumberError = formData.idNumber.trim()
     ? validateGovernmentIdNumber(formData.idType, formData.idNumber)
     : null
@@ -114,11 +112,22 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
               value={formData.idType}
               onChange={(e) => {
                 const nextType = e.target.value
+                const nextNumber = sanitizeGovernmentIdInput(nextType, formData.idNumber)
                 setFormData((prev) => ({
                   ...prev,
                   idType: nextType,
-                  idNumber: sanitizeGovernmentIdInput(nextType, prev.idNumber),
+                  idNumber: nextNumber,
+                  panNumber:
+                    normalizeGovernmentIdType(nextType) === 'PAN'
+                      ? nextNumber || prev.panNumber
+                      : prev.panNumber,
                 }))
+                if (normalizeGovernmentIdType(nextType) === 'PAN') {
+                  window.requestAnimationFrame(() => {
+                    panFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    panFieldRef.current?.querySelector('input')?.focus()
+                  })
+                }
               }}
               className={`${fieldClass} appearance-none`}
             >
@@ -138,10 +147,15 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
             <input
               value={formData.idNumber}
               onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  idNumber: sanitizeGovernmentIdInput(prev.idType, e.target.value),
-                }))
+                setFormData((prev) => {
+                  const idNumber = sanitizeGovernmentIdInput(prev.idType, e.target.value)
+                  return {
+                    ...prev,
+                    idNumber,
+                    panNumber:
+                      normalizeGovernmentIdType(prev.idType) === 'PAN' ? idNumber : prev.panNumber,
+                  }
+                })
               }
               placeholder={selectedIdMeta?.placeholder || 'Enter ID number'}
               maxLength={selectedIdMeta?.maxLength}
@@ -198,7 +212,7 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
             </div>
           )}
 
-          <div>
+          <div ref={panFieldRef}>
             <label className="mb-2 block text-xs font-medium text-white">
               Organization/Individual PAN <RequiredMark />
             </label>

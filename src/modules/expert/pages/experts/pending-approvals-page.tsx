@@ -19,7 +19,11 @@ import {
 } from '../../utils/expert-preference-columns'
 import { EXPERT_PENDING_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
-import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import {
+  isVenuePartner,
+  openExpertApplicationView,
+  openPartnerProfile,
+} from '../../utils/expert-application-navigation'
 import { ExpertListHeader } from './expert-list-shared'
 import { createExpertSelectColumn } from './expert-list-columns'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
@@ -258,7 +262,7 @@ export function ExpertPendingApprovalsPage() {
           cell: ({ row }) => {
             const expert = row.original
             const isOpen = activeDropdownId === expert.expertId
-            const isVenue = expert.serviceType?.toLowerCase() === 'venue'
+            const isVenue = isVenuePartner(expert)
 
             return (
               <TableActionsDropdown
@@ -267,17 +271,15 @@ export function ExpertPendingApprovalsPage() {
                 onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
                 menuWidth={220}
               >
-                {!isVenue && (
-                  <TableActionsItem
-                    icon={<Eye className="size-3.5" aria-hidden="true" />}
-                    onClick={() => {
-                      setActiveDropdownId(null)
-                      navigate(`/experts/management/profile/${expert.id}`)
-                    }}
-                  >
-                    View Expert
-                  </TableActionsItem>
-                )}
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    void openPartnerProfile(expert, navigate)
+                  }}
+                >
+                  {isVenue ? 'View Profile' : 'View Expert'}
+                </TableActionsItem>
                 <TableActionsItem
                   icon={<FileText className="size-3.5" aria-hidden="true" />}
                   onClick={() => {

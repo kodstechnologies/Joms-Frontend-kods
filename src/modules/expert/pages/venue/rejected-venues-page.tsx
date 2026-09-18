@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, PlayCircle } from 'lucide-react'
+import { ArrowLeft, Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -222,8 +222,17 @@ export function RejectedVenuesPage() {
                   label={`Open actions for ${venue.venueName}`}
                   isOpen={isOpen}
                   onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
-                  menuWidth={160}
+                  menuWidth={176}
                 >
+                  <TableActionsItem
+                    icon={<Eye className="size-3.5" aria-hidden="true" />}
+                    onClick={() => {
+                      setActiveDropdownId(null)
+                      navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
+                    }}
+                  >
+                    View Profile
+                  </TableActionsItem>
                   <TableActionsItem
                     icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
                     onClick={() => {
@@ -244,6 +253,7 @@ export function RejectedVenuesPage() {
       activeDropdownId,
       allVisibleVenuesSelected,
       handleActivate,
+      navigate,
       selectedVenueIds,
       someVisibleVenuesSelected,
       toggleVenueSelection,

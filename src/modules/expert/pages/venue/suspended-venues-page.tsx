@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { PlayCircle, Plus } from 'lucide-react'
+import { Eye, PlayCircle, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -94,8 +94,17 @@ export function VenueSuspendedPage() {
                 label={`Open actions for ${venue.venueName}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? venue._id : null)}
-                menuWidth={160}
+                menuWidth={176}
               >
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
+                  }}
+                >
+                  View Profile
+                </TableActionsItem>
                 <TableActionsItem
                   icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
@@ -112,7 +121,7 @@ export function VenueSuspendedPage() {
       ],
       VENUE_SUSPENDED_SORT_FIELDS,
     )
-  }, [handleActivate, list])
+  }, [handleActivate, list, navigate])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

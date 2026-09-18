@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { RotateCcw } from 'lucide-react'
+import { Eye, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
@@ -124,6 +124,15 @@ export function VenueDeletedPage() {
                 menuWidth={192}
               >
                 <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
+                  }}
+                >
+                  View Profile
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<RotateCcw className="size-3.5" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
@@ -148,7 +157,7 @@ export function VenueDeletedPage() {
       ],
       VENUE_DELETED_SORT_FIELDS,
     )
-  }, [handleExportVenueRow, handleRestore, list])
+  }, [handleExportVenueRow, handleRestore, list, navigate])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

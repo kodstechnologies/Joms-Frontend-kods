@@ -13,6 +13,7 @@ import {
 import { useActivateExpert } from '../../hooks/use-expert'
 import { useExpertStatusList } from '../../hooks/use-expert-status-list'
 import type { Expert } from '../../type/expert'
+import { isVenuePartner, openPartnerProfile } from '../../utils/expert-application-navigation'
 import {
   buildExpertDataColumnsById,
   pickPreferenceColumns,
@@ -85,6 +86,7 @@ export function ExpertSuspendedExpertsPage() {
           cell: ({ row }) => {
             const expert = row.original
             const isOpen = list.activeDropdownId === expert.expertId
+            const isVenue = isVenuePartner(expert)
 
             return (
               <TableActionsDropdown
@@ -97,10 +99,10 @@ export function ExpertSuspendedExpertsPage() {
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
-                    navigate(`/experts/management/profile/${expert.id}`)
+                    void openPartnerProfile(expert, navigate)
                   }}
                 >
-                  View Expert
+                  {isVenue ? 'View Profile' : 'View Expert'}
                 </TableActionsItem>
                 <TableActionsItem
                   icon={<PlayCircle className="size-3.5" aria-hidden="true" />}

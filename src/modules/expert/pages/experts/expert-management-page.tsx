@@ -60,7 +60,11 @@ import {
 import { useExpertStore } from '../../store/expert-store'
 import { useExpertAccountControls } from '@/modules/settings/hooks/use-expert-public-settings'
 import type { Expert } from '../../type/expert'
-import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import {
+  isVenuePartner,
+  openExpertApplicationView,
+  openPartnerProfile,
+} from '../../utils/expert-application-navigation'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { EXPERT_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -821,7 +825,7 @@ export const ExpertManagementPage = () => {
       cell: ({ row }) => {
         const expert = row.original
         const isOpen = activeDropdownId === expert.expertId
-        const isVenue = expert.serviceType?.toLowerCase() === 'venue'
+        const isVenue = isVenuePartner(expert)
 
         return (
           <TableActionsDropdown
@@ -830,18 +834,16 @@ export const ExpertManagementPage = () => {
             onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
             menuWidth={220}
           >
-            {!isVenue && (
-              <TableActionsItem
-                icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
-                className={ACTION_ITEM_CLASS}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/experts/management/profile/${expert.id}`)
-                }}
-              >
-                View Profile
-              </TableActionsItem>
-            )}
+            <TableActionsItem
+              icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                void openPartnerProfile(expert, navigate)
+              }}
+            >
+              View Profile
+            </TableActionsItem>
             <TableActionsItem
               icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
               className={ACTION_ITEM_CLASS}

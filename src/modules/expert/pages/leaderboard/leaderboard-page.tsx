@@ -36,6 +36,7 @@ import totalRevenueIcon from '@/assets/JOMS_ICONS-2/icons8-money-bag-rupee-24.sv
 
 import { fetchExpertLeaderboard } from '../../api/leaderboard-api'
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
+import { openPartnerProfile } from '../../utils/expert-application-navigation'
 import {
   DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS,
   EXPERT_LEADERBOARD_LEGACY_COLUMN_ID_MAP,
@@ -479,7 +480,7 @@ function ExpertProfileModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="text-[24px] leading-7 font-semibold tracking-normal text-white">
-            Expert Profile
+            {query.serviceType === 'venue' ? 'Venue Profile' : 'Expert Profile'}
           </h2>
           <button
             type="button"
@@ -494,7 +495,13 @@ function ExpertProfileModal({
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
           {isLoading && <p className="text-muted text-sm">Loading profile…</p>}
-          {isError && <p className="text-sm text-red-400">Failed to load expert profile.</p>}
+          {isError && (
+            <p className="text-sm text-red-400">
+              {query.serviceType === 'venue'
+                ? 'Failed to load venue profile.'
+                : 'Failed to load expert profile.'}
+            </p>
+          )}
           {profile && (
             <>
               <div className="relative flex items-start gap-4">
@@ -507,7 +514,12 @@ function ExpertProfileModal({
                   <button
                     type="button"
                     className="hover:text-brand-accent inline-flex items-center gap-2 text-left text-base font-semibold text-white"
-                    onClick={() => navigate(`/experts/management/profile/${profile.partnerId}`)}
+                    onClick={() =>
+                      void openPartnerProfile(
+                        { id: profile.partnerId, serviceType: query.serviceType },
+                        navigate,
+                      )
+                    }
                   >
                     {profile.name.replace(/\s+/g, '')}
                     <ExternalLink className="size-3.5" />

@@ -1,4 +1,11 @@
-import { validateGstNumber, validatePanNumber } from '@/shared/lib/partner-field-validation'
+import {
+  normalizeGovernmentIdNumber,
+  normalizePanNumber,
+  validateGovernmentIdNumber,
+  validateGovernmentIdType,
+  validateGstNumber,
+  validatePanNumber,
+} from '@/shared/lib/partner-field-validation'
 import { validateMobileNumber } from '@/shared/lib/phone'
 
 export type VenueOnboardingFormData = {
@@ -309,9 +316,14 @@ export const buildKycFormData = (form: VenueOnboardingFormData): FormData => {
   const formData = new FormData()
 
   formData.append('idType', form.idType)
-  formData.append('idNumber', form.idNumber)
+  formData.append('idNumber', normalizeGovernmentIdNumber(form.idType, form.idNumber))
   formData.append('hasGST', form.hasGST ? 'true' : 'false')
-  formData.append('panNumber', form.panNumber)
+  formData.append(
+    'panNumber',
+    normalizePanNumber(
+      form.idType.toLowerCase() === 'pan' ? form.idNumber || form.panNumber : form.panNumber,
+    ),
+  )
   formData.append('typeOfVenue', form.typeOfVenue)
 
   if (form.hasGST) {
@@ -474,10 +486,14 @@ export const getVenueOnboardingStepErrors = (
   }
 
   if (step === 3) {
-    if (!form.idType) errors.idType = 'ID type is required.'
-    if (!form.idNumber.trim()) errors.idNumber = 'ID number is required.'
+    const idTypeError = validateGovernmentIdType(form.idType)
+    if (idTypeError) errors.idType = idTypeError
+    const idNumberError = validateGovernmentIdNumber(form.idType, form.idNumber)
+    if (idNumberError) errors.idNumber = idNumberError
 
-    const panError = validatePanNumber(form.panNumber)
+    const panSource =
+      form.idType.trim().toLowerCase() === 'pan' ? form.idNumber || form.panNumber : form.panNumber
+    const panError = validatePanNumber(panSource)
     if (panError) errors.panNumber = panError
     if (!form.typeOfVenue) errors.typeOfVenue = 'Type of venue is required.'
 

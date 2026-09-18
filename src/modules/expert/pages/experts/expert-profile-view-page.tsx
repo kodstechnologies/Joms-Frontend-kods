@@ -56,7 +56,11 @@ import {
   getServiceManagementViewPath,
   isPendingListingReview,
 } from '../../lib/service-navigation'
-import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import {
+  isVenuePartner,
+  openExpertKycFromProfile,
+  resolveVenuePartnerProfilePath,
+} from '../../utils/expert-application-navigation'
 import { LOOKS_LIKE_CATEGORY_ID } from '../../utils/expert-application-helpers'
 import {
   useDeactivateExpert,
@@ -2748,6 +2752,39 @@ export function ExpertProfileViewPage() {
   })
 
   const profile = profileResponse?.data
+  const isVenueProfilePartner = Boolean(
+    profile &&
+    isVenuePartner({
+      id,
+      serviceType: profile.servicetype || profile.basicProfile?.serviceType,
+      servicetype: profile.servicetype,
+      basicProfile: profile.basicProfile,
+    }),
+  )
+  const [venueRedirectFailed, setVenueRedirectFailed] = useState(false)
+
+  useEffect(() => {
+    setVenueRedirectFailed(false)
+  }, [id])
+
+  useEffect(() => {
+    if (!id || !isVenueProfilePartner) return
+
+    let cancelled = false
+    void resolveVenuePartnerProfilePath(id).then((path) => {
+      if (cancelled) return
+      if (path) {
+        navigate(path, { replace: true })
+        return
+      }
+      setVenueRedirectFailed(true)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id, isVenueProfilePartner, navigate])
+
   const reports = useMemo(() => unwrapReportItems(reportsRes), [reportsRes])
   const allTickets = useMemo(() => ticketsRes?.data?.tickets ?? [], [ticketsRes])
   const activeTickets = useMemo(
@@ -3084,7 +3121,7 @@ export function ExpertProfileViewPage() {
     recordReasonUsage,
   ])
 
-  if (profileLoading) {
+  if (profileLoading || (isVenueProfilePartner && !venueRedirectFailed)) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />

@@ -10,7 +10,35 @@ import {
   isSubmittedKycStatus,
 } from '../utils/expert-application-helpers'
 
-const isVenueServiceType = (serviceType?: string | null) => serviceType?.toLowerCase() === 'venue'
+export type PartnerProfileRef = {
+  id?: string | null
+  partnerId?: string | null
+  serviceType?: string | null
+  servicetype?: string | null
+  venueKycId?: string | null
+  venueKycStatus?: string | null
+  basicProfile?: { serviceType?: string | null } | null
+}
+
+export const isVenueServiceType = (serviceType?: string | null) =>
+  String(serviceType || '')
+    .trim()
+    .toLowerCase() === 'venue'
+
+export const isVenuePartner = (partner?: PartnerProfileRef | null) => {
+  if (!partner) return false
+  if (
+    isVenueServiceType(
+      partner.serviceType || partner.servicetype || partner.basicProfile?.serviceType,
+    )
+  ) {
+    return true
+  }
+  return Boolean(partner.venueKycId || partner.venueKycStatus)
+}
+
+const getPartnerProfileId = (partner: PartnerProfileRef) =>
+  String(partner.id || partner.partnerId || '').trim()
 
 export const getVenueKycApplicationPath = (kycId: string) =>
   `/experts/management/application/${kycId}?source=venue_kyc`
@@ -65,28 +93,22 @@ const readKycId = (payload: unknown): string => {
   return String(record.data?._id || record._id || '').trim()
 }
 
-export const openVenuePartnerProfile = async (partnerId: string, navigate: NavigateFunction) => {
+export const resolveVenuePartnerProfilePath = async (partnerId: string): Promise<string | null> => {
   try {
     const response = await fetchVenueFullView(partnerId)
     const venueId = String(response?.data?.overview?.venue?._id || '').trim()
-    if (venueId) {
-      navigate(`/venues/management/profile/${venueId}`)
-      return
-    }
+    if (venueId) return `/venues/management/profile/${venueId}`
   } catch {
-    // Partner may only have a list record, KYC, or a partner profile.
+    // Partner may only have a list record or KYC.
   }
 
   try {
     const list = await fetchVenues({ ownerId: partnerId, limit: 1 })
     const venue = list?.data?.[0]
     const venueId = venue ? getVenueApiId(venue) : ''
-    if (venueId) {
-      navigate(`/venues/management/profile/${venueId}`)
-      return
-    }
+    if (venueId) return `/venues/management/profile/${venueId}`
   } catch {
-    // Continue to KYC / partner profile.
+    // Continue to KYC.
   }
 
   try {
@@ -98,11 +120,35 @@ export const openVenuePartnerProfile = async (partnerId: string, navigate: Navig
           (response as { status?: string }).status
         : ''
     if (kycId && isSubmittedKycStatus(kycStatus)) {
-      navigate(getVenueKycApplicationPath(kycId))
-      return
+      return getVenueKycApplicationPath(kycId)
     }
   } catch {
-    // Continue to partner profile.
+    // No venue profile available.
+  }
+
+  return null
+}
+
+export const openVenuePartnerProfile = async (partnerId: string, navigate: NavigateFunction) => {
+  const path = await resolveVenuePartnerProfilePath(partnerId)
+  if (path) {
+    navigate(path)
+    return
+  }
+
+  toast.error('Venue profile not found for this partner.')
+}
+
+export const openPartnerProfile = async (
+  partner: PartnerProfileRef,
+  navigate: NavigateFunction,
+) => {
+  const partnerId = getPartnerProfileId(partner)
+  if (!partnerId) return
+
+  if (isVenuePartner(partner)) {
+    await openVenuePartnerProfile(partnerId, navigate)
+    return
   }
 
   navigate(`/experts/management/profile/${partnerId}`)

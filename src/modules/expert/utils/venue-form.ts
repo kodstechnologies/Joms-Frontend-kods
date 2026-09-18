@@ -21,13 +21,34 @@ export const WEEK_DAYS = [
   'Sunday',
 ] as const
 
+const toDayKey = (day: string) => day.trim().slice(0, 3).toLowerCase()
+
 export const createDefaultWeeklyAvailability = (): WeeklyAvailabilityEntry[] =>
   WEEK_DAYS.map((day) => ({
     day,
     from: '09:00',
     to: '18:00',
-    enabled: day !== 'Saturday' && day !== 'Sunday',
+    enabled: false,
   }))
+
+export const hydrateWeeklyAvailability = (
+  savedWeekly?: Array<{ day?: string; from?: string; to?: string; enabled?: boolean }> | null,
+): WeeklyAvailabilityEntry[] => {
+  const defaults = createDefaultWeeklyAvailability()
+  const saved = savedWeekly ?? []
+  if (saved.length === 0) return defaults
+
+  return defaults.map((entry) => {
+    const match = saved.find((item) => toDayKey(String(item.day || '')) === toDayKey(entry.day))
+    if (!match) return { ...entry, enabled: false }
+    return {
+      ...entry,
+      from: match.from || entry.from,
+      to: match.to || entry.to,
+      enabled: match.enabled !== false,
+    }
+  })
+}
 
 export type VenueAmenitySelection = {
   categoryId: string
@@ -286,6 +307,8 @@ export const mapDraftToVenueFormData = (
   const spaces = (profile?.spaces || []) as Array<Record<string, unknown>>
   const space = spaces[0]
   const pricing = (space?.pricing as Array<Record<string, unknown>> | undefined)?.[0]
+  const availability = space?.availability as
+    { weeklyAvailability?: WeeklyAvailabilityEntry[] } | undefined
   const terms = profile?.terms as Record<string, unknown> | undefined
   const gallery = space?.galleryContact as Record<string, unknown> | undefined
   const amenitiesDoc =
@@ -364,7 +387,7 @@ export const mapDraftToVenueFormData = (
     venueCoverImageUrl: '',
     venueImageUrl: '',
     galleryImageUrls: [],
-    weeklyAvailability: createDefaultWeeklyAvailability(),
+    weeklyAvailability: hydrateWeeklyAvailability(availability?.weeklyAvailability),
     blockedDates: [],
   }
 }

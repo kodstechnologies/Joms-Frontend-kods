@@ -64,6 +64,11 @@ export function isGovernmentIdType(value: string): value is GovernmentIdType {
   return (GOVERNMENT_ID_TYPES as readonly string[]).includes(value)
 }
 
+export function getGovernmentIdMeta(idType: string) {
+  const type = normalizeGovernmentIdType(idType)
+  return type ? GOVERNMENT_ID_META[type] : null
+}
+
 export function normalizeGovernmentIdType(value: string): GovernmentIdType | '' {
   const trimmed = value.trim()
   if (!trimmed) return ''

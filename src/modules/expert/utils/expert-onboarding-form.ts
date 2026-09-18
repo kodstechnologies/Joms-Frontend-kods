@@ -175,7 +175,12 @@ export const buildIdentityVerificationFormData = (form: ExpertOnboardingFormData
   formData.append('idType', form.idType)
   formData.append('idNumber', normalizeGovernmentIdNumber(form.idType, form.idNumber))
   formData.append('gstAvailable', form.gstAvailable ? 'true' : 'false')
-  formData.append('panNumber', normalizePanNumber(form.panNumber))
+  formData.append(
+    'panNumber',
+    normalizePanNumber(
+      form.idType.trim().toLowerCase() === 'pan' ? form.idNumber || form.panNumber : form.panNumber,
+    ),
+  )
 
   if (form.gstAvailable) {
     if (form.gstNumber) formData.append('gstNumber', normalizeGstNumber(form.gstNumber))
@@ -481,7 +486,9 @@ export const getExpertOnboardingStepErrors = (
     if (idTypeError) errors.idType = idTypeError
     const idNumberError = validateGovernmentIdNumber(form.idType, form.idNumber)
     if (idNumberError) errors.idNumber = idNumberError
-    const panError = validatePanNumber(form.panNumber)
+    const panError = validatePanNumber(
+      form.idType.trim().toLowerCase() === 'pan' ? form.idNumber || form.panNumber : form.panNumber,
+    )
     if (panError) errors.panNumber = panError
     if (form.gstAvailable) {
       const gstError = validateGstNumber(form.gstNumber)

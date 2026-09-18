@@ -16,6 +16,7 @@ import {
 import { useBranding } from '@/app/providers/use-branding'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 import {
   downloadInvoiceDocument,
   invoiceFromMembershipSubscription,
@@ -158,7 +159,7 @@ export function MembershipDetailsPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      navigate(`/experts/management/profile/${subscription.partnerId}`)
+                      void openPartnerProfile({ id: subscription.partnerId }, navigate)
                     }
                     className="text-body-md-semibold text-brand-text hover:text-brand-text/80 inline-flex items-center gap-1.5 transition-colors"
                   >

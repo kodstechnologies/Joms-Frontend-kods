@@ -10,12 +10,22 @@ import {
   type VenueOnboardingFormData,
 } from '../utils/venue-onboarding-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import {
+  GOVERNMENT_ID_TYPES,
+  getGovernmentIdMeta,
+  normalizeGovernmentIdType,
+  sanitizeGovernmentIdInput,
+  sanitizeGstInput,
+  sanitizePanInput,
+  validateGovernmentIdNumber,
+  validateGstNumber,
+  validatePanNumber,
+} from '@/shared/lib/partner-field-validation'
 
 const fieldClass = 'ui-input'
 
 const selectClass = `${fieldClass} appearance-none`
 
-const ID_TYPES = ['PAN', 'Aadhaar', 'Passport', 'Driving License']
 const INDIAN_STATES = [
   'Karnataka',
   'Maharashtra',
@@ -90,8 +100,24 @@ function FileUploadBox({
   )
 }
 
+function FieldMessage({ error, hint }: { error?: string | null; hint?: string }) {
+  if (error) {
+    return <p className="text-brand-danger mt-1 text-[10px]">{error}</p>
+  }
+  if (!hint) return null
+  return <p className="text-muted mt-1 text-[10px]">{hint}</p>
+}
+
 export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
   const otherCertsRef = useRef<HTMLInputElement>(null)
+  const panFieldRef = useRef<HTMLDivElement>(null)
+  const selectedIdMeta = getGovernmentIdMeta(formData.idType)
+  const idNumberError = formData.idNumber.trim()
+    ? validateGovernmentIdNumber(formData.idType, formData.idNumber)
+    : null
+  const panError = formData.panNumber.trim() ? validatePanNumber(formData.panNumber) : null
+  const gstError =
+    formData.hasGST && formData.gstNumber.trim() ? validateGstNumber(formData.gstNumber) : null
 
   const { data: categoriesData } = useServiceCategoriesByType('venue')
   const categoryGroups = categoriesData?.data || {}
@@ -174,11 +200,29 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </label>
             <select
               value={formData.idType}
-              onChange={(e) => setFormData((prev) => ({ ...prev, idType: e.target.value }))}
+              onChange={(e) => {
+                const nextType = e.target.value
+                const nextNumber = sanitizeGovernmentIdInput(nextType, formData.idNumber)
+                setFormData((prev) => ({
+                  ...prev,
+                  idType: nextType,
+                  idNumber: nextNumber,
+                  panNumber:
+                    normalizeGovernmentIdType(nextType) === 'PAN'
+                      ? nextNumber || prev.panNumber
+                      : prev.panNumber,
+                }))
+                if (normalizeGovernmentIdType(nextType) === 'PAN') {
+                  window.requestAnimationFrame(() => {
+                    panFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    panFieldRef.current?.querySelector('input')?.focus()
+                  })
+                }
+              }}
               className={selectClass}
             >
               <option value="">Choose ID type</option>
-              {ID_TYPES.map((type) => (
+              {GOVERNMENT_ID_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
@@ -191,11 +235,26 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </label>
             <input
               value={formData.idNumber}
-              onChange={(e) => setFormData((prev) => ({ ...prev, idNumber: e.target.value }))}
-              placeholder="ABCDE1234F"
+              onChange={(e) =>
+                setFormData((prev) => {
+                  const idNumber = sanitizeGovernmentIdInput(prev.idType, e.target.value)
+                  return {
+                    ...prev,
+                    idNumber,
+                    panNumber:
+                      normalizeGovernmentIdType(prev.idType) === 'PAN' ? idNumber : prev.panNumber,
+                  }
+                })
+              }
+              placeholder={selectedIdMeta?.placeholder || 'Enter ID number'}
+              maxLength={selectedIdMeta?.maxLength}
+              inputMode={selectedIdMeta?.inputMode}
               className={fieldClass}
             />
-            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
+            <FieldMessage
+              error={idNumberError}
+              hint={selectedIdMeta?.formatHint || 'Select an ID type to see the expected format'}
+            />
           </div>
         </div>
       </div>
@@ -231,12 +290,16 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                 <input
                   value={formData.gstNumber}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, gstNumber: e.target.value.toUpperCase() }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      gstNumber: sanitizeGstInput(e.target.value),
+                    }))
                   }
                   placeholder="22AAAAA0000A1Z5"
+                  maxLength={15}
                   className={fieldClass}
                 />
-                <p className="text-muted mt-1 text-[10px]">Format: 29ABCDE1234F1Z5</p>
+                <FieldMessage error={gstError} hint="Format: 22AAAAA0000A1Z5" />
               </div>
               <div>
                 <label className="mb-2 block text-xs font-medium text-white">
@@ -314,19 +377,20 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </select>
           </div>
 
-          <div>
+          <div ref={panFieldRef}>
             <label className="mb-2 block text-xs font-medium text-white">
               Organization/Individual PAN <RequiredMark />
             </label>
             <input
               value={formData.panNumber}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, panNumber: e.target.value.toUpperCase() }))
+                setFormData((prev) => ({ ...prev, panNumber: sanitizePanInput(e.target.value) }))
               }
               placeholder="ABCDE1234F"
+              maxLength={10}
               className={fieldClass}
             />
-            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
+            <FieldMessage error={panError} hint="Format: ABCDE1234F" />
           </div>
         </div>
       </div>
