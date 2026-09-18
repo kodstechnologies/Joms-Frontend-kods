@@ -19,6 +19,7 @@ import {
 import { useVenueDocumentRules } from '@/modules/expert/hooks/use-venue-kyc'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import type { VenueCategory } from '@/modules/expert/type/venue'
 import {
   buildBasicProfileFormData,
@@ -55,6 +56,8 @@ export function CreateVenueOnboardingPage() {
   const partnerIdParam = searchParams.get('partnerId') || ''
   const venueIdParam = searchParams.get('venueId')
   const { allowAddVenues, isLoading: controlsLoading } = useVenueManagementControls()
+  const authUser = useAuthStore((state) => state.user)
+  const profileCreator = authUser ? { name: authUser.fullname, kind: authUser.kind } : null
 
   const [currentStep, setCurrentStep] = useState(1)
   const [createdPartnerId, setCreatedPartnerId] = useState('')
@@ -192,7 +195,7 @@ export function CreateVenueOnboardingPage() {
           if (!activePartnerId) {
             setIsCreatingPartner(true)
             const partnerResponse = await createExpertBasicProfile(
-              buildVenuePartnerProfileFormData(formData),
+              buildVenuePartnerProfileFormData(formData, profileCreator),
             )
             activePartnerId = partnerResponse.data._id
             setCreatedPartnerId(activePartnerId)

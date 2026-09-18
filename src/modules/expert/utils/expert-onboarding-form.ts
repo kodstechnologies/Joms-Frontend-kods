@@ -124,7 +124,10 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
   isEmailVerified: false,
 })
 
-export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormData => {
+export const buildBasicProfileFormData = (
+  form: ExpertOnboardingFormData,
+  creator?: { name?: string | null; kind?: 'superadmin' | 'subadmin' | null } | null,
+): FormData => {
   const formData = new FormData()
 
   formData.append('fullname', form.fullname.trim())
@@ -134,6 +137,13 @@ export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormD
   formData.append('bio', form.bio.trim())
   formData.append('phoneVerified', form.isPhoneVerified ? 'true' : 'false')
   formData.append('emailVerified', form.isEmailVerified ? 'true' : 'false')
+  formData.append('createdBy', 'Admin')
+  if (creator?.name?.trim()) {
+    formData.append('createdByName', creator.name.trim())
+  }
+  if (creator?.kind) {
+    formData.append('createdByKind', creator.kind)
+  }
 
   if (form.industry) formData.append('industry', form.industry.trim())
 

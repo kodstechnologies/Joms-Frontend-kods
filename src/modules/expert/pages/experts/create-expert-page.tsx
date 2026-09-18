@@ -28,6 +28,7 @@ import {
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { useExpertAccountControls } from '@/modules/settings/hooks/use-expert-public-settings'
 import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 const STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -43,6 +44,8 @@ export const CreateExpertPage = () => {
   const expertIdParam = searchParams.get('expertId')
   const isEditMode = searchParams.get('mode') === 'edit' && Boolean(expertIdParam)
   const { allowNewAccounts, isLoading: controlsLoading } = useExpertAccountControls()
+  const authUser = useAuthStore((state) => state.user)
+  const profileCreator = authUser ? { name: authUser.fullname, kind: authUser.kind } : null
 
   const [currentStep, setCurrentStep] = useState(1)
   const [expertId, setExpertId] = useState<string | null>(expertIdParam)
@@ -100,14 +103,16 @@ export const CreateExpertPage = () => {
         if (expertId) {
           await updateBasicProfile.mutateAsync({
             id: expertId,
-            payload: buildBasicProfileFormData(formData),
+            payload: buildBasicProfileFormData(formData, profileCreator),
           })
         } else {
           if (!allowNewAccounts) {
             toast.error(RESTRICTION_MESSAGES.expertCreate)
             return
           }
-          const response = await saveBasicProfile.mutateAsync(buildBasicProfileFormData(formData))
+          const response = await saveBasicProfile.mutateAsync(
+            buildBasicProfileFormData(formData, profileCreator),
+          )
           const newId = response.data._id
           setExpertId(newId)
           updateExpertIdInUrl(newId)

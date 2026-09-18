@@ -90,8 +90,20 @@ export const mergeWithDefaults = <T>(defaults: T, incoming: unknown): T => {
   return merged as T
 }
 
+export type BrandingConfigSource = {
+  applicationSettings?: {
+    applicationName?: string
+    logoUrl?: string
+    faviconUrl?: string
+  } | null
+  displayPreferences?: {
+    timezone?: string
+    dateTimeFormat?: string
+  } | null
+}
+
 export const resolveBranding = (
-  config?: PlatformSettings | null,
+  config?: BrandingConfigSource | PlatformSettings | null,
   options?: { preferDefaultsOnEmpty?: boolean },
 ): BrandingState => {
   const preferDefaults = options?.preferDefaultsOnEmpty !== false

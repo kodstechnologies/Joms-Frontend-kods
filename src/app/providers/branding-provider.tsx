@@ -2,16 +2,13 @@ import { useEffect, useMemo, type PropsWithChildren } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { BrandingContext } from '@/app/providers/use-branding'
-import { fetchSettings } from '@/modules/settings/api/settings-api'
+import { fetchAdminBranding } from '@/modules/settings/api/settings-api'
 import { settingsKeys } from '@/modules/settings/hooks/use-settings'
 import {
   DEFAULT_BRANDING,
-  getModulePlaceholder,
-  mergeWithDefaults,
   resolveBranding,
   type BrandingState,
 } from '@/modules/settings/utils/branding-config'
-import { platformDefaults } from '@/modules/settings/config/settings.config'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 function upsertFavicon(href: string) {
@@ -29,23 +26,21 @@ function upsertFavicon(href: string) {
 
 export function BrandingProvider({ children }: PropsWithChildren) {
   const token = useAuthStore((state) => state.token)
-  const platformQuery = useQuery({
-    queryKey: settingsKeys.module('platform'),
-    queryFn: () => fetchSettings('platform'),
+  const brandingQuery = useQuery({
+    queryKey: settingsKeys.branding(),
+    queryFn: fetchAdminBranding,
     enabled: Boolean(token),
-    placeholderData: getModulePlaceholder('platform'),
     retry: 1,
   })
 
   const branding = useMemo<BrandingState>(() => {
     // On error / empty payload, keep the general branding defaults.
-    if (platformQuery.isError || !platformQuery.data?.config) {
+    if (brandingQuery.isError || !brandingQuery.data) {
       return DEFAULT_BRANDING
     }
 
-    const config = mergeWithDefaults(platformDefaults, platformQuery.data.config)
-    return resolveBranding(config)
-  }, [platformQuery.data, platformQuery.isError])
+    return resolveBranding(brandingQuery.data)
+  }, [brandingQuery.data, brandingQuery.isError])
 
   useEffect(() => {
     document.title = branding.applicationName || DEFAULT_BRANDING.applicationName

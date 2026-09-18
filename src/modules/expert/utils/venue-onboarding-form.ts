@@ -249,13 +249,23 @@ export const buildBasicProfileFormData = (
   return formData
 }
 
-export const buildVenuePartnerProfileFormData = (form: VenueOnboardingFormData): FormData => {
+export const buildVenuePartnerProfileFormData = (
+  form: VenueOnboardingFormData,
+  creator?: { name?: string | null; kind?: 'superadmin' | 'subadmin' | null } | null,
+): FormData => {
   const formData = new FormData()
 
   formData.append('fullname', form.name.trim())
   formData.append('email', form.email.trim())
   formData.append('phoneNumber', form.phone.trim())
   formData.append('serviceType', 'venue')
+  formData.append('createdBy', 'Admin')
+  if (creator?.name?.trim()) {
+    formData.append('createdByName', creator.name.trim())
+  }
+  if (creator?.kind) {
+    formData.append('createdByKind', creator.kind)
+  }
 
   const serviceCategory = [form.venueCategoryId, form.venueCategoryName].filter(Boolean)
   if (serviceCategory.length > 0) {

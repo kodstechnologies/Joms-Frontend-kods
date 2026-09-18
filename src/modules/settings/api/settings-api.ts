@@ -26,6 +26,24 @@ export const fetchSettings = async <M extends SettingsModule>(module: M) => {
   return response.data.data
 }
 
+/** Logo/favicon/app name for all admins (no settings.view_configuration required). */
+export const fetchAdminBranding = async () => {
+  const response = await settingsApiClient.get<
+    ApiEnvelope<{
+      applicationSettings: {
+        applicationName: string
+        logoUrl: string
+        faviconUrl: string
+      }
+      displayPreferences: {
+        timezone: string
+        dateTimeFormat: string
+      }
+    }>
+  >('/settings/branding')
+  return response.data.data
+}
+
 export const updateSettings = async <M extends SettingsModule>(
   module: M,
   config: ModuleSettingsMap[M],

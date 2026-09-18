@@ -275,13 +275,23 @@ export function CommunicationListPage() {
       },
       'scheduled-at': {
         id: 'scheduled-at',
-        accessorKey: 'scheduledAtLabel',
         header: 'Scheduled At',
+        accessorFn: (row) => row.scheduledAtLabel || row.scheduledAt || '—',
+        cell: ({ row }) => (
+          <span className="text-slate-300">
+            {row.original.scheduledAtLabel || row.original.scheduledAt || '—'}
+          </span>
+        ),
       },
       'sent-at': {
         id: 'sent-at',
-        accessorKey: 'sentAtLabel',
         header: 'Sent At',
+        accessorFn: (row) => row.sentAtLabel || row.sentAt || '—',
+        cell: ({ row }) => (
+          <span className="text-slate-300">
+            {row.original.sentAtLabel || row.original.sentAt || '—'}
+          </span>
+        ),
       },
       'delivered-count': {
         id: 'delivered-count',
