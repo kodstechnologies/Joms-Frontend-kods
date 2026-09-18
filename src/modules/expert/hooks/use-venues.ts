@@ -34,7 +34,8 @@ export const useVenues = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: isDeletedList ? ['venues', 'deleted', params] : ['venues', params],
     queryFn: () => fetchVenues(params),
-    refetchOnMount: isDeletedList ? 'always' : true,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }
 
@@ -51,6 +52,8 @@ export const useVenueFullView = (venueId?: string, spaceId?: string) => {
     queryKey: ['venue-full-view', venueId, spaceId],
     queryFn: () => fetchVenueFullView(venueId as string, spaceId),
     enabled: !!venueId,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }
 
