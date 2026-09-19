@@ -43,7 +43,6 @@ export function ExpertSuspendedExpertsPage() {
     defaultVisibleColumnIds: DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
     exportFileName: 'suspended_experts_export',
-    filterExperts: (experts) => experts.filter((expert) => expert.status === 'suspended'),
   })
 
   const handleActivate = useCallback(
