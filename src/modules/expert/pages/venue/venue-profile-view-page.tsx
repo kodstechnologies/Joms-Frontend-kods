@@ -42,16 +42,19 @@ import {
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
   useBulkUpdateSpaceVisibility,
-  useDeleteVenue,
   useSetVenueOwnerPassword,
-  useSuspendVenue,
   useUpdateVenueOwnerAdminNotes,
   useUpdateVenueOwnerAdminTags,
   useVenueFullView,
   useVenueInsights,
   useVenueReportsForVenue,
 } from '../../hooks/use-venues'
-import { useBlockExpert, useForceLogoutExpert } from '../../hooks/use-expert'
+import {
+  useBlockExpert,
+  useDeactivateExpert,
+  useForceLogoutExpert,
+  useSuspendExpert,
+} from '../../hooks/use-expert'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
 import {
   DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -1590,23 +1593,21 @@ export function VenueProfileViewPage() {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
-  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const [notesModalOpen, setNotesModalOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<VenueReportItem | null>(null)
   const scrollToTimelineRef = useRef(false)
   const { tagModalOpen, openTagModal, closeTagModal } = useEntityTags()
 
-  const suspendVenueMutation = useSuspendVenue()
-  const deleteVenueMutation = useDeleteVenue()
+  const suspendExpertMutation = useSuspendExpert()
+  const deactivateExpertMutation = useDeactivateExpert()
   const setVenueOwnerPasswordMutation = useSetVenueOwnerPassword()
   const blockExpertMutation = useBlockExpert()
   const forceLogoutExpertMutation = useForceLogoutExpert()
   const recordReasonUsage = useRecordModerationReasonUsage()
-  const { allowDisableVenues } = useVenueManagementControls()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendExpert)
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteVenue)
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteExpert)
 
   const { data, isLoading, isError, error } = useVenueFullView(venueId)
   const fullView = data?.data
@@ -1685,7 +1686,7 @@ export function VenueProfileViewPage() {
     }
     if (!ownerPartnerExists) {
       toast.error(
-        'Owner partner account was permanently deleted from auth. Block, logout, and password reset are unavailable until the venue is re-linked to a partner.',
+        'Owner partner account was permanently deleted from auth. Suspend, block, logout, delete, and password reset are unavailable until the venue is re-linked to a partner.',
       )
       return null
     }
@@ -1706,7 +1707,6 @@ export function VenueProfileViewPage() {
     setDeleteModalOpen(false)
     setDeleteReasons([])
     setDeleteAdminNotes('')
-    setDeleteConfirmed(false)
   }, [])
 
   const handleCheckTimelines = useCallback(() => {
@@ -1858,7 +1858,8 @@ export function VenueProfileViewPage() {
   }, [])
 
   const handleSuspendSubmit = useCallback(() => {
-    if (!resolvedVenueId) return
+    const ownerId = ensureOwnerPartner()
+    if (!ownerId) return
 
     if (suspendReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -1888,9 +1889,9 @@ export function VenueProfileViewPage() {
     const extraDetails = suspendReasonDetails.trim()
     const reasonDetails = [templateDetails, extraDetails].filter(Boolean).join('\n\n')
 
-    suspendVenueMutation.mutate(
+    suspendExpertMutation.mutate(
       {
-        venueId: resolvedVenueId,
+        id: ownerId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
@@ -1905,45 +1906,42 @@ export function VenueProfileViewPage() {
           if (reasonPayload.reasonIds.length > 0) {
             recordReasonUsage.mutate(reasonPayload.reasonIds)
           }
-          toast.success('Venue suspended successfully')
+          toast.success('Owner suspended successfully')
           closeSuspendModal()
           setProfileMenuOpen(false)
           queryClient.invalidateQueries({ queryKey: ['venue-full-view', resolvedVenueId] })
           queryClient.invalidateQueries({ queryKey: ['venues'] })
-          navigate('/venues/management')
+          queryClient.invalidateQueries({ queryKey: ['experts'] })
+          queryClient.invalidateQueries({ queryKey: ['expert-profile', ownerId] })
         },
         onError: (err: unknown) => {
           const apiError = err as { response?: { data?: { message?: string } } }
-          toast.error(getApiErrorMessage(apiError, 'Failed to suspend venue. Please try again.'))
+          toast.error(getApiErrorMessage(apiError, 'Failed to suspend user. Please try again.'))
         },
       },
     )
   }, [
     buildSuspendReasonPayload,
     closeSuspendModal,
-    navigate,
+    ensureOwnerPartner,
     queryClient,
     recordReasonUsage,
+    resolvedVenueId,
     suspendAdminNotes,
     suspendEndDate,
+    suspendExpertMutation,
     suspendIndefinitely,
     suspendReasonDetails,
     suspendReasons,
     suspendStartDate,
-    suspendVenueMutation,
-    resolvedVenueId,
   ])
 
   const handleDeleteSubmit = useCallback(() => {
-    if (!resolvedVenueId) return
+    const ownerId = ensureOwnerPartner()
+    if (!ownerId) return
 
     if (deleteReasons.length === 0) {
       toast.error('Please select at least one reason.')
-      return
-    }
-
-    if (!deleteConfirmed) {
-      toast.error('Please confirm the delete reasons before continuing.')
       return
     }
 
@@ -1958,9 +1956,9 @@ export function VenueProfileViewPage() {
       return
     }
 
-    deleteVenueMutation.mutate(
+    deactivateExpertMutation.mutate(
       {
-        venueId: resolvedVenueId,
+        id: ownerId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           reasonDetails: reasonPayload.reasonDetails,
@@ -1972,29 +1970,29 @@ export function VenueProfileViewPage() {
           if (reasonPayload.reasonIds.length > 0) {
             recordReasonUsage.mutate(reasonPayload.reasonIds)
           }
-          toast.success('Venue deleted successfully')
+          toast.success('Owner deleted successfully')
           closeDeleteModal()
           setProfileMenuOpen(false)
           queryClient.invalidateQueries({ queryKey: ['venues'] })
+          queryClient.invalidateQueries({ queryKey: ['experts'] })
           navigate('/venues/management')
         },
         onError: (err: unknown) => {
           const apiError = err as { response?: { data?: { message?: string } } }
-          toast.error(getApiErrorMessage(apiError, 'Failed to delete venue.'))
+          toast.error(getApiErrorMessage(apiError, 'Failed to delete user.'))
         },
       },
     )
   }, [
     buildDeleteReasonPayload,
     closeDeleteModal,
+    deactivateExpertMutation,
     deleteAdminNotes,
-    deleteConfirmed,
     deleteReasons,
-    deleteVenueMutation,
+    ensureOwnerPartner,
     navigate,
     queryClient,
     recordReasonUsage,
-    resolvedVenueId,
   ])
 
   if (isLoading || kycLookupPending) {
@@ -2125,18 +2123,17 @@ export function VenueProfileViewPage() {
           >
             Logout User
           </TableActionsItem>
-          {allowDisableVenues ? (
-            <TableActionsItem
-              tone="light"
-              icon={<Ban className="size-3.5" />}
-              onClick={() => {
-                setProfileMenuOpen(false)
-                setSuspendModalOpen(true)
-              }}
-            >
-              Suspend User
-            </TableActionsItem>
-          ) : null}
+          <TableActionsItem
+            tone="light"
+            icon={<Ban className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              if (!ensureOwnerPartner()) return
+              setSuspendModalOpen(true)
+            }}
+          >
+            Suspend User
+          </TableActionsItem>
           <TableActionsItem
             tone="light"
             icon={<CircleMinus className="size-3.5" />}
@@ -2162,6 +2159,7 @@ export function VenueProfileViewPage() {
             className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
             onClick={() => {
               setProfileMenuOpen(false)
+              if (!ensureOwnerPartner()) return
               setDeleteModalOpen(true)
             }}
           >
@@ -2278,16 +2276,12 @@ export function VenueProfileViewPage() {
       <DecisionActionModal
         open={suspendModalOpen}
         variant="suspend"
-        title="Suspend Venue"
-        headerDescription="Are you sure you want to suspend this venue? This action will prevent new bookings and notify existing customers."
-        description=""
-        submitLabel="Suspend"
-        showHeroIcon={false}
-        submitIcon="none"
+        title="Suspend User"
+        description="Are you sure you want to suspend this user? This will restrict the owner partner account."
+        submitLabel="Suspend User"
         reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
-        showReasonsLabel
         showTimeline
         startDate={suspendStartDate}
         onStartDateChange={setSuspendStartDate}
@@ -2304,29 +2298,26 @@ export function VenueProfileViewPage() {
         onAdminNotesChange={setSuspendAdminNotes}
         onClose={closeSuspendModal}
         onSubmit={handleSuspendSubmit}
-        isSubmitting={suspendVenueMutation.isPending}
+        isSubmitting={suspendExpertMutation.isPending}
       />
 
       <DecisionActionModal
         open={deleteModalOpen}
         variant="delete"
-        title="Delete Venue"
-        headerDescription="Are you sure you want to delete this venue? This action will prevent new bookings and notify existing customers."
+        title="Delete User"
         description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete User"
+        submitIcon="x"
         heroLayout="stack"
         reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
-        showReasonsLabel
-        confirmationLabel="I confirm the documents are not approved due to above reasons."
-        confirmationChecked={deleteConfirmed}
-        onConfirmationChange={setDeleteConfirmed}
+        showReasonsLabel={false}
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
-        isSubmitting={deleteVenueMutation.isPending}
+        isSubmitting={deactivateExpertMutation.isPending}
       />
 
       <AddTagModal

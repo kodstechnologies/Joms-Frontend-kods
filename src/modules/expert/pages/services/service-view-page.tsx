@@ -6,7 +6,6 @@ import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import axios from 'axios'
 import {
   ArrowLeft,
-  Ban,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -15,7 +14,6 @@ import {
   Info,
   Languages,
   Loader2,
-  Pencil,
   Phone,
   X,
 } from 'lucide-react'
@@ -24,7 +22,6 @@ import { toast } from 'sonner'
 import {
   useConsultation,
   useService,
-  useSuspendService,
   useUpdateConsultationStatus,
   useUpdateServiceStatus,
 } from '../../hooks/use-services'
@@ -125,7 +122,7 @@ const formatCustomTimeline = (custom?: CustomPricing) => {
   return `${durationLabel} (${custom.timelineFrom}-${custom.timelineTo} ${custom.timelineUnit})`
 }
 
-type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend' | 'escalate'
+type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
 const formatAppliedAgo = (value?: string) => {
   if (!value) return 'Applied recently'
@@ -222,7 +219,6 @@ export const ServiceViewPage = () => {
     useUpdateServiceStatus()
   const { mutateAsync: updateConsultationStatus, isPending: isUpdatingConsultationStatus } =
     useUpdateConsultationStatus()
-  const suspendServiceMutation = useSuspendService()
   const recordReasonUsage = useRecordModerationReasonUsage()
   const serviceRejectReasons = useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
   const consultationRejectReasons = useModerationReasonOptions(
@@ -230,8 +226,6 @@ export const ServiceViewPage = () => {
   )
   const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
-  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendService)
 
   const isUpdatingStatus = isUpdatingServiceStatus || isUpdatingConsultationStatus
 
@@ -244,9 +238,6 @@ export const ServiceViewPage = () => {
   const [decisionAdminNotes, setDecisionAdminNotes] = useState('')
   const [decisionReason, setDecisionReason] = useState('')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
-  const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
-  const [suspendStartDate, setSuspendStartDate] = useState('')
-  const [suspendEndDate, setSuspendEndDate] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
 
   const user = useAuthStore((state) => state.user)
@@ -352,13 +343,8 @@ export const ServiceViewPage = () => {
     setActiveDecisionAction(action)
     setDecisionAdminNotes('')
     setDecisionReason('')
-    setSelectedReasons(
-      action === 'suspend' ? [] : action === 'approve' ? [] : ['unclear-image', 'content-issue'],
-    )
+    setSelectedReasons(action === 'approve' ? [] : ['unclear-image', 'content-issue'])
     setSelectedEscalationOption('')
-    setSuspendIndefinitely(false)
-    setSuspendStartDate('')
-    setSuspendEndDate('')
   }
 
   const closeDecisionModal = () => {
@@ -414,60 +400,6 @@ export const ServiceViewPage = () => {
         closeDecisionModal()
       } catch (err) {
         toast.error(getApiErrorMessage(err))
-      }
-      return
-    }
-
-    if (activeDecisionAction === 'suspend') {
-      if (selectedReasons.length === 0) {
-        toast.error('Please select at least one reason.')
-        return
-      }
-      if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
-        toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
-        return
-      }
-      if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
-        toast.error('End date must be on or after the start date.')
-        return
-      }
-      if (!decisionAdminNotes.trim()) {
-        toast.error('Admin notes are required.')
-        return
-      }
-
-      const toIso = (value: string) =>
-        value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
-
-      const reasonPayload = buildSuspendReasonPayload(selectedReasons)
-      if (reasonPayload.selectedReasons.length === 0) {
-        toast.error('Selected reasons are no longer available. Please refresh and try again.')
-        return
-      }
-
-      const extraDetails = decisionReason.trim()
-      const reasonDetails = [reasonPayload.reasonDetails, extraDetails].filter(Boolean).join('\n\n')
-
-      try {
-        await suspendServiceMutation.mutateAsync({
-          id: resolvedServiceId,
-          payload: {
-            selectedReasons: reasonPayload.selectedReasons,
-            suspendIndefinitely,
-            startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
-            endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-            reasonDetails,
-            adminNotes: decisionAdminNotes.trim(),
-          },
-        })
-        if (reasonPayload.reasonIds.length > 0) {
-          recordReasonUsage.mutate(reasonPayload.reasonIds)
-        }
-        toast.success('Service suspended successfully')
-        closeDecisionModal()
-      } catch (err) {
-        const message = getApiErrorMessage(err, 'Failed to suspend service.')
-        toast.error(message)
       }
       return
     }
@@ -666,7 +598,6 @@ export const ServiceViewPage = () => {
     })) || []
   const isEscalateFlow = activeDecisionAction === 'escalate'
   const isListingSuspended = Boolean(service.isSuspend) || service.status === 'suspended'
-  const isListingDeleted = Boolean(service.isDeleted) || service.status === 'deleted'
   const statusBadge = getReviewStatusBadge(isListingSuspended ? 'suspended' : service.status)
   const submittedAt = service.submittedAt || service.createdAt
   const profilePartnerId = resolvedPartnerId || service.partnerId
@@ -713,14 +644,6 @@ export const ServiceViewPage = () => {
           submitLabel: 'Request Changes',
           variant: 'requestChanges' as const,
           reasonOptions: requestChangesReasonOptions,
-        },
-        suspend: {
-          title: 'Suspend Service',
-          description:
-            'Are you sure you want to suspend this service? It will be hidden from users until reactivated.',
-          submitLabel: 'Suspend Service',
-          variant: 'suspend' as const,
-          reasonOptions: suspendReasonOptions,
         },
         escalate: {
           title: 'Escalate Application',
@@ -1115,13 +1038,6 @@ export const ServiceViewPage = () => {
           reasonOptions={decisionModalConfig.reasonOptions}
           selectedReasons={selectedReasons}
           onReasonToggle={toggleDecisionReason}
-          showTimeline={activeDecisionAction === 'suspend'}
-          startDate={suspendStartDate}
-          onStartDateChange={setSuspendStartDate}
-          endDate={suspendEndDate}
-          onEndDateChange={setSuspendEndDate}
-          indefinite={suspendIndefinitely}
-          onIndefiniteChange={setSuspendIndefinitely}
           onClose={closeDecisionModal}
           onSubmit={submitDecisionAction}
           escalationOptions={isEscalateFlow ? escalationOptions : []}
@@ -1130,7 +1046,7 @@ export const ServiceViewPage = () => {
           isSubmitting={
             isEscalateFlow
               ? escalateService.isPending || escalateConsultation.isPending
-              : isUpdatingStatus || suspendServiceMutation.isPending
+              : isUpdatingStatus
           }
         />
       )}
@@ -1175,44 +1091,16 @@ export const ServiceViewPage = () => {
             <h2 className="text-2xl font-bold text-white">{expertName}</h2>
             <p className="text-body-sm text-muted mt-1">{formatAppliedAgo(submittedAt)}</p>
           </div>
-          {(profilePartnerId || resolvedServiceId) && (
+          {profilePartnerId && (
             <div className="flex flex-wrap items-center gap-2">
-              {profilePartnerId && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/experts/management/profile/${profilePartnerId}`)}
-                  className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
-                >
-                  <Eye className="size-3.5" aria-hidden="true" />
-                  View Profile
-                </button>
-              )}
-              {profilePartnerId && resolvedServiceId && !isListingSuspended && !isListingDeleted ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(
-                      isConsultation
-                        ? `/services/management/create?partnerId=${encodeURIComponent(profilePartnerId)}&consultationId=${encodeURIComponent(resolvedServiceId)}&mode=edit`
-                        : `/services/management/create?partnerId=${encodeURIComponent(profilePartnerId)}&serviceId=${encodeURIComponent(resolvedServiceId)}&mode=edit`,
-                    )
-                  }
-                  className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
-                >
-                  <Pencil className="size-3.5" aria-hidden="true" />
-                  {isConsultation ? 'Edit Consultation' : 'Edit Service'}
-                </button>
-              ) : null}
-              {resolvedServiceId && !isListingSuspended && !isListingDeleted ? (
-                <button
-                  type="button"
-                  onClick={() => openDecisionModal('suspend')}
-                  className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
-                >
-                  <Ban className="size-3.5" aria-hidden="true" />
-                  Suspend Service
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={() => navigate(`/experts/management/profile/${profilePartnerId}`)}
+                className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
+              >
+                <Eye className="size-3.5" aria-hidden="true" />
+                View Profile
+              </button>
             </div>
           )}
         </div>
