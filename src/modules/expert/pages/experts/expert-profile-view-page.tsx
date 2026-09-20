@@ -3013,6 +3013,11 @@ export function ExpertProfileViewPage() {
       return
     }
 
+    if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
+      toast.error('End date must be on or after the start date.')
+      return
+    }
+
     if (!suspendAdminNotes.trim()) {
       toast.error('Admin notes are required.')
       return

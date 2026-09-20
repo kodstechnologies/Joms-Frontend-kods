@@ -380,17 +380,23 @@ function MembershipActionModalsContent({
           <button
             type="button"
             disabled={
-              isSubmitting || !fromDate || !toDate || !selectedReasons.length || !adminNotes.trim()
+              isSubmitting ||
+              !fromDate ||
+              !toDate ||
+              toDate < fromDate ||
+              !selectedReasons.length ||
+              !adminNotes.trim()
             }
             className="ui-cta ui-cta-primary flex-1"
-            onClick={() =>
+            onClick={() => {
+              if (toDate < fromDate) return
               onCancel({
                 reasons: selectedReasons,
                 adminNotes,
                 fromDate,
                 toDate,
               })
-            }
+            }}
           >
             Send for approval
           </button>
@@ -412,8 +418,21 @@ function MembershipActionModalsContent({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <ModalDateField label="From" value={fromDate} onChange={setFromDate} />
-        <ModalDateField label="To" value={toDate} onChange={setToDate} />
+        <ModalDateField
+          label="From"
+          value={fromDate}
+          max={toDate || undefined}
+          onChange={(next) => {
+            setFromDate(next)
+            if (toDate && next && toDate < next) setToDate('')
+          }}
+        />
+        <ModalDateField
+          label="To"
+          value={toDate}
+          min={fromDate || undefined}
+          onChange={setToDate}
+        />
       </div>
 
       <ReasonTags
@@ -478,11 +497,15 @@ function ModalDateField({
   value,
   onChange,
   placeholder = 'Custom Date',
+  min,
+  max,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  min?: string
+  max?: string
 }) {
   return (
     <label className="block space-y-2">
@@ -493,6 +516,8 @@ function ModalDateField({
         <input
           type="date"
           value={value}
+          min={min || undefined}
+          max={max || undefined}
           onChange={(e) => onChange(e.target.value)}
           className={cn(
             'box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 pr-10 text-[14px] text-white [color-scheme:dark] outline-none focus:border-white/30',

@@ -319,6 +319,16 @@ export const VenueManagementPage = () => {
       return
     }
 
+    if (!bulkPauseIndefinitely && (!bulkPauseStartDate || !bulkPauseEndDate)) {
+      toast.error('Please provide a pause timeline or choose indefinitely.')
+      return
+    }
+
+    if (!bulkPauseIndefinitely && bulkPauseEndDate < bulkPauseStartDate) {
+      toast.error('End date must be on or after the start date.')
+      return
+    }
+
     bulkPauseMutation.mutate(
       {
         venueIds: selectedVenueIds,
@@ -734,6 +744,11 @@ export const VenueManagementPage = () => {
 
     if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
       toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
+      toast.error('End date must be on or after the start date.')
       return
     }
 

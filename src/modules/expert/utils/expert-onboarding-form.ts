@@ -533,6 +533,14 @@ export const getExpertOnboardingStepErrors = (
         if (!entry.companyName.trim()) {
           errors[`workExperience.${index}.companyName`] = 'Company name is required.'
         }
+        if (
+          !entry.currentlyWorking &&
+          entry.startDate &&
+          entry.endDate &&
+          entry.endDate < entry.startDate
+        ) {
+          errors[`workExperience.${index}.endDate`] = 'End date must be on or after the start date.'
+        }
       })
     }
   }

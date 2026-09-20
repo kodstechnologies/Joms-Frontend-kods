@@ -206,6 +206,11 @@ export function MembershipPlansPage({
       return
     }
 
+    if (endDate < startDate) {
+      toast.error('End date must be on or after the start date.')
+      return
+    }
+
     try {
       await pauseMutation.mutateAsync({
         id: selectedPlan._id,
@@ -313,6 +318,11 @@ export function MembershipPlansPage({
   const handleSetValidity = async () => {
     if (!selectedPlan || !validityStart || !validityEnd) {
       toast.error('Select validity dates')
+      return
+    }
+
+    if (validityEnd < validityStart) {
+      toast.error('End date must be on or after the start date.')
       return
     }
 
@@ -595,11 +605,17 @@ export function MembershipPlansPage({
                 <Input
                   type="date"
                   value={validityStart}
-                  onChange={(e) => setValidityStart(e.target.value)}
+                  max={validityEnd || undefined}
+                  onChange={(e) => {
+                    const next = e.target.value
+                    setValidityStart(next)
+                    if (validityEnd && next && validityEnd < next) setValidityEnd('')
+                  }}
                 />
                 <Input
                   type="date"
                   value={validityEnd}
+                  min={validityStart || undefined}
                   onChange={(e) => setValidityEnd(e.target.value)}
                 />
               </div>

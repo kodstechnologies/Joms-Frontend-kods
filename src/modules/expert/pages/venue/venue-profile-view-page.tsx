@@ -838,6 +838,11 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         return
       }
 
+      if (action === 'suspend' && !bulkIndefinitely && bulkEndDate < bulkStartDate) {
+        toast.error('End date must be on or after the start date.')
+        return
+      }
+
       if (!bulkAdminNotes.trim()) {
         toast.error('Admin notes are required.')
         return
@@ -1868,6 +1873,11 @@ export function VenueProfileViewPage() {
 
     if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
       toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
+      toast.error('End date must be on or after the start date.')
       return
     }
 

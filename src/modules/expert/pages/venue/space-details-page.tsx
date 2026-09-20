@@ -312,6 +312,11 @@ export function SpaceDetailsPage() {
       return
     }
 
+    if (modalAction === 'suspend' && !suspendIndefinitely && endDate < startDate) {
+      toast.error('End date must be on or after the start date.')
+      return
+    }
+
     if (!adminNotes.trim()) {
       toast.error('Admin notes are required.')
       return

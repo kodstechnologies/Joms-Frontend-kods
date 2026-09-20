@@ -115,7 +115,19 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                   <input
                     type="date"
                     value={entry.startDate}
-                    onChange={(e) => updateEntry(index, { startDate: e.target.value })}
+                    max={!entry.currentlyWorking && entry.endDate ? entry.endDate : undefined}
+                    onChange={(e) => {
+                      const startDate = e.target.value
+                      const shouldClearEnd =
+                        !entry.currentlyWorking &&
+                        entry.endDate &&
+                        startDate &&
+                        entry.endDate < startDate
+                      updateEntry(index, {
+                        startDate,
+                        ...(shouldClearEnd ? { endDate: '' } : {}),
+                      })
+                    }}
                     className={`${fieldClass} [color-scheme:dark]`}
                   />
                 </div>
@@ -125,6 +137,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                   <input
                     type="date"
                     value={entry.endDate}
+                    min={entry.startDate || undefined}
                     disabled={entry.currentlyWorking}
                     onChange={(e) => updateEntry(index, { endDate: e.target.value })}
                     className={`${fieldClass} [color-scheme:dark] disabled:opacity-40`}

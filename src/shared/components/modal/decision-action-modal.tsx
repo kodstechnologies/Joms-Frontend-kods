@@ -469,8 +469,15 @@ export function DecisionActionModal({
                   <input
                     type="date"
                     value={startDate}
+                    max={!indefinite && endDate ? endDate : undefined}
                     disabled={indefinite}
-                    onChange={(event) => onStartDateChange?.(event.target.value)}
+                    onChange={(event) => {
+                      const nextStart = event.target.value
+                      onStartDateChange?.(nextStart)
+                      if (endDate && nextStart && endDate < nextStart) {
+                        onEndDateChange?.('')
+                      }
+                    }}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                   <img
@@ -490,6 +497,7 @@ export function DecisionActionModal({
                   <input
                     type="date"
                     value={endDate}
+                    min={!indefinite && startDate ? startDate : undefined}
                     disabled={indefinite}
                     onChange={(event) => onEndDateChange?.(event.target.value)}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"

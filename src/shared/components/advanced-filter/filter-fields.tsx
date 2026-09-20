@@ -36,7 +36,14 @@ export function RangeField({
           <Input
             type={inputType}
             value={from}
-            onChange={(event) => onFromChange(event.target.value)}
+            max={showCalendar && to ? to : undefined}
+            onChange={(event) => {
+              const nextFrom = event.target.value
+              onFromChange(nextFrom)
+              if (showCalendar && to && nextFrom && to < nextFrom) {
+                onToChange('')
+              }
+            }}
             placeholder={fromPlaceholder}
             className={cn(showCalendar && 'pr-9')}
           />
@@ -58,6 +65,7 @@ export function RangeField({
           <Input
             type={inputType}
             value={to}
+            min={showCalendar && from ? from : undefined}
             onChange={(event) => onToChange(event.target.value)}
             placeholder={toPlaceholder}
             className={cn(showCalendar && 'pr-9')}

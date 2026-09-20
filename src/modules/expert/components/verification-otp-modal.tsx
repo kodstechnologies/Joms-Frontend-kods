@@ -23,6 +23,14 @@ type VerificationOtpModalProps = {
   verifyOtp?: (target: string, code: string) => Promise<void>
 }
 
+/** Survives React Strict Mode remount so one Verify click cannot fire two OTP APIs. */
+const inflightOtpSends = new Map<string, Promise<boolean>>()
+const recentOtpSendAt = new Map<string, number>()
+const OTP_CLIENT_DEDUP_MS = 3_000
+
+const buildOtpSendKey = (type: 'phone' | 'email', value: string) =>
+  `${type}:${value.trim().toLowerCase()}`
+
 export function VerificationOtpModal({
   open,
   type,
@@ -41,6 +49,7 @@ export function VerificationOtpModal({
   const dialogRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
   const sendOtpRef = useRef(sendOtp)
+  const openSendKeyRef = useRef<string | null>(null)
 
   onCloseRef.current = onClose
   sendOtpRef.current = sendOtp
@@ -48,33 +57,91 @@ export function VerificationOtpModal({
   const isVisible = open && otpSent
   useDialogFocusTrap(isVisible, onClose, dialogRef)
 
-  const requestOtp = useCallback(async () => {
-    const value = targetValue.trim()
-    if (!value) return false
-
-    setIsSending(true)
-    try {
+  const dispatchOtp = useCallback(
+    async (value: string) => {
       if (sendOtpRef.current) {
         await sendOtpRef.current(value)
-      } else if (type === 'phone') {
-        await sendPartnerPhoneOtp(value)
-      } else {
-        await sendPartnerEmailOtp(value)
+        return
       }
-      toast.success(`OTP sent to ${value}`)
-      setOtpSent(true)
-      setTimer(30)
-      return true
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Failed to send OTP. Please check the backend service.'))
-      return false
-    } finally {
-      setIsSending(false)
-    }
-  }, [targetValue, type])
+      if (type === 'phone') {
+        await sendPartnerPhoneOtp(value)
+        return
+      }
+      await sendPartnerEmailOtp(value)
+    },
+    [type],
+  )
+
+  const requestOtp = useCallback(
+    async (options?: { force?: boolean }) => {
+      const value = targetValue.trim()
+      if (!value) return false
+
+      const sendKey = buildOtpSendKey(type, value)
+      const now = Date.now()
+
+      if (!options?.force) {
+        const lastSentAt = recentOtpSendAt.get(sendKey) || 0
+        if (now - lastSentAt < OTP_CLIENT_DEDUP_MS) {
+          setOtpSent(true)
+          setTimer(30)
+          return true
+        }
+
+        const existing = inflightOtpSends.get(sendKey)
+        if (existing) {
+          setIsSending(true)
+          try {
+            const ok = await existing
+            if (ok) {
+              setOtpSent(true)
+              setTimer(30)
+            }
+            return ok
+          } finally {
+            setIsSending(false)
+          }
+        }
+      }
+
+      setIsSending(true)
+      const sendPromise = (async () => {
+        try {
+          await dispatchOtp(value)
+          recentOtpSendAt.set(sendKey, Date.now())
+          toast.success(`OTP sent to ${value}`)
+          return true
+        } catch (err: unknown) {
+          toast.error(
+            getApiErrorMessage(err, 'Failed to send OTP. Please check the backend service.'),
+          )
+          return false
+        }
+      })()
+
+      inflightOtpSends.set(sendKey, sendPromise)
+      try {
+        const ok = await sendPromise
+        if (ok) {
+          setOtpSent(true)
+          setTimer(30)
+        }
+        return ok
+      } finally {
+        setIsSending(false)
+        window.setTimeout(() => {
+          if (inflightOtpSends.get(sendKey) === sendPromise) {
+            inflightOtpSends.delete(sendKey)
+          }
+        }, 1500)
+      }
+    },
+    [dispatchOtp, targetValue, type],
+  )
 
   useEffect(() => {
     if (!open) {
+      openSendKeyRef.current = null
       setOtp('')
       setTimer(30)
       setOtpSent(false)
@@ -83,16 +150,25 @@ export function VerificationOtpModal({
       return
     }
 
+    const value = targetValue.trim()
+    if (!value) return
+
+    const sendKey = buildOtpSendKey(type, value)
+    // Same open session / Strict Mode remount: do not send again.
+    if (openSendKeyRef.current === sendKey) return
+    openSendKeyRef.current = sendKey
+
     let cancelled = false
     void requestOtp().then((ok) => {
       if (cancelled || ok) return
+      openSendKeyRef.current = null
       onCloseRef.current()
     })
 
     return () => {
       cancelled = true
     }
-  }, [open, requestOtp])
+  }, [open, requestOtp, targetValue, type])
 
   useEffect(() => {
     if (!isVisible) return
@@ -109,7 +185,7 @@ export function VerificationOtpModal({
   const handleResend = async () => {
     if (isSending) return
     setOtp('')
-    await requestOtp()
+    await requestOtp({ force: true })
   }
 
   const handleVerify = async () => {
