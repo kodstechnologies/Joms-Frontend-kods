@@ -98,7 +98,7 @@ export const createModerationReason = async (payload: {
   slug?: string
   title: string
   description?: string
-  defaultMessageTemplate?: string
+  defaultMessageTemplate: string
   isActive?: boolean
 }) => {
   const response = await settingsApiClient.post<ApiEnvelope<ModerationReason>>(
@@ -152,9 +152,13 @@ export function buildModerationActionPayload(
     .map((reason) => reason.defaultMessageTemplate.trim())
     .filter(Boolean)
 
+  const partnerFacingReasons = selected.map(
+    (reason) => reason.defaultMessageTemplate.trim() || reason.title,
+  )
+
   return {
     reasonIds: selected.map((reason) => reason.id),
-    selectedReasons: selected.map((reason) => reason.title),
-    reasonDetails: messageTemplates.join('\n\n'),
+    selectedReasons: partnerFacingReasons,
+    reasonDetails: messageTemplates.join('\n\n') || partnerFacingReasons.join('\n\n'),
   }
 }
