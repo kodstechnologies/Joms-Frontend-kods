@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   AlertTriangle,
   Check,
@@ -264,17 +264,29 @@ export function DecisionActionModal({
 
   useDialogFocusTrap(open, onClose, dialogRef)
 
+  const todayDate = getTodayDateInputValue()
+  const timelineStartMin = todayDate
+  const minEndFromStart = startDate ? addDaysToDateInputValue(startDate, 1) : ''
+  const timelineEndMin = !indefinite
+    ? minEndFromStart || addDaysToDateInputValue(todayDate, 1)
+    : undefined
+
+  useEffect(() => {
+    if (!open || !showTimeline || indefinite || !onEndDateChange) return
+    if (!startDate || !minEndFromStart) return
+    if (endDate && endDate < minEndFromStart) {
+      onEndDateChange(minEndFromStart)
+    }
+  }, [open, showTimeline, indefinite, startDate, endDate, minEndFromStart, onEndDateChange])
+
   if (!open) {
     return null
   }
 
-  const todayDate = getTodayDateInputValue()
-  const timelineStartMin = todayDate
-  const timelineStartMax =
-    !indefinite && endDate ? addDaysToDateInputValue(endDate, -1) || undefined : undefined
-  const timelineEndMin = !indefinite
-    ? addDaysToDateInputValue(startDate || todayDate, 1) || addDaysToDateInputValue(todayDate, 1)
-    : undefined
+  const hasInvalidTimeline =
+    showTimeline &&
+    !indefinite &&
+    Boolean(startDate && endDate && (startDate < todayDate || endDate <= startDate))
 
   const styles = variantStyles[variant]
   const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
@@ -497,19 +509,16 @@ export function DecisionActionModal({
                     type="date"
                     value={startDate}
                     min={timelineStartMin}
-                    max={timelineStartMax}
                     disabled={indefinite}
                     onChange={(event) => {
                       let nextStart = event.target.value
                       if (nextStart && nextStart < todayDate) {
                         nextStart = todayDate
                       }
-                      if (timelineStartMax && nextStart && nextStart > timelineStartMax) {
-                        nextStart = timelineStartMax
-                      }
                       onStartDateChange?.(nextStart)
-                      if (endDate && nextStart && endDate <= nextStart) {
-                        onEndDateChange?.('')
+                      const nextMinEnd = nextStart ? addDaysToDateInputValue(nextStart, 1) : ''
+                      if (nextMinEnd && (!endDate || endDate < nextMinEnd)) {
+                        onEndDateChange?.(nextMinEnd)
                       }
                     }}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
@@ -529,14 +538,18 @@ export function DecisionActionModal({
                   )}
                 >
                   <input
+                    key={`suspend-end-${timelineEndMin || 'none'}`}
                     type="date"
                     value={endDate}
                     min={timelineEndMin}
-                    disabled={indefinite}
+                    disabled={indefinite || !startDate}
                     onChange={(event) => {
                       let nextEnd = event.target.value
                       if (timelineEndMin && nextEnd && nextEnd < timelineEndMin) {
                         nextEnd = timelineEndMin
+                      }
+                      if (startDate && nextEnd && nextEnd <= startDate) {
+                        nextEnd = addDaysToDateInputValue(startDate, 1)
                       }
                       onEndDateChange?.(nextEnd)
                     }}
@@ -652,7 +665,7 @@ export function DecisionActionModal({
           <button
             type="button"
             onClick={onSubmit}
-            disabled={isSubmitting || submitDisabled}
+            disabled={isSubmitting || submitDisabled || hasInvalidTimeline}
             className={cn('ui-modal-btn h-10 max-w-[238px] flex-1 overflow-visible', styles.submit)}
           >
             <span className="truncate">{submitLabel}</span>
