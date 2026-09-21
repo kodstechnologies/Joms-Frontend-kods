@@ -23,6 +23,14 @@ export type DecisionActionModalOption = {
 export type DecisionActionSubmitIcon =
   'check' | 'x' | 'trash' | 'userMinus' | 'pause' | 'circleArrowOutUpRight' | 'none'
 
+const getTodayDateInputValue = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 type DecisionActionModalProps = {
   open: boolean
   variant: DecisionActionModalVariant
@@ -249,6 +257,10 @@ export function DecisionActionModal({
     return null
   }
 
+  const todayDate = getTodayDateInputValue()
+  const timelineStartMin = todayDate
+  const timelineEndMin = !indefinite && startDate && startDate > todayDate ? startDate : todayDate
+
   const styles = variantStyles[variant]
   const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
   const resolvedShowReasonsLabel = showReasonsLabel ?? styles.showReasonsLabel ?? true
@@ -469,6 +481,7 @@ export function DecisionActionModal({
                   <input
                     type="date"
                     value={startDate}
+                    min={timelineStartMin}
                     max={!indefinite && endDate ? endDate : undefined}
                     disabled={indefinite}
                     onChange={(event) => {
@@ -497,7 +510,7 @@ export function DecisionActionModal({
                   <input
                     type="date"
                     value={endDate}
-                    min={!indefinite && startDate ? startDate : undefined}
+                    min={timelineEndMin}
                     disabled={indefinite}
                     onChange={(event) => onEndDateChange?.(event.target.value)}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
