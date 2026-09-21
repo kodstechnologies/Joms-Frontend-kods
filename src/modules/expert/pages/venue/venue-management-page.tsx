@@ -22,6 +22,12 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 import { VENUE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
@@ -324,8 +330,13 @@ export const VenueManagementPage = () => {
       return
     }
 
-    if (!bulkPauseIndefinitely && bulkPauseEndDate < bulkPauseStartDate) {
-      toast.error('End date must be on or after the start date.')
+    if (!bulkPauseIndefinitely && isStartBeforeToday(bulkPauseStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!bulkPauseIndefinitely && isEndOnOrBeforeStart(bulkPauseStartDate, bulkPauseEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 
@@ -747,8 +758,13 @@ export const VenueManagementPage = () => {
       return
     }
 
-    if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
-      toast.error('End date must be on or after the start date.')
+    if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 

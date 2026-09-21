@@ -21,6 +21,12 @@ import {
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
@@ -628,8 +634,13 @@ export const ServiceManagementPage = () => {
       return
     }
 
-    if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
-      toast.error('End date must be on or after the start date.')
+    if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 

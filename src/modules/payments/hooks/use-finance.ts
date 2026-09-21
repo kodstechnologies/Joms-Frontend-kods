@@ -208,12 +208,20 @@ export const useEscalateDispute = () => {
       priority,
       adminNotes,
       escalateToAdminId,
+      escalateToAdminName,
     }: {
       id: string
       priority?: 'urgent' | 'high' | 'normal'
       adminNotes?: string
       escalateToAdminId?: string
-    }) => escalateFinanceDispute(id, { priority, adminNotes, escalateToAdminId }),
+      escalateToAdminName?: string
+    }) =>
+      escalateFinanceDispute(id, {
+        priority,
+        adminNotes,
+        escalateToAdminId,
+        escalateToAdminName,
+      }),
     onSuccess: (_data, variables) => invalidateDisputeQueries(queryClient, variables.id),
   })
 }
@@ -253,12 +261,20 @@ export const useEscalateRefund = () => {
       priority,
       adminNotes,
       escalateToAdminId,
+      escalateToAdminName,
     }: {
       id: string
       priority?: 'urgent' | 'high' | 'normal'
       adminNotes?: string
       escalateToAdminId?: string
-    }) => escalateFinanceRefund(id, { priority, adminNotes, escalateToAdminId }),
+      escalateToAdminName?: string
+    }) =>
+      escalateFinanceRefund(id, {
+        priority,
+        adminNotes,
+        escalateToAdminId,
+        escalateToAdminName,
+      }),
     onSuccess: (_data, variables) => invalidateRefundQueries(queryClient, variables.id),
   })
 }
@@ -402,14 +418,24 @@ export const useEscalateFinance = () => {
       resourceType,
       adminNote,
       escalateToAdminId,
+      escalateToAdminName,
       priority,
     }: {
       id: string
       resourceType: string
       adminNote: string
       escalateToAdminId?: string
+      escalateToAdminName?: string
       priority?: 'urgent' | 'high' | 'normal'
-    }) => escalateFinanceResource(id, resourceType, adminNote, escalateToAdminId, priority),
+    }) =>
+      escalateFinanceResource(
+        id,
+        resourceType,
+        adminNote,
+        escalateToAdminId,
+        priority,
+        escalateToAdminName,
+      ),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: financeKeys.notes(variables.id) })
     },

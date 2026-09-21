@@ -31,6 +31,17 @@ const getTodayDateInputValue = () => {
   return `${year}-${month}-${day}`
 }
 
+const addDaysToDateInputValue = (value: string, days: number) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return ''
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  date.setDate(date.getDate() + days)
+  const nextYear = date.getFullYear()
+  const nextMonth = String(date.getMonth() + 1).padStart(2, '0')
+  const nextDay = String(date.getDate()).padStart(2, '0')
+  return `${nextYear}-${nextMonth}-${nextDay}`
+}
+
 type DecisionActionModalProps = {
   open: boolean
   variant: DecisionActionModalVariant
@@ -259,7 +270,11 @@ export function DecisionActionModal({
 
   const todayDate = getTodayDateInputValue()
   const timelineStartMin = todayDate
-  const timelineEndMin = !indefinite && startDate && startDate > todayDate ? startDate : todayDate
+  const timelineStartMax =
+    !indefinite && endDate ? addDaysToDateInputValue(endDate, -1) || undefined : undefined
+  const timelineEndMin = !indefinite
+    ? addDaysToDateInputValue(startDate || todayDate, 1) || addDaysToDateInputValue(todayDate, 1)
+    : undefined
 
   const styles = variantStyles[variant]
   const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
@@ -482,12 +497,18 @@ export function DecisionActionModal({
                     type="date"
                     value={startDate}
                     min={timelineStartMin}
-                    max={!indefinite && endDate ? endDate : undefined}
+                    max={timelineStartMax}
                     disabled={indefinite}
                     onChange={(event) => {
-                      const nextStart = event.target.value
+                      let nextStart = event.target.value
+                      if (nextStart && nextStart < todayDate) {
+                        nextStart = todayDate
+                      }
+                      if (timelineStartMax && nextStart && nextStart > timelineStartMax) {
+                        nextStart = timelineStartMax
+                      }
                       onStartDateChange?.(nextStart)
-                      if (endDate && nextStart && endDate < nextStart) {
+                      if (endDate && nextStart && endDate <= nextStart) {
                         onEndDateChange?.('')
                       }
                     }}
@@ -512,7 +533,13 @@ export function DecisionActionModal({
                     value={endDate}
                     min={timelineEndMin}
                     disabled={indefinite}
-                    onChange={(event) => onEndDateChange?.(event.target.value)}
+                    onChange={(event) => {
+                      let nextEnd = event.target.value
+                      if (timelineEndMin && nextEnd && nextEnd < timelineEndMin) {
+                        nextEnd = timelineEndMin
+                      }
+                      onEndDateChange?.(nextEnd)
+                    }}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                   <img

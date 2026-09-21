@@ -7,6 +7,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import {
   AlertOctagon,
@@ -877,8 +883,17 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         return
       }
 
-      if (action === 'suspend' && !bulkIndefinitely && bulkEndDate < bulkStartDate) {
-        toast.error('End date must be on or after the start date.')
+      if (action === 'suspend' && !bulkIndefinitely && isStartBeforeToday(bulkStartDate)) {
+        toast.error(START_BEFORE_TODAY_MESSAGE)
+        return
+      }
+
+      if (
+        action === 'suspend' &&
+        !bulkIndefinitely &&
+        isEndOnOrBeforeStart(bulkStartDate, bulkEndDate)
+      ) {
+        toast.error(END_MUST_AFTER_START_MESSAGE)
         return
       }
 
@@ -1060,8 +1075,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate spaces.'))
         return
       }
@@ -1391,8 +1405,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    | (typeof data.profile & { analytics?: Record<string, unknown> })
-    | undefined
+    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -1917,8 +1930,13 @@ export function VenueProfileViewPage() {
       return
     }
 
-    if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
-      toast.error('End date must be on or after the start date.')
+    if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 
