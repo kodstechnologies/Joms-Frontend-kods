@@ -414,7 +414,7 @@ export const ExpertBasicProfileStep = ({
 
                 <div>
                   <label className="mb-2 block text-[14px] leading-5 font-semibold tracking-normal text-white">
-                    Bio
+                    Bio <RequiredMark />
                   </label>
                   <textarea
                     value={formData.bio}
