@@ -85,6 +85,7 @@ import type {
 } from '@/shared/types/data-filter'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
+import { adminNoteTextsNewestFirst } from '@/modules/expert/utils/admin-notes-display'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -328,14 +329,6 @@ const SIDEBAR_CARDS_SCROLL =
 
 const SIDEBAR_ITEM_CARD = 'rounded-lg bg-[#050505] p-3'
 
-function splitAdminNotes(raw?: string | null): string[] {
-  if (!raw?.trim()) return []
-  return raw
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-}
-
 function ProfileSidebar({
   data,
   tickets = [],
@@ -373,13 +366,14 @@ function ProfileSidebar({
   const partnerId = overview?.venue?.ownerId
   const venueKycId = profile.kycId || overview?.venue?.kycId
 
-  const adminNoteEntries = useMemo(() => {
-    const log = overview?.venue?.adminNotesLog
-    if (Array.isArray(log) && log.length > 0) {
-      return log.map((entry) => String(entry?.text || '').trim()).filter(Boolean)
-    }
-    return splitAdminNotes(overview?.venue?.adminInternalNotes)
-  }, [overview?.venue?.adminInternalNotes, overview?.venue?.adminNotesLog])
+  const adminNoteEntries = useMemo(
+    () =>
+      adminNoteTextsNewestFirst(
+        overview?.venue?.adminNotesLog,
+        overview?.venue?.adminInternalNotes,
+      ),
+    [overview?.venue?.adminInternalNotes, overview?.venue?.adminNotesLog],
+  )
 
   const handleViewKyc = () => {
     if (!isSubmittedKycStatus(kycStatus)) {

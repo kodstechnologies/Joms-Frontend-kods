@@ -47,10 +47,13 @@ function Card({ className, children }: { className?: string; children: ReactNode
 }
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {
+  const title = typeof value === 'string' || typeof value === 'number' ? String(value) : undefined
   return (
-    <div className="min-w-[130px] shrink-0 space-y-1.5 sm:min-w-0 sm:shrink">
+    <div className="min-w-0 space-y-1.5">
       <p className={labelClass}>{label}</p>
-      <div className={valueClass}>{value}</div>
+      <div className={cn(valueClass, 'min-w-0 break-all')} title={title}>
+        {value}
+      </div>
     </div>
   )
 }
@@ -364,20 +367,18 @@ export function FinanceEscalationDetailPage() {
 
           <div className="my-5 border-b border-white/[0.06]" />
 
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <div className="flex min-w-max gap-6 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
-              <InfoItem label="Record ID" value={recordId} />
-              <InfoItem label="Transaction ID" value={payment?._id || escrow?.paymentId || id} />
-              <InfoItem label="Opened Date" value={openedDate} />
-              <InfoItem
-                label="Status"
-                value={
-                  <FinanceStatusBadge status={status} toneClass={financeEscalationStatusClass} />
-                }
-              />
-              <InfoItem label="Module type" value={moduleType} />
-              <InfoItem label="Payment mode" value={paymentMode} />
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            <InfoItem label="Record ID" value={recordId} />
+            <InfoItem label="Transaction ID" value={payment?._id || escrow?.paymentId || id} />
+            <InfoItem label="Opened Date" value={openedDate} />
+            <InfoItem
+              label="Status"
+              value={
+                <FinanceStatusBadge status={status} toneClass={financeEscalationStatusClass} />
+              }
+            />
+            <InfoItem label="Module type" value={moduleType} />
+            <InfoItem label="Payment mode" value={paymentMode} />
           </div>
         </Card>
 

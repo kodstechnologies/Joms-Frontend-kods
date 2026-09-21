@@ -127,6 +127,7 @@ import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { ShareProfileModal } from '@/shared/components/modal/share-profile-modal'
 import { CustomUrlModal } from '../../components/custom-url-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
+import { adminNoteTextsNewestFirst } from '@/modules/expert/utils/admin-notes-display'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -661,16 +662,10 @@ function ProfileSidebar({
       <div className={cn(PROFILE_CARD, 'p-5')}>
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
         {(() => {
-          const notes =
-            Array.isArray(profile.finalReview?.adminNotesLog) &&
-            profile.finalReview.adminNotesLog.length > 0
-              ? profile.finalReview.adminNotesLog
-                  .map((entry) => String(entry?.text || '').trim())
-                  .filter(Boolean)
-              : String(profile.finalReview?.internalNotes || '')
-                  .split(/\n+/)
-                  .map((line) => line.trim())
-                  .filter(Boolean)
+          const notes = adminNoteTextsNewestFirst(
+            profile.finalReview?.adminNotesLog,
+            profile.finalReview?.internalNotes,
+          )
           const itemCard = 'rounded-lg bg-[#050505] p-3'
           const cardsScroll =
             'max-h-[11.5rem] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]'
