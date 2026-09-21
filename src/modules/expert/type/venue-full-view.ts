@@ -61,6 +61,12 @@ export interface VenueFullViewVenue {
   bookingsCount?: number
   insights?: VenueFullViewInsights
   adminInternalNotes?: string | null
+  adminNotesLog?: Array<{
+    id: string
+    text: string
+    createdAt?: string | null
+    createdBy?: string | null
+  }>
   adminTags?: string[]
   lastActiveAt?: string | null
   customUrl?: string | null

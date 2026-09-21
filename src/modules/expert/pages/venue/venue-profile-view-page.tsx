@@ -322,6 +322,20 @@ const getVenueKycStatusTone = (status?: string | null) => {
   return 'inline-flex h-[25px] items-center justify-center rounded-[10px] border border-amber-500/30 bg-amber-500/15 px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-amber-300'
 }
 
+/** Fits ~3 stacked cards; scroll when more than 3 items. */
+const SIDEBAR_CARDS_SCROLL =
+  'max-h-[11.5rem] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]'
+
+const SIDEBAR_ITEM_CARD = 'rounded-lg bg-[#050505] p-3'
+
+function splitAdminNotes(raw?: string | null): string[] {
+  if (!raw?.trim()) return []
+  return raw
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 function ProfileSidebar({
   data,
   tickets = [],
@@ -358,6 +372,14 @@ function ProfileSidebar({
       : ratingValue != null && Number(ratingValue) > 0
   const partnerId = overview?.venue?.ownerId
   const venueKycId = profile.kycId || overview?.venue?.kycId
+
+  const adminNoteEntries = useMemo(() => {
+    const log = overview?.venue?.adminNotesLog
+    if (Array.isArray(log) && log.length > 0) {
+      return log.map((entry) => String(entry?.text || '').trim()).filter(Boolean)
+    }
+    return splitAdminNotes(overview?.venue?.adminInternalNotes)
+  }, [overview?.venue?.adminInternalNotes, overview?.venue?.adminNotesLog])
 
   const handleViewKyc = () => {
     if (!isSubmittedKycStatus(kycStatus)) {
@@ -424,33 +446,50 @@ function ProfileSidebar({
 
       <div className={cn(PROFILE_CARD, 'p-5')}>
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
-        <div className="rounded-lg bg-[#050505] p-3">
+
+        <div className="space-y-2">
           <p className="text-muted text-[10px]">Active Tickets</p>
           {ticketsLoading ? (
-            <p className="text-body-sm text-muted mt-1 font-medium">Loading…</p>
+            <div className={SIDEBAR_ITEM_CARD}>
+              <p className="text-body-sm text-muted font-medium">Loading…</p>
+            </div>
           ) : tickets.length === 0 ? (
-            <p className="text-body-sm mt-1 font-medium text-white">None</p>
+            <div className={SIDEBAR_ITEM_CARD}>
+              <p className="text-body-sm font-medium text-white">None</p>
+            </div>
           ) : (
-            <ul className="mt-2 space-y-2">
-              {tickets.slice(0, 3).map((ticket) => (
-                <li key={ticket.id}>
+            <div className={cn(tickets.length > 3 ? SIDEBAR_CARDS_SCROLL : 'space-y-2')}>
+              {tickets.map((ticket) => (
+                <div key={ticket.id} className={SIDEBAR_ITEM_CARD}>
                   <button
                     type="button"
                     onClick={() => navigate(`/support/tickets/${ticket.id}`)}
                     className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
+                    title={`# ${ticket.id} – ${ticket.subject}`}
                   >
                     # {ticket.id} – {ticket.subject}
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
-        <div className="mt-3 rounded-lg bg-[#050505] p-3">
+
+        <div className="mt-4 space-y-2">
           <p className="text-muted text-[10px]">Admin notes</p>
-          <p className="text-body-sm mt-1 font-medium text-white">
-            {overview?.venue?.adminInternalNotes || 'None'}
-          </p>
+          {adminNoteEntries.length === 0 ? (
+            <div className={SIDEBAR_ITEM_CARD}>
+              <p className="text-body-sm font-medium text-white">None</p>
+            </div>
+          ) : (
+            <div className={cn(adminNoteEntries.length > 3 ? SIDEBAR_CARDS_SCROLL : 'space-y-2')}>
+              {adminNoteEntries.map((note, index) => (
+                <div key={`${index}-${note.slice(0, 32)}`} className={SIDEBAR_ITEM_CARD}>
+                  <p className="text-body-sm font-medium whitespace-pre-wrap text-white">{note}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1021,7 +1060,8 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate spaces.'))
         return
       }
@@ -1351,7 +1391,8 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
+    | (typeof data.profile & { analytics?: Record<string, unknown> })
+    | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -2339,7 +2380,7 @@ export function VenueProfileViewPage() {
 
       <AdminNotesModal
         open={notesModalOpen}
-        initialNotes={fullView.overview.venue.adminInternalNotes || ''}
+        initialNotes=""
         onClose={() => setNotesModalOpen(false)}
         onSubmit={handleSaveNotes}
       />

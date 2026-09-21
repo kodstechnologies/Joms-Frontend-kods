@@ -660,34 +660,71 @@ function ProfileSidebar({
 
       <div className={cn(PROFILE_CARD, 'p-5')}>
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
-        <div className="rounded-lg bg-[#050505] p-3">
-          <p className="text-muted text-[10px]">Active Tickets</p>
-          {ticketsLoading ? (
-            <p className="text-body-sm text-muted mt-1 font-medium">Loading...</p>
-          ) : tickets.length === 0 ? (
-            <p className="text-body-sm mt-1 font-medium text-white">None</p>
-          ) : (
-            <ul className="mt-2 space-y-2">
-              {tickets.slice(0, 3).map((ticket) => (
-                <li key={ticket.id}>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/support/tickets/${ticket.id}`)}
-                    className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
-                  >
-                    # {ticket.id} – {ticket.subject}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="mt-3 rounded-lg bg-[#050505] p-3">
-          <p className="text-muted text-[10px]">Admin notes</p>
-          <p className="text-body-sm mt-1 font-medium text-white">
-            {profile.finalReview?.internalNotes || 'None'}
-          </p>
-        </div>
+        {(() => {
+          const notes =
+            Array.isArray(profile.finalReview?.adminNotesLog) &&
+            profile.finalReview.adminNotesLog.length > 0
+              ? profile.finalReview.adminNotesLog
+                  .map((entry) => String(entry?.text || '').trim())
+                  .filter(Boolean)
+              : String(profile.finalReview?.internalNotes || '')
+                  .split(/\n+/)
+                  .map((line) => line.trim())
+                  .filter(Boolean)
+          const itemCard = 'rounded-lg bg-[#050505] p-3'
+          const cardsScroll =
+            'max-h-[11.5rem] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]'
+
+          return (
+            <>
+              <div className="space-y-2">
+                <p className="text-muted text-[10px]">Active Tickets</p>
+                {ticketsLoading ? (
+                  <div className={itemCard}>
+                    <p className="text-body-sm text-muted font-medium">Loading...</p>
+                  </div>
+                ) : tickets.length === 0 ? (
+                  <div className={itemCard}>
+                    <p className="text-body-sm font-medium text-white">None</p>
+                  </div>
+                ) : (
+                  <div className={tickets.length > 3 ? cardsScroll : 'space-y-2'}>
+                    {tickets.map((ticket) => (
+                      <div key={ticket.id} className={itemCard}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/support/tickets/${ticket.id}`)}
+                          className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
+                        >
+                          # {ticket.id} – {ticket.subject}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <p className="text-muted text-[10px]">Admin notes</p>
+                {notes.length === 0 ? (
+                  <div className={itemCard}>
+                    <p className="text-body-sm font-medium text-white">None</p>
+                  </div>
+                ) : (
+                  <div className={notes.length > 3 ? cardsScroll : 'space-y-2'}>
+                    {notes.map((note, index) => (
+                      <div key={`${index}-${note.slice(0, 24)}`} className={itemCard}>
+                        <p className="text-body-sm font-medium whitespace-pre-wrap text-white">
+                          {note}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )
+        })()}
       </div>
     </div>
   )
@@ -1635,7 +1672,8 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
@@ -3496,7 +3534,7 @@ export function ExpertProfileViewPage() {
 
       <AdminNotesModal
         open={notesModalOpen}
-        initialNotes={profile.finalReview?.internalNotes || ''}
+        initialNotes=""
         onClose={() => setNotesModalOpen(false)}
         onSubmit={handleSaveNotes}
       />

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
@@ -19,6 +19,10 @@ function AdminNotesModalContent({
   onSubmit: (notes: string) => void
 }) {
   const [notes, setNotes] = useState(initialNotes)
+
+  useEffect(() => {
+    setNotes(initialNotes)
+  }, [initialNotes])
 
   return createPortal(
     <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4">
@@ -47,7 +51,12 @@ function AdminNotesModalContent({
           </button>
           <button
             type="button"
-            onClick={() => onSubmit(notes.trim())}
+            onClick={() => {
+              const next = notes.trim()
+              if (!next) return
+              onSubmit(next)
+              setNotes('')
+            }}
             className="ui-modal-btn ui-modal-btn-gold"
           >
             Submit
@@ -68,6 +77,11 @@ export function AdminNotesModal({
   if (!open) return null
 
   return (
-    <AdminNotesModalContent initialNotes={initialNotes} onClose={onClose} onSubmit={onSubmit} />
+    <AdminNotesModalContent
+      key={initialNotes || 'empty'}
+      initialNotes={initialNotes}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />
   )
 }
