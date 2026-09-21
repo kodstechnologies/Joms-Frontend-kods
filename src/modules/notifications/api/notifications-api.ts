@@ -1,4 +1,4 @@
-import { adminApiClient, notificationApiClient } from '@/shared/lib/axios'
+import { notificationApiClient } from '@/shared/lib/axios'
 
 export type InboxKind = 'notification' | 'alert'
 
@@ -108,24 +108,6 @@ export const unregisterDeviceToken = async (token: string) => {
     {
       data: { token },
     },
-  )
-  return response.data
-}
-
-export const seedAdminInboxAlerts = async () => {
-  const response = await adminApiClient.post<
-    ApiEnvelope<{
-      count: number
-      ids: Record<string, string | null>
-      results: Array<{ eventType: string; path: string; sent: boolean; skipped: boolean }>
-    }>
-  >('/admin/inbox/seed-alerts')
-  return response.data
-}
-
-export const clearSeededAdminInboxAlerts = async () => {
-  const response = await adminApiClient.post<ApiEnvelope<{ deletedCount: number }>>(
-    '/admin/inbox/clear-seeded-alerts',
   )
   return response.data
 }

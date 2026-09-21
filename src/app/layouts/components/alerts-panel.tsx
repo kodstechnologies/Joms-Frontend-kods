@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, ExternalLink, Siren, X } from 'lucide-react'
-import { useQueryClient } from '@tanstack/react-query'
 
 import {
-  clearSeededAdminInboxAlerts,
   NOTIFICATION_PAGE_SIZE,
   useMarkNotificationRead,
   useMyNotifications,
   useUnreadNotificationCount,
-  notificationKeys,
   type InAppNotification,
 } from '@/modules/notifications'
 import { resolveAdminInboxNavigation } from '@/modules/notifications/utils/admin-inbox-navigation'
@@ -84,8 +81,6 @@ type AlertsPanelProps = {
 
 export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const clearedSeededRef = useRef(false)
   const [page, setPage] = useState(1)
   const alertsQuery = useMyNotifications(open, 'alert', { page, limit: NOTIFICATION_PAGE_SIZE })
   const markReadMutation = useMarkNotificationRead()
@@ -99,22 +94,6 @@ export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
   useEffect(() => {
     if (open) setPage(1)
   }, [open])
-
-  useEffect(() => {
-    if (!open || clearedSeededRef.current) return
-    clearedSeededRef.current = true
-
-    clearSeededAdminInboxAlerts()
-      .then(() => {
-        void queryClient.invalidateQueries({
-          queryKey: [...notificationKeys.all, 'list', 'alert'],
-        })
-        void queryClient.invalidateQueries({ queryKey: notificationKeys.unread('alert') })
-      })
-      .catch(() => {
-        clearedSeededRef.current = false
-      })
-  }, [open, queryClient])
 
   useEffect(() => {
     if (!open) return
@@ -260,25 +239,8 @@ type AlertsTriggerProps = {
 }
 
 export function AlertsTrigger({ open, onOpen }: AlertsTriggerProps) {
-  const queryClient = useQueryClient()
   const unreadQuery = useUnreadNotificationCount('alert')
   const count = unreadQuery.data ?? 0
-
-  useEffect(() => {
-    let cancelled = false
-    clearSeededAdminInboxAlerts()
-      .then(() => {
-        if (cancelled) return
-        void queryClient.invalidateQueries({
-          queryKey: [...notificationKeys.all, 'list', 'alert'],
-        })
-        void queryClient.invalidateQueries({ queryKey: notificationKeys.unread('alert') })
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [queryClient])
 
   return (
     <button

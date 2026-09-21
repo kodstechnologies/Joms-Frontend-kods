@@ -50,10 +50,14 @@ const slugify = (label: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 64) || `item-${Date.now()}`
 
+const PROFILE_CUSTOMIZATION_BENEFIT_ID = 'profile-customization'
+
+const withoutProfileCustomization = (benefits: MembershipPlanConfigItem[]) =>
+  benefits.filter((item) => item.id !== PROFILE_CUSTOMIZATION_BENEFIT_ID)
+
 const defaultPlanConfig = (): MembershipPlanConfig => ({
   commissionRatePercent: 0,
   benefits: [
-    { id: 'profile-customization', label: 'Profile customization', enabled: true },
     { id: 'dedicated-account-manager', label: 'Dedicated Account Manager', enabled: true },
   ],
   partnerApp: [],
@@ -63,11 +67,12 @@ const defaultPlanConfig = (): MembershipPlanConfig => ({
 
 const resolveInitialPlanConfig = (plan?: MembershipPlan | null): MembershipPlanConfig => {
   if (plan?.planConfig) {
+    const benefits = plan.planConfig.benefits?.length
+      ? withoutProfileCustomization(plan.planConfig.benefits)
+      : defaultPlanConfig().benefits
     return {
       commissionRatePercent: Number(plan.planConfig.commissionRatePercent ?? 0),
-      benefits: plan.planConfig.benefits?.length
-        ? plan.planConfig.benefits
-        : defaultPlanConfig().benefits,
+      benefits,
       partnerApp: plan.planConfig.partnerApp ?? [],
       eligibility: plan.planConfig.eligibility ?? [],
       otherSettings: plan.planConfig.otherSettings ?? [],
@@ -82,11 +87,6 @@ const resolveInitialPlanConfig = (plan?: MembershipPlan | null): MembershipPlanC
 
   const benefits: MembershipPlanConfigItem[] = [
     {
-      id: 'profile-customization',
-      label: 'Profile customization',
-      enabled: Boolean(features.profileCustomization),
-    },
-    {
       id: 'dedicated-account-manager',
       label: 'Dedicated Account Manager',
       enabled: Boolean(features.dedicatedAccountManager),
@@ -100,7 +100,7 @@ const resolveInitialPlanConfig = (plan?: MembershipPlan | null): MembershipPlanC
 
   return {
     commissionRatePercent: 0,
-    benefits,
+    benefits: withoutProfileCustomization(benefits),
     partnerApp: [],
     eligibility: [],
     otherSettings: [],
@@ -233,12 +233,16 @@ export function MembershipPlanForm({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (readOnly) return
+    const sanitizedPlanConfig: MembershipPlanConfig = {
+      ...planConfig,
+      benefits: withoutProfileCustomization(planConfig.benefits),
+    }
     onSubmit({
       type: 'expert',
       planName: planName.trim(),
       pricing: pricingList,
-      planConfig,
-      features: { planConfig },
+      planConfig: sanitizedPlanConfig,
+      features: { planConfig: sanitizedPlanConfig },
       trialPeriodDays,
       enableAutoRenew,
       allowPlanUpgrades,
@@ -445,8 +449,7 @@ export function MembershipPlanForm({
                     checked={item.enabled !== false}
                     onChange={(checked) => toggleBenefitFeature(item.id, checked)}
                   />
-                  {item.id !== 'profile-customization' &&
-                  item.id !== 'dedicated-account-manager' ? (
+                  {item.id !== 'dedicated-account-manager' ? (
                     <button
                       type="button"
                       onClick={() => removeBenefitFeature(item.id)}
