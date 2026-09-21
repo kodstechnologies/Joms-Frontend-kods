@@ -443,6 +443,7 @@ export function AssignRefundAuthorityPage() {
       if (kind === 'dispute') {
         await escalateFinanceDispute(id, {
           escalateToAdminId: selected.id,
+          escalateToAdminName: selectedDisplayName,
           adminNotes,
           priority,
         })
@@ -453,10 +454,12 @@ export function AssignRefundAuthorityPage() {
           adminNotes,
           selected.id,
           priority,
+          selectedDisplayName,
         )
       } else {
         await escalateFinanceRefund(id, {
           escalateToAdminId: selected.id,
+          escalateToAdminName: selectedDisplayName,
           adminNotes,
           priority,
         })

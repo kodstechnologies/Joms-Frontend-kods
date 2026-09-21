@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   AlertTriangle,
   Check,
@@ -22,6 +22,25 @@ export type DecisionActionModalOption = {
 
 export type DecisionActionSubmitIcon =
   'check' | 'x' | 'trash' | 'userMinus' | 'pause' | 'circleArrowOutUpRight' | 'none'
+
+const getTodayDateInputValue = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const addDaysToDateInputValue = (value: string, days: number) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return ''
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  date.setDate(date.getDate() + days)
+  const nextYear = date.getFullYear()
+  const nextMonth = String(date.getMonth() + 1).padStart(2, '0')
+  const nextDay = String(date.getDate()).padStart(2, '0')
+  return `${nextYear}-${nextMonth}-${nextDay}`
+}
 
 type DecisionActionModalProps = {
   open: boolean
@@ -245,9 +264,29 @@ export function DecisionActionModal({
 
   useDialogFocusTrap(open, onClose, dialogRef)
 
+  const todayDate = getTodayDateInputValue()
+  const timelineStartMin = todayDate
+  const minEndFromStart = startDate ? addDaysToDateInputValue(startDate, 1) : ''
+  const timelineEndMin = !indefinite
+    ? minEndFromStart || addDaysToDateInputValue(todayDate, 1)
+    : undefined
+
+  useEffect(() => {
+    if (!open || !showTimeline || indefinite || !onEndDateChange) return
+    if (!startDate || !minEndFromStart) return
+    if (endDate && endDate < minEndFromStart) {
+      onEndDateChange(minEndFromStart)
+    }
+  }, [open, showTimeline, indefinite, startDate, endDate, minEndFromStart, onEndDateChange])
+
   if (!open) {
     return null
   }
+
+  const hasInvalidTimeline =
+    showTimeline &&
+    !indefinite &&
+    Boolean(startDate && endDate && (startDate < todayDate || endDate <= startDate))
 
   const styles = variantStyles[variant]
   const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
@@ -469,13 +508,17 @@ export function DecisionActionModal({
                   <input
                     type="date"
                     value={startDate}
-                    max={!indefinite && endDate ? endDate : undefined}
+                    min={timelineStartMin}
                     disabled={indefinite}
                     onChange={(event) => {
-                      const nextStart = event.target.value
+                      let nextStart = event.target.value
+                      if (nextStart && nextStart < todayDate) {
+                        nextStart = todayDate
+                      }
                       onStartDateChange?.(nextStart)
-                      if (endDate && nextStart && endDate < nextStart) {
-                        onEndDateChange?.('')
+                      const nextMinEnd = nextStart ? addDaysToDateInputValue(nextStart, 1) : ''
+                      if (nextMinEnd && (!endDate || endDate < nextMinEnd)) {
+                        onEndDateChange?.(nextMinEnd)
                       }
                     }}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
@@ -495,11 +538,21 @@ export function DecisionActionModal({
                   )}
                 >
                   <input
+                    key={`suspend-end-${timelineEndMin || 'none'}`}
                     type="date"
                     value={endDate}
-                    min={!indefinite && startDate ? startDate : undefined}
-                    disabled={indefinite}
-                    onChange={(event) => onEndDateChange?.(event.target.value)}
+                    min={timelineEndMin}
+                    disabled={indefinite || !startDate}
+                    onChange={(event) => {
+                      let nextEnd = event.target.value
+                      if (timelineEndMin && nextEnd && nextEnd < timelineEndMin) {
+                        nextEnd = timelineEndMin
+                      }
+                      if (startDate && nextEnd && nextEnd <= startDate) {
+                        nextEnd = addDaysToDateInputValue(startDate, 1)
+                      }
+                      onEndDateChange?.(nextEnd)
+                    }}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                   <img
@@ -612,7 +665,7 @@ export function DecisionActionModal({
           <button
             type="button"
             onClick={onSubmit}
-            disabled={isSubmitting || submitDisabled}
+            disabled={isSubmitting || submitDisabled || hasInvalidTimeline}
             className={cn('ui-modal-btn h-10 max-w-[238px] flex-1 overflow-visible', styles.submit)}
           >
             <span className="truncate">{submitLabel}</span>

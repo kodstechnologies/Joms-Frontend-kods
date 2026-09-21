@@ -21,9 +21,16 @@ import {
   useFinanceRefund,
   useFinanceTaxDetail,
 } from '@/modules/payments/hooks/use-finance'
-import type { FinanceAdminNote } from '@/modules/payments/types/finance-api'
+import {
+  financeEscalateAssigneeName,
+  type FinanceAdminNote,
+} from '@/modules/payments/types/finance-api'
 import { escalateKind } from '@/modules/payments/utils/finance-escalate'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
+import {
+  useAdminEscalation,
+  useEscalationAssignees,
+} from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -169,6 +176,9 @@ export function FinanceEscalationDetailPage() {
   const refundQuery = useFinanceRefund(kind === 'refund' ? id : '')
   const notesQuery = useFinanceNotes(id)
   const addNote = useAddFinanceNote()
+  const escalationEntityType = kind === 'refund' ? 'refund' : 'finance'
+  const adminEscalationQuery = useAdminEscalation(escalationEntityType, id || undefined)
+  const assigneesQuery = useEscalationAssignees('finance.*')
 
   const [selectedEvidenceId, setSelectedEvidenceId] = useState('')
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
@@ -181,6 +191,30 @@ export function FinanceEscalationDetailPage() {
   const notes = useMemo(() => notesQuery.data?.data ?? [], [notesQuery.data?.data])
   const escalateNotes = notes.filter((note) => note.action === 'escalate')
   const latestEscalate = escalateNotes[0]
+  const adminEscalation = adminEscalationQuery.data?.data
+  const assignees = useMemo(() => {
+    const list = assigneesQuery.data?.data
+    return Array.isArray(list) ? list : []
+  }, [assigneesQuery.data?.data])
+
+  const assigneeFromNote = financeEscalateAssigneeName(latestEscalate)
+  const assigneeFromEscalation = String(adminEscalation?.escalatedToName || '').trim()
+  const assigneeId =
+    latestEscalate?.escalateToAdminId ||
+    adminEscalation?.escalatedToSubAdminId ||
+    adminEscalation?.escalatedToAuthAdminId ||
+    ''
+  const assigneeFromDirectory = useMemo(() => {
+    if (!assigneeId) return ''
+    const match = assignees.find((item) => item.id === assigneeId)
+    return String(match?.fullname || '').trim()
+  }, [assigneeId, assignees])
+  const assignedTo =
+    assigneeFromQuery ||
+    assigneeFromNote ||
+    assigneeFromEscalation ||
+    assigneeFromDirectory ||
+    'Unassigned'
 
   const isLoading =
     (kind === 'refund' && refundQuery.isLoading) ||
@@ -261,7 +295,6 @@ export function FinanceEscalationDetailPage() {
     (typeof snapshot?.email === 'string' && snapshot.email) ||
     (typeof snapshot?.userEmail === 'string' && snapshot.userEmail) ||
     '—'
-  const assignedTo = assigneeFromQuery || latestEscalate?.escalateToAdminId || 'Assigned admin'
   const escalationNote = latestEscalate?.adminNote || '—'
   const priority = titleCase(latestEscalate?.priority || 'normal')
   const openedDate = formatDate(
@@ -289,8 +322,8 @@ export function FinanceEscalationDetailPage() {
       .reverse()
       .map((note, index) => ({
         step: String(index + 2).padStart(2, '0'),
-        title: 'Escalated to Admin',
-        actor: assignedTo || 'Admin',
+        title: assignedTo !== 'Unassigned' ? `Escalated to ${assignedTo}` : 'Escalated to Admin',
+        actor: assignedTo !== 'Unassigned' ? assignedTo : 'Admin',
         timestamp: formatDate(note.createdAt),
         description: note.adminNote || 'Escalated for senior review',
       })),
@@ -361,7 +394,7 @@ export function FinanceEscalationDetailPage() {
             </div>
             <span className="text-body-sm-medium bg-brand-bg text-brand-text inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-3 py-1.5">
               <Flag className="size-3.5" aria-hidden="true" />
-              Escalated to Admin
+              {assignedTo !== 'Unassigned' ? `Escalated to ${assignedTo}` : 'Escalated to Admin'}
             </span>
           </div>
 
@@ -388,7 +421,7 @@ export function FinanceEscalationDetailPage() {
               <div className="mb-5">
                 <h2 className={sectionTitleClass}>Support Team Assessment</h2>
                 <p className={sectionSubtitleClass}>
-                  Escalated{assignedTo ? ` to ${assignedTo}` : ''} on {openedDate}
+                  Escalated{assignedTo !== 'Unassigned' ? ` to ${assignedTo}` : ''} on {openedDate}
                 </p>
               </div>
 

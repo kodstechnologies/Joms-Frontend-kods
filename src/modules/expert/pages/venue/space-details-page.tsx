@@ -7,6 +7,12 @@ import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
 import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
+import {
   AlertOctagon,
   ArrowLeft,
   CheckCircle2,
@@ -312,8 +318,17 @@ export function SpaceDetailsPage() {
       return
     }
 
-    if (modalAction === 'suspend' && !suspendIndefinitely && endDate < startDate) {
-      toast.error('End date must be on or after the start date.')
+    if (modalAction === 'suspend' && !suspendIndefinitely && isStartBeforeToday(startDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (
+      modalAction === 'suspend' &&
+      !suspendIndefinitely &&
+      isEndOnOrBeforeStart(startDate, endDate)
+    ) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 

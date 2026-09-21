@@ -281,6 +281,13 @@ export type FinanceAdminNote = {
   createdAt?: string
 }
 
+export function financeEscalateAssigneeName(note?: FinanceAdminNote | null): string {
+  if (!note) return ''
+  const fromPayload = note.payload?.escalateToAdminName
+  if (typeof fromPayload === 'string' && fromPayload.trim()) return fromPayload.trim()
+  return ''
+}
+
 export type FinanceListParams = {
   module?: string
   status?: string

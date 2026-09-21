@@ -11,6 +11,12 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 
 import { Button } from '@/shared/components/ui/button'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
@@ -270,8 +276,12 @@ export const ServiceDetailPage = () => {
         toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
         return
       }
-      if (!suspendIndefinitely && suspendEndDate < suspendStartDate) {
-        toast.error('End date must be on or after the start date.')
+      if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+        toast.error(START_BEFORE_TODAY_MESSAGE)
+        return
+      }
+      if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+        toast.error(END_MUST_AFTER_START_MESSAGE)
         return
       }
       if (!adminNotes.trim()) {
