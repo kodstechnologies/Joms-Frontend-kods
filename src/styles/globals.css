@@ -7256,6 +7256,20 @@ select::-ms-expand {
   transform: none;
 }
 
+.ui-table-actions-menu-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.35) transparent;
+}
+
+.ui-table-actions-menu-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ui-table-actions-menu-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.28);
+}
+
 .ui-table-actions-menu-up {
   border-radius: 10px 10px 0 10px !important;
 }

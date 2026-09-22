@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams, type NavigateFunction } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
@@ -166,6 +166,25 @@ import { SafeImage } from '@/shared/components/media/safe-image'
 type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | 'health'
 
 type ListingSubTab = 'services' | 'consultations'
+
+const PROFILE_TAB_KEYS = new Set<TabKey>([
+  'overview',
+  'service-listings',
+  'availability',
+  'analytics',
+  'health',
+])
+
+const parseProfileTab = (value: string | null): TabKey | null => {
+  if (!value) return null
+  const normalized = value.trim().toLowerCase().replace(/_/g, '-')
+  if (PROFILE_TAB_KEYS.has(normalized as TabKey)) return normalized as TabKey
+  if (normalized === 'listings' || normalized === 'services') return 'service-listings'
+  if (normalized === 'reports' || normalized === 'tickets' || normalized === 'disputes') {
+    return 'health'
+  }
+  return null
+}
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
@@ -1673,7 +1692,8 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
@@ -2729,9 +2749,11 @@ export function ExpertProfileViewPage() {
   const queryClient = useQueryClient()
   const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { id } = useParams<{ id: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { allowNewServiceListings, allowNewConsultationListings } = useServiceListingControls()
   const canCreateListings = allowNewServiceListings || allowNewConsultationListings
-  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const initialTab = parseProfileTab(searchParams.get('tab')) || 'overview'
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
   const [listingSubTab, setListingSubTab] = useState<ListingSubTab>('services')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
@@ -2846,6 +2868,24 @@ export function ExpertProfileViewPage() {
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     scrollToTimelineRef.current = false
   }, [activeTab])
+
+  useEffect(() => {
+    const fromQuery = parseProfileTab(searchParams.get('tab'))
+    if (fromQuery && fromQuery !== activeTab) {
+      setActiveTab(fromQuery)
+    }
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps -- sync URL → tab only
+
+  const selectProfileTab = useCallback(
+    (tab: TabKey) => {
+      setActiveTab(tab)
+      const next = new URLSearchParams(searchParams)
+      if (tab === 'overview') next.delete('tab')
+      else next.set('tab', tab)
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams],
+  )
 
   const navigateToCreateListing = useCallback(() => {
     if (!id) return
@@ -3438,7 +3478,7 @@ export function ExpertProfileViewPage() {
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => selectProfileTab(tab.key)}
                 className={cn(
                   'relative shrink-0 px-3 text-[13px] font-semibold whitespace-nowrap transition-colors sm:flex-1 sm:px-4',
                   activeTab === tab.key

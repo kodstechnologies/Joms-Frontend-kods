@@ -11,14 +11,21 @@ import exportSelectedIcon from '@/assets/JOMS_ICONS-2/icons8-download-24.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   AlertCircle,
+  BadgeCheck,
   Ban,
   Bell,
   CheckSquare,
   CircleArrowDown,
+  ExternalLink,
+  FolderTree,
   Hourglass,
+  LayoutList,
   Mail,
+  MessageSquare,
   PauseCircle,
+  ShoppingBag,
   Tag,
+  Ticket,
   Trash2,
   User,
   Users,
@@ -325,6 +332,10 @@ export const ExpertManagementPage = () => {
   const [bulkMembershipAction, setBulkMembershipAction] = useState<'upgrade' | 'downgrade'>(
     'upgrade',
   )
+  /** When set, membership modal targets this partner instead of table selection. */
+  const [membershipTargetPartnerIds, setMembershipTargetPartnerIds] = useState<string[]>([])
+  const [membershipModalSubscription, setMembershipModalSubscription] =
+    useState<MembershipSubscription | null>(null)
   const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
@@ -346,6 +357,127 @@ export const ExpertManagementPage = () => {
       )
       .map((exp) => exp.id || exp.expertId)
   }, [experts, selectedExpertIds])
+
+  const membershipPartnerIds = useMemo(
+    () =>
+      membershipTargetPartnerIds.length > 0
+        ? membershipTargetPartnerIds
+        : selectedPartnerIds.length > 0
+          ? selectedPartnerIds
+          : selectedExpertIds,
+    [membershipTargetPartnerIds, selectedExpertIds, selectedPartnerIds],
+  )
+
+  const openChangeMembershipForExpert = useCallback(async (expert: Expert) => {
+    const partnerId = String(expert.id || expert.expertId || '').trim()
+    if (!partnerId) {
+      toast.error('Expert partner ID is missing.')
+      return
+    }
+    try {
+      const response = await fetchExpertSubscriptions({
+        partnerIds: partnerId,
+        status: 'active',
+        page: 1,
+        limit: 1,
+      })
+      const subscription =
+        (response.data?.subscriptions ?? []).find(
+          (item) => String(item.partnerId || '').trim() === partnerId,
+        ) ?? null
+      if (!subscription) {
+        toast.error(`${expert.name || 'This expert'} does not have any membership.`)
+        return
+      }
+      setMembershipModalSubscription(subscription)
+      setMembershipTargetPartnerIds([partnerId])
+      setBulkMembershipAction('upgrade')
+      setIsMembershipModalOpen(true)
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'Failed to verify expert membership.'))
+    }
+  }, [])
+
+  const closeMembershipModal = useCallback(() => {
+    setIsMembershipModalOpen(false)
+    setMembershipTargetPartnerIds([])
+    setMembershipModalSubscription(null)
+  }, [])
+
+  const openCommunicateWithExpert = useCallback(
+    (expert: Expert) => {
+      const partnerId = String(expert.id || expert.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openViewMicrosite = useCallback((expert: Expert) => {
+    const url = String(expert.microWebsiteUrl || '').trim()
+    if (!url) {
+      toast.error('Microsite is not set for this expert yet.')
+      return
+    }
+    const href = /^https?:\/\//i.test(url) ? url : `https://${url}`
+    window.open(href, '_blank', 'noopener,noreferrer')
+  }, [])
+
+  const openManageListings = useCallback(
+    (expert: Expert) => {
+      const partnerId = String(expert.id || expert.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}?tab=service-listings`)
+    },
+    [navigate],
+  )
+
+  const openViewOrders = useCallback(
+    (expert: Expert) => {
+      const partnerId = String(expert.id || expert.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}/clientele`)
+    },
+    [navigate],
+  )
+
+  const openViewReportsOrTickets = useCallback(
+    (expert: Expert) => {
+      const partnerId = String(expert.id || expert.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}?tab=health`)
+    },
+    [navigate],
+  )
+
+  const openChangeCategory = useCallback(
+    (expert: Expert) => {
+      const partnerId = String(expert.id || expert.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/create?expertId=${encodeURIComponent(partnerId)}&mode=edit`)
+    },
+    [navigate],
+  )
 
   const selectedExperts = useMemo(() => {
     return experts.filter(
@@ -696,7 +828,16 @@ export const ExpertManagementPage = () => {
               return
             }
 
+            const subscriptions = response.data?.subscriptions ?? []
+            setMembershipModalSubscription(
+              ids.length === 1
+                ? (subscriptions.find((item) => String(item.partnerId || '').trim() === ids[0]) ??
+                    subscriptions[0] ??
+                    null)
+                : null,
+            )
             setBulkMembershipAction(nextAction)
+            setMembershipTargetPartnerIds([])
             setIsMembershipModalOpen(true)
           } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } }
@@ -858,7 +999,8 @@ export const ExpertManagementPage = () => {
             label={`Open actions for ${expert.name}`}
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
-            menuWidth={220}
+            menuWidth={240}
+            maxVisibleItems={8}
           >
             <TableActionsItem
               icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -940,6 +1082,96 @@ export const ExpertManagementPage = () => {
             >
               Report Expert
             </TableActionsItem>
+            <TableActionsItem
+              icon={<MessageSquare className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openCommunicateWithExpert(expert)
+              }}
+            >
+              Communicate with Expert
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<ExternalLink className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewMicrosite(expert)
+              }}
+            >
+              View Microsite
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<LayoutList className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openManageListings(expert)
+              }}
+            >
+              Manage Listings
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<ShoppingBag className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewOrders(expert)
+              }}
+            >
+              View Orders
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<FileText className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewReportsOrTickets(expert)
+              }}
+            >
+              View Reports
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<Ticket className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewReportsOrTickets(expert)
+              }}
+            >
+              View Tickets & Disputes
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<BadgeCheck className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                void openExpertApplicationView(expert, navigate)
+              }}
+            >
+              Verify Expert
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<Gem className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                void openChangeMembershipForExpert(expert)
+              }}
+            >
+              Change Membership
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<FolderTree className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openChangeCategory(expert)
+              }}
+            >
+              Change Category
+            </TableActionsItem>
           </TableActionsDropdown>
         )
       },
@@ -953,12 +1185,19 @@ export const ExpertManagementPage = () => {
     activeDropdownId,
     allVisibleExpertsSelected,
     navigate,
+    openChangeCategory,
+    openChangeMembershipForExpert,
+    openCommunicateWithExpert,
     openDeleteModal,
+    openManageListings,
     openSuspendModal,
     openTagModal,
+    openViewMicrosite,
+    openViewOrders,
+    openViewReportsOrTickets,
     selectedExpertIds,
     someVisibleExpertsSelected,
-    tableColumnPreferencesQuery.data,
+    tableColumnPreferencesQuery.data?.visibleColumnIds,
     toggleExpertSelection,
     toggleVisibleexperts,
   ])
@@ -1266,16 +1505,17 @@ export const ExpertManagementPage = () => {
       {isMembershipModalOpen && (
         <MembershipActionModals
           subscription={
-            {
+            membershipModalSubscription ??
+            ({
               _id: 'bulk-membership-update',
               membershipPlanId: '',
               status: 'active',
-            } as unknown as MembershipSubscription
+            } as unknown as MembershipSubscription)
           }
           action={bulkMembershipAction}
-          onClose={() => setIsMembershipModalOpen(false)}
+          onClose={closeMembershipModal}
           onUpgrade={(payload) => {
-            const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+            const ids = membershipPartnerIds
             bulkUpdateMembershipMutation.mutate(
               {
                 partnerIds: ids,
@@ -1290,7 +1530,7 @@ export const ExpertManagementPage = () => {
                 onSuccess: () => {
                   toast.success(`Membership upgraded for ${ids.length} expert(s)`)
                   setSelectedExpertIds([])
-                  setIsMembershipModalOpen(false)
+                  closeMembershipModal()
                 },
                 onError: (err: unknown) => {
                   const error = err as { response?: { data?: { message?: string } } }
@@ -1300,7 +1540,7 @@ export const ExpertManagementPage = () => {
             )
           }}
           onDowngrade={(payload) => {
-            const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+            const ids = membershipPartnerIds
             bulkUpdateMembershipMutation.mutate(
               {
                 partnerIds: ids,
@@ -1315,7 +1555,7 @@ export const ExpertManagementPage = () => {
                 onSuccess: () => {
                   toast.success(`Membership downgraded for ${ids.length} expert(s)`)
                   setSelectedExpertIds([])
-                  setIsMembershipModalOpen(false)
+                  closeMembershipModal()
                 },
                 onError: (err: unknown) => {
                   const error = err as { response?: { data?: { message?: string } } }

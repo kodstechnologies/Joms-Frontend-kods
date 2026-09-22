@@ -19,11 +19,15 @@ type TableActionsDropdownProps = {
   menuClassName?: string
   buttonClassName?: string
   menuWidth?: number
+  /** When set, menu scrolls after this many visible items (~40px each). */
+  maxVisibleItems?: number
   tone?: 'dark' | 'light'
 }
 
 const MENU_GAP = 8
 const VIEWPORT_PAD = 8
+const ACTION_ITEM_HEIGHT_PX = 40
+const MENU_VERTICAL_PADDING_PX = 12
 
 export function TableActionsDropdown({
   label,
@@ -33,6 +37,7 @@ export function TableActionsDropdown({
   menuClassName,
   buttonClassName,
   menuWidth = 192,
+  maxVisibleItems,
   tone = 'light',
 }: TableActionsDropdownProps) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -85,7 +90,7 @@ export function TableActionsDropdown({
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
     }
-  }, [isOpen, menuWidth, children])
+  }, [isOpen, menuWidth, children, maxVisibleItems])
 
   useEffect(() => {
     if (!isOpen) return
@@ -108,6 +113,15 @@ export function TableActionsDropdown({
     }
   }, [isOpen, onOpenChange])
 
+  const scrollStyle: CSSProperties | undefined =
+    maxVisibleItems && maxVisibleItems > 0
+      ? {
+          maxHeight: MENU_VERTICAL_PADDING_PX + maxVisibleItems * ACTION_ITEM_HEIGHT_PX,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+        }
+      : undefined
+
   const menu = isOpen ? (
     <div
       ref={menuRef}
@@ -116,20 +130,24 @@ export function TableActionsDropdown({
         'ui-table-actions-menu',
         placement?.openUp && 'ui-table-actions-menu-up',
         tone === 'dark' && 'ui-table-actions-menu-dark',
+        maxVisibleItems ? 'ui-table-actions-menu-scroll' : null,
         menuClassName,
       )}
       style={
-        placement?.style ?? {
-          position: 'fixed',
-          top: -9999,
-          left: -9999,
-          width: menuWidth,
-          minWidth: menuWidth,
-          maxWidth: menuWidth,
-          zIndex: 2000,
-          margin: 0,
-          visibility: 'hidden',
-        }
+        placement?.style
+          ? { ...placement.style, ...scrollStyle }
+          : {
+              position: 'fixed',
+              top: -9999,
+              left: -9999,
+              width: menuWidth,
+              minWidth: menuWidth,
+              maxWidth: menuWidth,
+              zIndex: 2000,
+              margin: 0,
+              visibility: 'hidden',
+              ...scrollStyle,
+            }
       }
     >
       {children}

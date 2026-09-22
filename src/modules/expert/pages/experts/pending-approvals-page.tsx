@@ -1,9 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Ban, CheckCircle2, Eye, FileText } from 'lucide-react'
+import { Ban, CheckCircle2, Eye, FileText, MessageSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
+import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import { fetchExpertApplicationView, updateExpertKycStatus } from '../../api/expert-application-api'
 import {
@@ -48,6 +51,7 @@ const filterPendingExperts = (experts: Expert[]) =>
 export function ExpertPendingApprovalsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { fileFormat } = useDefaultExportFormat()
   const [revokeExpertTarget, setRevokeExpertTarget] = useState<Expert | null>(null)
   const [approveExpertTarget, setApproveExpertTarget] = useState<Expert | null>(null)
   const [approveAdminNotes, setApproveAdminNotes] = useState('')
@@ -91,6 +95,44 @@ export function ExpertPendingApprovalsPage() {
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: revokeReasonOptions, buildPayload: buildRevokeReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
+
+  const openCommunicateWithExpert = useCallback(
+    (expert: Expert) => {
+      const partnerId = String(expert.id || expert.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const handleExportExpertRow = useCallback(
+    async (expert: Expert) => {
+      try {
+        await exportMappedItemsToFile(
+          EXPERT_PENDING_EXPORT_COLUMN_MAP,
+          [expert],
+          fileFormat,
+          `pending_expert_${expert.expertId || expert.id}`,
+          {
+            columnIds: visibleColumnIds,
+            catalogOrder: DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS,
+          },
+        )
+        toast.success('Expert exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export expert'))
+      }
+    },
+    [fileFormat, visibleColumnIds],
+  )
 
   const toggleRevokeReason = useCallback((value: string) => {
     setRevokeReasons((current) =>
@@ -269,7 +311,8 @@ export function ExpertPendingApprovalsPage() {
                 label={`Open actions for ${expert.name}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
-                menuWidth={220}
+                menuWidth={240}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -320,6 +363,24 @@ export function ExpertPendingApprovalsPage() {
                 >
                   Reject Application
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    openCommunicateWithExpert(expert)
+                  }}
+                >
+                  Communicate with Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<ExportDataIcon className="size-3.5" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    void handleExportExpertRow(expert)
+                  }}
+                >
+                  Export Record
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -327,7 +388,15 @@ export function ExpertPendingApprovalsPage() {
       ],
       EXPERT_COLUMN_SORT_FIELDS,
     )
-  }, [activeDropdownId, navigate, selection, visibleColumnIds])
+  }, [
+    activeDropdownId,
+    handleExportExpertRow,
+    navigate,
+    openCommunicateWithExpert,
+    selection,
+    setActiveDropdownId,
+    visibleColumnIds,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
