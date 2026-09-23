@@ -339,7 +339,7 @@ export const EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIt
     id: 'microsite-status',
     label: 'Microsite Status',
     type: 'Status',
-    description: 'Public microsite Active / Hidden',
+    description: 'Public microsite Active / Suspended',
     defaultVisible: false,
   },
   {

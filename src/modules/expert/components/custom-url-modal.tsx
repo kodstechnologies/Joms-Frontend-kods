@@ -84,7 +84,7 @@ function CustomUrlModalContent({
                     type="button"
                     role="switch"
                     aria-checked={visible}
-                    aria-label="Show custom URL on profile"
+                    aria-label="Activate or suspend custom URL microsite"
                     disabled={!details?.link || isSaving}
                     onClick={() => {
                       if (!details?.link) {
@@ -111,8 +111,8 @@ function CustomUrlModalContent({
                 </div>
                 <p className="text-body-sm text-muted mt-2">
                   {visible
-                    ? 'Custom URL is visible in the Profile section.'
-                    : 'Custom URL is hidden from the Profile section.'}
+                    ? 'Custom URL is active — visible in Profile and the partner app.'
+                    : 'Custom URL is suspended — partner app shows "Custom URL unavailable" and the public microsite is offline.'}
                 </p>
               </div>
 

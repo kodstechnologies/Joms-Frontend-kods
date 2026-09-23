@@ -629,7 +629,7 @@ function ProfileSidebar({
                 onClick={() => onOpenCustomUrl?.()}
                 className="text-right text-[16px] leading-5 font-semibold tracking-normal text-white/50 underline decoration-solid transition-colors hover:text-[#E0A263]"
               >
-                Hidden
+                Suspended
               </button>
             )
           ) : (
@@ -3603,8 +3603,8 @@ export function ExpertProfileViewPage() {
             onSuccess: () => {
               toast.success(
                 visible
-                  ? 'Custom URL is now visible on the profile'
-                  : 'Custom URL is now hidden from the profile',
+                  ? 'Custom URL reinstated — visible on profile and partner app'
+                  : 'Custom URL suspended — partner app will show Custom URL unavailable',
               )
             },
             onError: (error) => {
