@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, RotateCcw } from 'lucide-react'
+import { Eye, MessageSquare, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
@@ -12,7 +12,7 @@ import { useRestoreVenue } from '../../hooks/use-venues'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
-import { getVenueApiId, getVenueDisplayId } from '../../utils/venue-list'
+import { getVenueApiId, getVenueDisplayId, getVenuePartnerId } from '../../utils/venue-list'
 import {
   buildVenueDataColumnsById,
   createVenueSelectColumn,
@@ -91,6 +91,23 @@ export function VenueDeletedPage() {
     [restoreVenueMutation],
   )
 
+  const openCommunicateWithHost = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
   const columns = useMemo<ColumnDef<Venue>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
     return withServerSortMeta(
@@ -121,7 +138,8 @@ export function VenueDeletedPage() {
                 label={`Open actions for ${venue.venueName}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? venue._id : null)}
-                menuWidth={192}
+                menuWidth={200}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -150,6 +168,15 @@ export function VenueDeletedPage() {
                 >
                   Export Data
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithHost(venue)
+                  }}
+                >
+                  Communicate with Host
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -157,7 +184,7 @@ export function VenueDeletedPage() {
       ],
       VENUE_DELETED_SORT_FIELDS,
     )
-  }, [handleExportVenueRow, handleRestore, list, navigate])
+  }, [handleExportVenueRow, handleRestore, list, navigate, openCommunicateWithHost])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ClipboardList, Trash2 } from 'lucide-react'
+import { ClipboardList, Trash2, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import {
   MODERATION_CATEGORY_SLUGS,
@@ -49,6 +50,7 @@ import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   buildReferralListQueryParams,
   createReferralFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -62,6 +64,8 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 
 const REFERRAL_SORT_FIELD_MAP = buildCatalogSortFieldMap(REFERRALS_TABLE_COLUMNS_CATALOG, {
   'referred-at': 'referredAt',
@@ -455,6 +459,7 @@ export function ReferralManagementPage() {
   const [deleteSelectedReasons, setDeleteSelectedReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const { fileFormat } = useDefaultExportFormat()
 
   const {
     options: deleteReasonOptions,
@@ -614,7 +619,8 @@ export function ReferralManagementPage() {
           label="Open expert referral actions"
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? id : null)}
-          menuWidth={178}
+          menuWidth={200}
+          maxVisibleItems={8}
         >
           <TableActionsItem
             icon={<ClipboardList className="size-3.5" strokeWidth={1.75} />}
@@ -638,10 +644,87 @@ export function ReferralManagementPage() {
           >
             Delete Referral
           </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-3.5" strokeWidth={1.75} />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              const referrerId = String(record.referrerUserId || record.referrerId || '').trim()
+              const sourceType = String(record.sourceType || '').toLowerCase()
+              const referrerName = String(record.referrerName || '')
+                .trim()
+                .toLowerCase()
+              const referrerType = String(record.referrerType || '').toLowerCase()
+              const isPlatformReferrer =
+                referrerType === 'admin' ||
+                sourceType.includes('platform') ||
+                referrerName === 'admin' ||
+                (!referrerId && !sourceType.includes('expert'))
+
+              if (isPlatformReferrer) {
+                const authUser = useAuthStore.getState().user
+                const isCurrentAdmin =
+                  !referrerId ||
+                  Boolean(
+                    authUser &&
+                    (String(authUser.id) === referrerId ||
+                      String(authUser.subAdminId || '') === referrerId),
+                  )
+                navigate(
+                  isCurrentAdmin
+                    ? '/settings/access/my-profile'
+                    : `/settings/access/users/${referrerId}`,
+                )
+                return
+              }
+
+              if (!referrerId) {
+                toast.error('Referrer profile ID is missing.')
+                return
+              }
+
+              void openPartnerProfile(
+                {
+                  id: referrerId,
+                  partnerId: referrerId,
+                  serviceType: referrerType.includes('venue') ? 'venue' : undefined,
+                },
+                navigate,
+              )
+            }}
+          >
+            View Referrer Profile
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<ExportDataIcon className="size-3.5" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void exportMappedItemsToFile(
+                EXPORT_COLUMN_MAP,
+                [record],
+                fileFormat,
+                `referral_${record.referralId}`,
+                { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+              )
+                .then(() => toast.success('Referral details exported'))
+                .catch((error) =>
+                  toast.error(getApiErrorMessage(error, 'Failed to export referral details')),
+                )
+            }}
+          >
+            Export Referral Details
+          </TableActionsItem>
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, handleResend, openDeleteModal],
+    [
+      activeDropdownId,
+      catalogColumnIds,
+      exportColumnIds,
+      fileFormat,
+      handleResend,
+      navigate,
+      openDeleteModal,
+    ],
   )
 
   const expertColumns = useMemo<ColumnDef<ExpertInvite>[]>(() => {

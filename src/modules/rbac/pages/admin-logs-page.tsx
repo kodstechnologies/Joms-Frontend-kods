@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, ExternalLink, FileText, Flag, UserRound } from 'lucide-react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useFlagAuditLog, useMySubAdminLogs, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac'
@@ -35,8 +35,10 @@ import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildPrefixedListQueryParams,
   createPrefixedListExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { formatDateTimeEnInLogs as formatDateTime } from '@/shared/lib/format-datetime'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 const PAGE_SIZE = 10
 
@@ -272,6 +274,7 @@ export function AdminLogsPage() {
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
   const [roleUsersModalId, setRoleUsersModalId] = useState<string | null>(null)
   const [flagLogId, setFlagLogId] = useState<string | null>(null)
+  const { fileFormat } = useDefaultExportFormat()
 
   const logParams = useMemo(
     () =>
@@ -431,6 +434,7 @@ export function AdminLogsPage() {
           label="Open log actions"
           isOpen={activeDropdownId === logId}
           onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
+          maxVisibleItems={8}
         >
           <TableActionsItem icon={<FileText className="size-3.5" />} onClick={openHistory}>
             View Pre-Version
@@ -445,10 +449,26 @@ export function AdminLogsPage() {
           >
             {log.flagged ? 'Already Flagged' : 'Flag Action'}
           </TableActionsItem>
+          <TableActionsItem
+            icon={<ExportDataIcon className="size-3.5" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void exportMappedItemsToFile(
+                LOG_EXPORT_COLUMN_MAP,
+                [log],
+                fileFormat,
+                `audit_log_${logId || 'row'}`,
+              )
+                .then(() => toast.success('Log exported'))
+                .catch((error) => toast.error(getApiErrorMessage(error, 'Failed to export log')))
+            }}
+          >
+            Export Logs
+          </TableActionsItem>
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, openFlagModal, openHistory],
+    [activeDropdownId, fileFormat, openFlagModal, openHistory],
   )
 
   const userColumns = useMemo<ColumnDef<AuditLog>[]>(

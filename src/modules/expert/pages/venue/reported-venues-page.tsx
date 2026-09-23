@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Ban, Eye } from 'lucide-react'
+import { Ban, Eye, MessageSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { fetchVenueReports } from '../../api/venue-api'
 import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
@@ -48,6 +49,23 @@ export function VenueReportedVenuesPage() {
     catalogColumnIds: VENUE_REPORTED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
+  const openCommunicateWithHost = useCallback(
+    (reportItem: VenueReportItem) => {
+      const partnerId = String(reportItem.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
   const columns = useMemo<ColumnDef<VenueReportItem>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
     return withServerSortMeta(
@@ -72,7 +90,8 @@ export function VenueReportedVenuesPage() {
                 label={`Open actions for report ${reportItem.reportId}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? reportItem.reportId : null)}
-                menuWidth={176}
+                menuWidth={200}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -93,6 +112,15 @@ export function VenueReportedVenuesPage() {
                 >
                   View Report
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithHost(reportItem)
+                  }}
+                >
+                  Communicate with Host
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -100,7 +128,7 @@ export function VenueReportedVenuesPage() {
       ],
       VENUE_REPORTED_SORT_FIELDS,
     )
-  }, [list, navigate])
+  }, [list, navigate, openCommunicateWithHost])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

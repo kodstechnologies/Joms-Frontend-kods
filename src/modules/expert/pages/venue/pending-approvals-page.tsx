@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye, MessageSquare, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
@@ -10,7 +11,8 @@ import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import type { Venue } from '../../type/venue'
-import { getVenueApiId } from '../../utils/venue-list'
+import { getVenueApiId, getVenuePartnerId } from '../../utils/venue-list'
+import { openVenuePartnerProfile } from '../../utils/expert-application-navigation'
 import {
   buildVenueDataColumnsById,
   createVenueSelectColumn,
@@ -47,6 +49,35 @@ export function VenuePendingApprovalsPage() {
     catalogColumnIds: VENUE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
+  const openCommunicateWithHost = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openViewHostProfile = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      void openVenuePartnerProfile(partnerId, navigate)
+    },
+    [navigate],
+  )
+
   const columns = useMemo<ColumnDef<Venue>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
     return withServerSortMeta(
@@ -81,6 +112,7 @@ export function VenuePendingApprovalsPage() {
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? venue._id : null)}
                 menuWidth={190}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -111,6 +143,24 @@ export function VenuePendingApprovalsPage() {
                     Approve Application
                   </TableActionsItem>
                 ) : null}
+                <TableActionsItem
+                  icon={<User className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openViewHostProfile(venue)
+                  }}
+                >
+                  View Host Profile
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithHost(venue)
+                  }}
+                >
+                  Communicate with Host
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -118,7 +168,7 @@ export function VenuePendingApprovalsPage() {
       ],
       VENUE_PENDING_SORT_FIELDS,
     )
-  }, [allowApproveVenues, list, navigate])
+  }, [allowApproveVenues, list, navigate, openCommunicateWithHost, openViewHostProfile])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

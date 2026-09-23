@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, PlayCircle, Plus } from 'lucide-react'
+import { Eye, MessageSquare, PlayCircle, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -9,7 +9,7 @@ import { useActivateVenue } from '../../hooks/use-venues'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
-import { getVenueApiId } from '../../utils/venue-list'
+import { getVenueApiId, getVenuePartnerId } from '../../utils/venue-list'
 import {
   buildVenueDataColumnsById,
   createVenueSelectColumn,
@@ -61,6 +61,23 @@ export function VenueSuspendedPage() {
     [activateVenueMutation],
   )
 
+  const openCommunicateWithHost = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
   const columns = useMemo<ColumnDef<Venue>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
     return withServerSortMeta(
@@ -94,7 +111,8 @@ export function VenueSuspendedPage() {
                 label={`Open actions for ${venue.venueName}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? venue._id : null)}
-                menuWidth={176}
+                menuWidth={200}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -114,6 +132,15 @@ export function VenueSuspendedPage() {
                 >
                   Active Venue
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithHost(venue)
+                  }}
+                >
+                  Communicate with Host
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -121,7 +148,7 @@ export function VenueSuspendedPage() {
       ],
       VENUE_SUSPENDED_SORT_FIELDS,
     )
-  }, [handleActivate, list, navigate])
+  }, [handleActivate, list, navigate, openCommunicateWithHost])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

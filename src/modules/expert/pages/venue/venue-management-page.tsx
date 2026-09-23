@@ -15,6 +15,8 @@ import {
   Bell,
   Mail,
   FileText,
+  MessageSquare,
+  User,
   XCircle,
   EyeOff,
   Hourglass,
@@ -94,7 +96,10 @@ import {
   escalateVenueSpaceApplication,
 } from '@/modules/my-tasks/api/escalation-api'
 import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
-import { getVenueKycApplicationPath } from '../../utils/expert-application-navigation'
+import {
+  getVenueKycApplicationPath,
+  openVenuePartnerProfile,
+} from '../../utils/expert-application-navigation'
 
 type ManagementMetric = {
   id: string
@@ -534,6 +539,58 @@ export const VenueManagementPage = () => {
     })
     navigate(`/communication/create?${params.toString()}`)
   }, [navigate, selectedPartnerIds])
+
+  const openCommunicateWithHost = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openViewHostProfile = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      void openVenuePartnerProfile(partnerId, navigate)
+    },
+    [navigate],
+  )
+
+  const handleExportVenueRow = useCallback(
+    async (venue: Venue) => {
+      try {
+        await exportMappedItemsToFile(
+          EXPORT_COLUMN_MAP,
+          [venue],
+          fileFormat,
+          `venue_${getVenueDisplayId(venue)}`,
+          { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+        )
+        toast.success('Venue exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export venue'))
+      }
+    },
+    [catalogColumnIds, exportColumnIds, fileFormat],
+  )
+
+  const openEscalateForVenue = useCallback((venue: Venue) => {
+    setSelectedVenueIds([venue._id])
+    setIsEscalateModalOpen(true)
+  }, [])
 
   const handleEscalateSubmit = useCallback(async () => {
     if (selectedVenues.length === 0) {
@@ -1203,6 +1260,7 @@ export const VenueManagementPage = () => {
             label={`Open actions for ${venue.venueName}`}
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
+            maxVisibleItems={8}
           >
             <TableActionsItem
               icon={<LayoutDashboard className="size-3.5 text-slate-700" />}
@@ -1249,6 +1307,50 @@ export const VenueManagementPage = () => {
             >
               Delete Venue
             </TableActionsItem>
+
+            <TableActionsItem
+              icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewHostProfile(venue)
+              }}
+            >
+              View Host Profile
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<MessageSquare className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openCommunicateWithHost(venue)
+              }}
+            >
+              Communicate with Host
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<FileText className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openEscalateForVenue(venue)
+              }}
+            >
+              Escalate
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<ExportDataIcon className="size-3.5" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                void handleExportVenueRow(venue)
+              }}
+            >
+              Export Venue Data
+            </TableActionsItem>
           </TableActionsDropdown>
         )
       },
@@ -1262,10 +1364,14 @@ export const VenueManagementPage = () => {
     activeDropdownId,
     allVisibleVenuesSelected,
     allowDisableVenues,
+    handleExportVenueRow,
     navigate,
+    openCommunicateWithHost,
     openDeleteModal,
+    openEscalateForVenue,
     openSuspendModal,
     openTagModal,
+    openViewHostProfile,
     selectedVenueIds,
     someVisibleVenuesSelected,
     tableColumnPreferencesQuery.data,

@@ -7419,6 +7419,7 @@ select::-ms-expand {
   background: var(--brand-surface);
   color: var(--brand-text);
   box-shadow: 0 24px 80px rgb(0 0 0 / 65%);
+  text-align: left;
 }
 
 .ui-modal-header {

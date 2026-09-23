@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useNavigate } from 'react-router-dom'
-import { Eye, Tag, Trash2 } from 'lucide-react'
+import { Eye, Tag, Trash2, UserPlus, UserRoundCog } from 'lucide-react'
 import editIcon from '@/assets/JOMS_ICONS-2/edit-text.svg'
 import changeStatusIcon from '@/assets/JOMS_ICONS-2/icons8-data-transfer-24.svg'
 import changePriorityIcon from '@/assets/JOMS_ICONS-2/change-priority.svg'
@@ -12,7 +12,11 @@ import { toast } from 'sonner'
 import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
-import { EscalateTicketModal } from '../components/reassign-ticket-modal'
+import {
+  AssignTicketModal,
+  EscalateTicketModal,
+  ReassignTicketModal,
+} from '../components/reassign-ticket-modal'
 import { EscalationStatusBadge } from '../components/escalation-status-badge'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
@@ -33,9 +37,11 @@ import {
   TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '../config/ticket-management-table-columns.config'
 import {
+  useAssignSupportTicket,
   useDeleteSupportTicket,
   useEscalateSupportTicket,
   useLiveSupportUpdates,
+  useSupportAgents,
   useSupportTickets,
   useUpdateSupportTicket,
 } from '../hooks/use-support'
@@ -82,6 +88,7 @@ import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-util
 import {
   buildSupportTicketsListQueryParams,
   createSupportTicketsFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchSupportTickets } from '../api/support-api'
 
@@ -236,6 +243,9 @@ export function TicketManagementPage() {
   const [tagModalOpen, setTagModalOpen] = useState(false)
   const [escalateOpen, setEscalateOpen] = useState(false)
   const [escalateTicketId, setEscalateTicketId] = useState<string | null>(null)
+  const [assignOpen, setAssignOpen] = useState(false)
+  const [assignTicketId, setAssignTicketId] = useState<string | null>(null)
+  const [assignMode, setAssignMode] = useState<'assign' | 'reassign'>('assign')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -257,7 +267,9 @@ export function TicketManagementPage() {
   const { data, isLoading } = useSupportTickets(listQueryParams)
   const updateMutation = useUpdateSupportTicket()
   const escalateMutation = useEscalateSupportTicket()
+  const assignMutation = useAssignSupportTicket()
   const deleteMutation = useDeleteSupportTicket()
+  const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
   const tableColumnPreferencesQuery = useTableColumnPreferences(TICKET_MANAGEMENT_MODULE_KEY)
 
@@ -389,6 +401,7 @@ export function TicketManagementPage() {
     (record: SupportTicket) => {
       const id = record.id
       const isOpen = activeDropdownId === id
+      const isAssigned = Boolean(record.assignedToId)
 
       return (
         <TableActionsDropdown
@@ -396,6 +409,7 @@ export function TicketManagementPage() {
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? id : null)}
           menuWidth={210}
+          maxVisibleItems={8}
         >
           <TableActionsItem
             icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -483,6 +497,51 @@ export function TicketManagementPage() {
           >
             Escalate
           </TableActionsItem>
+          {!isAssigned ? (
+            <TableActionsItem
+              icon={<UserPlus className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+              onClick={() => {
+                setActiveDropdownId(null)
+                setAssignMode('assign')
+                setAssignTicketId(id)
+                setAssignOpen(true)
+              }}
+            >
+              Assign Ticket
+            </TableActionsItem>
+          ) : (
+            <TableActionsItem
+              icon={<UserRoundCog className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+              onClick={() => {
+                setActiveDropdownId(null)
+                setAssignMode('reassign')
+                setAssignTicketId(id)
+                setAssignOpen(true)
+              }}
+            >
+              Reassign Ticket
+            </TableActionsItem>
+          )}
+          <TableActionsItem
+            icon={<ExportDataIcon className="size-3.5" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+            onClick={() => {
+              setActiveDropdownId(null)
+              void exportMappedItemsToFile(
+                EXPORT_COLUMN_MAP,
+                [record],
+                fileFormat,
+                `ticket_${id}`,
+                { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+              )
+                .then(() => toast.success('Ticket exported'))
+                .catch((error) => toast.error(getApiErrorMessage(error, 'Failed to export ticket')))
+            }}
+          >
+            Export Ticket
+          </TableActionsItem>
           <TableActionsItem
             icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
@@ -501,7 +560,16 @@ export function TicketManagementPage() {
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, deleteMutation, navigate, setSelectedTicketId, updateMutation],
+    [
+      activeDropdownId,
+      catalogColumnIds,
+      deleteMutation,
+      exportColumnIds,
+      fileFormat,
+      navigate,
+      setSelectedTicketId,
+      updateMutation,
+    ],
   )
 
   const columns = useMemo<ColumnDef<SupportTicket>[]>(() => {
@@ -740,6 +808,7 @@ export function TicketManagementPage() {
 
   const activeTicket = tickets.find((t) => t.id === activeTicketId)
   const escalateTicket = tickets.find((t) => t.id === escalateTicketId)
+  const assignTicket = tickets.find((t) => t.id === assignTicketId)
   const escalatePermission = getSupportModuleEscalationPermission(escalateTicket?.module)
   const escalateAssigneesQuery = useEscalationAssignees(escalatePermission)
   const escalateAgents = useMemo(() => {
@@ -900,6 +969,68 @@ export function TicketManagementPage() {
           }
         }}
       />
+
+      {assignMode === 'assign' ? (
+        <AssignTicketModal
+          open={assignOpen}
+          agents={agentsQuery.data?.data?.agents ?? []}
+          isLoading={agentsQuery.isFetching}
+          currentAssigneeId={assignTicket?.assignedToId}
+          isSubmitting={assignMutation.isPending}
+          onClose={() => {
+            setAssignOpen(false)
+            setAssignTicketId(null)
+          }}
+          onSelect={async (agent) => {
+            if (!assignTicketId) return
+            try {
+              await assignMutation.mutateAsync({
+                id: assignTicketId,
+                payload: {
+                  assignedToId: agent.id,
+                  assignedToName: agent.name,
+                  assignedToAvatarUrl: agent.avatarUrl,
+                },
+              })
+              setAssignOpen(false)
+              setAssignTicketId(null)
+              toast.success(`Ticket assigned to ${agent.name}`)
+            } catch (err) {
+              toast.error(getApiErrorMessage(err, 'Failed to assign ticket'))
+            }
+          }}
+        />
+      ) : (
+        <ReassignTicketModal
+          open={assignOpen}
+          agents={agentsQuery.data?.data?.agents ?? []}
+          isLoading={agentsQuery.isFetching}
+          currentAssigneeId={assignTicket?.assignedToId}
+          isSubmitting={assignMutation.isPending}
+          onClose={() => {
+            setAssignOpen(false)
+            setAssignTicketId(null)
+          }}
+          onSelect={async (agent) => {
+            if (!assignTicketId) return
+            try {
+              await assignMutation.mutateAsync({
+                id: assignTicketId,
+                payload: {
+                  assignedToId: agent.id,
+                  assignedToName: agent.name,
+                  assignedToAvatarUrl: agent.avatarUrl,
+                },
+              })
+              setAssignOpen(false)
+              setAssignTicketId(null)
+              toast.success(`Ticket reassigned to ${agent.name}`)
+            } catch (err) {
+              toast.error(getApiErrorMessage(err, 'Failed to reassign ticket'))
+            }
+          }}
+        />
+      )}
       {exportFilterModals}
     </div>
   )

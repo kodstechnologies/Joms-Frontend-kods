@@ -209,7 +209,7 @@ export function CommunicationDetails() {
           </div>
         ) : null}
 
-        <div className="border-t border-white/[0.06] pt-5">
+        <div id="delivery-report" className="scroll-mt-24 border-t border-white/[0.06] pt-5">
           <p className="text-body-sm-semibold text-brand-text mb-4">Delivery Analytics</p>
           {data.deliveryMeta?.note ? (
             <p className="text-body-sm text-muted mb-4">{data.deliveryMeta.note}</p>

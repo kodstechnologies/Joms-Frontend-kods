@@ -154,6 +154,20 @@ export function ReassignTicketModal(
   )
 }
 
+export function AssignTicketModal(
+  props: Omit<SupportAgentPickerModalProps, 'title' | 'confirmLabel' | 'selectedBadgeLabel'>,
+) {
+  if (!props.open) return null
+  return (
+    <SupportNameSelectModal
+      {...props}
+      title="Assign ticket"
+      description="Are you sure you want to assign this ticket? This ticket will be handled by the selected party."
+      submitLabel="Assign"
+    />
+  )
+}
+
 function SupportNameSelectModal({
   open,
   agents,

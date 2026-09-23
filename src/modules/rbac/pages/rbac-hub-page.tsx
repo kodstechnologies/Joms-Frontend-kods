@@ -1,24 +1,27 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Clock, Shield, UserCheck } from 'lucide-react'
 import {
-  CircleX,
-  Clock,
-  FileText,
-  Pencil,
-  RefreshCw,
-  RotateCcw,
-  Shield,
-  ShieldOff,
-  UserCheck,
-  UserMinus,
-  UserPlus,
-  Waypoints,
-} from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+  AccessAssignUserIcon,
+  AccessChangeRoleIcon,
+  AccessDisableRoleIcon,
+  AccessEditPermissionIcon,
+  AccessEditScopeIcon,
+  AccessPasswordResetIcon,
+  AccessRemoveRoleIcon,
+  AccessRemoveUserIcon,
+  AccessSuspendUserIcon,
+  AccessViewLogsIcon,
+  AccessViewUserIcon,
+  AccessViewUserLogsIcon,
+  ExportDataIcon,
+  ManageMetricsIcon,
+} from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createNewRoleIcon from '@/assets/JOMS_ICONS-2/create-new-role.svg'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { RbacStatsBar } from '../components/rbac-stats-bar'
 import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
 import {
@@ -69,6 +72,7 @@ import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildRbacListQueryParams,
   createRbacFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 
@@ -211,6 +215,7 @@ export function RbacHubPage() {
   })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [passwordResetUser, setPasswordResetUser] = useState<SubAdmin | null>(null)
+  const { fileFormat } = useDefaultExportFormat()
 
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -376,6 +381,27 @@ export function RbacHubPage() {
       setActiveDropdownId(null)
     },
     [deleteRoleMutation],
+  )
+
+  const handleExportRole = useCallback(
+    async (role: Role) => {
+      try {
+        await exportMappedItemsToFile(
+          EXPORT_ROLE_COLUMN_MAP,
+          [role],
+          fileFormat,
+          `role_${role.roleCode || role.id}`,
+          {
+            columnIds: rolesExportColumnIds,
+            catalogOrder: DEFAULT_RBAC_HUB_ROLES_VISIBLE_COLUMN_IDS,
+          },
+        )
+        toast.success('Role exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export role'))
+      }
+    },
+    [fileFormat, rolesExportColumnIds],
   )
 
   const handleSuspendUser = useCallback(
@@ -574,9 +600,10 @@ export function RbacHubPage() {
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
           menuWidth={180}
+          maxVisibleItems={8}
         >
           <TableActionsItem
-            icon={<Pencil className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessEditPermissionIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/roles/${row.original.id}/edit`)
@@ -586,7 +613,7 @@ export function RbacHubPage() {
           </TableActionsItem>
           <TableActionsItem
             className="ui-table-actions-item-danger"
-            icon={<CircleX className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessRemoveRoleIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               handleDeleteRole(row.original.id)
@@ -596,7 +623,7 @@ export function RbacHubPage() {
           </TableActionsItem>
           {row.original.status === 'active' ? (
             <TableActionsItem
-              icon={<ShieldOff className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+              icon={<AccessDisableRoleIcon />}
               onClick={() => {
                 setActiveDropdownId(null)
                 handleDisableRole(row.original.id)
@@ -608,7 +635,7 @@ export function RbacHubPage() {
             <TableActionsItem
               icon={
                 <Shield
-                  className="text-brand-success size-4"
+                  className="text-brand-success size-3.5"
                   strokeWidth={1.85}
                   aria-hidden="true"
                 />
@@ -622,7 +649,7 @@ export function RbacHubPage() {
             </TableActionsItem>
           )}
           <TableActionsItem
-            icon={<Pencil className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessEditScopeIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/roles/${row.original.id}/edit`)
@@ -631,7 +658,7 @@ export function RbacHubPage() {
             Edit scope
           </TableActionsItem>
           <TableActionsItem
-            icon={<UserPlus className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessAssignUserIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate('/settings/access/users/create')
@@ -640,13 +667,22 @@ export function RbacHubPage() {
             Assign new user
           </TableActionsItem>
           <TableActionsItem
-            icon={<FileText className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessViewLogsIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/roles/${row.original.id}/logs`)
             }}
           >
             View Logs
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<ExportDataIcon className="size-3.5" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void handleExportRole(row.original)
+            }}
+          >
+            Export Role
           </TableActionsItem>
         </TableActionsDropdown>
       ),
@@ -658,6 +694,7 @@ export function RbacHubPage() {
     handleDeleteRole,
     handleDisableRole,
     handleEnableRole,
+    handleExportRole,
     navigate,
     tableColumnPreferencesQuery.data,
   ])
@@ -775,9 +812,10 @@ export function RbacHubPage() {
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
           menuWidth={180}
+          maxVisibleItems={8}
         >
           <TableActionsItem
-            icon={<FileText className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessViewUserIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/users/${row.original.id}`)
@@ -786,7 +824,7 @@ export function RbacHubPage() {
             View user
           </TableActionsItem>
           <TableActionsItem
-            icon={<RefreshCw className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessChangeRoleIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/users/create?edit=${row.original.id}`)
@@ -795,7 +833,7 @@ export function RbacHubPage() {
             Change role
           </TableActionsItem>
           <TableActionsItem
-            icon={<Waypoints className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessViewUserLogsIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/users/${row.original.id}/logs`)
@@ -804,7 +842,7 @@ export function RbacHubPage() {
             View user logs
           </TableActionsItem>
           <TableActionsItem
-            icon={<RotateCcw className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessPasswordResetIcon />}
             onClick={() => {
               setPasswordResetUser(row.original)
               setActiveDropdownId(null)
@@ -813,7 +851,7 @@ export function RbacHubPage() {
             Password reset
           </TableActionsItem>
           <TableActionsItem
-            icon={<UserMinus className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+            icon={<AccessRemoveUserIcon />}
             onClick={() => {
               setActiveDropdownId(null)
               handleDeleteUser(row.original.id)
@@ -824,7 +862,7 @@ export function RbacHubPage() {
           {row.original.status === 'active' ? (
             <TableActionsItem
               className="ui-table-actions-item-danger"
-              icon={<CircleX className="size-4" strokeWidth={1.85} aria-hidden="true" />}
+              icon={<AccessSuspendUserIcon />}
               onClick={() => {
                 setActiveDropdownId(null)
                 handleSuspendUser(row.original.id)
@@ -836,7 +874,7 @@ export function RbacHubPage() {
             <TableActionsItem
               icon={
                 <UserCheck
-                  className="text-brand-success size-4"
+                  className="text-brand-success size-3.5"
                   strokeWidth={1.85}
                   aria-hidden="true"
                 />

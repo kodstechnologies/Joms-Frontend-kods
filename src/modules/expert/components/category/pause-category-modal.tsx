@@ -112,7 +112,7 @@ function PauseCategoryModalDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="pause-category-modal-title"
-        className="ui-modal-shell w-full max-w-[584px]"
+        className="ui-modal-shell w-full max-w-[584px] text-left"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="ui-modal-header">

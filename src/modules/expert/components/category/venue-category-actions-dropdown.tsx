@@ -1,13 +1,17 @@
-import { useState } from 'react'
-import { Pencil, Pause, PlusSquare, X } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Ban, Pencil, PlusSquare, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import type { VenueCategory } from './venue-category-table-columns'
 import { CATEGORY_ACTION_ITEM_CLASS } from './category-list-shared'
@@ -17,6 +21,11 @@ import {
   useSoftDeleteVenueCategory,
 } from '../../hooks/use-venue-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import {
+  DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+} from '../../config/venue-category-management-table-columns.config'
 
 interface Props {
   category: VenueCategory
@@ -24,10 +33,29 @@ interface Props {
 
 export function VenueCategoryActionsDropdown({ category }: Props) {
   const [open, setOpen] = useState(false)
-  const [pauseModalOpen, setPauseModalOpen] = useState(false)
+  const [disableModalOpen, setDisableModalOpen] = useState(false)
   const navigate = useNavigate()
   const pauseMutation = usePauseVenueCategory()
   const softDeleteMutation = useSoftDeleteVenueCategory()
+  const { fileFormat } = useDefaultExportFormat()
+
+  const handleExportData = useCallback(async () => {
+    try {
+      await exportMappedItemsToFile(
+        VENUE_CATEGORY_EXPORT_COLUMN_MAP,
+        [category],
+        fileFormat,
+        `venue_category_${category.categoryId || category.id}`,
+        {
+          columnIds: DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+          catalogOrder: VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((c) => c.id),
+        },
+      )
+      toast.success('Category exported')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export category'))
+    }
+  }, [category, fileFormat])
 
   return (
     <>
@@ -36,6 +64,7 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
         isOpen={open}
         onOpenChange={setOpen}
         menuWidth={220}
+        maxVisibleItems={8}
       >
         <TableActionsItem
           className={CATEGORY_ACTION_ITEM_CLASS}
@@ -63,11 +92,11 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
           className={CATEGORY_ACTION_ITEM_CLASS}
           onClick={() => {
             setOpen(false)
-            setPauseModalOpen(true)
+            setDisableModalOpen(true)
           }}
-          icon={<Pause className="size-3.5 text-slate-700" aria-hidden="true" />}
+          icon={<Ban className="size-3.5 text-slate-700" aria-hidden="true" />}
         >
-          Pause Category
+          Disable
         </TableActionsItem>
 
         <TableActionsItem
@@ -87,22 +116,35 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
         >
           <span className="text-red-500">Remove Category</span>
         </TableActionsItem>
+
+        <TableActionsItem
+          className={CATEGORY_ACTION_ITEM_CLASS}
+          onClick={() => {
+            setOpen(false)
+            void handleExportData()
+          }}
+          icon={<ExportDataIcon className="size-3.5" />}
+        >
+          Export Data
+        </TableActionsItem>
       </TableActionsDropdown>
 
       <PauseCategoryModal
-        open={pauseModalOpen}
-        onClose={() => setPauseModalOpen(false)}
+        open={disableModalOpen}
+        onClose={() => setDisableModalOpen(false)}
         reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseCategory}
-        submitLabel="Pause Category"
+        title="Disable Category"
+        description="Disabling this category will temporarily stop all new requests."
+        submitLabel="Disable"
         isSubmitting={pauseMutation.isPending}
         onConfirm={() => {
           pauseMutation.mutate(category.id, {
             onSuccess: () => {
-              toast.success('Category paused successfully')
-              setPauseModalOpen(false)
+              toast.success('Category disabled successfully')
+              setDisableModalOpen(false)
             },
             onError: (error) => {
-              toast.error(getErrorMessage(error, 'Failed to pause category'))
+              toast.error(getErrorMessage(error, 'Failed to disable category'))
             },
           })
         }}
