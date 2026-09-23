@@ -1,16 +1,29 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, RotateCcw } from 'lucide-react'
+import { AlertCircle, Eye, RotateCcw, ShoppingBag, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalateConsultationApplication,
+  escalateServiceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 import { SERVICE_DELETED_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
 import { useRestoreService } from '../../hooks/use-services'
 import { useServiceStatusList } from '../../hooks/use-service-status-list'
-import { getServiceManagementViewPath } from '../../lib/service-navigation'
+import {
+  consultationPerformancePath,
+  getServiceManagementViewPath,
+  servicePerformancePath,
+} from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
 import {
   buildServiceDataColumnsById,
@@ -65,6 +78,10 @@ export function DeletedServicesPage() {
   const restoreServiceMutation = useRestoreService()
   const catalogColumnIds = DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
   const { fileFormat } = useDefaultExportFormat()
+  const [escalateTarget, setEscalateTarget] = useState<Service | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
 
   const list = useServiceStatusList({
     moduleKey: SERVICE_DELETED_MODULE_KEY,
@@ -74,6 +91,47 @@ export function DeletedServicesPage() {
     exportFileName: 'deleted_services_export',
     exportColumnMap: EXPORT_COLUMN_MAP,
   })
+
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
+
+  const openViewExpert = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}`)
+    },
+    [navigate],
+  )
+
+  const openOrdersAndRevenue = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing for this listing.')
+        return
+      }
+      const isConsultation = String(service.serviceType || '')
+        .toLowerCase()
+        .includes('consultation')
+      navigate(
+        isConsultation
+          ? consultationPerformancePath(partnerId, service._id)
+          : servicePerformancePath(partnerId, service._id),
+      )
+    },
+    [navigate],
+  )
 
   const handleExportServiceRow = useCallback(
     async (service: Service) => {
@@ -109,6 +167,59 @@ export function DeletedServicesPage() {
     [restoreServiceMutation],
   )
 
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const isConsultation = String(escalateTarget.serviceType || '')
+      .toLowerCase()
+      .includes('consultation')
+    const payload = {
+      assigneeSubAdminId: selectedEscalationOption,
+      assigneeName: selectedAssignee?.fullname || '',
+      adminNote: escalateAdminNotes.trim(),
+      entityTitle: escalateTarget.title,
+      applicationUrl: getServiceManagementViewPath(escalateTarget),
+    }
+
+    setIsEscalating(true)
+    try {
+      if (isConsultation) {
+        await escalateConsultationApplication(escalateTarget._id, payload)
+      } else {
+        await escalateServiceApplication(escalateTarget._id, payload)
+      }
+      toast.success('Escalated to compliance')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate listing.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
+
   const columns = useMemo<ColumnDef<Service>[]>(() => {
     const dataColumnsById = buildServiceDataColumnsById()
 
@@ -133,7 +244,8 @@ export function DeletedServicesPage() {
                 label={`Open actions for ${service.title}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? service._id : null)}
-                menuWidth={192}
+                menuWidth={240}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" />}
@@ -154,13 +266,40 @@ export function DeletedServicesPage() {
                   Restore Service
                 </TableActionsItem>
                 <TableActionsItem
+                  icon={<User className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openViewExpert(service)
+                  }}
+                >
+                  View Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<ShoppingBag className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openOrdersAndRevenue(service)
+                  }}
+                >
+                  View Orders & Revenue
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<AlertCircle className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    setEscalateTarget(service)
+                  }}
+                >
+                  Escalate to Compliance
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<ExportDataIcon className="size-3.5" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
                     void handleExportServiceRow(service)
                   }}
                 >
-                  Export Data
+                  Export Record
                 </TableActionsItem>
               </TableActionsDropdown>
             )
@@ -169,7 +308,7 @@ export function DeletedServicesPage() {
       ],
       SERVICE_COLUMN_SORT_FIELDS,
     )
-  }, [handleExportServiceRow, handleRestore, list, navigate])
+  }, [handleExportServiceRow, handleRestore, list, navigate, openOrdersAndRevenue, openViewExpert])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -210,6 +349,24 @@ export function DeletedServicesPage() {
         emptyMessage="No deleted services found."
       />
       {list.exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate to Compliance"
+        description="Are you sure you want to escalate this deleted listing to compliance? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   AlertTriangle,
+  BarChart3,
   CalendarDays,
   ExternalLink,
   Search,
@@ -58,6 +59,10 @@ import type {
   LeaderboardRow,
 } from '../../type/leaderboard'
 import { toast } from 'sonner'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 
 const RANK_BADGE_STYLES: Record<number, string> = {
   1: 'bg-brand-accent text-brand-text-dark',
@@ -843,6 +848,7 @@ export const LeaderboardPage = () => {
   const [isExporting, setIsExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [profilePartnerId, setProfilePartnerId] = useState<string | null>(null)
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const serverSort = useServerTableSort({
     sortFieldMap: LEADERBOARD_SORT_FIELD_MAP,
@@ -1028,6 +1034,22 @@ export const LeaderboardPage = () => {
     setProfilePartnerId(row.partnerId)
   }
 
+  const openViewAnalytics = useCallback(
+    (row: LeaderboardRow) => {
+      const partnerId = String(row.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Partner ID is missing.')
+        return
+      }
+      if (isVenueLeaderboard) {
+        navigate(`/venues/management/profile/${partnerId}/analytics`)
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}/analytics`)
+    },
+    [isVenueLeaderboard, navigate],
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -1204,11 +1226,14 @@ export const LeaderboardPage = () => {
                     </th>
                   )
                 })}
+                <th scope="col" className="px-3 py-3 pr-5 text-right whitespace-nowrap">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {showShimmer ? (
-                <TableRowsShimmer columnCount={visibleColumns.length} />
+                <TableRowsShimmer columnCount={visibleColumns.length + 1} />
               ) : (
                 <>
                   {rows.map((row) => (
@@ -1239,12 +1264,31 @@ export const LeaderboardPage = () => {
                           {renderLeaderboardCell(column.id, row, openProfile)}
                         </td>
                       ))}
+                      <td className="relative px-3 py-3 pr-5 text-right align-middle">
+                        <TableActionsDropdown
+                          label={`Open actions for ${row.name}`}
+                          isOpen={activeDropdownId === row.partnerId}
+                          onOpenChange={(open) => setActiveDropdownId(open ? row.partnerId : null)}
+                          menuWidth={220}
+                          maxVisibleItems={8}
+                        >
+                          <TableActionsItem
+                            icon={<BarChart3 className="size-3.5" aria-hidden="true" />}
+                            onClick={() => {
+                              setActiveDropdownId(null)
+                              openViewAnalytics(row)
+                            }}
+                          >
+                            View Analytics
+                          </TableActionsItem>
+                        </TableActionsDropdown>
+                      </td>
                     </tr>
                   ))}
                   {rows.length === 0 && (
                     <tr>
                       <td
-                        colSpan={visibleColumns.length + 1}
+                        colSpan={visibleColumns.length + 2}
                         className="text-muted px-3 py-8 text-center text-sm"
                       >
                         {isVenueLeaderboard

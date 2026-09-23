@@ -1,9 +1,21 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, PlayCircle } from 'lucide-react'
+import { AlertCircle, Eye, MessageSquare, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalateConsultationApplication,
+  escalateServiceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 import { SERVICE_SUSPENDED_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
@@ -18,6 +30,7 @@ import {
   buildServiceDataColumnsById,
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
+import { SERVICE_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { ExpertListHeader } from '../experts/expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
 import { SERVICE_SUSPENDED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -30,7 +43,12 @@ import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps
 
 export function SuspendedServicesPage() {
   const navigate = useNavigate()
+  const { fileFormat } = useDefaultExportFormat()
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
+  const [escalateTarget, setEscalateTarget] = useState<Service | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
   const activateServiceMutation = useActivateService()
   const catalogColumnIds = useMemo(
     () => SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
@@ -43,7 +61,18 @@ export function SuspendedServicesPage() {
     defaultVisibleColumnIds: DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
     exportFileName: 'suspended_services_export',
+    exportColumnMap: SERVICE_EXPORT_COLUMN_MAP,
   })
+
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const visibleServiceIds = useMemo(
     () => list.services.map((service) => service._id),
@@ -84,6 +113,97 @@ export function SuspendedServicesPage() {
     },
     [activateServiceMutation],
   )
+
+  const openCommunicateWithExpert = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const handleExportServiceRow = useCallback(
+    async (service: Service) => {
+      try {
+        await exportMappedItemsToFile(
+          SERVICE_EXPORT_COLUMN_MAP,
+          [service],
+          fileFormat,
+          `suspended_service_${service.serviceid || service._id}`,
+          {
+            columnIds: list.visibleColumnIds,
+            catalogOrder: DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
+          },
+        )
+        toast.success('Service exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export service'))
+      }
+    },
+    [fileFormat, list.visibleColumnIds],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const isConsultation = String(escalateTarget.serviceType || '')
+      .toLowerCase()
+      .includes('consultation')
+    const payload = {
+      assigneeSubAdminId: selectedEscalationOption,
+      assigneeName: selectedAssignee?.fullname || '',
+      adminNote: escalateAdminNotes.trim(),
+      entityTitle: escalateTarget.title,
+      applicationUrl: getServiceManagementViewPath(escalateTarget),
+    }
+
+    setIsEscalating(true)
+    try {
+      if (isConsultation) {
+        await escalateConsultationApplication(escalateTarget._id, payload)
+      } else {
+        await escalateServiceApplication(escalateTarget._id, payload)
+      }
+      toast.success('Escalated to compliance')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate listing.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
 
   const columns = useMemo<ColumnDef<Service>[]>(() => {
     const dataColumnsById = buildServiceDataColumnsById()
@@ -142,7 +262,8 @@ export function SuspendedServicesPage() {
                 label={`Open actions for ${service.title}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? service._id : null)}
-                menuWidth={180}
+                menuWidth={240}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -162,6 +283,33 @@ export function SuspendedServicesPage() {
                 >
                   Activate Service
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithExpert(service)
+                  }}
+                >
+                  Communicate with Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<AlertCircle className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    setEscalateTarget(service)
+                  }}
+                >
+                  Escalate to Compliance
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<ExportDataIcon className="size-3.5" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    void handleExportServiceRow(service)
+                  }}
+                >
+                  Export Record
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -172,8 +320,10 @@ export function SuspendedServicesPage() {
   }, [
     allVisibleServicesSelected,
     handleActivate,
+    handleExportServiceRow,
     list,
     navigate,
+    openCommunicateWithExpert,
     selectedServiceIds,
     someVisibleServicesSelected,
     toggleServiceSelection,
@@ -218,6 +368,24 @@ export function SuspendedServicesPage() {
         emptyMessage="No suspended services found."
       />
       {list.exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate to Compliance"
+        description="Are you sure you want to escalate this suspended listing to compliance? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

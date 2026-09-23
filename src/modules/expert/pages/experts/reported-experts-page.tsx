@@ -1,7 +1,8 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Ban, Eye } from 'lucide-react'
+import { Ban, Eye, MessageSquare, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { fetchExpertReports } from '../../api/expert-api'
 import {
@@ -19,6 +20,7 @@ import {
   pickExpertReportPreferenceColumns,
 } from '../../utils/expert-preference-columns'
 import { EXPERT_REPORTED_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { openVenuePartnerProfile } from '../../utils/expert-application-navigation'
 import { ExpertListHeader } from './expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
@@ -61,6 +63,56 @@ export function ExpertReportedExpertsPage() {
     navigate(location.pathname, { replace: true, state: null })
   }, [list.items, list.loading, location.pathname, location.state, navigate])
 
+  const openCommunicateWithExpert = useCallback(
+    (report: ExpertReportItem) => {
+      const partnerId = String(report.partnerId || report.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openReporterProfile = useCallback(
+    (report: ExpertReportItem) => {
+      const reporterId = String(report.reporterId || '').trim()
+      if (!reporterId) {
+        toast.error('Reporter ID is missing.')
+        return
+      }
+
+      const type = String(report.reporterType || '')
+        .trim()
+        .toLowerCase()
+
+      if (type.includes('admin')) {
+        navigate(`/settings/access/users/${reporterId}`)
+        return
+      }
+
+      if (type.includes('venue')) {
+        void openVenuePartnerProfile(reporterId, navigate)
+        return
+      }
+
+      if (type.includes('expert') || type.includes('service_partner') || type.includes('partner')) {
+        navigate(`/experts/management/profile/${reporterId}`)
+        return
+      }
+
+      // Clients / end users — no dedicated client profile route; past tickets is the closest view
+      navigate(`/support/past-tickets/${reporterId}`)
+    },
+    [navigate],
+  )
+
   const columns = useMemo<ColumnDef<ExpertReportItem>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
     return withServerSortMeta(
@@ -85,7 +137,8 @@ export function ExpertReportedExpertsPage() {
                 label={`Open actions for report ${reportItem.reportId}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? reportItem.reportId : null)}
-                menuWidth={176}
+                menuWidth={240}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -106,6 +159,24 @@ export function ExpertReportedExpertsPage() {
                 >
                   View Report
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<User className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openReporterProfile(reportItem)
+                  }}
+                >
+                  View Reporter Profile
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithExpert(reportItem)
+                  }}
+                >
+                  Communicate with Expert
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -118,6 +189,8 @@ export function ExpertReportedExpertsPage() {
     list.setActiveDropdownId,
     list.tableColumnPreferencesQuery.data?.visibleColumnIds,
     navigate,
+    openCommunicateWithExpert,
+    openReporterProfile,
   ])
 
   return (

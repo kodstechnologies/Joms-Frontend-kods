@@ -8,6 +8,7 @@ import {
   fetchExpertSubscriptions,
   fetchSubscriptionById,
   pauseSubscription,
+  resumeSubscription,
   upgradeSubscription,
 } from '../api/membership-subscription-api'
 import type {
@@ -16,6 +17,7 @@ import type {
   ChangePlanPayload,
   ExtendSubscriptionPayload,
   PauseSubscriptionPayload,
+  ResumeSubscriptionPayload,
 } from '../types/membership-subscription'
 
 export const useExpertSubscriptions = (params?: Record<string, unknown>) => {
@@ -93,6 +95,16 @@ export const usePauseSubscription = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: PauseSubscriptionPayload }) =>
       pauseSubscription(id, payload),
+    onSuccess: () => invalidateSubscriptionQueries(queryClient),
+  })
+}
+
+export const useResumeSubscription = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload?: ResumeSubscriptionPayload }) =>
+      resumeSubscription(id, payload),
     onSuccess: () => invalidateSubscriptionQueries(queryClient),
   })
 }

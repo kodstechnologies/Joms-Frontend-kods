@@ -140,6 +140,12 @@ export type CancelSubscriptionPayload = {
 
 export type PauseSubscriptionPayload = CancelSubscriptionPayload
 
+export type ResumeSubscriptionPayload = {
+  reasons?: string[]
+  adminNotes?: string
+  updatedBy?: string
+}
+
 export type ExtendMembershipSuspensionPayload = {
   startDate: string
   endDate: string

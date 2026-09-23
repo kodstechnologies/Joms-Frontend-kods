@@ -2,9 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft } from 'lucide-react'
+import {
+  ArrowLeft,
+  Banknote,
+  Eye,
+  FileWarning,
+  LayoutList,
+  MessageSquare,
+  User,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { seedFinanceRefundCase } from '@/modules/payments/api/finance-api'
 
 import { fetchExpertClientele } from '../../api/expert-api'
 import {
@@ -74,6 +83,7 @@ type ClienteleItem = {
   refundIssued?: boolean
   refundAmount?: number | null
   refundStatus?: string | null
+  refundId?: string | null
   lastUpdated?: string | null
 }
 
@@ -362,6 +372,54 @@ export function ExpertClientelePage() {
     [expertId, navigate],
   )
 
+  const openProcessRefund = useCallback(
+    async (item: ClienteleItem) => {
+      const existingRefundId = String(item.refundId || '').trim()
+      if (existingRefundId) {
+        navigate(`/finance/refunds/${encodeURIComponent(existingRefundId)}`)
+        return
+      }
+
+      const paymentId = String(item.paymentId || '').trim()
+      if (!paymentId) {
+        toast.error('Payment ID is missing for this booking. Cannot process refund.')
+        return
+      }
+
+      try {
+        const response = await seedFinanceRefundCase({
+          mode: 'refund_request',
+          module: 'service',
+          paymentId,
+          amount: Number(item.orderValue ?? item.price) || undefined,
+          reason: `Clientele booking ${item.bookingId}`,
+        })
+        const seededRefundId = String(
+          response?.data?.refund?._id || response?.data?.refund?.refundId || '',
+        ).trim()
+        const disputeId = String(
+          response?.data?.dispute?._id || response?.data?.dispute?.disputeId || '',
+        ).trim()
+
+        if (seededRefundId) {
+          navigate(`/finance/refunds/${encodeURIComponent(seededRefundId)}`)
+          return
+        }
+        if (disputeId) {
+          navigate(`/finance/refunds/${encodeURIComponent(disputeId)}/dispute`)
+          return
+        }
+        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
+      } catch (error) {
+        toast.error(
+          getApiErrorMessage(error, 'Failed to open refund flow. Opening payment details.'),
+        )
+        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
+      }
+    },
+    [navigate],
+  )
+
   const dataColumnsById = useMemo<Record<string, ColumnDef<ClienteleItem>>>(
     () => ({
       'booking-id': {
@@ -513,9 +571,12 @@ export function ExpertClientelePage() {
               label="Booking actions"
               isOpen={activeActionMenu === item.bookingId}
               onOpenChange={(open) => setActiveActionMenu(open ? item.bookingId : null)}
+              menuWidth={240}
+              maxVisibleItems={8}
             >
               <TableActionsItem
                 tone="light"
+                icon={<Eye className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   toast.message(`Booking ${item.bookingId}`)
@@ -525,6 +586,7 @@ export function ExpertClientelePage() {
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
+                icon={<User className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   if (item.clientId && item.clientId !== '—') {
@@ -538,6 +600,7 @@ export function ExpertClientelePage() {
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
+                icon={<LayoutList className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   if (item.listingType === 'Consultation' && item.listingId) {
@@ -557,6 +620,7 @@ export function ExpertClientelePage() {
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
+                icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   openCommunicate('email')
@@ -564,18 +628,10 @@ export function ExpertClientelePage() {
               >
                 Communicate with Expert
               </TableActionsItem>
-              <TableActionsItem
-                tone="light"
-                onClick={() => {
-                  setActiveActionMenu(null)
-                  openCommunicate('email')
-                }}
-              >
-                Communicate with Client
-              </TableActionsItem>
               {item.disputeRaised ? (
                 <TableActionsItem
                   tone="light"
+                  icon={<FileWarning className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveActionMenu(null)
                     toast.message(
@@ -590,12 +646,23 @@ export function ExpertClientelePage() {
               ) : null}
               <TableActionsItem
                 tone="light"
+                icon={<ExportDataIcon className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   onExport()
                 }}
               >
                 Export Booking Record
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<Banknote className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  void openProcessRefund(item)
+                }}
+              >
+                Process Refund
               </TableActionsItem>
             </TableActionsDropdown>
           </div>
@@ -614,6 +681,7 @@ export function ExpertClientelePage() {
     navigate,
     onExport,
     openCommunicate,
+    openProcessRefund,
     tableColumnPreferencesQuery.data,
   ])
 

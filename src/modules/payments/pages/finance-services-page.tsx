@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Eye, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, Tag, Trash2, User } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -226,6 +226,21 @@ export function FinanceServicesPage() {
             }}
           >
             View Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-[18px] text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+            onClick={() => {
+              setActiveDropdownId(null)
+              const partnerId = String(record.partnerId || '').trim()
+              if (!partnerId || partnerId === '—') {
+                toast.error('Partner profile is not available for this record')
+                return
+              }
+              navigate(`/experts/management/profile/${encodeURIComponent(partnerId)}`)
+            }}
+          >
+            View Partner
           </TableActionsItem>
           <TableActionsItem
             icon={<Tag className="size-[18px] text-slate-700" aria-hidden="true" />}

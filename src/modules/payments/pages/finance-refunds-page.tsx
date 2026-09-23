@@ -3,11 +3,14 @@ import type { ColumnDef } from '@tanstack/react-table'
 import {
   AlertTriangle,
   ArrowLeftRight,
+  Check,
   Eye,
   GitMerge,
   SlidersHorizontal,
   Tag,
   Trash2,
+  User,
+  X,
 } from 'lucide-react'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
@@ -27,6 +30,8 @@ import {
   useFinanceDashboard,
   useFinanceDisputes,
   useFinanceRefunds,
+  useIssueRefund,
+  useRejectRefund,
   useSoftDeleteFinance,
   useUpdateDisputeStatus,
   useUpdateRefundStatus,
@@ -61,6 +66,8 @@ import {
 } from '@/modules/payments/components/finance-escalate-delete-modal'
 import { useTagsApi } from '@/modules/payments/hooks/use-tags-api'
 import { ChangeStatusModal } from '@/shared/components/modals/change-status-modal'
+import { DenyRefundModal } from '@/modules/payments/components/deny-refund-modal'
+import { IssueRefundModal } from '@/modules/payments/components/issue-refund-modal'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -133,6 +140,8 @@ export function FinanceRefundsPage() {
   const [statusTarget, setStatusTarget] = useState<RefundChargebackRow | null>(null)
   const [tagTarget, setTagTarget] = useState<RefundChargebackRow | null>(null)
   const [mergeTarget, setMergeTarget] = useState<RefundChargebackRow | null>(null)
+  const [approveTarget, setApproveTarget] = useState<RefundChargebackRow | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<RefundChargebackRow | null>(null)
   const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
 
   const listQueryParams = useMemo(
@@ -177,6 +186,8 @@ export function FinanceRefundsPage() {
   const dashboardQuery = useFinanceDashboard()
   const updateDisputeStatus = useUpdateDisputeStatus()
   const updateRefundStatus = useUpdateRefundStatus()
+  const issueRefund = useIssueRefund()
+  const rejectRefund = useRejectRefund()
   const addNote = useAddFinanceNote()
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
@@ -292,6 +303,11 @@ export function FinanceRefundsPage() {
   const renderActions = useCallback(
     (record: RefundChargebackRow) => {
       const isOpen = activeDropdownId === record.id
+      const isDispute = record.kind === 'dispute'
+      const isRefund = record.kind === 'refund'
+      const canActOnRefund =
+        isRefund && (record.rawStatus === 'initiated' || record.rawStatus === 'failed')
+      const partnerId = String(record.partnerId || '').trim()
 
       return (
         <TableActionsDropdown
@@ -299,6 +315,7 @@ export function FinanceRefundsPage() {
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
           menuWidth={220}
+          maxVisibleItems={8}
         >
           <TableActionsItem
             icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -306,7 +323,7 @@ export function FinanceRefundsPage() {
             onClick={() => {
               setActiveDropdownId(null)
               navigate(
-                record.kind === 'dispute' || record.type === 'Dispute'
+                isDispute
                   ? `/finance/refunds/${record.id}/dispute`
                   : `/finance/refunds/${record.id}`,
               )
@@ -314,6 +331,44 @@ export function FinanceRefundsPage() {
           >
             View Details
           </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+            onClick={() => {
+              setActiveDropdownId(null)
+              if (!partnerId) {
+                toast.error('Partner profile is not available for this record')
+                return
+              }
+              navigate(`/experts/management/profile/${encodeURIComponent(partnerId)}`)
+            }}
+          >
+            View Partner
+          </TableActionsItem>
+          {canActOnRefund ? (
+            <TableActionsItem
+              icon={<Check className="size-3.5 text-emerald-700" aria-hidden="true" />}
+              className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+              onClick={() => {
+                setActiveDropdownId(null)
+                setApproveTarget(record)
+              }}
+            >
+              Approve Refund
+            </TableActionsItem>
+          ) : null}
+          {canActOnRefund ? (
+            <TableActionsItem
+              icon={<X className="text-brand-danger size-3.5" aria-hidden="true" />}
+              className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
+              onClick={() => {
+                setActiveDropdownId(null)
+                setRejectTarget(record)
+              }}
+            >
+              Reject Refund
+            </TableActionsItem>
+          ) : null}
           <TableActionsItem
             icon={<ArrowLeftRight className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
@@ -346,7 +401,6 @@ export function FinanceRefundsPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              const isDispute = record.kind === 'dispute' || record.type === 'Dispute'
               navigate(
                 escalateUrl(record.id, {
                   kind: isDispute ? 'dispute' : 'refund',
@@ -363,7 +417,6 @@ export function FinanceRefundsPage() {
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
-              const isDispute = record.kind === 'dispute' || record.type === 'Dispute'
               setRowAction({
                 kind: 'delete',
                 id: record.id,
@@ -643,6 +696,58 @@ export function FinanceRefundsPage() {
             void refundsQuery.refetch()
           } catch (err) {
             toast.error(apiErrorMessage(err, 'Failed to update status'))
+            throw err
+          }
+        }}
+      />
+
+      <IssueRefundModal
+        open={!!approveTarget}
+        originalAmount={approveTarget?.amount || '—'}
+        maxRefundableAmount={Number(approveTarget?.amountValue) || 0}
+        defaultAmount={
+          approveTarget?.amountValue != null ? String(approveTarget.amountValue) : undefined
+        }
+        onClose={() => setApproveTarget(null)}
+        onSubmit={async ({ refundAmount, reason, adminNotes }) => {
+          if (!approveTarget) return
+          try {
+            await issueRefund.mutateAsync({
+              id: approveTarget.id,
+              amount: Number(String(refundAmount).replace(/,/g, '')),
+              reason,
+              adminNotes,
+            })
+            toast.success('Refund approved')
+            setApproveTarget(null)
+            void refundsQuery.refetch()
+            void disputesQuery.refetch()
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to approve refund'))
+            throw err
+          }
+        }}
+      />
+
+      <DenyRefundModal
+        open={!!rejectTarget}
+        originalAmount={rejectTarget?.amount || '—'}
+        denyingAmount={rejectTarget?.amount}
+        onClose={() => setRejectTarget(null)}
+        onSubmit={async ({ reason, adminNotes }) => {
+          if (!rejectTarget) return
+          try {
+            await rejectRefund.mutateAsync({
+              id: rejectTarget.id,
+              reason,
+              adminNotes,
+            })
+            toast.success('Refund rejected')
+            setRejectTarget(null)
+            void refundsQuery.refetch()
+            void disputesQuery.refetch()
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to reject refund'))
             throw err
           }
         }}

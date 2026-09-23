@@ -14,6 +14,8 @@ import {
   Mail,
   Package,
   PauseCircle,
+  BarChart3,
+  ShoppingBag,
   Tag,
   Trash2,
   Upload,
@@ -45,7 +47,11 @@ import {
   useBulkDisableServices,
 } from '../../hooks/use-services'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-import { getServiceManagementViewPath } from '../../lib/service-navigation'
+import {
+  getServiceManagementViewPath,
+  servicePerformancePath,
+  consultationPerformancePath,
+} from '../../lib/service-navigation'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
 import {
@@ -121,8 +127,10 @@ export const ServiceManagementPage = () => {
   const [bulkDeleteConfirmed, setBulkDeleteConfirmed] = useState(false)
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
+  const [pauseListingTarget, setPauseListingTarget] = useState<Service | null>(null)
 
   const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
+  const [escalateTarget, setEscalateTarget] = useState<Service | null>(null)
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [isEscalating, setIsEscalating] = useState(false)
@@ -199,7 +207,8 @@ export const ServiceManagementPage = () => {
 
   const confirmBulkPause = useCallback(
     (payload: { reasons: string[]; adminNotes: string }) => {
-      if (selectedServiceIds.length === 0) return
+      const serviceIds = pauseListingTarget ? [pauseListingTarget._id] : selectedServiceIds
+      if (serviceIds.length === 0) return
       const reasonPayload = buildPauseReasonPayload(payload.reasons)
       if (pauseReasonOptions.length > 0 && reasonPayload.selectedReasons.length === 0) {
         toast.error('Please select at least one reason for pausing.')
@@ -212,7 +221,7 @@ export const ServiceManagementPage = () => {
 
       bulkPauseMutation.mutate(
         {
-          serviceIds: selectedServiceIds,
+          serviceIds,
           selectedReasons: reasonPayload.selectedReasons,
           adminNotes: payload.adminNotes.trim(),
           indefinite: true,
@@ -222,8 +231,13 @@ export const ServiceManagementPage = () => {
             if (reasonPayload.reasonIds.length > 0) {
               recordReasonUsage.mutate(reasonPayload.reasonIds)
             }
-            toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
+            toast.success(
+              pauseListingTarget
+                ? `Paused ${pauseListingTarget.title || 'listing'}`
+                : `Paused ${serviceIds.length} selected service(s)`,
+            )
             setSelectedServiceIds([])
+            setPauseListingTarget(null)
             setIsBulkPauseModalOpen(false)
           },
           onError: (err: unknown) => {
@@ -234,6 +248,7 @@ export const ServiceManagementPage = () => {
       )
     },
     [
+      pauseListingTarget,
       selectedServiceIds,
       pauseReasonOptions.length,
       buildPauseReasonPayload,
@@ -372,9 +387,57 @@ export const ServiceManagementPage = () => {
 
   const closeEscalateModal = useCallback(() => {
     setIsEscalateModalOpen(false)
+    setEscalateTarget(null)
     setEscalateAdminNotes('')
     setSelectedEscalationOption('')
   }, [])
+
+  const openPauseListing = useCallback((service: Service) => {
+    setPauseListingTarget(service)
+    setIsBulkPauseModalOpen(true)
+  }, [])
+
+  const openEscalateListing = useCallback((service: Service) => {
+    setEscalateTarget(service)
+    setIsEscalateModalOpen(true)
+  }, [])
+
+  const openListingPerformance = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing for this listing.')
+        return
+      }
+      const isConsultation = String(service.serviceType || '')
+        .toLowerCase()
+        .includes('consultation')
+      navigate(
+        isConsultation
+          ? consultationPerformancePath(partnerId, service._id)
+          : servicePerformancePath(partnerId, service._id),
+      )
+    },
+    [navigate],
+  )
+
+  const handleExportServiceRow = useCallback(
+    async (service: Service) => {
+      try {
+        await exportMappedItemsToFile(
+          SERVICE_EXPORT_COLUMN_MAP,
+          [service],
+          fileFormat,
+          `service_${service.serviceid || service._id}`,
+          { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+        )
+        toast.success('Service exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export service'))
+      }
+    },
+    [catalogColumnIds, exportColumnIds, fileFormat],
+  )
 
   const handleBulkExport = useCallback(() => {
     if (selectedServiceCount === 0) {
@@ -432,7 +495,8 @@ export const ServiceManagementPage = () => {
   }, [navigate, selectedPartnerIds])
 
   const handleEscalateSubmit = useCallback(async () => {
-    if (selectedServices.length === 0) {
+    const servicesToEscalate = escalateTarget ? [escalateTarget] : selectedServices
+    if (servicesToEscalate.length === 0) {
       toast.error('Please select at least one service.')
       return
     }
@@ -453,7 +517,7 @@ export const ServiceManagementPage = () => {
 
     try {
       const results = await Promise.allSettled(
-        selectedServices.map((service) => {
+        servicesToEscalate.map((service) => {
           const isConsultation = String(service.serviceType || '')
             .toLowerCase()
             .includes('consultation')
@@ -475,7 +539,8 @@ export const ServiceManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
@@ -483,9 +548,11 @@ export const ServiceManagementPage = () => {
       toast.success(
         failedCount > 0
           ? `Escalated ${successCount} service(s); ${failedCount} failed.`
-          : `Successfully escalated ${successCount} service(s)`,
+          : escalateTarget
+            ? 'Listing escalated'
+            : `Successfully escalated ${successCount} service(s)`,
       )
-      setSelectedServiceIds([])
+      if (!escalateTarget) setSelectedServiceIds([])
       closeEscalateModal()
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Failed to escalate services.'))
@@ -496,6 +563,7 @@ export const ServiceManagementPage = () => {
     assigneesData?.data,
     closeEscalateModal,
     escalateAdminNotes,
+    escalateTarget,
     selectedEscalationOption,
     selectedServices,
   ])
@@ -761,7 +829,8 @@ export const ServiceManagementPage = () => {
             label={`Open actions for ${service.title}`}
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-            menuWidth={192}
+            menuWidth={240}
+            maxVisibleItems={8}
           >
             <TableActionsItem
               icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -805,6 +874,53 @@ export const ServiceManagementPage = () => {
                 Delete Service
               </TableActionsItem>
             ) : null}
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openPauseListing(service)
+                }}
+              >
+                Pause Listing
+              </TableActionsItem>
+            ) : null}
+            <TableActionsItem
+              icon={<ShoppingBag className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openListingPerformance(service)
+              }}
+            >
+              View Orders & Bookings
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<BarChart3 className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openListingPerformance(service)
+              }}
+            >
+              View Analytics
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<AlertCircle className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openEscalateListing(service)
+              }}
+            >
+              Escalate Listing
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<ExportDataIcon className="size-3.5" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                void handleExportServiceRow(service)
+              }}
+            >
+              Export Record
+            </TableActionsItem>
           </TableActionsDropdown>
         )
       },
@@ -817,8 +933,12 @@ export const ServiceManagementPage = () => {
   }, [
     activeDropdownId,
     allVisibleServicesSelected,
+    handleExportServiceRow,
     navigate,
     openDeleteModal,
+    openEscalateListing,
+    openListingPerformance,
+    openPauseListing,
     openSuspendModal,
     openTagModal,
     selectedServiceIds,
@@ -1154,19 +1274,26 @@ export const ServiceManagementPage = () => {
       <PauseCategoryModal
         open={isBulkPauseModalOpen}
         title={
-          selectedServiceIds.length > 1
-            ? `Pause ${selectedServiceIds.length} Services`
-            : 'Pause Service'
+          pauseListingTarget
+            ? 'Pause Listing'
+            : selectedServiceIds.length > 1
+              ? `Pause ${selectedServiceIds.length} Services`
+              : 'Pause Service'
         }
         heading={
-          selectedServiceIds.length > 1
-            ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
-            : undefined
+          pauseListingTarget
+            ? undefined
+            : selectedServiceIds.length > 1
+              ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
+              : undefined
         }
         description="Pausing this service will temporarily stop all new requests."
         submitLabel="Pause Service"
         reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
-        onClose={() => setIsBulkPauseModalOpen(false)}
+        onClose={() => {
+          setIsBulkPauseModalOpen(false)
+          setPauseListingTarget(null)
+        }}
         onConfirm={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
       />
@@ -1175,14 +1302,18 @@ export const ServiceManagementPage = () => {
         open={isEscalateModalOpen}
         variant="escalate"
         title={
-          selectedServiceCount > 1
-            ? `Escalate ${selectedServiceCount} Services`
-            : 'Escalate Application'
+          escalateTarget
+            ? 'Escalate Listing'
+            : selectedServiceCount > 1
+              ? `Escalate ${selectedServiceCount} Services`
+              : 'Escalate Application'
         }
         description={
-          selectedServiceCount > 1
-            ? `Are you sure you want to escalate ${selectedServiceCount} selected services? These will be reviewed by the selected sub-admin.`
-            : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
+          escalateTarget
+            ? 'Are you sure you want to escalate this listing? It will be reviewed by the selected sub-admin.'
+            : selectedServiceCount > 1
+              ? `Are you sure you want to escalate ${selectedServiceCount} selected services? These will be reviewed by the selected sub-admin.`
+              : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
         }
         submitLabel="Escalate"
         escalationOptions={escalationOptions}

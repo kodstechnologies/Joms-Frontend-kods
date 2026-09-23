@@ -1,13 +1,29 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
-import { CircleArrowDown, CircleArrowUp, CircleX, ClipboardList, Waypoints } from 'lucide-react'
+import {
+  CircleArrowDown,
+  CircleArrowUp,
+  CircleX,
+  ClipboardList,
+  CreditCard,
+  MessageSquare,
+  PauseCircle,
+  PlayCircle,
+  RefreshCw,
+  User,
+  Waypoints,
+} from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
+import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 
 import { MembershipActionModals } from '../components/membership-action-modals'
+import { MembershipHistoryModal } from '../components/membership-history-modal'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
   DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
@@ -18,6 +34,8 @@ import { EXPERT_MEMBERSHIP_SORT_FIELD_MAP } from '../config/membership-table-sor
 import {
   useCancelSubscription,
   useExpertSubscriptions,
+  usePauseSubscription,
+  useResumeSubscription,
 } from '../hooks/use-membership-subscriptions'
 import { useExpertMembershipStore } from '../store/expert-membership-store'
 import type { MembershipSubscription } from '../types/membership-subscription'
@@ -156,9 +174,11 @@ export function ExpertMembershipsPage() {
     null,
   )
   const [actionType, setActionType] = useState<
-    'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
+    'upgrade' | 'downgrade' | 'extend' | 'renew' | 'cancel' | 'pause' | 'resume' | null
   >(null)
   const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
+  const [historyTarget, setHistoryTarget] = useState<MembershipSubscription | null>(null)
+  const { fileFormat } = useDefaultExportFormat()
 
   const { currentPage, setCurrentPage } = useExpertMembershipStore()
   const serverSort = useServerTableSort({
@@ -206,6 +226,8 @@ export function ExpertMembershipsPage() {
   })
 
   const cancelMutation = useCancelSubscription()
+  const pauseMutation = usePauseSubscription()
+  const resumeMutation = useResumeSubscription()
 
   const subscriptions = data?.data?.subscriptions ?? []
   const meta = data?.data?.meta
@@ -247,10 +269,24 @@ export function ExpertMembershipsPage() {
     (subscription: MembershipSubscription, action: typeof actionType) => {
       const status = String(subscription.status || '').toLowerCase()
       if (
-        (action === 'upgrade' || action === 'downgrade' || action === 'extend') &&
+        (action === 'upgrade' ||
+          action === 'downgrade' ||
+          action === 'extend' ||
+          action === 'renew' ||
+          action === 'pause') &&
         (status === 'cancelled' || status === 'expired')
       ) {
         toast.error(`Cannot ${action} a ${status} membership`)
+        setActiveDropdownId(null)
+        return
+      }
+      if (action === 'pause' && status !== 'active') {
+        toast.error('Only active memberships can be paused')
+        setActiveDropdownId(null)
+        return
+      }
+      if (action === 'resume' && status !== 'paused') {
+        toast.error('Only paused memberships can be resumed')
         setActiveDropdownId(null)
         return
       }
@@ -266,48 +302,166 @@ export function ExpertMembershipsPage() {
     setActionType(null)
   }
 
+  const openViewUserProfile = useCallback(
+    (subscription: MembershipSubscription) => {
+      const partnerId = String(subscription.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      void openPartnerProfile({ id: partnerId }, navigate)
+    },
+    [navigate],
+  )
+
+  const openCommunicate = useCallback(
+    (subscription: MembershipSubscription) => {
+      const partnerId = String(subscription.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const handleExportSubscription = useCallback(
+    async (subscription: MembershipSubscription) => {
+      try {
+        await exportMappedItemsToFile(
+          EXPORT_COLUMN_MAP,
+          [subscription],
+          fileFormat,
+          `subscription_${subscription.subscriptionId || subscription._id}`,
+          {
+            columnIds: exportColumnIds,
+            catalogOrder: catalogColumnIds,
+          },
+        )
+        toast.success('Subscription exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export subscription'))
+      }
+    },
+    [catalogColumnIds, exportColumnIds, fileFormat],
+  )
+
   const renderActions = useCallback(
-    (subscription: MembershipSubscription) => (
-      <TableActionsDropdown
-        label={`Actions for ${subscription.partnerName}`}
-        isOpen={activeDropdownId === subscription._id}
-        onOpenChange={(open) => setActiveDropdownId(open ? subscription._id : null)}
-        menuWidth={180}
-      >
-        <TableActionsItem
-          icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
-          onClick={() => navigate(`/memberships/experts/${subscription._id}`)}
+    (subscription: MembershipSubscription) => {
+      const status = String(subscription.status || '').toLowerCase()
+      return (
+        <TableActionsDropdown
+          label={`Actions for ${subscription.partnerName}`}
+          isOpen={activeDropdownId === subscription._id}
+          onOpenChange={(open) => setActiveDropdownId(open ? subscription._id : null)}
+          menuWidth={240}
+          maxVisibleItems={8}
         >
-          View Details
-        </TableActionsItem>
-        <TableActionsItem
-          icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
-          onClick={() => openAction(subscription, 'upgrade')}
-        >
-          Upgrade plan
-        </TableActionsItem>
-        <TableActionsItem
-          icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
-          onClick={() => openAction(subscription, 'downgrade')}
-        >
-          Downgrade Plan
-        </TableActionsItem>
-        <TableActionsItem
-          icon={<Waypoints className="size-4" strokeWidth={1.85} />}
-          onClick={() => openAction(subscription, 'extend')}
-        >
-          Extend Plan
-        </TableActionsItem>
-        <TableActionsItem
-          icon={<CircleX className="size-4" strokeWidth={1.85} />}
-          className="ui-table-actions-item-danger"
-          onClick={() => openAction(subscription, 'cancel')}
-        >
-          Cancel Plan
-        </TableActionsItem>
-      </TableActionsDropdown>
-    ),
-    [activeDropdownId, navigate, openAction],
+          <TableActionsItem
+            icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
+            onClick={() => navigate(`/memberships/experts/${subscription._id}`)}
+          >
+            View Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
+            onClick={() => openAction(subscription, 'upgrade')}
+          >
+            Upgrade plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
+            onClick={() => openAction(subscription, 'downgrade')}
+          >
+            Downgrade Plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Waypoints className="size-4" strokeWidth={1.85} />}
+            onClick={() => openAction(subscription, 'extend')}
+          >
+            Extend Plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CircleX className="size-4" strokeWidth={1.85} />}
+            className="ui-table-actions-item-danger"
+            onClick={() => openAction(subscription, 'cancel')}
+          >
+            Cancel Plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              openViewUserProfile(subscription)
+            }}
+          >
+            View User Profile
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<RefreshCw className="size-3.5" aria-hidden="true" />}
+            onClick={() => openAction(subscription, 'renew')}
+          >
+            Renew Membership
+          </TableActionsItem>
+          {status === 'paused' ? (
+            <TableActionsItem
+              icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
+              onClick={() => openAction(subscription, 'resume')}
+            >
+              Resume Membership
+            </TableActionsItem>
+          ) : (
+            <TableActionsItem
+              icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+              onClick={() => openAction(subscription, 'pause')}
+            >
+              Pause Membership
+            </TableActionsItem>
+          )}
+          <TableActionsItem
+            icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              openCommunicate(subscription)
+            }}
+          >
+            Communicate
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CreditCard className="size-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setHistoryTarget(subscription)
+            }}
+          >
+            View Payment History
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<ExportDataIcon className="size-3.5" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void handleExportSubscription(subscription)
+            }}
+          >
+            Export Subscription
+          </TableActionsItem>
+        </TableActionsDropdown>
+      )
+    },
+    [
+      activeDropdownId,
+      handleExportSubscription,
+      navigate,
+      openAction,
+      openCommunicate,
+      openViewUserProfile,
+    ],
   )
 
   const columns = useMemo<ColumnDef<MembershipSubscription>[]>(() => {
@@ -387,11 +541,24 @@ export function ExpertMembershipsPage() {
 
       {exportFilterModals}
 
+      {historyTarget ? (
+        <MembershipHistoryModal
+          open={Boolean(historyTarget)}
+          onClose={() => setHistoryTarget(null)}
+          subscription={historyTarget}
+        />
+      ) : null}
+
       <MembershipActionModals
         subscription={selectedSubscription}
         action={actionType}
         onClose={closeAction}
-        isSubmitting={isPlanChangeSubmitting || cancelMutation.isPending}
+        isSubmitting={
+          isPlanChangeSubmitting ||
+          cancelMutation.isPending ||
+          pauseMutation.isPending ||
+          resumeMutation.isPending
+        }
         onUpgrade={async (payload) => {
           if (!selectedSubscription) return
           setIsPlanChangeSubmitting(true)
@@ -437,6 +604,21 @@ export function ExpertMembershipsPage() {
             setIsPlanChangeSubmitting(false)
           }
         }}
+        onRenew={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipExtendForApproval(selectedSubscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Renewal sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send renewal for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
         onCancel={async (payload) => {
           if (!selectedSubscription) return
           try {
@@ -448,6 +630,32 @@ export function ExpertMembershipsPage() {
             closeAction()
           } catch (error) {
             toast.error(getApiErrorMessage(error, 'Failed to cancel membership'))
+          }
+        }}
+        onPause={async (payload) => {
+          if (!selectedSubscription) return
+          try {
+            await pauseMutation.mutateAsync({
+              id: selectedSubscription._id,
+              payload: { ...payload, updatedBy: 'Admin' },
+            })
+            toast.success('Membership paused')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to pause membership'))
+          }
+        }}
+        onResume={async (payload) => {
+          if (!selectedSubscription) return
+          try {
+            await resumeMutation.mutateAsync({
+              id: selectedSubscription._id,
+              payload: { ...payload, updatedBy: 'Admin' },
+            })
+            toast.success('Membership resumed')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to resume membership'))
           }
         }}
       />

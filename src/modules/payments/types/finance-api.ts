@@ -195,6 +195,7 @@ export type FinanceRefund = {
   status: string
   refundType?: string
   paymentId?: string
+  partnerId?: string | null
   beneficiary?: string
   razorpayPaymentId?: string | null
   razorpayRefundId?: string | null

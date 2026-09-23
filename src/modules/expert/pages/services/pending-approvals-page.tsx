@@ -1,12 +1,18 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react'
+import { AlertCircle, ArrowLeft, CheckCircle2, Eye, MessageSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { DataTable } from '@/shared/components/table/data-table'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import {
   DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
   SERVICE_PENDING_APPROVALS_MODULE_KEY,
@@ -28,10 +34,20 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalateConsultationApplication,
+  escalateServiceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 export function PendingApprovalsPage() {
   const navigate = useNavigate()
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
+  const [escalateTarget, setEscalateTarget] = useState<Service | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
   const catalogColumnIds = useMemo(
     () => SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
     [],
@@ -62,6 +78,16 @@ export function PendingApprovalsPage() {
     exportFilterModals,
   } = list
 
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
+
   const visibleServiceIds = useMemo(() => services.map((service) => service._id), [services])
   const allVisibleServicesSelected =
     visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
@@ -86,6 +112,76 @@ export function PendingApprovalsPage() {
         : [...currentIds, serviceId],
     )
   }, [])
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const openCommunicateWithExpert = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const isConsultation = String(escalateTarget.serviceType || '')
+      .toLowerCase()
+      .includes('consultation')
+    const payload = {
+      assigneeSubAdminId: selectedEscalationOption,
+      assigneeName: selectedAssignee?.fullname || '',
+      adminNote: escalateAdminNotes.trim(),
+      entityTitle: escalateTarget.title,
+      applicationUrl: getServiceManagementViewPath(escalateTarget),
+    }
+
+    setIsEscalating(true)
+    try {
+      if (isConsultation) {
+        await escalateConsultationApplication(escalateTarget._id, payload)
+      } else {
+        await escalateServiceApplication(escalateTarget._id, payload)
+      }
+      toast.success('Listing escalated')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate listing.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
 
   const columns = useMemo<ColumnDef<Service>[]>(() => {
     const dataColumnsById = buildServiceDataColumnsById()
@@ -144,7 +240,8 @@ export function PendingApprovalsPage() {
                 label={`Open actions for ${service.title}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-                menuWidth={190}
+                menuWidth={240}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -164,6 +261,33 @@ export function PendingApprovalsPage() {
                 >
                   Approve Application
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(getServiceManagementViewPath(service))
+                  }}
+                >
+                  Preview Listing
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    openCommunicateWithExpert(service)
+                  }}
+                >
+                  Communicate with Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<AlertCircle className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    setEscalateTarget(service)
+                  }}
+                >
+                  Escalate Listing
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -175,7 +299,9 @@ export function PendingApprovalsPage() {
     activeDropdownId,
     allVisibleServicesSelected,
     navigate,
+    openCommunicateWithExpert,
     selectedServiceIds,
+    setActiveDropdownId,
     someVisibleServicesSelected,
     toggleServiceSelection,
     toggleVisibleServices,
@@ -229,7 +355,7 @@ export function PendingApprovalsPage() {
         onColumnSearchChange={enhancedSearch.setColumnSearch}
         onColumnSearchRemove={enhancedSearch.removeColumnSearch}
         onClearAllSearches={enhancedSearch.clearAll}
-        searchPlaceholder="Search by service name or ID"
+        searchPlaceholder="Search by title or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
         {...serverSort.dataTableSortProps}
@@ -244,6 +370,24 @@ export function PendingApprovalsPage() {
         emptyMessage="No pending approvals found."
       />
       {exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate Listing"
+        description="Are you sure you want to escalate this listing? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

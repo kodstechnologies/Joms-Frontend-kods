@@ -224,6 +224,14 @@ export function CreateSubAdminPage() {
       }
     }
 
+    const email = String(form.email ?? '')
+      .trim()
+      .toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Enter a valid email address')
+      return false
+    }
+
     if (!form.roleIds.length) {
       toast.error('Select at least one role')
       return false
@@ -248,9 +256,14 @@ export function CreateSubAdminPage() {
   }
 
   const handleCreate = async () => {
+    if (!validateForm()) {
+      setStep('form')
+      return
+    }
     try {
       const result = await createMutation.mutateAsync({
         ...form,
+        email: String(form.email).trim().toLowerCase(),
         mfaEnabled: effectiveMfaEnabled,
         adminNote,
       })

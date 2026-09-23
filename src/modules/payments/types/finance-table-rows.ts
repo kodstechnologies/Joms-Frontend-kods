@@ -11,6 +11,7 @@ export type RevenueOverviewRow = {
   subCategory?: string
   ownerType: string
   ownerName: string
+  partnerId?: string
   grossAmount: string
   discounts?: string
   refundAmount?: string
@@ -137,11 +138,14 @@ export type RefundChargebackRow = {
   kind?: 'dispute' | 'refund'
   relatedEntity: string
   amount: string
+  amountValue?: number
   reason: string
   initiatedDate: string
   description: string
   status: RefundChargebackStatus
   rawStatus?: string
+  partnerId?: string
+  paymentId?: string
 }
 
 export type PayoutStatus = 'Completed' | 'Pending' | 'Failed'

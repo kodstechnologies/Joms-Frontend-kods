@@ -576,6 +576,35 @@ export function AdminLogsPage() {
 
   const columns = isRole ? roleColumns : userColumns
 
+  if (logsQuery.isError) {
+    return (
+      <div className="flex flex-col gap-4 md:gap-6">
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, profileFallback)}
+            className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
+          >
+            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+            <span>{pageTitle}</span>
+          </button>
+        </div>
+        <div className="radius-lg bg-brand-surface border border-white/10 p-6">
+          <p className="text-brand-text text-base font-semibold">Unable to load user logs</p>
+          <p className="text-brand-muted mt-2 text-sm">
+            {getApiErrorMessage(logsQuery.error, 'User or sub-admin was not found for this log.')}
+          </p>
+          <Button
+            className="ui-cta ui-cta-primary mt-4"
+            onClick={() => navigateBackOrFallback(navigate, '/settings/logs')}
+          >
+            Back to Setting Logs
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   if (historyOpen) {
     return (
       <VersionHistoryPanel
