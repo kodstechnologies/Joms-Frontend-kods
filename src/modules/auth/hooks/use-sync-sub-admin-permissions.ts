@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { fetchRbacMe } from '@/modules/rbac/api/rbac-api'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { normalizeUserPermissions } from '@/app/layouts/navigation/navigation.filter'
 
-const SYNC_INTERVAL_MS = 30_000
+const SYNC_INTERVAL_MS = 5_000
 
 const permissionFingerprint = (permissions: string[] = []) =>
   [...permissions].map(String).sort().join('|')
@@ -14,7 +15,9 @@ const permissionFingerprint = (permissions: string[] = []) =>
  * Role updates by a super-admin must appear without requiring a full re-login.
  */
 export function useSyncSubAdminPermissions() {
-  const userId = useAuthStore((state) => state.user?.id)
+  const queryClient = useQueryClient()
+  const user = useAuthStore((state) => state.user)
+  const userId = user?.id
   const updateUser = useAuthStore((state) => state.updateUser)
   const inFlight = useRef(false)
 
@@ -36,15 +39,21 @@ export function useSyncSubAdminPermissions() {
         const currentPermissions = useAuthStore.getState().user?.permissions ?? []
         const prevFingerprint = permissionFingerprint(currentPermissions)
         const nextFingerprint = permissionFingerprint(nextPermissions)
+        const newMfaEnabled = Boolean(profile.mfaEnabled ?? profile.profile?.mfaEnabled)
+        const prevMfaEnabled = Boolean(useAuthStore.getState().user?.mfaEnabled)
 
         updateUser({
           subAdminId: profile.subAdminId,
           ...(prevFingerprint !== nextFingerprint ? { permissions: nextPermissions } : {}),
           requiresContactSetup: Boolean(profile.requiresContactSetup),
           contactSetupCompleted: Boolean(profile.contactSetupCompleted),
-          mfaEnabled: Boolean(profile.mfaEnabled ?? profile.profile?.mfaEnabled),
+          mfaEnabled: newMfaEnabled,
           fullname: profile.name || undefined,
         })
+
+        if (prevMfaEnabled !== newMfaEnabled) {
+          void queryClient.invalidateQueries({ queryKey: ['rbac'] })
+        }
       } catch {
         // Keep existing session permissions if profile sync fails
       } finally {

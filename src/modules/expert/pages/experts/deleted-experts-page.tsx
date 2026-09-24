@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Bell, Eye, FileText, RotateCcw, ShoppingBag, Wallet } from 'lucide-react'
+import { Bell, Eye, FileText, Link2, RotateCcw, ShoppingBag, Wallet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
@@ -11,6 +11,7 @@ import {
   EXPERT_DELETED_MODULE_KEY,
 } from '../../config/expert-management-table-columns.config'
 import { useRestoreExpert } from '../../hooks/use-expert'
+import { useExpertMicrositeActions } from '../../hooks/use-expert-microsite-actions'
 import { useExpertStatusList } from '../../hooks/use-expert-status-list'
 import type { Expert } from '../../type/expert'
 import { isVenuePartner, openPartnerProfile } from '../../utils/expert-application-navigation'
@@ -39,6 +40,7 @@ export function ExpertDeletedExpertsPage() {
   const catalogColumnIds = DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS
   const { fileFormat } = useDefaultExportFormat()
   const [payoutDrawerTarget, setPayoutDrawerTarget] = useState<Expert | null>(null)
+  const { openReinstateMicrosite, micrositeModal } = useExpertMicrositeActions()
 
   const list = useExpertStatusList({
     moduleKey: EXPERT_DELETED_MODULE_KEY,
@@ -223,6 +225,15 @@ export function ExpertDeletedExpertsPage() {
                 >
                   Notify Expert
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<Link2 className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openReinstateMicrosite(expert.id || expert.expertId, expert.name)
+                  }}
+                >
+                  Reinstate Microsite
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -235,6 +246,7 @@ export function ExpertDeletedExpertsPage() {
     list,
     navigate,
     openNotifyExpert,
+    openReinstateMicrosite,
     openViewOrders,
     openViewReports,
     restoreExpertMutation,
@@ -285,6 +297,7 @@ export function ExpertDeletedExpertsPage() {
         expertId={payoutDrawerTarget?.id || payoutDrawerTarget?.expertId || ''}
         expertName={payoutDrawerTarget?.name || 'Expert'}
       />
+      {micrositeModal}
     </div>
   )
 }

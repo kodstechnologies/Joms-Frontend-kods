@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowLeftRight,
   Clock,
+  KeyRound,
   Trash2,
   Upload,
   UserCheck,
@@ -17,6 +18,7 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { AdminNoteModal } from '../components/admin-note-modal'
 import { RbacLoader } from '../components/rbac-loader'
 import { UpdatePasswordModal } from '../components/update-password-modal'
+import { ResetMfaModal } from '../components/reset-mfa-modal'
 import {
   useDeleteSubAdmin,
   useSubAdmin,
@@ -24,6 +26,7 @@ import {
   useSuspendSubAdmin,
   useReactivateSubAdmin,
   useUpdateSubAdminPassword,
+  useResetSubAdminMfa,
 } from '../hooks/use-rbac'
 import { fetchSubAdminLogs } from '../api/rbac-api'
 import type { AuditLog, UpdateSubAdminPasswordPayload } from '../types/rbac'
@@ -109,8 +112,7 @@ type RoleHistoryRow = {
 
 const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   const previousVersion = log.metadata?.previousVersion as
-    | { roleIds?: string[]; firstName?: string; lastName?: string }
-    | undefined
+    { roleIds?: string[]; firstName?: string; lastName?: string } | undefined
 
   return {
     id: log.id || log._id || log.action,
@@ -181,6 +183,9 @@ export function AdminDetailPage() {
   const reactivateMutation = useReactivateSubAdmin()
   const deleteMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
+  const resetMfaMutation = useResetSubAdminMfa()
+
+  const [resetMfaOpen, setResetMfaOpen] = useState(false)
 
   const subAdmin = subAdminData?.data
   const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
@@ -319,6 +324,19 @@ export function AdminDetailPage() {
     [id, updatePasswordMutation],
   )
 
+  const handleResetMfa = useCallback(async () => {
+    if (!subAdmin) return
+    try {
+      await resetMfaMutation.mutateAsync(id)
+      toast.success(
+        `MFA reset successfully for ${subAdmin.fullname}. They will be prompted to re-configure 2FA.`,
+      )
+      setResetMfaOpen(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to reset MFA'))
+    }
+  }, [id, resetMfaMutation, subAdmin])
+
   if (isLoading || !subAdmin) {
     return <RbacLoader label="Loading admin details..." />
   }
@@ -372,6 +390,14 @@ export function AdminDetailPage() {
           >
             <ArrowLeftRight className="size-4" aria-hidden="true" />
             Change Role
+          </button>
+          <button
+            type="button"
+            className="ad-btn ad-btn-outline border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+            onClick={() => setResetMfaOpen(true)}
+          >
+            <KeyRound className="size-4" aria-hidden="true" />
+            Reset MFA
           </button>
           {isActive ? (
             <button type="button" className="ad-btn ad-btn-danger" onClick={handleSuspend}>
@@ -430,7 +456,16 @@ export function AdminDetailPage() {
               <DetailField label="Employee ID">{subAdmin.employeeId || '—'}</DetailField>
               <DetailField label="Department">{subAdmin.department || '—'}</DetailField>
               <DetailField label="2FA Status">
-                {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
+                <div className="flex items-center gap-2">
+                  <span>{subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setResetMfaOpen(true)}
+                    className="ml-1 text-xs font-medium text-amber-500 underline underline-offset-2 hover:text-amber-400"
+                  >
+                    Reset MFA
+                  </button>
+                </div>
               </DetailField>
               <DetailField label="Workplace">{subAdmin.workplaceFlexibility || '—'}</DetailField>
             </div>
@@ -534,6 +569,14 @@ export function AdminDetailPage() {
         open={Boolean(selectedAdminNote)}
         note={selectedAdminNote ?? undefined}
         onClose={() => setSelectedAdminNote(null)}
+      />
+
+      <ResetMfaModal
+        open={resetMfaOpen}
+        user={subAdmin}
+        isSubmitting={resetMfaMutation.isPending}
+        onClose={() => setResetMfaOpen(false)}
+        onConfirm={handleResetMfa}
       />
 
       {exportFilterModals}

@@ -23,6 +23,7 @@ import {
   Mail,
   MessageSquare,
   PauseCircle,
+  PlayCircle,
   ShoppingBag,
   Tag,
   Ticket,
@@ -56,6 +57,7 @@ import {
   useBulkVerifyKycExperts,
   useBulkEscalateExperts,
 } from '../../hooks/use-expert'
+import { useExpertMicrositeActions } from '../../hooks/use-expert-microsite-actions'
 import { MembershipActionModals } from '@/modules/memberships/components/membership-action-modals'
 import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
 import type { MembershipSubscription } from '@/modules/memberships/types/membership-subscription'
@@ -137,6 +139,8 @@ export const ExpertManagementPage = () => {
   const [notesExpertTarget, setNotesExpertTarget] = useState<Expert | null>(null)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
   const navigate = useNavigate()
+  const { openSuspendMicrosite, openReinstateMicrosite, micrositeModal } =
+    useExpertMicrositeActions()
   const { allowNewAccounts } = useExpertAccountControls()
   const authUser = useAuthStore((state) => state.user)
   const suspendExpertMutation = useSuspendExpert()
@@ -1103,6 +1107,26 @@ export const ExpertManagementPage = () => {
               View Microsite
             </TableActionsItem>
             <TableActionsItem
+              icon={<PauseCircle className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSuspendMicrosite(expert.id || expert.expertId, expert.name)
+              }}
+            >
+              Suspend Microsite
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<PlayCircle className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openReinstateMicrosite(expert.id || expert.expertId, expert.name)
+              }}
+            >
+              Reinstate Microsite
+            </TableActionsItem>
+            <TableActionsItem
               icon={<LayoutList className="size-3.5 text-slate-700" aria-hidden="true" />}
               className={ACTION_ITEM_CLASS}
               onClick={() => {
@@ -1193,6 +1217,8 @@ export const ExpertManagementPage = () => {
     openSuspendModal,
     openTagModal,
     openViewMicrosite,
+    openSuspendMicrosite,
+    openReinstateMicrosite,
     openViewOrders,
     openViewReportsOrTickets,
     selectedExpertIds,
@@ -1595,6 +1621,8 @@ export const ExpertManagementPage = () => {
           onClose={() => setReportExpertTarget(null)}
         />
       )}
+
+      {micrositeModal}
     </div>
   )
 }

@@ -280,3 +280,33 @@ export const revokeSubAdminInvite = async (inviteId: string, payload: InviteActi
   )
   return response.data
 }
+
+export const revokeRole = async (roleId: string) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: { role: Role; revokedCount: number }
+    message?: string
+  }>(`/admin/rbac/roles/${roleId}/revoke`)
+  return response.data
+}
+
+export const revokeSubAdminRole = async (subAdminId: string, roleId?: string) => {
+  const url = roleId
+    ? `/admin/rbac/sub-admins/${subAdminId}/roles/${roleId}/revoke`
+    : `/admin/rbac/sub-admins/${subAdminId}/revoke-role`
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: SubAdmin
+    message?: string
+  }>(url, roleId ? { roleId } : {})
+  return response.data
+}
+
+export const resetSubAdminMfa = async (subAdminId: string) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: SubAdmin
+    message?: string
+  }>(`/admin/rbac/sub-admins/${subAdminId}/reset-mfa`)
+  return response.data
+}

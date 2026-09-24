@@ -112,7 +112,7 @@ function CustomUrlModalContent({
                 <p className="text-body-sm text-muted mt-2">
                   {visible
                     ? 'Custom URL is active — visible in Profile and the partner app.'
-                    : 'Custom URL is suspended — partner app shows "Custom URL unavailable" and the public microsite is offline.'}
+                    : 'Custom URL is suspended — partner app shows "Custom link unavailable" and the public microsite is offline.'}
                 </p>
               </div>
 
@@ -168,8 +168,6 @@ export function CustomUrlModal({
 }: CustomUrlModalProps) {
   if (!open) return null
 
-  // Remount when server details arrive/change so toggle state initializes from props
-  // without setState-in-effect.
   const contentKey = details
     ? `${details.link ?? 'none'}:${details.visible ? 'on' : 'off'}`
     : `pending:${isLoading ? '1' : '0'}`

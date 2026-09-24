@@ -211,6 +211,8 @@ export type AdminProfile = {
   requiresContactSetup?: boolean
   contactSetupCompleted?: boolean
   mfaEnabled?: boolean
+  mfaRequired?: boolean
+  requiresMfaSetup?: boolean
   profile?: SuperAdminSelfProfile
 }
 

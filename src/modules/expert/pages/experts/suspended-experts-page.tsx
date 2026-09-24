@@ -4,6 +4,8 @@ import {
   AlertCircle,
   Bell,
   Eye,
+  Link2,
+  Link2Off,
   MessageSquare,
   PlayCircle,
   ShoppingBag,
@@ -27,6 +29,7 @@ import {
   EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG,
 } from '../../config/expert-management-table-columns.config'
 import { useActivateExpert, useBulkEscalateExperts } from '../../hooks/use-expert'
+import { useExpertMicrositeActions } from '../../hooks/use-expert-microsite-actions'
 import { useExpertStatusList } from '../../hooks/use-expert-status-list'
 import type { Expert } from '../../type/expert'
 import { isVenuePartner, openPartnerProfile } from '../../utils/expert-application-navigation'
@@ -57,6 +60,8 @@ export function ExpertSuspendedExpertsPage() {
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const { data: assigneesData } = useEscalationAssignees('experts.*')
+  const { openSuspendMicrosite, openReinstateMicrosite, micrositeModal } =
+    useExpertMicrositeActions()
   const catalogColumnIds = useMemo(
     () => EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
     [],
@@ -343,6 +348,24 @@ export function ExpertSuspendedExpertsPage() {
                   Escalate to Compliance
                 </TableActionsItem>
                 <TableActionsItem
+                  icon={<Link2Off className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openSuspendMicrosite(expert.id || expert.expertId, expert.name)
+                  }}
+                >
+                  Suspend Microsite
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Link2 className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openReinstateMicrosite(expert.id || expert.expertId, expert.name)
+                  }}
+                >
+                  Reinstate Microsite
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<ExportDataIcon className="size-3.5" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
@@ -365,6 +388,8 @@ export function ExpertSuspendedExpertsPage() {
     navigate,
     openCommunicateWithExpert,
     openNotifyExpert,
+    openReinstateMicrosite,
+    openSuspendMicrosite,
     openViewConsultations,
     openViewOrders,
   ])
@@ -414,7 +439,6 @@ export function ExpertSuspendedExpertsPage() {
         expertId={payoutDrawerTarget?.id || payoutDrawerTarget?.expertId || ''}
         expertName={payoutDrawerTarget?.name || 'Expert'}
       />
-
       <DecisionActionModal
         open={Boolean(escalateTarget)}
         variant="escalate"
@@ -430,6 +454,7 @@ export function ExpertSuspendedExpertsPage() {
         onSubmit={handleEscalateSubmit}
         isSubmitting={bulkEscalateMutation.isPending}
       />
+      {micrositeModal}
     </div>
   )
 }

@@ -1,12 +1,23 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye } from 'lucide-react'
+import { CircleArrowDown, CircleArrowUp, CircleX, Eye, Waypoints } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
-import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
+import {
+  useCancelSubscription,
+  useExpertSubscriptions,
+} from '@/modules/memberships/hooks/use-membership-subscriptions'
+import { MembershipActionModals } from '@/modules/memberships/components/membership-action-modals'
+import {
+  submitMembershipExtendForApproval,
+  submitMembershipPlanChangeForApproval,
+} from '@/modules/memberships/utils/submit-membership-plan-change-approval'
+import type { MembershipSubscription } from '@/modules/memberships/types/membership-subscription'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import type { SubscriptionStatus } from '@/modules/memberships/types/membership-subscription'
 import {
@@ -90,6 +101,7 @@ const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }
 
 export function MembershipManagementPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: SORT_FIELD_MAP,
@@ -99,6 +111,14 @@ export function MembershipManagementPage() {
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
+    null,
+  )
+  const [actionType, setActionType] = useState<
+    'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
+  >(null)
+  const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
+  const cancelMutation = useCancelSubscription()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_MEMBERSHIPS_MODULE_KEY)
   const catalogColumnIds = useMemo(
     () => FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
@@ -124,10 +144,16 @@ export function MembershipManagementPage() {
 
   const { data, isLoading, isFetching } = useExpertSubscriptions(listQueryParams)
 
-  const rows = useMemo(
-    () => (data?.data?.subscriptions ?? []).map(mapSubscriptionToFinanceRow),
-    [data],
-  )
+  const subscriptions = data?.data?.subscriptions ?? []
+  const subscriptionById = useMemo(() => {
+    const map = new Map<string, MembershipSubscription>()
+    for (const subscription of subscriptions) {
+      map.set(subscription._id, subscription)
+    }
+    return map
+  }, [subscriptions])
+
+  const rows = useMemo(() => subscriptions.map(mapSubscriptionToFinanceRow), [subscriptions])
   const meta = data?.data?.meta
   const counts = meta?.counts
 
@@ -138,6 +164,87 @@ export function MembershipManagementPage() {
     toggleVisibleRows,
     toggleRowSelection,
   } = useFinanceRowSelection(rows)
+
+  const closeAction = useCallback(() => {
+    setSelectedSubscription(null)
+    setActionType(null)
+  }, [])
+
+  const openUpgradeMembership = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled' || status === 'expired') {
+        toast.error(`Cannot upgrade a ${status} membership`)
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('upgrade')
+    },
+    [subscriptionById],
+  )
+
+  const openDowngradeMembership = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled' || status === 'expired') {
+        toast.error(`Cannot downgrade a ${status} membership`)
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('downgrade')
+    },
+    [subscriptionById],
+  )
+
+  const openExtendSubscription = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled' || status === 'expired') {
+        toast.error(`Cannot extend a ${status} membership`)
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('extend')
+    },
+    [subscriptionById],
+  )
+
+  const openCancelSubscription = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled') {
+        toast.error('Membership is already cancelled')
+        return
+      }
+      if (status === 'expired') {
+        toast.error('Cannot cancel an expired membership')
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('cancel')
+    },
+    [subscriptionById],
+  )
 
   function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
@@ -178,7 +285,8 @@ export function MembershipManagementPage() {
         label="Open subscription actions"
         isOpen={activeDropdownId === record.id}
         onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
-        menuWidth={200}
+        menuWidth={220}
+        maxVisibleItems={8}
       >
         <TableActionsItem
           icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -190,9 +298,56 @@ export function MembershipManagementPage() {
         >
           View Details
         </TableActionsItem>
+        <TableActionsItem
+          icon={<CircleArrowUp className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openUpgradeMembership(record)
+          }}
+        >
+          Upgrade Membership
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<CircleArrowDown className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openDowngradeMembership(record)
+          }}
+        >
+          Downgrade Membership
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<Waypoints className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openExtendSubscription(record)
+          }}
+        >
+          Extend Subscription
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<CircleX className="size-3.5 text-red-600" aria-hidden="true" />}
+          className="ui-table-actions-item-danger text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openCancelSubscription(record)
+          }}
+        >
+          Cancel Subscription
+        </TableActionsItem>
       </TableActionsDropdown>
     ),
-    [activeDropdownId, navigate],
+    [
+      activeDropdownId,
+      navigate,
+      openUpgradeMembership,
+      openDowngradeMembership,
+      openExtendSubscription,
+      openCancelSubscription,
+    ],
   )
 
   const columns = useMemo<ColumnDef<FinanceMembershipRow>[]>(() => {
@@ -385,6 +540,76 @@ export function MembershipManagementPage() {
       />
 
       {exportFilterModals}
+
+      <MembershipActionModals
+        subscription={selectedSubscription}
+        action={actionType}
+        onClose={closeAction}
+        isSubmitting={isPlanChangeSubmitting || cancelMutation.isPending}
+        onUpgrade={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'upgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            toast.success('Upgrade sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send upgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
+        onDowngrade={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'downgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            toast.success('Downgrade sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send downgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
+        onExtend={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipExtendForApproval(selectedSubscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            toast.success('Extend sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send extend for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
+        onCancel={async (payload) => {
+          if (!selectedSubscription) return
+          try {
+            await cancelMutation.mutateAsync({
+              id: selectedSubscription._id,
+              payload: { ...payload, updatedBy: 'Admin' },
+            })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            void queryClient.invalidateQueries({ queryKey: ['subscription'] })
+            toast.success('Cancellation request submitted')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to cancel membership'))
+          }
+        }}
+      />
     </div>
   )
 }

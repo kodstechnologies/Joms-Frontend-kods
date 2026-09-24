@@ -16,21 +16,35 @@ export function AuthenticatorSetupGate() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const { mfa, isLoading: isPolicyLoading } = useSecurityPolicy()
-  const meQuery = useRbacMe()
   const isSubAdmin = Boolean(user && !user.isSuperAdmin)
-  const contactQuery = useContactSetupProfile(isSubAdmin)
+
+  // Fast polling (5s) for subadmins to detect super-admin role/MFA changes in real time
+  const meQuery = useRbacMe(isSubAdmin ? { refetchInterval: 5_000 } : undefined)
+  const contactQuery = useContactSetupProfile(
+    isSubAdmin,
+    isSubAdmin ? { refetchInterval: 5_000 } : undefined,
+  )
 
   const liveEnrolled = isSubAdmin
     ? contactQuery.data?.data.profile?.mfaEnabled
     : (meQuery.data?.data.mfaEnabled ?? meQuery.data?.data.profile?.mfaEnabled)
-  const enrolled = Boolean(user?.mfaEnabled || liveEnrolled)
+
+  // Prefer live server state over local storage state
+  const enrolled = typeof liveEnrolled === 'boolean' ? liveEnrolled : Boolean(user?.mfaEnabled)
   const enrollmentResolved =
     typeof liveEnrolled === 'boolean' ||
     typeof user?.mfaEnabled === 'boolean' ||
     meQuery.isFetched ||
     (isSubAdmin && contactQuery.isFetched)
-  const requiresAuthenticator =
+
+  const policyRequiresMfa =
     mfa.requireForAllSubAdmins && selectedMfaMethod(mfa) === 'authenticatorApp'
+  const roleRequiresMfa = Boolean(meQuery.data?.data?.mfaRequired)
+  const requiresMfaSetup = Boolean(meQuery.data?.data?.requiresMfaSetup)
+
+  // If policy, role, or reset requires MFA, or if sub-admin is not enrolled
+  const requiresAuthenticator =
+    policyRequiresMfa || roleRequiresMfa || requiresMfaSetup || (isSubAdmin && !enrolled)
   const inSetupFlow = isAuthenticatorSetupRoute(location.pathname, location.search)
   const open =
     !isPolicyLoading && enrollmentResolved && requiresAuthenticator && !enrolled && !inSetupFlow
@@ -38,6 +52,8 @@ export function AuthenticatorSetupGate() {
   return (
     <AuthenticatorRequiredModal
       open={open}
+      title="Authenticator setup required"
+      description="Two-factor authentication is required for your account or has been reset by an administrator. Please set up your authenticator app to continue."
       onSetup={() => navigate(myProfileAuthenticatorSetupPath())}
     />
   )

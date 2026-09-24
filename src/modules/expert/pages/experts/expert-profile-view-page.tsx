@@ -1692,8 +1692,7 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
@@ -3612,7 +3611,7 @@ export function ExpertProfileViewPage() {
               toast.success(
                 visible
                   ? 'Custom URL reinstated — visible on profile and partner app'
-                  : 'Custom URL suspended — partner app will show Custom URL unavailable',
+                  : 'Custom URL suspended — partner app will show Custom link unavailable',
               )
             },
             onError: (error) => {

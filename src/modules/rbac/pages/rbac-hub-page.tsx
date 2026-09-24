@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Clock, Shield, UserCheck } from 'lucide-react'
+import { Clock, KeyRound, Shield, ShieldAlert, UserCheck } from 'lucide-react'
 import {
   AccessAssignUserIcon,
   AccessChangeRoleIcon,
@@ -36,10 +36,14 @@ import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-prefere
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { UpdatePasswordModal } from '../components/update-password-modal'
+import { RevokeRoleModal } from '../components/revoke-role-modal'
+import { ResetMfaModal } from '../components/reset-mfa-modal'
 import {
   useDeleteRole,
   useDisableRole,
   useEnableRole,
+  useRevokeRole,
+  useRevokeSubAdminRole,
   useDeleteSubAdmin,
   useRoleUsers,
   useRoles,
@@ -48,6 +52,7 @@ import {
   useSuspendSubAdmin,
   useReactivateSubAdmin,
   useUpdateSubAdminPassword,
+  useResetSubAdminMfa,
 } from '../hooks/use-rbac'
 import { fetchRoleUsers, fetchRoles, fetchSubAdmins } from '../api/rbac-api'
 import { useRbacStore } from '../store/rbac-store'
@@ -254,10 +259,65 @@ export function RbacHubPage() {
   const disableRoleMutation = useDisableRole()
   const enableRoleMutation = useEnableRole()
   const deleteRoleMutation = useDeleteRole()
+  const revokeRoleMutation = useRevokeRole()
+  const revokeSubAdminRoleMutation = useRevokeSubAdminRole()
   const suspendMutation = useSuspendSubAdmin()
   const reactivateMutation = useReactivateSubAdmin()
   const deleteSubAdminMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
+  const resetMfaMutation = useResetSubAdminMfa()
+
+  const [revokeRoleTarget, setRevokeRoleTarget] = useState<Role | null>(null)
+  const [revokeUserRoleTarget, setRevokeUserRoleTarget] = useState<SubAdmin | null>(null)
+  const [resetMfaUserTarget, setResetMfaUserTarget] = useState<SubAdmin | null>(null)
+
+  const handleRevokeRole = useCallback(
+    async (role: Role) => {
+      try {
+        const result = await revokeRoleMutation.mutateAsync(role.id)
+        toast.success(
+          result?.data?.revokedCount
+            ? `Role "${role.name}" revoked from ${result.data.revokedCount} user(s)`
+            : `Role "${role.name}" revoked successfully`,
+        )
+        setRevokeRoleTarget(null)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to revoke role'))
+      }
+    },
+    [revokeRoleMutation],
+  )
+
+  const handleRevokeUserRole = useCallback(
+    async (user: SubAdmin, roleId: string) => {
+      try {
+        await revokeSubAdminRoleMutation.mutateAsync({
+          subAdminId: user.id,
+          roleId,
+        })
+        toast.success(`Role revoked from ${user.fullname}`)
+        setRevokeUserRoleTarget(null)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to revoke role from user'))
+      }
+    },
+    [revokeSubAdminRoleMutation],
+  )
+
+  const handleResetMfa = useCallback(
+    async (user: SubAdmin) => {
+      try {
+        await resetMfaMutation.mutateAsync(user.id)
+        toast.success(
+          `MFA reset successfully for ${user.fullname}. They will be prompted to re-configure 2FA.`,
+        )
+        setResetMfaUserTarget(null)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to reset MFA'))
+      }
+    },
+    [resetMfaMutation],
+  )
   const tableColumnPreferencesQuery = useTableColumnPreferences(RBAC_HUB_MODULE_KEY)
   const usersCatalogColumnIds = useMemo(
     () => RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
@@ -684,6 +744,16 @@ export function RbacHubPage() {
           >
             Export Role
           </TableActionsItem>
+          <TableActionsItem
+            className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
+            icon={<ShieldAlert className="size-3.5 text-amber-500" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setRevokeRoleTarget(row.original)
+            }}
+          >
+            Revoke Role
+          </TableActionsItem>
         </TableActionsDropdown>
       ),
     }
@@ -832,6 +902,18 @@ export function RbacHubPage() {
           >
             Change role
           </TableActionsItem>
+          {row.original.roles && row.original.roles.length > 0 ? (
+            <TableActionsItem
+              className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
+              icon={<ShieldAlert className="size-3.5 text-amber-500" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                setRevokeUserRoleTarget(row.original)
+              }}
+            >
+              Revoke Role
+            </TableActionsItem>
+          ) : null}
           <TableActionsItem
             icon={<AccessViewUserLogsIcon />}
             onClick={() => {
@@ -849,6 +931,16 @@ export function RbacHubPage() {
             }}
           >
             Password reset
+          </TableActionsItem>
+          <TableActionsItem
+            className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
+            icon={<KeyRound className="size-3.5 text-amber-500" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setResetMfaUserTarget(row.original)
+            }}
+          >
+            Reset MFA
           </TableActionsItem>
           <TableActionsItem
             icon={<AccessRemoveUserIcon />}
@@ -1049,6 +1141,32 @@ export function RbacHubPage() {
         isSubmitting={updatePasswordMutation.isPending}
         onClose={() => setPasswordResetUser(null)}
         onSubmit={handlePasswordReset}
+      />
+
+      <RevokeRoleModal
+        type="role"
+        open={Boolean(revokeRoleTarget)}
+        role={revokeRoleTarget}
+        isSubmitting={revokeRoleMutation.isPending}
+        onClose={() => setRevokeRoleTarget(null)}
+        onConfirm={handleRevokeRole}
+      />
+
+      <RevokeRoleModal
+        type="user"
+        open={Boolean(revokeUserRoleTarget)}
+        user={revokeUserRoleTarget}
+        isSubmitting={revokeSubAdminRoleMutation.isPending}
+        onClose={() => setRevokeUserRoleTarget(null)}
+        onConfirm={handleRevokeUserRole}
+      />
+
+      <ResetMfaModal
+        open={Boolean(resetMfaUserTarget)}
+        user={resetMfaUserTarget}
+        isSubmitting={resetMfaMutation.isPending}
+        onClose={() => setResetMfaUserTarget(null)}
+        onConfirm={handleResetMfa}
       />
 
       {exportFilterModals}

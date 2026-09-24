@@ -5,10 +5,17 @@ import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
 
 type AuthenticatorRequiredModalProps = {
   open: boolean
+  title?: string
+  description?: string
   onSetup: () => void
 }
 
-export function AuthenticatorRequiredModal({ open, onSetup }: AuthenticatorRequiredModalProps) {
+export function AuthenticatorRequiredModal({
+  open,
+  title = 'Authenticator setup required',
+  description = 'Two-factor authentication is required for your account or has been reset by an administrator. Please complete authenticator setup to continue.',
+  onSetup,
+}: AuthenticatorRequiredModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   useDialogFocusTrap(open, () => undefined, dialogRef)
 
@@ -31,7 +38,7 @@ export function AuthenticatorRequiredModal({ open, onSetup }: AuthenticatorRequi
           id="authenticator-required-title"
           className="text-center text-lg font-semibold tracking-tight"
         >
-          Authenticator setup required
+          {title}
         </h3>
 
         <div className="mt-8 flex justify-center">
@@ -48,8 +55,7 @@ export function AuthenticatorRequiredModal({ open, onSetup }: AuthenticatorRequi
           id="authenticator-required-description"
           className="mt-6 text-center text-sm leading-6 text-white/70"
         >
-          MFA is now enabled for your account. Please visit your profile to complete the
-          authenticator setup.
+          {description}
         </p>
 
         <button

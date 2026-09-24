@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Ban, Eye, MessageSquare, User } from 'lucide-react'
+import { AlertTriangle, Ban, Eye, Link2, Link2Off, MessageSquare, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -11,6 +11,7 @@ import {
   EXPERT_REPORTED_TABLE_COLUMNS_CATALOG,
 } from '../../config/expert-management-table-columns.config'
 import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
+import { useExpertMicrositeActions } from '../../hooks/use-expert-microsite-actions'
 import {
   ExpertReportDetailModal,
   type ExpertReportItem,
@@ -53,6 +54,8 @@ export function ExpertReportedExpertsPage() {
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
   const [isEscalating, setIsEscalating] = useState(false)
+  const { openSuspendMicrosite, openReinstateMicrosite, micrositeModal } =
+    useExpertMicrositeActions()
 
   const list = useReportedList<ExpertReportItem>({
     moduleKey: EXPERT_REPORTED_MODULE_KEY,
@@ -311,6 +314,24 @@ export function ExpertReportedExpertsPage() {
                   Escalate Case
                 </TableActionsItem>
                 <TableActionsItem
+                  icon={<Link2Off className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openSuspendMicrosite(reportItem.partnerId, reportItem.expertName)
+                  }}
+                >
+                  Suspend Microsite
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Link2 className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openReinstateMicrosite(reportItem.partnerId, reportItem.expertName)
+                  }}
+                >
+                  Reinstate Microsite
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<ExportDataIcon className="size-3.5" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
@@ -326,7 +347,17 @@ export function ExpertReportedExpertsPage() {
       ],
       EXPERT_COLUMN_SORT_FIELDS,
     )
-  }, [handleExportCase, list, navigate, openCommunicateWithExpert, openReporterProfile])
+  }, [
+    handleExportCase,
+    list.activeDropdownId,
+    list.setActiveDropdownId,
+    list.tableColumnPreferencesQuery.data?.visibleColumnIds,
+    navigate,
+    openCommunicateWithExpert,
+    openReporterProfile,
+    openSuspendMicrosite,
+    openReinstateMicrosite,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -376,7 +407,6 @@ export function ExpertReportedExpertsPage() {
         }}
         onUpdated={list.reload}
       />
-
       <DecisionActionModal
         open={Boolean(escalateTarget)}
         variant="escalate"
@@ -394,6 +424,7 @@ export function ExpertReportedExpertsPage() {
         }}
         isSubmitting={isEscalating}
       />
+      {micrositeModal}
     </div>
   )
 }
