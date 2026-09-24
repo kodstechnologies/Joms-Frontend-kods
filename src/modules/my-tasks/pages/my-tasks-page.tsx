@@ -201,6 +201,7 @@ export function MyTasksPage() {
       serviceType: task.serviceType,
       applicationUrl: task.applicationUrl,
       escalationTarget: task.escalationTarget,
+      metadata: task.metadata,
     })
   }
 

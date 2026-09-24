@@ -7,6 +7,7 @@ export type EscalationNavigationTarget = {
   serviceType?: string
   applicationUrl?: string
   escalationTarget?: string
+  metadata?: Record<string, unknown>
 }
 
 const partnerReviewTab = (escalationTarget?: string) => {
@@ -66,6 +67,8 @@ const buildFallbackUrl = ({
       return `/support/tickets/${entityId}`
     case 'settings_log':
       return `/settings/logs?logId=${encodeURIComponent(entityId)}`
+    case 'incident':
+      return `/settings/main?tab=incident&incidentId=${encodeURIComponent(entityId)}`
     default:
       return null
   }
@@ -75,6 +78,7 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
   const canonical = buildFallbackUrl(target)
   const stored = target.applicationUrl?.trim()
   const storedOrEmpty = stored && stored !== '/' ? stored : ''
+  const metadataIncidentId = String(target.metadata?.incidentId || '').trim()
 
   // Explicit operational deep-links always win (order/booking/profile nested paths).
   if (
@@ -83,6 +87,17 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
     /\/experts\/management\/profile\/[^/]+\/(service|consultation)\//.test(storedOrEmpty)
   ) {
     return withPartnerReviewTab(storedOrEmpty, target.escalationTarget)
+  }
+
+  // Incident assignments: prefer stored URL / display INC_* code over DB entity id.
+  if (target.entityType === 'incident') {
+    if (storedOrEmpty.includes('/settings/main') && storedOrEmpty.includes('incidentId=')) {
+      return storedOrEmpty
+    }
+    if (metadataIncidentId) {
+      return `/settings/main?tab=incident&incidentId=${encodeURIComponent(metadataIncidentId)}`
+    }
+    return canonical
   }
 
   let resolved: string | null = null

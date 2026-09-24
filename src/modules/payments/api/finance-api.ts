@@ -246,6 +246,24 @@ export const seedFinanceRefundCase = async (body: {
   return response.data
 }
 
+export const initiateFinanceRefund = async (body: {
+  paymentId: string
+  amount?: number | null
+  reason?: string
+  adminNotes?: string
+}) => {
+  const response = await paymentApiClient.post<
+    ApiSuccess<{
+      payment?: { _id?: string; orderId?: string; module?: string; amount?: number }
+      maxRefundableAmount?: number
+      dispute?: { _id?: string; disputeId?: string } | null
+      refund?: { _id?: string; refundId?: string; status?: string; amount?: number }
+      created?: boolean
+    }>
+  >('/admin/finance/refunds/initiate', body)
+  return response.data
+}
+
 export const fetchFinanceReconciliation = async (params?: FinanceListParams) => {
   const res = await getData<Paginated<FinanceReconciliation>>(
     '/admin/finance/reconciliation',

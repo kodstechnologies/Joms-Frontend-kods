@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useNavigate } from 'react-router-dom'
-import { Eye, Tag, Trash2, UserPlus, UserRoundCog } from 'lucide-react'
+import { Eye, GitMerge, Tag, Trash2, UserPlus, UserRoundCog } from 'lucide-react'
 import editIcon from '@/assets/JOMS_ICONS-2/edit-text.svg'
 import changeStatusIcon from '@/assets/JOMS_ICONS-2/icons8-data-transfer-24.svg'
 import changePriorityIcon from '@/assets/JOMS_ICONS-2/change-priority.svg'
@@ -17,6 +17,7 @@ import {
   EscalateTicketModal,
   ReassignTicketModal,
 } from '../components/reassign-ticket-modal'
+import { MergeTicketsModal } from '../components/merge-tickets-modal'
 import { EscalationStatusBadge } from '../components/escalation-status-badge'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
@@ -41,6 +42,7 @@ import {
   useDeleteSupportTicket,
   useEscalateSupportTicket,
   useLiveSupportUpdates,
+  useMergeSupportTickets,
   useSupportAgents,
   useSupportTickets,
   useUpdateSupportTicket,
@@ -247,6 +249,7 @@ export function TicketManagementPage() {
   const [assignTicketId, setAssignTicketId] = useState<string | null>(null)
   const [assignMode, setAssignMode] = useState<'assign' | 'reassign'>('assign')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [mergeModalOpen, setMergeModalOpen] = useState(false)
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [isExportingMetrics, setIsExportingMetrics] = useState(false)
@@ -269,6 +272,7 @@ export function TicketManagementPage() {
   const escalateMutation = useEscalateSupportTicket()
   const assignMutation = useAssignSupportTicket()
   const deleteMutation = useDeleteSupportTicket()
+  const mergeMutation = useMergeSupportTickets()
   const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
   const tableColumnPreferencesQuery = useTableColumnPreferences(TICKET_MANAGEMENT_MODULE_KEY)
@@ -329,6 +333,88 @@ export function TicketManagementPage() {
       prev.length === tickets.length ? [] : tickets.map((ticket) => ticket.id),
     )
   }, [tickets])
+
+  const selectedTickets = useMemo(
+    () =>
+      selectedIds
+        .map((id) => tickets.find((ticket) => ticket.id === id))
+        .filter((ticket): ticket is SupportTicket => Boolean(ticket)),
+    [selectedIds, tickets],
+  )
+
+  const mergePreviewTickets = useMemo(() => {
+    return [...selectedTickets]
+      .sort((a, b) => {
+        const aTime = new Date(a.createdAtIso || a.createdAt || 0).getTime()
+        const bTime = new Date(b.createdAtIso || b.createdAt || 0).getTime()
+        return aTime - bTime
+      })
+      .map((ticket, index) => ({
+        id: ticket.id,
+        user: ticket.reporter || 'Unknown user',
+        issue: ticket.subject || ticket.issueType || 'Support issue',
+        time: formatTicketDateTime(ticket.createdAtIso || ticket.createdAt),
+        avatarUrl: ticket.reporterAvatarUrl,
+        isPrimary: index === 0,
+      }))
+  }, [selectedTickets])
+
+  const openMergeModal = useCallback(() => {
+    if (selectedIds.length !== 2) {
+      toast.error('Select exactly two tickets to merge.')
+      return
+    }
+    if (selectedTickets.length !== 2) {
+      toast.error('Selected tickets are not available on this page. Refresh and try again.')
+      return
+    }
+
+    const [first, second] = selectedTickets
+    const firstReporter = String(first.reporterId || first.reporter || '')
+      .trim()
+      .toLowerCase()
+    const secondReporter = String(second.reporterId || second.reporter || '')
+      .trim()
+      .toLowerCase()
+    if (!firstReporter || firstReporter !== secondReporter) {
+      toast.error('Only duplicate tickets from the same user can be merged.')
+      return
+    }
+
+    const firstCategory = String(first.category || '')
+      .trim()
+      .toLowerCase()
+    const secondCategory = String(second.category || '')
+      .trim()
+      .toLowerCase()
+    if (!firstCategory || firstCategory !== secondCategory) {
+      toast.error('Only tickets in the same category can be merged.')
+      return
+    }
+
+    setMergeModalOpen(true)
+  }, [selectedIds.length, selectedTickets])
+
+  const handleMergeTickets = useCallback(
+    async (notes: string) => {
+      try {
+        const result = await mergeMutation.mutateAsync({
+          ticketIds: selectedIds,
+          notes,
+        })
+        const primaryId = String(result?.data?.id || mergePreviewTickets[0]?.id || '').trim()
+        toast.success(
+          primaryId ? `Tickets merged into ${primaryId}` : 'Tickets merged into the older ticket',
+        )
+        setSelectedIds([])
+        setMergeModalOpen(false)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to merge tickets'))
+        throw error
+      }
+    },
+    [mergeMutation, mergePreviewTickets, selectedIds],
+  )
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -836,6 +922,17 @@ export function TicketManagementPage() {
           <Button
             type="button"
             variant="primary"
+            onClick={openMergeModal}
+            disabled={selectedIds.length === 0}
+            className="ui-cta ui-cta-primary inline-flex items-center gap-2"
+          >
+            <GitMerge className="size-4 shrink-0" />
+            Merge Tickets
+            {selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
             onClick={() => void handleExportMetrics()}
             disabled={isExportingMetrics}
             className="ui-export-data ui-cta ui-cta-primary"
@@ -916,6 +1013,13 @@ export function TicketManagementPage() {
               ? 'No escalated tickets.'
               : 'No tickets found.'
         }
+      />
+
+      <MergeTicketsModal
+        open={mergeModalOpen}
+        tickets={mergePreviewTickets}
+        onClose={() => setMergeModalOpen(false)}
+        onSubmit={handleMergeTickets}
       />
 
       <AddTagModal

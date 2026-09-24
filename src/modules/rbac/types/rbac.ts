@@ -254,6 +254,7 @@ export type SubAdminInvite = {
   roleName: string
   email: string
   status: 'pending' | 'accepted' | 'revoked'
+  inviteLink?: string
   timestamp?: string
   sentAt: string
   sentBy?: string
