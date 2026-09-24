@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertCircle, ArrowLeft, CheckCircle2, Eye, MessageSquare } from 'lucide-react'
+import { AlertCircle, ArrowLeft, CheckCircle2, Eye, FileText, MessageSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -132,6 +132,13 @@ export function PendingApprovalsPage() {
         partnerIds: partnerId,
       })
       navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openViewSubmittedDocuments = useCallback(
+    (service: Service) => {
+      navigate(getServiceManagementViewPath(service, { section: 'documents' }))
     },
     [navigate],
   )
@@ -280,6 +287,15 @@ export function PendingApprovalsPage() {
                   Communicate with Expert
                 </TableActionsItem>
                 <TableActionsItem
+                  icon={<FileText className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    openViewSubmittedDocuments(service)
+                  }}
+                >
+                  View Submitted Documents
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<AlertCircle className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveDropdownId(null)
@@ -300,6 +316,7 @@ export function PendingApprovalsPage() {
     allVisibleServicesSelected,
     navigate,
     openCommunicateWithExpert,
+    openViewSubmittedDocuments,
     selectedServiceIds,
     setActiveDropdownId,
     someVisibleServicesSelected,

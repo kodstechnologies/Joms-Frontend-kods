@@ -14,6 +14,7 @@ export type MyTask = {
     | 'finance'
     | 'membership_upgrade'
     | 'support_ticket'
+    | 'settings_log'
   entityId?: string
   venueId?: string
   title: string

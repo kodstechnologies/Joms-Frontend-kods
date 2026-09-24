@@ -13,7 +13,14 @@ import { cn } from '@/shared/lib/cn'
 import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
 
 export type DecisionActionModalVariant =
-  'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend' | 'delete' | 'pause' | 'warn'
+  | 'approve'
+  | 'reject'
+  | 'requestChanges'
+  | 'escalate'
+  | 'suspend'
+  | 'delete'
+  | 'pause'
+  | 'warn'
 
 export type DecisionActionModalOption = {
   label: string
@@ -21,7 +28,13 @@ export type DecisionActionModalOption = {
 }
 
 export type DecisionActionSubmitIcon =
-  'check' | 'x' | 'trash' | 'userMinus' | 'pause' | 'circleArrowOutUpRight' | 'none'
+  | 'check'
+  | 'x'
+  | 'trash'
+  | 'userMinus'
+  | 'pause'
+  | 'circleArrowOutUpRight'
+  | 'none'
 
 const getTodayDateInputValue = () => {
   const now = new Date()
@@ -74,6 +87,8 @@ type DecisionActionModalProps = {
   isSubmitting?: boolean
   submitDisabled?: boolean
   showTimeline?: boolean
+  /** When true, existing suspensions may keep a start date earlier than today. */
+  timelineAllowPastStart?: boolean
   startDate?: string
   onStartDateChange?: (value: string) => void
   endDate?: string
@@ -248,6 +263,7 @@ export function DecisionActionModal({
   isSubmitting = false,
   submitDisabled = false,
   showTimeline = false,
+  timelineAllowPastStart = false,
   startDate = '',
   onStartDateChange,
   endDate = '',
@@ -265,7 +281,7 @@ export function DecisionActionModal({
   useDialogFocusTrap(open, onClose, dialogRef)
 
   const todayDate = getTodayDateInputValue()
-  const timelineStartMin = todayDate
+  const timelineStartMin = timelineAllowPastStart ? undefined : todayDate
   const minEndFromStart = startDate ? addDaysToDateInputValue(startDate, 1) : ''
   const timelineEndMin = !indefinite
     ? minEndFromStart || addDaysToDateInputValue(todayDate, 1)
@@ -286,7 +302,11 @@ export function DecisionActionModal({
   const hasInvalidTimeline =
     showTimeline &&
     !indefinite &&
-    Boolean(startDate && endDate && (startDate < todayDate || endDate <= startDate))
+    Boolean(
+      startDate &&
+      endDate &&
+      ((!timelineAllowPastStart && startDate < todayDate) || endDate <= startDate),
+    )
 
   const styles = variantStyles[variant]
   const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
@@ -512,7 +532,7 @@ export function DecisionActionModal({
                     disabled={indefinite}
                     onChange={(event) => {
                       let nextStart = event.target.value
-                      if (nextStart && nextStart < todayDate) {
+                      if (!timelineAllowPastStart && nextStart && nextStart < todayDate) {
                         nextStart = todayDate
                       }
                       onStartDateChange?.(nextStart)

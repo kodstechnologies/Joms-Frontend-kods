@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { HardDriveDownload, RotateCcw, Settings2, Trash2 } from 'lucide-react'
+import { Download, HardDriveDownload, RotateCcw, Settings2, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -158,6 +158,35 @@ export function BackupRestorePanel() {
   const runMutation = useRunBackup()
   const warnedRef = useRef<string | null>(null)
   const tableColumnPreferencesQuery = useTableColumnPreferences(BACKUP_MODULE_KEY)
+
+  const downloadBackupMetadata = useCallback((row: BackupHistoryRow) => {
+    const metadata = {
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      scope: row.scope,
+      createdBy: row.createdBy,
+      timestamp: row.timestamp,
+      size: row.size,
+      status: row.status,
+      partial: row.partial ?? false,
+      rdsError: row.rdsError ?? null,
+      jsonError: row.jsonError ?? null,
+      exportedAt: new Date().toISOString(),
+    }
+    const blob = new Blob([JSON.stringify(metadata, null, 2)], {
+      type: 'application/json;charset=utf-8',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `backup_metadata_${row.id || row.name || 'export'}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Backup metadata downloaded')
+  }, [])
   const catalogColumnIds = useMemo(
     () => BACKUP_HISTORY_COLUMNS_CATALOG.map((column) => column.id),
     [],
@@ -306,9 +335,18 @@ export function BackupRestorePanel() {
           label="Backup actions"
           isOpen={menuOpenId === row.original.id}
           onOpenChange={(open) => setMenuOpenId(open ? row.original.id : null)}
-          menuWidth={140}
+          menuWidth={220}
           menuClassName="ui-table-actions-menu-access"
         >
+          <TableActionsItem
+            icon={<Download className="size-3.5" />}
+            onClick={() => {
+              setMenuOpenId(null)
+              downloadBackupMetadata(row.original)
+            }}
+          >
+            Download Backup Metadata
+          </TableActionsItem>
           <TableActionsItem
             icon={<RotateCcw className="size-3.5" />}
             onClick={() => {
@@ -339,6 +377,7 @@ export function BackupRestorePanel() {
   }, [
     catalogColumnIds,
     deleteMutation,
+    downloadBackupMetadata,
     menuOpenId,
     tableColumnPreferencesQuery.data?.visibleColumnIds,
   ])

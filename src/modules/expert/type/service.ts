@@ -72,6 +72,13 @@ export interface SuspendServicePayload {
   adminNotes: string
 }
 
+export interface UpdateServiceSuspensionPayload {
+  suspendIndefinitely: boolean
+  startDate?: string
+  endDate?: string
+  adminNotes: string
+}
+
 export interface ServiceSuspendActivateResponse {
   success: boolean
   message: string
@@ -154,7 +161,8 @@ export type UpdateServiceStatusRejectPayload = {
 }
 
 export type UpdateServiceStatusPayload =
-  UpdateServiceStatusApprovePayload | UpdateServiceStatusRejectPayload
+  | UpdateServiceStatusApprovePayload
+  | UpdateServiceStatusRejectPayload
 
 export interface ServiceDetail {
   _id: string
@@ -269,7 +277,8 @@ export type UpdateConsultationStatusRejectPayload = {
 }
 
 export type UpdateConsultationStatusPayload =
-  UpdateConsultationStatusApprovePayload | UpdateConsultationStatusRejectPayload
+  | UpdateConsultationStatusApprovePayload
+  | UpdateConsultationStatusRejectPayload
 
 export interface ConsultationStatusUpdateResponse {
   success: boolean

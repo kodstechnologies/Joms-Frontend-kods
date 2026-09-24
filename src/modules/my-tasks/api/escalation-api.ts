@@ -11,6 +11,7 @@ export type AdminEscalationEntityType =
   | 'finance'
   | 'membership_upgrade'
   | 'support_ticket'
+  | 'settings_log'
 
 export type AdminEscalation = {
   _id?: string
@@ -194,6 +195,17 @@ export const escalateMembershipUpgradeApplication = async (
 ) => {
   const response = await adminApiClient.patch(
     `/admin/internal/admin/membership-upgrades/${subscriptionId}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateSettingsLogApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/settings-logs/${id}/escalate`,
     payload,
   )
   return response.data

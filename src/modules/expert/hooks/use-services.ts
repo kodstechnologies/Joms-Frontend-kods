@@ -6,6 +6,7 @@ import {
   updateServiceStatus,
   updateConsultationStatus,
   suspendService,
+  updateServiceSuspension,
   activateService,
   deleteService,
   restoreService,
@@ -20,6 +21,7 @@ import {
 } from '../api/service-api'
 import type {
   SuspendServicePayload,
+  UpdateServiceSuspensionPayload,
   UpdateConsultationStatusPayload,
   UpdateServiceStatusPayload,
 } from '../type/service'
@@ -71,6 +73,24 @@ export const useSuspendService = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: SuspendServicePayload }) =>
       suspendService(id, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['service', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['consultation', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-service-detail', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-service-revisions', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
+    },
+  })
+}
+
+export const useUpdateServiceSuspension = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateServiceSuspensionPayload }) =>
+      updateServiceSuspension(id, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
       queryClient.invalidateQueries({ queryKey: ['service', variables.id] })

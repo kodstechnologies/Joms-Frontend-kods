@@ -16,12 +16,19 @@ export const isApprovedListingStatus = (status?: string) => {
   return normalized === 'live' || normalized === 'approved'
 }
 
-export const getServiceManagementViewPath = (service: ServiceViewTarget) => {
+export const getServiceManagementViewPath = (
+  service: ServiceViewTarget,
+  options?: { section?: 'documents' | 'media' },
+) => {
   const params = new URLSearchParams()
   params.set('type', service.serviceType || 'Service')
 
   if (service.partnerId) {
     params.set('partnerId', service.partnerId)
+  }
+
+  if (options?.section === 'documents' || options?.section === 'media') {
+    params.set('section', 'documents')
   }
 
   return `/services/management/view/${service._id}?${params.toString()}`

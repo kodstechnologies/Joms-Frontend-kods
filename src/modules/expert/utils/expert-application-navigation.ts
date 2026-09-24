@@ -68,10 +68,17 @@ export const openExpertApplicationView = async (
     venueKycStatus?: string | null
   },
   navigate: NavigateFunction,
+  options?: { tab?: 'overview' | 'kyc' | 'banking'; focus?: string },
 ) => {
+  const query = new URLSearchParams()
+  if (options?.tab) query.set('tab', options.tab)
+  if (options?.focus) query.set('focus', options.focus)
+  const extra = query.toString()
+
   if (isVenueServiceType(expert.serviceType)) {
     if (expert.venueKycId && isSubmittedKycStatus(expert.venueKycStatus)) {
-      navigate(getVenueKycApplicationPath(expert.venueKycId))
+      const base = getVenueKycApplicationPath(expert.venueKycId)
+      navigate(extra ? `${base}&${extra}` : base)
       return
     }
 
@@ -84,7 +91,7 @@ export const openExpertApplicationView = async (
     return
   }
 
-  navigate(`/experts/management/application/${expert.id}`)
+  navigate(`/experts/management/application/${expert.id}${extra ? `?${extra}` : ''}`)
 }
 
 const readKycId = (payload: unknown): string => {

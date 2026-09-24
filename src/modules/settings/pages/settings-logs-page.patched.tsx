@@ -1,6 +1,15 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, History, RotateCcw, Shield, UserRound, Waypoints } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  History,
+  MessageSquare,
+  RotateCcw,
+  Shield,
+  UserRound,
+  Waypoints,
+} from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -57,6 +66,12 @@ import {
 import { formatDateTimeEnInLogs as formatDateTime } from '@/shared/lib/format-datetime'
 import { fetchRoles } from '@/modules/rbac/api/rbac-api'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateSettingsLogApplication } from '@/modules/my-tasks/api/escalation-api'
 
 const PAGE_SIZE = 10
 
@@ -178,6 +193,20 @@ export function SettingsLogsPage() {
   const [versionHistoryModule, setVersionHistoryModule] = useState<SettingsModule | null>(null)
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [noteLog, setNoteLog] = useState<SettingsLog | null>(null)
+  const [escalateTarget, setEscalateTarget] = useState<SettingsLog | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const { data: assigneesData } = useEscalationAssignees('settings.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const serverSort = useServerTableSort({
     sortFieldMap: SETTINGS_LOG_SORT_FIELD_MAP,
@@ -302,6 +331,76 @@ export function SettingsLogsPage() {
     },
     [navigate],
   )
+
+  const openCommunicate = useCallback(
+    (log: SettingsLog) => {
+      // Sub-admins do not support push; open email compose for admins audience.
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'admins',
+      })
+      const performedBy = String(log.performedBy || '').trim()
+      if (performedBy) {
+        params.set('hint', `Settings log by ${performedBy}`)
+      }
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const applicationUrl = `/settings/logs?logId=${encodeURIComponent(escalateTarget.id)}`
+
+    setIsEscalating(true)
+    try {
+      await escalateSettingsLogApplication(escalateTarget.id, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        entityTitle: `${escalateTarget.moduleLabel || escalateTarget.module} — ${escalateTarget.performedBy || 'Settings log'}`,
+        applicationUrl,
+        escalationTarget: 'application',
+        metadata: {
+          source: 'settings_logs',
+          logId: escalateTarget.id,
+          adminId: escalateTarget.adminId,
+          module: escalateTarget.module,
+          orderUrl: applicationUrl,
+        },
+      })
+      toast.success('Settings log escalated')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate settings log.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
 
   const openViewUserLogs = useCallback(
     (log: SettingsLog) => {
@@ -449,6 +548,15 @@ export function SettingsLogsPage() {
                 Export Log
               </TableActionsItem>
               <TableActionsItem
+                icon={<AlertTriangle className="size-3.5" />}
+                onClick={() => {
+                  setActiveMenuId(null)
+                  setEscalateTarget(log)
+                }}
+              >
+                Escalate
+              </TableActionsItem>
+              <TableActionsItem
                 icon={<UserRound className="size-3.5" />}
                 onClick={() => {
                   setActiveMenuId(null)
@@ -456,6 +564,24 @@ export function SettingsLogsPage() {
                 }}
               >
                 View User Profile
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<UserRound className="size-3.5" />}
+                onClick={() => {
+                  setActiveMenuId(null)
+                  openViewUserProfile(log)
+                }}
+              >
+                View User
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<MessageSquare className="size-3.5" />}
+                onClick={() => {
+                  setActiveMenuId(null)
+                  openCommunicate(log)
+                }}
+              >
+                Communicate
               </TableActionsItem>
               <TableActionsItem
                 icon={<History className="size-3.5" />}
@@ -508,6 +634,7 @@ export function SettingsLogsPage() {
     handleExportLogRow,
     handleRestore,
     navigate,
+    openCommunicate,
     openViewRole,
     openViewUserLogs,
     openViewUserProfile,
@@ -518,6 +645,24 @@ export function SettingsLogsPage() {
 
   return (
     <div className="space-y-6">
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate"
+        description="Are you sure you want to escalate this settings log? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
+
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="login-trails-title-row">
           <button type="button" onClick={goBack} className="login-trails-back" aria-label="Back">

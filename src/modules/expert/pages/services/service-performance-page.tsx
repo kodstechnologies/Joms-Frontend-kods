@@ -1,9 +1,29 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Check, Star, User, Users, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Banknote,
+  Check,
+  CreditCard,
+  Eye,
+  MessageSquare,
+  Receipt,
+  Star,
+  Users,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { seedFinanceRefundCase } from '@/modules/payments/api/finance-api'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
 
 import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
@@ -83,6 +103,20 @@ export function ServicePerformancePage() {
   const [appliedFilters, setAppliedFilters] = useState<ServiceOrdersQuery>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentModalOrder, setPaymentModalOrder] = useState<ServiceOrderRow | null>(null)
+  const [escalateTarget, setEscalateTarget] = useState<ServiceOrderRow | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const performanceQuery = useServicePerformance(serviceId)
   const performance = performanceQuery.data?.data
@@ -146,6 +180,249 @@ export function ServicePerformancePage() {
     [expertId, navigate, serviceId],
   )
 
+  const resolvePaymentId = useCallback((order: ServiceOrderRow) => {
+    return String(order.paymentId || order.transactionId || '').trim()
+  }, [])
+
+  const resolveOrderUrl = useCallback(
+    (order: ServiceOrderRow) =>
+      serviceOrderDetailPath(expertId, serviceId, order.id, order.engagementType),
+    [expertId, serviceId],
+  )
+
+  const openCommunicateWithExpert = useCallback(
+    (order?: ServiceOrderRow) => {
+      const partnerId = String(order?.partnerId || expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [expertId, navigate],
+  )
+
+  const openViewRefundDetails = useCallback(
+    (order: ServiceOrderRow) => {
+      const refundId = String(order.refundId || '').trim()
+      if (!refundId) {
+        toast.error('No refund record found for this order.')
+        return
+      }
+      navigate(`/finance/refunds/${encodeURIComponent(refundId)}`)
+    },
+    [navigate],
+  )
+
+  const openProcessRefund = useCallback(
+    async (order: ServiceOrderRow) => {
+      const existingRefundId = String(order.refundId || '').trim()
+      if (existingRefundId) {
+        navigate(`/finance/refunds/${encodeURIComponent(existingRefundId)}`)
+        return
+      }
+
+      const paymentId = resolvePaymentId(order)
+      if (!paymentId) {
+        toast.error('Payment ID is missing for this order. Cannot process refund.')
+        return
+      }
+
+      try {
+        const response = await seedFinanceRefundCase({
+          mode: 'refund_request',
+          module: 'service',
+          paymentId,
+          amount: Number(order.totalPaid ?? order.price) || undefined,
+          reason: `Service order ${order.orderId}`,
+        })
+        const seededRefundId = String(
+          response?.data?.refund?._id || response?.data?.refund?.refundId || '',
+        ).trim()
+        const disputeId = String(
+          response?.data?.dispute?._id || response?.data?.dispute?.disputeId || '',
+        ).trim()
+
+        if (seededRefundId) {
+          navigate(`/finance/refunds/${encodeURIComponent(seededRefundId)}`)
+          return
+        }
+        if (disputeId) {
+          navigate(`/finance/refunds/${encodeURIComponent(disputeId)}/dispute`)
+          return
+        }
+        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
+      } catch (error) {
+        toast.error(
+          getApiErrorMessage(error, 'Failed to open refund flow. Opening payment details.'),
+        )
+        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
+      }
+    },
+    [navigate, resolvePaymentId],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const orderUrl = resolveOrderUrl(escalateTarget)
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const paymentId = resolvePaymentId(escalateTarget)
+
+    setIsEscalating(true)
+    try {
+      await escalateServiceApplication(serviceId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        entityTitle: `Service order ${escalateTarget.orderId} — ${escalateTarget.title || performance?.service.title || 'Service'}`,
+        applicationUrl: orderUrl,
+        escalationTarget: 'application',
+        partnerId: String(escalateTarget.partnerId || expertId || ''),
+        metadata: {
+          source: 'service_performance',
+          orderId: escalateTarget.id,
+          paymentId: paymentId || undefined,
+          serviceId,
+          clientId: escalateTarget.clientId,
+          orderUrl,
+        },
+      })
+      toast.success('Escalated — assigned admin opens order details from My Tasks')
+      closeEscalateModal()
+      navigate(orderUrl)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate order.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    expertId,
+    navigate,
+    performance?.service.title,
+    resolveOrderUrl,
+    resolvePaymentId,
+    selectedEscalationOption,
+    serviceId,
+  ])
+
+  const buildOrderExportCells = useCallback(
+    (order: ServiceOrderRow, exportCols: { id: string; label: string }[]) =>
+      exportCols.map((column) => {
+        switch (column.id) {
+          case 'order-id':
+            return order.orderId
+          case 'client-id':
+            return formatClientCode(order.clientId)
+          case 'client-name':
+            return order.clientName || DASH
+          case 'client-source':
+            return order.clientSource || DASH
+          case 'client-phone':
+            return order.clientPhone || DASH
+          case 'order-status':
+            return titleCase(order.orderStatus)
+          case 'ordered-at':
+            return formatDate(order.orderedAt)
+          case 'start-date':
+            return formatDate(order.startDate)
+          case 'end-date':
+            return formatDate(order.endDate)
+          case 'delivery-duration':
+            return order.deliveryDuration || DASH
+          case 'price':
+            return String(order.price)
+          case 'payment-id':
+            return order.paymentId || DASH
+          case 'payment-method':
+            return order.paymentMethod || DASH
+          case 'transaction-id':
+            return order.transactionId || DASH
+          case 'rating':
+            return order.rating === null ? DASH : String(order.rating)
+          case 'payout-status':
+            return order.payoutStatusLabel || DASH
+          case 'disputed':
+            return order.disputed ? 'Yes' : 'No'
+          case 'dispute-end-date':
+            return formatDate(order.disputeEndDate)
+          case 'dispute-raised-at':
+            return formatDate(order.disputeRaisedAt)
+          case 'dispute-ticket-id':
+            return order.disputeId || order.supportTicketId || DASH
+          case 'refund-issued':
+            return order.refundIssued ? 'Yes' : 'No'
+          case 'refund-amount':
+            return order.refundAmount === null ? DASH : String(order.refundAmount)
+          case 'refund-status':
+            return order.refundStatus || DASH
+          case 'refunded-at':
+            return formatDate(order.refundedAt)
+          case 'listing-type':
+            return listingTypeLabel(order)
+          default:
+            return DASH
+        }
+      }),
+    [],
+  )
+
+  const getVisibleExportColumns = useCallback(() => {
+    const catalogIds = SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      [
+        ...new Set(
+          rawIds
+            .map((id) => SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP[id] ?? id)
+            .filter((id) => catalogIds.includes(id)),
+        ),
+      ],
+      catalogIds,
+    )
+    return SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.filter((column) =>
+      visibleIds.includes(column.id),
+    )
+  }, [tableColumnPreferencesQuery.data?.visibleColumnIds])
+
+  const handleExportOrderRow = useCallback(
+    (order: ServiceOrderRow, format = 'excel') => {
+      const exportCols = getVisibleExportColumns()
+      const headers = exportCols.map((column) => column.label)
+      const rows = [buildOrderExportCells(order, exportCols)]
+      exportDataToFile(headers, rows, format, `service_order_${order.orderId || order.id}`)
+      toast.success('Order exported')
+    },
+    [buildOrderExportCells, getVisibleExportColumns],
+  )
+
   const handleExport = useCallback(
     (format = 'excel') => {
       if (orders.length === 0) {
@@ -153,88 +430,14 @@ export function ServicePerformancePage() {
         return
       }
 
-      const catalogIds = SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-      const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-        ? tableColumnPreferencesQuery.data.visibleColumnIds
-        : DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS
-      const visibleIds = sortIdsByCatalogOrder(
-        [
-          ...new Set(
-            rawIds
-              .map((id) => SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP[id] ?? id)
-              .filter((id) => catalogIds.includes(id)),
-          ),
-        ],
-        catalogIds,
-      )
-      const exportCols = SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.filter((column) =>
-        visibleIds.includes(column.id),
-      )
-
+      const exportCols = getVisibleExportColumns()
       const headers = exportCols.map((column) => column.label)
-      const rows = orders.map((order) =>
-        exportCols.map((column) => {
-          switch (column.id) {
-            case 'order-id':
-              return order.orderId
-            case 'client-id':
-              return formatClientCode(order.clientId)
-            case 'client-name':
-              return order.clientName || DASH
-            case 'client-source':
-              return order.clientSource || DASH
-            case 'client-phone':
-              return order.clientPhone || DASH
-            case 'order-status':
-              return titleCase(order.orderStatus)
-            case 'ordered-at':
-              return formatDate(order.orderedAt)
-            case 'start-date':
-              return formatDate(order.startDate)
-            case 'end-date':
-              return formatDate(order.endDate)
-            case 'delivery-duration':
-              return order.deliveryDuration || DASH
-            case 'price':
-              return String(order.price)
-            case 'payment-id':
-              return order.paymentId || DASH
-            case 'payment-method':
-              return order.paymentMethod || DASH
-            case 'transaction-id':
-              return order.transactionId || DASH
-            case 'rating':
-              return order.rating === null ? DASH : String(order.rating)
-            case 'payout-status':
-              return order.payoutStatusLabel || DASH
-            case 'disputed':
-              return order.disputed ? 'Yes' : 'No'
-            case 'dispute-end-date':
-              return formatDate(order.disputeEndDate)
-            case 'dispute-raised-at':
-              return formatDate(order.disputeRaisedAt)
-            case 'dispute-ticket-id':
-              return order.disputeId || order.supportTicketId || DASH
-            case 'refund-issued':
-              return order.refundIssued ? 'Yes' : 'No'
-            case 'refund-amount':
-              return order.refundAmount === null ? DASH : String(order.refundAmount)
-            case 'refund-status':
-              return order.refundStatus || DASH
-            case 'refunded-at':
-              return formatDate(order.refundedAt)
-            case 'listing-type':
-              return listingTypeLabel(order)
-            default:
-              return DASH
-          }
-        }),
-      )
+      const rows = orders.map((order) => buildOrderExportCells(order, exportCols))
 
       exportDataToFile(headers, rows, format, 'service_orders_export')
       toast.success(`Exported ${orders.length} order(s)`)
     },
-    [orders, tableColumnPreferencesQuery.data?.visibleColumnIds],
+    [buildOrderExportCells, getVisibleExportColumns, orders],
   )
 
   const dataColumnsById = useMemo<Record<string, ColumnDef<ServiceOrderRow>>>(
@@ -516,26 +719,78 @@ export function ServicePerformancePage() {
               label="Order actions"
               isOpen={activeActionMenu === order.id}
               onOpenChange={(open) => setActiveActionMenu(open ? order.id : null)}
+              menuWidth={240}
+              maxVisibleItems={8}
             >
               <TableActionsItem
                 tone="light"
-                icon={<User className="size-3.5" />}
+                icon={<Eye className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   openOrderDetail(order)
                 }}
               >
-                View Details
+                View Order Details
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
-                icon={<User className="size-3.5" />}
+                icon={<CreditCard className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   setPaymentModalOrder(order)
                 }}
               >
                 View Payment Details
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<Receipt className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openViewRefundDetails(order)
+                }}
+              >
+                View Refund Details
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<AlertTriangle className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  setEscalateTarget(order)
+                }}
+              >
+                Escalate Order
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<MessageSquare className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openCommunicateWithExpert(order)
+                }}
+              >
+                Communicate with Expert
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<Banknote className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  void openProcessRefund(order)
+                }}
+              >
+                Process Refund
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<ExportDataIcon className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  handleExportOrderRow(order)
+                }}
+              >
+                Export Order
               </TableActionsItem>
             </TableActionsDropdown>
           </div>
@@ -544,7 +799,16 @@ export function ServicePerformancePage() {
     }
 
     return withServerSortMeta([...preferenceColumns, actionsColumn], SERVICE_COLUMN_SORT_FIELDS)
-  }, [activeActionMenu, dataColumnsById, openOrderDetail, tableColumnPreferencesQuery.data])
+  }, [
+    activeActionMenu,
+    dataColumnsById,
+    handleExportOrderRow,
+    openCommunicateWithExpert,
+    openOrderDetail,
+    openProcessRefund,
+    openViewRefundDetails,
+    tableColumnPreferencesQuery.data,
+  ])
 
   const serviceTitle = performance?.service.title || ordersData?.service.title || 'Service'
 
@@ -561,6 +825,24 @@ export function ServicePerformancePage() {
           image: paymentModalOrder?.serviceImage || ordersData?.service.image,
         }}
         onClose={() => setPaymentModalOrder(null)}
+      />
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate Order"
+        description="Are you sure you want to escalate this order to compliance? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
       />
 
       {filterModals}

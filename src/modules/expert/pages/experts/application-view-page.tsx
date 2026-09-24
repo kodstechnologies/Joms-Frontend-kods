@@ -152,6 +152,7 @@ export function ExpertApplicationViewPage() {
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
 
   const tabFromQuery = searchParams.get('tab')
+  const focusFromQuery = searchParams.get('focus')
   const initialTab: TabKey =
     tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview'
       ? tabFromQuery
@@ -222,6 +223,17 @@ export function ExpertApplicationViewPage() {
   const isBankingSubmitted = isSubmittedKycStatus(application?.banking?.status)
   const displayKycStatus = getDisplayKycStatus(application?.expert, application?.kyc)
   const showKycDetails = isKycSubmitted
+
+  useEffect(() => {
+    if (focusFromQuery !== 'gst' || activeTab !== 'kyc' || isLoading || !showKycDetails) return
+    const timer = window.setTimeout(() => {
+      document.getElementById('gst-information')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }, 120)
+    return () => window.clearTimeout(timer)
+  }, [activeTab, focusFromQuery, isLoading, showKycDetails])
 
   const activeSectionSubmitted =
     decisionTargetForTab === 'banking' ? isBankingSubmitted : isKycSubmitted
@@ -763,7 +775,7 @@ export function ExpertApplicationViewPage() {
                   label="Sample Work Link"
                   value={kyc?.sampleWorkLink || profile?.sampleWorkLink}
                 />
-                <div>
+                <div id="gst-information" className="scroll-mt-24">
                   <p className="text-muted text-[11px] font-medium tracking-wider uppercase">
                     GST Information
                   </p>

@@ -64,6 +64,8 @@ const buildFallbackUrl = ({
       return `/settings/membership-upgrade-details/${entityId}`
     case 'support_ticket':
       return `/support/tickets/${entityId}`
+    case 'settings_log':
+      return `/settings/logs?logId=${encodeURIComponent(entityId)}`
     default:
       return null
   }
@@ -74,6 +76,15 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
   const stored = target.applicationUrl?.trim()
   const storedOrEmpty = stored && stored !== '/' ? stored : ''
 
+  // Explicit operational deep-links always win (order/booking/profile nested paths).
+  if (
+    storedOrEmpty.includes('/orders/') ||
+    storedOrEmpty.includes('/bookings/') ||
+    /\/experts\/management\/profile\/[^/]+\/(service|consultation)\//.test(storedOrEmpty)
+  ) {
+    return withPartnerReviewTab(storedOrEmpty, target.escalationTarget)
+  }
+
   let resolved: string | null = null
 
   if (target.entityType === 'venue_space') {
@@ -81,15 +92,21 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
     else if (storedOrEmpty.includes('/space/')) resolved = storedOrEmpty
     else return null
   } else if (target.entityType === 'consultation' || target.entityType === 'service') {
-    resolved = canonical || storedOrEmpty || null
+    // Prefer caller-provided deep-link (e.g. order details) over generic listing view.
+    resolved = storedOrEmpty || canonical || null
   } else if (target.entityType === 'finance') {
     resolved = storedOrEmpty || canonical || null
   } else if (target.entityType === 'partner' && target.serviceType === 'venue') {
     const storedKycId = getVenueKycIdFromUrl(storedOrEmpty)
-    if (storedKycId && storedKycId !== target.entityId) resolved = storedOrEmpty
+    if (storedOrEmpty.includes('/experts/management/profile/')) resolved = storedOrEmpty
+    else if (storedKycId && storedKycId !== target.entityId) resolved = storedOrEmpty
     else resolved = canonical
+  } else if (target.entityType === 'partner') {
+    // Reported-experts / clientele deep-links to profile (or nested order/booking under profile)
+    if (storedOrEmpty.includes('/experts/management/profile/')) resolved = storedOrEmpty
+    else resolved = storedOrEmpty || canonical || null
   } else {
-    resolved = canonical || storedOrEmpty || null
+    resolved = storedOrEmpty || canonical || null
   }
 
   if (!resolved) return null

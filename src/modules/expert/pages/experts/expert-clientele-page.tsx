@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
+  AlertTriangle,
   ArrowLeft,
   Banknote,
+  CreditCard,
   Eye,
   FileWarning,
   LayoutList,
@@ -14,6 +16,15 @@ import {
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { seedFinanceRefundCase } from '@/modules/payments/api/finance-api'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalateConsultationApplication,
+  escalateServiceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 import { fetchExpertClientele } from '../../api/expert-api'
 import {
@@ -51,6 +62,7 @@ import {
   buildPrefixedListQueryParams,
   createPrefixedListExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { consultationBookingPath, serviceOrderDetailPath } from '../../lib/service-navigation'
 
 type ClienteleItem = {
   bookingId: string
@@ -250,6 +262,20 @@ export function ExpertClientelePage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
+  const [escalateTarget, setEscalateTarget] = useState<ClienteleItem | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+  const { data: assigneesData } = useEscalationAssignees('experts.*')
+
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        value: assignee.id,
+        label: assignee.fullname || assignee.email || assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const listQueryParams = useMemo(
     () =>
@@ -356,6 +382,16 @@ export function ExpertClientelePage() {
     return entries.map(([tier, count]) => `${tier}: ${count}`).join(', ')
   }, [metrics.clientsByMembership])
 
+  const resolvePaymentId = useCallback((item: ClienteleItem) => {
+    return String(item.paymentId || item.transactionId || '').trim()
+  }, [])
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
   const openCommunicate = useCallback(
     (channel: 'email' | 'push') => {
       if (!expertId) {
@@ -372,6 +408,141 @@ export function ExpertClientelePage() {
     [expertId, navigate],
   )
 
+  const openViewPaymentDetails = useCallback(
+    (item: ClienteleItem) => {
+      const paymentId = resolvePaymentId(item)
+      if (!paymentId) {
+        toast.error('Payment ID is missing for this booking.')
+        return
+      }
+      navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
+    },
+    [navigate, resolvePaymentId],
+  )
+
+  const resolveClienteleOrderUrl = useCallback(
+    (item: ClienteleItem) => {
+      const listingId = String(item.listingId || '').trim()
+      const orderId = String(item.bookingId || '').trim()
+      if (!expertId || !listingId || !orderId) return ''
+
+      const listingType = String(item.listingType || '')
+        .trim()
+        .toLowerCase()
+
+      if (listingType.includes('consultation')) {
+        return consultationBookingPath(expertId, listingId, orderId)
+      }
+
+      // Custom quotations / milestone proposals use the proposal order detail route.
+      if (listingType.includes('custom') || item.bookingSource === 'Custom Order') {
+        // For custom rows, listingId is the proposal id; service performance expects a service id.
+        // Prefer proposal detail under the same service drilldown when possible.
+        return serviceOrderDetailPath(expertId, listingId, orderId, 'proposal')
+      }
+
+      // Exact service order detail path (not bare expert profile).
+      return serviceOrderDetailPath(expertId, listingId, orderId, 'order')
+    },
+    [expertId],
+  )
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!expertId) {
+      toast.error('Expert partner ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const orderUrl = resolveClienteleOrderUrl(escalateTarget)
+    if (!orderUrl) {
+      toast.error('Order / listing reference is missing for this booking. Cannot escalate.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const note = escalateAdminNotes.trim()
+    const bookingId = String(escalateTarget.bookingId || '').trim()
+    const paymentId = resolvePaymentId(escalateTarget)
+    const listingId = String(escalateTarget.listingId || '').trim()
+    const isConsultation = String(escalateTarget.listingType || '')
+      .trim()
+      .toLowerCase()
+      .includes('consultation')
+
+    setIsEscalating(true)
+    try {
+      // Escalate the listing entity so My Tasks opens order details (not partner profile/application).
+      if (isConsultation) {
+        await escalateConsultationApplication(listingId, {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: note,
+          entityTitle: `Clientele booking ${bookingId || '—'} — ${expertName}`,
+          applicationUrl: orderUrl,
+          escalationTarget: 'application',
+          partnerId: expertId,
+          metadata: {
+            source: 'expert_clientele',
+            bookingId,
+            paymentId: paymentId || undefined,
+            listingId,
+            listingType: escalateTarget.listingType,
+            clientId: escalateTarget.clientId,
+            orderUrl,
+          },
+        })
+      } else {
+        await escalateServiceApplication(listingId, {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: note,
+          entityTitle: `Clientele order ${bookingId || '—'} — ${expertName}`,
+          applicationUrl: orderUrl,
+          escalationTarget: 'application',
+          partnerId: expertId,
+          metadata: {
+            source: 'expert_clientele',
+            bookingId,
+            paymentId: paymentId || undefined,
+            listingId,
+            listingType: escalateTarget.listingType,
+            clientId: escalateTarget.clientId,
+            orderUrl,
+          },
+        })
+      }
+      toast.success('Escalated — assigned admin opens order details from My Tasks')
+      closeEscalateModal()
+      navigate(orderUrl)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate booking.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    expertId,
+    expertName,
+    navigate,
+    resolveClienteleOrderUrl,
+    resolvePaymentId,
+    selectedEscalationOption,
+  ])
+
   const openProcessRefund = useCallback(
     async (item: ClienteleItem) => {
       const existingRefundId = String(item.refundId || '').trim()
@@ -380,7 +551,7 @@ export function ExpertClientelePage() {
         return
       }
 
-      const paymentId = String(item.paymentId || '').trim()
+      const paymentId = resolvePaymentId(item)
       if (!paymentId) {
         toast.error('Payment ID is missing for this booking. Cannot process refund.')
         return
@@ -417,7 +588,7 @@ export function ExpertClientelePage() {
         navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
       }
     },
-    [navigate],
+    [navigate, resolvePaymentId],
   )
 
   const dataColumnsById = useMemo<Record<string, ColumnDef<ClienteleItem>>>(
@@ -620,6 +791,16 @@ export function ExpertClientelePage() {
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
+                icon={<CreditCard className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openViewPaymentDetails(item)
+                }}
+              >
+                View Payment Details
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
                 icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
@@ -646,13 +827,13 @@ export function ExpertClientelePage() {
               ) : null}
               <TableActionsItem
                 tone="light"
-                icon={<ExportDataIcon className="size-3.5" />}
+                icon={<AlertTriangle className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
-                  onExport()
+                  setEscalateTarget(item)
                 }}
               >
-                Export Booking Record
+                Escalate
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
@@ -663,6 +844,16 @@ export function ExpertClientelePage() {
                 }}
               >
                 Process Refund
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<ExportDataIcon className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  onExport()
+                }}
+              >
+                Export Booking Record
               </TableActionsItem>
             </TableActionsDropdown>
           </div>
@@ -682,6 +873,7 @@ export function ExpertClientelePage() {
     onExport,
     openCommunicate,
     openProcessRefund,
+    openViewPaymentDetails,
     tableColumnPreferencesQuery.data,
   ])
 
@@ -761,6 +953,24 @@ export function ExpertClientelePage() {
         }}
       />
       {exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate"
+        description="Are you sure you want to escalate this booking? The assigned sub-admin will open the order details page from My Tasks."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

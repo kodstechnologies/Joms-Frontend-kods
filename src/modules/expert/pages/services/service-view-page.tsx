@@ -200,6 +200,11 @@ export const ServiceViewPage = () => {
   const [searchParams] = useSearchParams()
   const serviceTypeParam = searchParams.get('type') || ''
   const partnerIdParam = searchParams.get('partnerId') || ''
+  const sectionParam = String(searchParams.get('section') || searchParams.get('focus') || '')
+    .trim()
+    .toLowerCase()
+  const shouldFocusDocuments =
+    sectionParam === 'documents' || sectionParam === 'media' || sectionParam === 'images'
   const shouldFetchConsultation = serviceTypeParam.toLowerCase().includes('consultation')
 
   const {
@@ -293,6 +298,20 @@ export const ServiceViewPage = () => {
   }, [imageCount])
 
   const closeImageViewer = useCallback(() => setImageViewerOpen(false), [])
+
+  useEffect(() => {
+    if (!shouldFocusDocuments || isLoading || !service) return
+    const timer = window.setTimeout(() => {
+      document.getElementById('listing-submitted-documents')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+      if ((service.images || []).length > 0) {
+        setImageViewerOpen(true)
+      }
+    }, 150)
+    return () => window.clearTimeout(timer)
+  }, [isLoading, service, shouldFocusDocuments])
 
   useEffect(() => {
     if (!imageViewerOpen) return
@@ -744,7 +763,7 @@ export const ServiceViewPage = () => {
   )
 
   const renderConsultationDetails = () => (
-    <div className="max-w-[1102px] py-2">
+    <div id="listing-submitted-documents" className="max-w-[1102px] scroll-mt-6 py-2">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
         <div className="space-y-6">
           <div className="flex items-stretch gap-3">
@@ -883,7 +902,7 @@ export const ServiceViewPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <div className="space-y-6">
+        <div id="listing-submitted-documents" className="scroll-mt-6 space-y-6">
           <div className="relative h-[230px] w-full overflow-hidden rounded-lg bg-[#050505]">
             {activeImage ? (
               <button

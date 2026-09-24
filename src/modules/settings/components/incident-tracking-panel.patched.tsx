@@ -360,7 +360,7 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
                 setSelected(incident)
               }}
             >
-              Assign
+              Assign Incident
             </TableActionsItem>
             <TableActionsItem
               icon={<ExportDataIcon className="size-3.5" />}

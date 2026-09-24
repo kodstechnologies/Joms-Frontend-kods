@@ -253,6 +253,7 @@ export type ServiceOrderRow = {
   disputePeriodLapsed: boolean | null
   supportTicketId: string | null
   refundIssued: boolean
+  refundId?: string | null
   refundAmount: number | null
   refundStatus: string | null
   refundedAt: string | null

@@ -2874,6 +2874,14 @@ export function ExpertProfileViewPage() {
     if (fromQuery && fromQuery !== activeTab) {
       setActiveTab(fromQuery)
     }
+    const listing = String(searchParams.get('listing') || '')
+      .trim()
+      .toLowerCase()
+    if (listing === 'consultations' || listing === 'consultation') {
+      setListingSubTab('consultations')
+    } else if (listing === 'services' || listing === 'service') {
+      setListingSubTab('services')
+    }
   }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps -- sync URL → tab only
 
   const selectProfileTab = useCallback(

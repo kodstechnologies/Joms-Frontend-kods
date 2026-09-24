@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Ban, CheckCircle2, Eye, FileText, MessageSquare } from 'lucide-react'
+import { Ban, CheckCircle2, Eye, FileText, MessageSquare, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -333,7 +333,19 @@ export function ExpertPendingApprovalsPage() {
                   {isVenue ? 'Venue KYC View' : 'Application View'}
                 </TableActionsItem>
                 <TableActionsItem
-                  icon={<CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden="true" />}
+                  icon={<ShieldCheck className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    void openExpertApplicationView(expert, navigate, {
+                      tab: 'kyc',
+                      focus: 'gst',
+                    })
+                  }}
+                >
+                  Verify GST
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<CheckCircle2 className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveDropdownId(null)
                     if (isVenue) {
@@ -348,7 +360,7 @@ export function ExpertPendingApprovalsPage() {
                   Approve Application
                 </TableActionsItem>
                 <TableActionsItem
-                  icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
+                  icon={<Ban className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveDropdownId(null)
                     if (isVenue) {

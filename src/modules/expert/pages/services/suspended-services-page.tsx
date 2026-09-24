@@ -1,6 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertCircle, Eye, MessageSquare, PlayCircle } from 'lucide-react'
+import {
+  AlertCircle,
+  CalendarClock,
+  CalendarPlus,
+  Eye,
+  MessageSquare,
+  PlayCircle,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
@@ -16,13 +23,14 @@ import {
   escalateConsultationApplication,
   escalateServiceApplication,
 } from '@/modules/my-tasks/api/escalation-api'
+import { END_MUST_AFTER_START_MESSAGE, isEndOnOrBeforeStart } from '@/shared/utils/date-range'
 
 import { SERVICE_SUSPENDED_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
   DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
   SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG,
 } from '../../config/service-management-table-columns.config'
-import { useActivateService } from '../../hooks/use-services'
+import { useActivateService, useUpdateServiceSuspension } from '../../hooks/use-services'
 import { useServiceStatusList } from '../../hooks/use-service-status-list'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
@@ -41,6 +49,14 @@ import {
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 
+type SuspensionModalMode = 'modify' | 'extend'
+
+const toDateInputValue = (value?: string | null) => {
+  if (!value) return ''
+  const day = String(value).trim().slice(0, 10)
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : ''
+}
+
 export function SuspendedServicesPage() {
   const navigate = useNavigate()
   const { fileFormat } = useDefaultExportFormat()
@@ -49,7 +65,14 @@ export function SuspendedServicesPage() {
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [isEscalating, setIsEscalating] = useState(false)
+  const [suspensionTarget, setSuspensionTarget] = useState<Service | null>(null)
+  const [suspensionMode, setSuspensionMode] = useState<SuspensionModalMode>('modify')
+  const [suspensionStartDate, setSuspensionStartDate] = useState('')
+  const [suspensionEndDate, setSuspensionEndDate] = useState('')
+  const [suspensionIndefinitely, setSuspensionIndefinitely] = useState(false)
+  const [suspensionAdminNotes, setSuspensionAdminNotes] = useState('')
   const activateServiceMutation = useActivateService()
+  const updateSuspensionMutation = useUpdateServiceSuspension()
   const catalogColumnIds = useMemo(
     () => SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
     [],
@@ -130,6 +153,89 @@ export function SuspendedServicesPage() {
     },
     [navigate],
   )
+
+  const openSuspensionModal = useCallback((service: Service, mode: SuspensionModalMode) => {
+    const isIndefinite = String(service.suspensionType || '')
+      .toLowerCase()
+      .includes('indefinite')
+    setSuspensionTarget(service)
+    setSuspensionMode(mode)
+    setSuspensionIndefinitely(isIndefinite)
+    setSuspensionStartDate(toDateInputValue(service.suspendedAt))
+    setSuspensionEndDate(isIndefinite ? '' : toDateInputValue(service.suspensionUntil))
+    setSuspensionAdminNotes('')
+  }, [])
+
+  const closeSuspensionModal = useCallback(() => {
+    setSuspensionTarget(null)
+    setSuspensionStartDate('')
+    setSuspensionEndDate('')
+    setSuspensionIndefinitely(false)
+    setSuspensionAdminNotes('')
+  }, [])
+
+  const handleSuspensionSubmit = useCallback(() => {
+    if (!suspensionTarget) return
+
+    if (!suspensionIndefinitely && (!suspensionStartDate || !suspensionEndDate)) {
+      toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspensionIndefinitely && isEndOnOrBeforeStart(suspensionStartDate, suspensionEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
+      return
+    }
+
+    if (!suspensionAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const toIso = (value: string) =>
+      value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
+
+    updateSuspensionMutation.mutate(
+      {
+        id: suspensionTarget._id,
+        payload: {
+          suspendIndefinitely: suspensionIndefinitely,
+          startDate: suspensionIndefinitely ? undefined : toIso(suspensionStartDate),
+          endDate: suspensionIndefinitely ? undefined : toIso(suspensionEndDate),
+          adminNotes: suspensionAdminNotes.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            suspensionMode === 'extend'
+              ? 'Suspension extended successfully'
+              : 'Suspension updated successfully',
+          )
+          closeSuspensionModal()
+        },
+        onError: (error: unknown) => {
+          toast.error(
+            getApiErrorMessage(
+              error,
+              suspensionMode === 'extend'
+                ? 'Failed to extend suspension.'
+                : 'Failed to modify suspension.',
+            ),
+          )
+        },
+      },
+    )
+  }, [
+    closeSuspensionModal,
+    suspensionAdminNotes,
+    suspensionEndDate,
+    suspensionIndefinitely,
+    suspensionMode,
+    suspensionStartDate,
+    suspensionTarget,
+    updateSuspensionMutation,
+  ])
 
   const handleExportServiceRow = useCallback(
     async (service: Service) => {
@@ -275,6 +381,24 @@ export function SuspendedServicesPage() {
                   View Details
                 </TableActionsItem>
                 <TableActionsItem
+                  icon={<CalendarClock className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openSuspensionModal(service, 'modify')
+                  }}
+                >
+                  Modify Suspension
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<CalendarPlus className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openSuspensionModal(service, 'extend')
+                  }}
+                >
+                  Extend Suspension
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
@@ -324,11 +448,21 @@ export function SuspendedServicesPage() {
     list,
     navigate,
     openCommunicateWithExpert,
+    openSuspensionModal,
     selectedServiceIds,
     someVisibleServicesSelected,
     toggleServiceSelection,
     toggleVisibleServices,
   ])
+
+  const suspensionModalTitle =
+    suspensionMode === 'extend' ? 'Extend Suspension' : 'Modify Suspension'
+  const suspensionModalDescription =
+    suspensionMode === 'extend'
+      ? 'Update the suspension end date or switch to indefinite suspension for this listing.'
+      : 'Update the suspension timeline for this listing.'
+  const suspensionSubmitLabel =
+    suspensionMode === 'extend' ? 'Extend Suspension' : 'Modify Suspension'
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -368,6 +502,28 @@ export function SuspendedServicesPage() {
         emptyMessage="No suspended services found."
       />
       {list.exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(suspensionTarget)}
+        variant="suspend"
+        title={suspensionModalTitle}
+        description={suspensionModalDescription}
+        submitLabel={suspensionSubmitLabel}
+        showTimeline
+        timelineAllowPastStart
+        startDate={suspensionStartDate}
+        onStartDateChange={setSuspensionStartDate}
+        endDate={suspensionEndDate}
+        onEndDateChange={setSuspensionEndDate}
+        indefinite={suspensionIndefinitely}
+        onIndefiniteChange={setSuspensionIndefinitely}
+        indefiniteLabel="Suspend indefinitely (until manually reactivated)"
+        adminNotes={suspensionAdminNotes}
+        onAdminNotesChange={setSuspensionAdminNotes}
+        onClose={closeSuspensionModal}
+        onSubmit={handleSuspensionSubmit}
+        isSubmitting={updateSuspensionMutation.isPending}
+      />
 
       <DecisionActionModal
         open={Boolean(escalateTarget)}

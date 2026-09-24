@@ -19,6 +19,7 @@ import {
   Tag,
   Trash2,
   Upload,
+  User,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -401,6 +402,18 @@ export const ServiceManagementPage = () => {
     setEscalateTarget(service)
     setIsEscalateModalOpen(true)
   }, [])
+
+  const openViewExpert = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}`)
+    },
+    [navigate],
+  )
 
   const openListingPerformance = useCallback(
     (service: Service) => {
@@ -895,6 +908,15 @@ export const ServiceManagementPage = () => {
               View Orders & Bookings
             </TableActionsItem>
             <TableActionsItem
+              icon={<User className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewExpert(service)
+              }}
+            >
+              View Expert
+            </TableActionsItem>
+            <TableActionsItem
               icon={<BarChart3 className="size-3.5" aria-hidden="true" />}
               onClick={() => {
                 setActiveDropdownId(null)
@@ -938,6 +960,7 @@ export const ServiceManagementPage = () => {
     openDeleteModal,
     openEscalateListing,
     openListingPerformance,
+    openViewExpert,
     openPauseListing,
     openSuspendModal,
     openTagModal,
