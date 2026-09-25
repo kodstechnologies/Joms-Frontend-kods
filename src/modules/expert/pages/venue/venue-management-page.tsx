@@ -466,13 +466,7 @@ export const VenueManagementPage = () => {
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [
-      activeStatus,
-      catalogColumnIds,
-      enhancedSearch,
-      exportColumnIds,
-      viewFromUrl,
-    ],
+    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds, viewFromUrl],
   )
 
   const {
@@ -688,7 +682,8 @@ export const VenueManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate venues.'))
         return
       }
@@ -1615,8 +1610,6 @@ export const VenueManagementPage = () => {
           </div>
         </div>
       )}
-
-
 
       <DataTable
         columns={columns}

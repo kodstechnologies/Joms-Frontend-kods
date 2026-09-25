@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowLeft, Link2, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -9,7 +9,7 @@ import { useSubAdminInvites } from '../hooks/use-rbac'
 import { fetchSubAdminInvites } from '../api/rbac-api'
 import type { SubAdminInvite } from '../types/rbac'
 import { InviteStatusBadge } from '../components/invite-status-badge'
-import { formatInviteTimestamp } from '../utils/invite-format'
+import { formatInviteTimestamp, copyInviteLink } from '../utils/invite-format'
 import { InviteActionModals } from '../components/invite-action-modals'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -157,6 +157,20 @@ export function SubAdminDetailPage() {
                   isOpen={activeDropdownId === row.original.id}
                   onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
                 >
+                  <TableActionsItem
+                    icon={<Link2 className="size-3.5" />}
+                    onClick={async () => {
+                      setActiveDropdownId(null)
+                      try {
+                        await copyInviteLink(row.original)
+                        toast.success('Invitation link copied')
+                      } catch {
+                        toast.error('Unable to copy invitation link')
+                      }
+                    }}
+                  >
+                    Copy Invitation Link
+                  </TableActionsItem>
                   <TableActionsItem
                     icon={<RotateCcw className="size-3.5" />}
                     onClick={() => {

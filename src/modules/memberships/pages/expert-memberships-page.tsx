@@ -7,6 +7,7 @@ import {
   CircleX,
   ClipboardList,
   CreditCard,
+  IndianRupee,
   MessageSquare,
   PauseCircle,
   PlayCircle,
@@ -25,6 +26,8 @@ import { openPartnerProfile } from '@/modules/expert/utils/expert-application-na
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipHistoryModal } from '../components/membership-history-modal'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
+import { IssueRefundModal } from '@/modules/payments/components/issue-refund-modal'
+import { initiateFinanceRefund } from '@/modules/payments/api/finance-api'
 import {
   DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
   MEMBERSHIPS_MODULE_KEY,
@@ -178,6 +181,7 @@ export function ExpertMembershipsPage() {
   >(null)
   const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
   const [historyTarget, setHistoryTarget] = useState<MembershipSubscription | null>(null)
+  const [refundTarget, setRefundTarget] = useState<MembershipSubscription | null>(null)
   const { fileFormat } = useDefaultExportFormat()
 
   const { currentPage, setCurrentPage } = useExpertMembershipStore()
@@ -331,6 +335,19 @@ export function ExpertMembershipsPage() {
     [navigate],
   )
 
+  const openRefundPayment = useCallback((subscription: MembershipSubscription) => {
+    const paymentId = String(subscription.paymentInfo?.paymentId || '').trim()
+    if (!paymentId) {
+      toast.error('No payment found for this membership. Cannot refund.')
+      return
+    }
+    setRefundTarget(subscription)
+  }, [])
+
+  const refundOriginalAmount = Number(
+    refundTarget?.paymentInfo?.amount ?? refundTarget?.purchasedPrice ?? 0,
+  )
+
   const handleExportSubscription = useCallback(
     async (subscription: MembershipSubscription) => {
       try {
@@ -361,7 +378,7 @@ export function ExpertMembershipsPage() {
           isOpen={activeDropdownId === subscription._id}
           onOpenChange={(open) => setActiveDropdownId(open ? subscription._id : null)}
           menuWidth={240}
-          maxVisibleItems={8}
+          maxVisibleItems={9}
         >
           <TableActionsItem
             icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
@@ -443,6 +460,15 @@ export function ExpertMembershipsPage() {
             View Payment History
           </TableActionsItem>
           <TableActionsItem
+            icon={<IndianRupee className="size-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              openRefundPayment(subscription)
+            }}
+          >
+            Refund Payment
+          </TableActionsItem>
+          <TableActionsItem
             icon={<ExportDataIcon className="size-3.5" />}
             onClick={() => {
               setActiveDropdownId(null)
@@ -460,6 +486,7 @@ export function ExpertMembershipsPage() {
       navigate,
       openAction,
       openCommunicate,
+      openRefundPayment,
       openViewUserProfile,
     ],
   )
@@ -548,6 +575,37 @@ export function ExpertMembershipsPage() {
           subscription={historyTarget}
         />
       ) : null}
+
+      <IssueRefundModal
+        open={Boolean(refundTarget)}
+        originalAmount={formatCurrency(refundOriginalAmount)}
+        maxRefundableAmount={refundOriginalAmount}
+        defaultAmount={refundOriginalAmount > 0 ? String(refundOriginalAmount) : undefined}
+        onClose={() => setRefundTarget(null)}
+        onSubmit={async ({ refundAmount, reason, adminNotes }) => {
+          if (!refundTarget) return
+          const paymentId = String(refundTarget.paymentInfo?.paymentId || '').trim()
+          if (!paymentId) {
+            toast.error('No payment found for this membership. Cannot refund.')
+            throw new Error('Missing paymentId')
+          }
+          try {
+            await initiateFinanceRefund({
+              paymentId,
+              amount: Number(String(refundAmount).replace(/,/g, '')),
+              reason,
+              adminNotes,
+            })
+            toast.success('Refund issued')
+            setRefundTarget(null)
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            void queryClient.invalidateQueries({ queryKey: ['finance-refunds'] })
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to refund payment'))
+            throw error
+          }
+        }}
+      />
 
       <MembershipActionModals
         subscription={selectedSubscription}

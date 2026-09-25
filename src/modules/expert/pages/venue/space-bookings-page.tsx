@@ -21,7 +21,9 @@ export function SpaceBookingsPage() {
   }, [fullView, spaceId])
 
   const spacePath =
-    venueId && spaceId ? `/venues/management/profile/${venueId}/space/${spaceId}` : '/venues/management'
+    venueId && spaceId
+      ? `/venues/management/profile/${venueId}/space/${spaceId}`
+      : '/venues/management'
 
   return (
     <div className="mx-auto flex max-w-[1210px] flex-col gap-5 pb-8">

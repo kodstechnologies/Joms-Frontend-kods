@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Copy, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowLeft, Link2, Copy, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -9,7 +9,7 @@ import { useAllInvites } from '../hooks/use-rbac'
 import { fetchAllInvites } from '../api/rbac-api'
 import type { SubAdminInvite } from '../types/rbac'
 import { InviteStatusBadge } from '../components/invite-status-badge'
-import { formatInviteTimestamp } from '../utils/invite-format'
+import { formatInviteTimestamp, copyInviteLink } from '../utils/invite-format'
 import { InviteActionModals } from '../components/invite-action-modals'
 import {
   DEFAULT_RBAC_HUB_INVITES_VISIBLE_COLUMN_IDS,

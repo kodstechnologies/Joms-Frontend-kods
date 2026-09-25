@@ -238,4 +238,3 @@ export const useUpdateVenueSubCategory = () => {
     onSuccess: () => invalidateVenueCategories(queryClient),
   })
 }
-

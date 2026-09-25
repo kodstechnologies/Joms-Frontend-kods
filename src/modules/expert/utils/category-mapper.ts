@@ -103,7 +103,8 @@ export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category =
     image: category.image || undefined,
     status: mapServiceStatus(category.status),
     subCategory: category.subCategoryCount ?? activeSubs.length,
-    services: category.services ?? category.managementVisibleListings ?? category.activeListings ?? 0,
+    services:
+      category.services ?? category.managementVisibleListings ?? category.activeListings ?? 0,
     experts: category.experts ?? 0,
     totalOrders: category.totalOrders ?? 0,
     completedOrders: category.completedOrders ?? 0,

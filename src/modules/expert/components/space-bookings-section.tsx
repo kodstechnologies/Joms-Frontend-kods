@@ -206,7 +206,7 @@ export function SpaceBookingsSection({ spaceId }: SpaceBookingsSectionProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="space-booking-details-title"
-            className="w-full max-w-lg rounded-brand-lg border border-white/10 bg-[#121417] p-5 shadow-2xl"
+            className="rounded-brand-lg w-full max-w-lg border border-white/10 bg-[#121417] p-5 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-3">

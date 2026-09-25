@@ -7,7 +7,11 @@ import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useVenueFullView } from '../../hooks/use-venues'
 import { useSpaceAnalytics } from '../../hooks/use-venue-analytics'
 import { useFinancePayouts, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
-import { formatDate, formatInr, mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  formatDate,
+  formatInr,
+  mapPaymentToVenueRow,
+} from '@/modules/payments/utils/finance-mappers'
 import { statusBadgeClass } from '../../utils/payout-status'
 import { cn } from '@/shared/lib/cn'
 
@@ -47,10 +51,7 @@ export function SpaceRevenuePayoutsPage() {
     { ...financeFilter, page: revenuePage },
     Boolean(venueId && spaceId),
   )
-  const payoutQuery = useFinancePayouts(
-    { ...financeFilter, page: payoutPage },
-    Boolean(spaceId),
-  )
+  const payoutQuery = useFinancePayouts({ ...financeFilter, page: payoutPage }, Boolean(spaceId))
 
   const revenueRows = useMemo(
     () => (revenueQuery.data?.data?.rows ?? []).map(mapPaymentToVenueRow),
@@ -65,7 +66,9 @@ export function SpaceRevenuePayoutsPage() {
   )
   const cashFlow = analyticsQuery.data?.cashFlow ?? []
   const spacePath =
-    venueId && spaceId ? `/venues/management/profile/${venueId}/space/${spaceId}` : '/venues/management'
+    venueId && spaceId
+      ? `/venues/management/profile/${venueId}/space/${spaceId}`
+      : '/venues/management'
 
   return (
     <div className="mx-auto flex max-w-[1210px] flex-col gap-5 pb-8">
@@ -98,13 +101,13 @@ export function SpaceRevenuePayoutsPage() {
           ? Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={`revenue-kpi-${index}`}
-                className="h-24 animate-pulse rounded-brand-lg border border-white/5 bg-brand-surface"
+                className="rounded-brand-lg bg-brand-surface h-24 animate-pulse border border-white/5"
               />
             ))
           : overviewCards.map((card) => (
               <article
                 key={card.label}
-                className="rounded-brand-lg border border-white/5 bg-brand-surface p-4"
+                className="rounded-brand-lg bg-brand-surface border border-white/5 p-4"
               >
                 <p className="text-[12px] text-[#999]">{card.label}</p>
                 <p className="mt-2 text-[22px] font-bold text-white">{card.value}</p>
@@ -113,7 +116,7 @@ export function SpaceRevenuePayoutsPage() {
             ))}
       </section>
 
-      <section className="rounded-brand-lg border border-white/5 bg-brand-surface p-5">
+      <section className="rounded-brand-lg bg-brand-surface border border-white/5 p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-body-md font-bold text-white">Revenue</h2>
           <p className="text-[12px] text-[#777]">
@@ -125,7 +128,17 @@ export function SpaceRevenuePayoutsPage() {
           isError={revenueQuery.isError}
           emptyMessage="No revenue records for this space."
           errorMessage="Failed to load revenue records."
-          columns={['Order', 'Booking', 'Client', 'Amount', 'Partner payout', 'Net revenue', 'Status', 'Date', '']}
+          columns={[
+            'Order',
+            'Booking',
+            'Client',
+            'Amount',
+            'Partner payout',
+            'Net revenue',
+            'Status',
+            'Date',
+            '',
+          ]}
           rows={revenueRows.map((row) => ({
             id: row.id,
             cells: [
@@ -173,7 +186,7 @@ export function SpaceRevenuePayoutsPage() {
         ) : null}
       </section>
 
-      <section className="rounded-brand-lg border border-white/5 bg-brand-surface p-5">
+      <section className="rounded-brand-lg bg-brand-surface border border-white/5 p-5">
         <h2 className="text-body-md mb-4 font-bold text-white">Payouts</h2>
         <FinanceTable
           isLoading={payoutQuery.isLoading}

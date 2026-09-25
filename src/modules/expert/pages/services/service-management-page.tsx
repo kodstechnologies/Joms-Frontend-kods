@@ -346,13 +346,7 @@ export const ServiceManagementPage = () => {
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [
-      appliedAdvancedFilters,
-      activeStatus,
-      currentPage,
-      enhancedSearch,
-      serverSort.sortParams,
-    ],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -1170,8 +1164,6 @@ export const ServiceManagementPage = () => {
           </div>
         </div>
       )}
-
-
 
       <DataTable
         columns={columns}

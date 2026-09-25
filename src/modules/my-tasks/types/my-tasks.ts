@@ -15,6 +15,7 @@ export type MyTask = {
     | 'membership_upgrade'
     | 'support_ticket'
     | 'settings_log'
+    | 'incident'
   entityId?: string
   venueId?: string
   title: string
@@ -33,6 +34,7 @@ export type MyTask = {
   escalatedAt: string
   applicationUrl: string
   direction: string
+  metadata?: Record<string, unknown>
 }
 
 export type MyTasksGrouped = Record<TaskStatus, MyTask[]> & {

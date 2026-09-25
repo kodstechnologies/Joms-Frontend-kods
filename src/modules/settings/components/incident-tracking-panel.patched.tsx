@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClipboardList } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -22,9 +22,16 @@ import {
   INCIDENT_TRACKING_LEGACY_COLUMN_ID_MAP,
   INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG,
 } from '../config/incident-table-columns.config'
-import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
+import {
+  incidentKeys,
+  useAssignIncident,
+  useIncidentMetrics,
+  useIncidents,
+} from '../hooks/use-incidents'
 import { useDefaultExportFormat } from '../hooks/use-default-export-format'
-import { fetchIncidents } from '../api/incidents-api'
+import { fetchIncident, fetchIncidents } from '../api/incidents-api'
+import { escalateIncidentApplication } from '@/modules/my-tasks/api/escalation-api'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -194,6 +201,7 @@ const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
 
 export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTrackingPanelProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { fileFormat } = useDefaultExportFormat()
   const [page, setPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -243,37 +251,97 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
     )
   }, [filteredActiveMetricIds, metrics])
 
-  const listQueryParams = useMemo(
-    () =>
-      buildPrefixedListQueryParams(appliedFilters, {
-        page,
-        limit: PAGE_SIZE,
-        ...enhancedSearch.buildSearchParams(),
-        ...serverSort.sortParams,
-      }),
-    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
-  )
+  const deepLinkId = String(highlightIncidentId || '').trim()
+
+  const listQueryParams = useMemo(() => {
+    // Deep-link from My Tasks: ignore advanced filters so assigned row is not filtered out.
+    const filters = deepLinkId ? {} : appliedFilters
+    return buildPrefixedListQueryParams(filters, {
+      page: deepLinkId ? 1 : page,
+      limit: PAGE_SIZE,
+      ...(deepLinkId
+        ? { incidentId: deepLinkId, search: deepLinkId }
+        : {
+            ...enhancedSearch.buildSearchParams(),
+            ...serverSort.sortParams,
+          }),
+    })
+  }, [appliedFilters, deepLinkId, enhancedSearch, page, serverSort.sortParams])
 
   const { data: incidentsResult, isLoading } = useIncidents(listQueryParams)
   const assignMutation = useAssignIncident()
 
-  const rows = useMemo(() => incidentsResult?.data ?? [], [incidentsResult?.data])
+  const deepLinkQuery = useQuery({
+    queryKey: [...incidentKeys.all, 'deeplink', deepLinkId],
+    queryFn: () => fetchIncident(deepLinkId),
+    enabled: Boolean(deepLinkId),
+    retry: false,
+  })
+
+  const rows = useMemo(() => {
+    const list = incidentsResult?.data ?? []
+    const deepLinked = deepLinkQuery.data
+    if (!deepLinked) return list
+    if (list.some((row) => row.id === deepLinked.id || row.incidentId === deepLinked.incidentId)) {
+      return list
+    }
+    return [deepLinked, ...list]
+  }, [deepLinkQuery.data, incidentsResult?.data])
+
   const meta = incidentsResult?.meta
   const totalPages = meta?.totalPages ?? 1
-  const totalItems = meta?.total ?? 0
+  const totalItems = Math.max(meta?.total ?? 0, rows.length)
 
-  const [highlightDismissedId, setHighlightDismissedId] = useState<string | null>(null)
+  const deepLinkNotifiedRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!deepLinkId) return
+    setPage(1)
+    setAppliedFilters({})
+    enhancedSearch.setGlobalSearch(deepLinkId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when deep-link id changes
+  }, [deepLinkId])
 
   const highlightedRow = useMemo(() => {
-    const incidentId = String(highlightIncidentId || '').trim()
-    if (!incidentId || isLoading || !rows.length) return null
-    return rows.find((row) => row.incidentId === incidentId || row.id === incidentId) ?? null
-  }, [highlightIncidentId, isLoading, rows])
+    if (!deepLinkId || isLoading || deepLinkQuery.isLoading) return null
+    return (
+      rows.find(
+        (row) =>
+          row.incidentId === deepLinkId ||
+          row.id === deepLinkId ||
+          String(row.incidentId || '').toLowerCase() === deepLinkId.toLowerCase(),
+      ) ??
+      deepLinkQuery.data ??
+      null
+    )
+  }, [deepLinkId, deepLinkQuery.data, deepLinkQuery.isLoading, isLoading, rows])
 
-  const activeHighlightId = String(highlightIncidentId || '').trim()
-  const selectedRow =
-    selected ??
-    (highlightedRow && highlightDismissedId !== activeHighlightId ? highlightedRow : null)
+  // Only open Assign modal from explicit action — not from My Tasks deep-link.
+  const selectedRow = selected
+
+  useEffect(() => {
+    if (!deepLinkId || isLoading || deepLinkQuery.isLoading || deepLinkQuery.isFetching) return
+    if (deepLinkNotifiedRef.current === deepLinkId) return
+    deepLinkNotifiedRef.current = deepLinkId
+
+    if (highlightedRow || deepLinkQuery.data) {
+      const code = highlightedRow?.incidentId || deepLinkQuery.data?.incidentId || deepLinkId
+      toast.message(`Showing assigned incident ${code}`)
+      return
+    }
+
+    if (deepLinkQuery.isError) {
+      toast.error(`Incident ${deepLinkId} was not found`)
+    }
+  }, [
+    deepLinkId,
+    deepLinkQuery.data,
+    deepLinkQuery.isError,
+    deepLinkQuery.isFetching,
+    deepLinkQuery.isLoading,
+    highlightedRow,
+    isLoading,
+  ])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     toast.success('Filters applied')
@@ -452,26 +520,54 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
         incident={selectedRow}
         onClose={() => {
           setSelected(null)
-          if (highlightedRow) {
-            setHighlightDismissedId(activeHighlightId)
-          }
         }}
         onSubmit={(department, user, assigneeId) => {
           if (!selectedRow) return
           assignMutation.mutate(
             { id: selectedRow.id, department, assignee: user, assigneeId },
             {
-              onSuccess: () => {
+              onSuccess: async () => {
                 const ticketId = selectedRow.sourceTicketId
+                const applicationUrl = `/settings/main?tab=incident&incidentId=${encodeURIComponent(
+                  selectedRow.incidentId || selectedRow.id,
+                )}`
+                try {
+                  await escalateIncidentApplication(selectedRow.id, {
+                    assigneeSubAdminId: assigneeId,
+                    assigneeName: user,
+                    adminNote: `Assigned incident ${selectedRow.incidentId} to ${user} (${department})`,
+                    entityTitle:
+                      selectedRow.title ||
+                      selectedRow.incidentId ||
+                      `Incident ${selectedRow.incidentId || selectedRow.id}`,
+                    applicationUrl,
+                    escalationTarget: 'application',
+                    priority: 'High',
+                    metadata: {
+                      source: 'incident_tracking',
+                      incidentId: selectedRow.incidentId,
+                      department,
+                      orderUrl: applicationUrl,
+                      sourceTicketId: ticketId || undefined,
+                    },
+                  })
+                  void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+                  void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+                } catch (error) {
+                  toast.error(
+                    getApiErrorMessage(
+                      error,
+                      'Incident assigned, but failed to add it to My Tasks.',
+                    ),
+                  )
+                }
+
                 setSelected(null)
-                setHighlightDismissedId(activeHighlightId)
-                toast.success(`Assigned ${user} from ${department}`, {
-                  action: ticketId
-                    ? {
-                        label: 'Open ticket',
-                        onClick: () => navigate(`/support/tickets/${ticketId}`),
-                      }
-                    : undefined,
+                toast.success(`Assigned to ${user} — appears in their My Tasks`, {
+                  action: {
+                    label: 'Open My Tasks',
+                    onClick: () => navigate('/my-tasks'),
+                  },
                 })
               },
               onError: () => toast.error('Failed to assign incident'),
