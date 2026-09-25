@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, MessageSquare, RotateCcw } from 'lucide-react'
+import { AlertTriangle, Eye, MessageSquare, RotateCcw, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
-import { useRestoreVenue } from '../../hooks/use-venues'
+import { usePurgeVenue, useRestoreVenue } from '../../hooks/use-venues'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
@@ -46,6 +46,7 @@ export function VenueDeletedPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
   const restoreVenueMutation = useRestoreVenue()
+  const purgeVenueMutation = usePurgeVenue()
   const { fileFormat } = useDefaultExportFormat()
 
   const [escalateTarget, setEscalateTarget] = useState<Venue | null>(null)
@@ -110,6 +111,25 @@ export function VenueDeletedPage() {
       })
     },
     [restoreVenueMutation],
+  )
+
+  const handlePurge = useCallback(
+    (venue: Venue) => {
+      purgeVenueMutation.mutate(
+        {
+          venueId: getVenueApiId(venue),
+          adminNotes: 'Permanently purged by administrator',
+        },
+        {
+          onSuccess: () =>
+            toast.success(`Permanently purged ${venue.venueName || getVenueDisplayId(venue)}`),
+          onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, 'Failed to permanently purge venue.'))
+          },
+        },
+      )
+    },
+    [purgeVenueMutation],
   )
 
   const openCommunicateWithHost = useCallback(
@@ -242,6 +262,15 @@ export function VenueDeletedPage() {
                   Restore Venue
                 </TableActionsItem>
                 <TableActionsItem
+                  icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    handlePurge(venue)
+                  }}
+                >
+                  Permanently Purge Venue
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<ExportDataIcon className="size-3.5" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
@@ -275,7 +304,7 @@ export function VenueDeletedPage() {
       ],
       VENUE_DELETED_SORT_FIELDS,
     )
-  }, [handleExportVenueRow, handleRestore, list, navigate, openCommunicateWithHost])
+  }, [handleExportVenueRow, handlePurge, handleRestore, list, navigate, openCommunicateWithHost])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

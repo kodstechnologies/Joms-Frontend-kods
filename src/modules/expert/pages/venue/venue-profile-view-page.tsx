@@ -27,6 +27,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  Flag,
   ImageOff,
   Mail,
   MapPin,
@@ -112,6 +113,7 @@ import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escal
 import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import type { UpdateVenueSpaceVisibilityPayload } from '../../api/venue-api'
 import { fetchSupportTickets } from '@/modules/support-management/api/support-api'
 import type { SupportTicket } from '@/modules/support-management/types/support'
@@ -121,6 +123,7 @@ import {
   VenueReportDetailModal,
   type VenueReportItem,
 } from '../../components/venue-report-detail-modal'
+import { VenueReportSubmitModal } from '../../components/venue-report-submit-modal'
 
 type TabKey = 'overview' | 'spaces' | 'analytics' | 'health'
 
@@ -1069,7 +1072,8 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate spaces.'))
         return
       }
@@ -1399,7 +1403,8 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
+    | (typeof data.profile & { analytics?: Record<string, unknown> })
+    | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -1648,8 +1653,10 @@ export function VenueProfileViewPage() {
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [notesModalOpen, setNotesModalOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<VenueReportItem | null>(null)
+  const [reportVenueOpen, setReportVenueOpen] = useState(false)
   const scrollToTimelineRef = useRef(false)
   const { tagModalOpen, openTagModal, closeTagModal } = useEntityTags()
+  const authUser = useAuthStore((state) => state.user)
 
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
@@ -2218,6 +2225,28 @@ export function VenueProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
+            icon={<Flag className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              if (!resolvedVenueId) {
+                toast.error('Venue ID is missing.')
+                return
+              }
+              if (!ownerPartnerId) {
+                toast.error('Venue partner ID is missing.')
+                return
+              }
+              if (!authUser?.id) {
+                toast.error('Admin session is required to report a venue.')
+                return
+              }
+              setReportVenueOpen(true)
+            }}
+          >
+            Report Venue
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
             icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
             className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
             onClick={() => {
@@ -2405,6 +2434,22 @@ export function VenueProfileViewPage() {
           void refetchReports()
         }}
       />
+
+      {reportVenueOpen && authUser && resolvedVenueId ? (
+        <VenueReportSubmitModal
+          open={reportVenueOpen}
+          venueId={resolvedVenueId}
+          partnerId={ownerPartnerId}
+          venueName={venue.name}
+          reporterId={authUser.id}
+          reporterName={authUser.fullname || authUser.email || 'Admin'}
+          onClose={() => setReportVenueOpen(false)}
+          onSubmitted={() => {
+            void refetchReports()
+            navigate('/venues/management/reported')
+          }}
+        />
+      ) : null}
     </div>
   )
 }

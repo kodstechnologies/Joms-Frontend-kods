@@ -207,11 +207,6 @@ const VenueSuspendedPage = lazy(() =>
     default: m.VenueSuspendedPage,
   })),
 )
-const VenueReportedPage = lazy(() =>
-  import('@/modules/expert').then((m) => ({
-    default: m.VenueReportedVenuesPage,
-  })),
-)
 const VenueRejectedPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.RejectedVenuesPage,
@@ -1113,7 +1108,6 @@ export function AppRouter() {
 
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
-                <Route path="/venues/management/reported" element={<VenueReportedPage />} />
                 <Route path="/venues/management/rejected" element={<VenueRejectedPage />} />
                 <Route path="/venues/management/deleted" element={<VenueDeletedPage />} />
                 <Route

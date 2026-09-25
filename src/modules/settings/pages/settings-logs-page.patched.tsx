@@ -433,7 +433,7 @@ export function SettingsLogsPage() {
           toast.error(`Role "${roleName}" was not found in RBAC.`)
           return
         }
-        navigate(`/settings/access/roles/${match.id}/users`)
+        navigate(`/settings/access/roles/${match.id}/logs`)
       } catch (error) {
         toast.error(getApiErrorMessage(error, 'Failed to open role.'))
       }

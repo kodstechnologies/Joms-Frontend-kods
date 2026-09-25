@@ -435,16 +435,6 @@ export const ExpertManagementPage = () => {
     window.open(href, '_blank', 'noopener,noreferrer')
   }, [])
 
-  const openViewPublicProfile = useCallback(
-    (expert: Expert) => {
-      openPublicUrl(
-        String(expert.microWebsiteUrl || ''),
-        'Public profile is not available for this expert yet.',
-      )
-    },
-    [openPublicUrl],
-  )
-
   const openViewMicrosite = useCallback(
     (expert: Expert) => {
       openPublicUrl(
@@ -1051,16 +1041,6 @@ export const ExpertManagementPage = () => {
                 void openPartnerProfile(expert, navigate)
               }}
             >
-              View Profile
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<ExternalLink className="size-3.5 text-slate-700" aria-hidden="true" />}
-              className={ACTION_ITEM_CLASS}
-              onClick={() => {
-                setActiveDropdownId(null)
-                openViewPublicProfile(expert)
-              }}
-            >
               View Public Profile
             </TableActionsItem>
             <TableActionsItem
@@ -1270,7 +1250,6 @@ export const ExpertManagementPage = () => {
     openChangeMembershipForExpert,
     openCommunicateWithExpert,
     openNotifyExpert,
-    openViewPublicProfile,
     openDeleteModal,
     openManageListings,
     openSuspendModal,

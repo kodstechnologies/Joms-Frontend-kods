@@ -25,8 +25,6 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
-import { Button } from '@/shared/components/ui/button'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -68,7 +66,16 @@ export function VenueReportedVenuesPage() {
     exportFileName: 'reported_venues_export',
     exportColumnMap: VENUE_REPORTED_EXPORT_COLUMN_MAP,
     fetchReports: fetchVenueReports,
-    parseResponse: defaultParseResponse<VenueReportItem>,
+    parseResponse: (response) => {
+      const parsed = defaultParseResponse<VenueReportItem & { _id?: string }>(response)
+      return {
+        ...parsed,
+        items: parsed.items.map((item) => ({
+          ...item,
+          id: item.id || item._id || item.reportId,
+        })),
+      }
+    },
     defaultVisibleColumnIds: DEFAULT_VENUE_REPORTED_VISIBLE_COLUMN_IDS,
     catalogColumnIds: VENUE_REPORTED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
@@ -245,23 +252,15 @@ export function VenueReportedVenuesPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <ExpertListHeader
-          title="Reported Venues"
-          breadcrumbItems={[
-            { label: 'Venue Management', to: '/venues/management' },
-            { label: 'Reported Venues', isActive: true },
-          ]}
-          backTo="/venues/management"
-        />
-        <Button
-          className="ui-manage-metrics h-9 w-full md:w-auto"
-          onClick={() => navigate('/metrics/venue-reported?returnTo=/venues/management/reported')}
-        >
-          <ManageMetricsIcon />
-          Manage Metrics
-        </Button>
-      </div>
+      <ExpertListHeader
+        title="Reported Venues"
+        breadcrumbItems={[
+          { label: 'Venue Management', to: '/venues/management' },
+          { label: 'Reported Venues', isActive: true },
+        ]}
+        backTo="/venues/management"
+        metricsPath="/metrics/venue-reported?returnTo=/venues/management/reported"
+      />
 
       <DataTable
         columns={columns}

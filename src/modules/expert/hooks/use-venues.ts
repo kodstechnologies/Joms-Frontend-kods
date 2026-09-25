@@ -10,6 +10,7 @@ import {
   activateVenue,
   deleteVenue,
   restoreVenue,
+  purgeVenue,
   setVenueOwnerPassword,
   bulkDeleteVenues,
   bulkPauseVenues,
@@ -135,6 +136,18 @@ export const useRestoreVenue = () => {
 
   return useMutation({
     mutationFn: (venueId: string) => restoreVenue(venueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const usePurgeVenue = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ venueId, adminNotes }: { venueId: string; adminNotes?: string }) =>
+      purgeVenue(venueId, adminNotes ? { adminNotes } : undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },

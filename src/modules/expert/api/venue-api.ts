@@ -70,6 +70,13 @@ export const restoreVenue = async (venueId: string) => {
   return response.data
 }
 
+export const purgeVenue = async (venueId: string, payload?: { adminNotes?: string }) => {
+  const response = await venueApiClient.delete(`/venues/admin/purge/${venueId}`, {
+    data: payload,
+  })
+  return response.data
+}
+
 export const activateVenue = async (venueId: string) => {
   const response = await venueApiClient.patch(`/venues/admin/activate/${venueId}`)
   return response.data
@@ -694,6 +701,22 @@ export const bulkMessageVenues = async (venueIds: string[]) => {
 
 export const fetchVenueReports = async (params?: Record<string, unknown>) => {
   const response = await kycApiClient.get('/venue-kyc/internal/admin/reports/venues', { params })
+  return response.data
+}
+
+export type SubmitVenueReportPayload = {
+  venueId: string
+  partnerId?: string
+  issueType: string
+  reason: string
+  reporterId: string
+  reporterName: string
+  reporterType?: string
+  supportingDocuments?: string[]
+}
+
+export const submitVenueReport = async (payload: SubmitVenueReportPayload) => {
+  const response = await kycApiClient.post('/venue-kyc/internal/reports/venues', payload)
   return response.data
 }
 

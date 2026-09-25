@@ -23,6 +23,7 @@ import {
   XCircle,
   EyeOff,
   Hourglass,
+  Flag,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -103,6 +104,8 @@ import {
   getVenueKycApplicationPath,
   openVenuePartnerProfile,
 } from '../../utils/expert-application-navigation'
+import { VenueReportSubmitModal } from '../../components/venue-report-submit-modal'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 type ManagementMetric = {
   id: string
@@ -214,6 +217,7 @@ const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 export const VenueManagementPage = () => {
+  const authUser = useAuthStore((state) => state.user)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
@@ -230,6 +234,7 @@ export const VenueManagementPage = () => {
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [reportVenueTarget, setReportVenueTarget] = useState<Venue | null>(null)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
 
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
@@ -1397,6 +1402,17 @@ export const VenueManagementPage = () => {
             </TableActionsItem>
 
             <TableActionsItem
+              icon={<Flag className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                setReportVenueTarget(venue)
+              }}
+            >
+              Report Venue
+            </TableActionsItem>
+
+            <TableActionsItem
               icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
               className={ACTION_ITEM_CLASS}
               onClick={() => {
@@ -1810,6 +1826,19 @@ export const VenueManagementPage = () => {
         initialTags={initialTags}
         onSubmit={saveTags}
       />
+
+      {reportVenueTarget && authUser ? (
+        <VenueReportSubmitModal
+          open={Boolean(reportVenueTarget)}
+          venueId={getVenueApiId(reportVenueTarget)}
+          partnerId={getVenuePartnerId(reportVenueTarget)}
+          venueName={reportVenueTarget.venueName || getVenueDisplayId(reportVenueTarget)}
+          reporterId={authUser.id}
+          reporterName={authUser.fullname || authUser.email || 'Admin'}
+          onClose={() => setReportVenueTarget(null)}
+          onSubmitted={() => navigate('/venues/management/reported')}
+        />
+      ) : null}
     </div>
   )
 }

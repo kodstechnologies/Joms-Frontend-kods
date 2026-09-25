@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FilterValues, ModuleFilterKey } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
@@ -78,6 +78,13 @@ export function useReportedList<T>({
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
 
+  // Keep latest fetch/parse fns without putting them in effect deps (inline parseResponse
+  // was recreating every render → infinite reload / perpetual buffering).
+  const fetchReportsRef = useRef(fetchReports)
+  const parseResponseRef = useRef(parseResponse)
+  fetchReportsRef.current = fetchReports
+  parseResponseRef.current = parseResponse
+
   const resetPage = useCallback(() => setCurrentPage(1), [])
   const serverSort = useServerTableSort({
     sortFieldMap,
@@ -102,15 +109,16 @@ export function useReportedList<T>({
 
   const loadReports = useCallback(() => {
     setLoading(true)
-    fetchReports({
-      page: currentPage,
-      limit: 10,
-      ...sortParams,
-      ...searchParams,
-      ...apiFilterParams,
-    })
+    fetchReportsRef
+      .current({
+        page: currentPage,
+        limit: 10,
+        ...sortParams,
+        ...searchParams,
+        ...apiFilterParams,
+      })
       .then((res) => {
-        const parsed = parseResponse(res)
+        const parsed = parseResponseRef.current(res)
         setItems(parsed.items)
         setTotalItems(parsed.total)
         setTotalPages(parsed.totalPages)
@@ -121,7 +129,7 @@ export function useReportedList<T>({
         setTotalPages(1)
       })
       .finally(() => setLoading(false))
-  }, [apiFilterParams, currentPage, fetchReports, parseResponse, searchParams, sortParams])
+  }, [apiFilterParams, currentPage, searchParams, sortParams])
 
   useEffect(() => {
     loadReports()
@@ -136,8 +144,8 @@ export function useReportedList<T>({
     () =>
       createFilteredExportHandler(
         async (params: Record<string, unknown>) => {
-          const response = await fetchReports(params)
-          const parsed = parseResponse(response)
+          const response = await fetchReportsRef.current(params)
+          const parsed = parseResponseRef.current(response)
           return {
             data: parsed.items,
             meta: {
@@ -156,15 +164,7 @@ export function useReportedList<T>({
         },
         { columnIds: exportColumnIds, catalogOrder: catalogIds },
       ),
-    [
-      catalogIds,
-      enhancedSearch.globalSearch,
-      exportColumnIds,
-      exportColumnMap,
-      exportFileName,
-      fetchReports,
-      parseResponse,
-    ],
+    [catalogIds, enhancedSearch.globalSearch, exportColumnIds, exportColumnMap, exportFileName],
   )
 
   const {
