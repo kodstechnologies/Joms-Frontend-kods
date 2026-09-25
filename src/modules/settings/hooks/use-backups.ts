@@ -43,7 +43,15 @@ export const useRunBackup = () => {
 
 export const useRestoreBackup = () =>
   useMutation({
-    mutationFn: ({ id, mode }: { id: string; mode: string }) => restoreBackup(id, { mode }),
+    mutationFn: ({
+      id,
+      mode,
+      scheduledAt,
+    }: {
+      id: string
+      mode: string
+      scheduledAt?: string
+    }) => restoreBackup(id, { mode, scheduledAt, confirm: 'CONFIRM' }),
   })
 
 export const useDeleteBackup = () => {

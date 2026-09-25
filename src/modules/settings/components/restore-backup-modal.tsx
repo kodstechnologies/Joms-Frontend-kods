@@ -1,32 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 import type { BackupHistoryRow } from '../types/settings'
 import { cn } from '@/shared/lib/cn'
 
+export type RestoreSubmitPayload = {
+  mode: string
+  scheduledAt?: string
+}
+
 type RestoreBackupModalProps = {
   open: boolean
   backup: BackupHistoryRow | null
   onClose: () => void
-  onSubmit: (mode: string) => void
+  onSubmit: (payload: RestoreSubmitPayload) => void
+  isSubmitting?: boolean
 }
 
 const restoreOptions = [
   {
-    key: 'immediate',
-    label: 'Restore Immediately',
-    description: 'Restore to production environment now',
-  },
-  {
     key: 'staging',
     label: 'Restore to staging',
-    description: 'Verify Data in staging before pushing to production',
+    description: 'Safer path — verify before using restored data in production',
+  },
+  {
+    key: 'immediate',
+    label: 'Restore Immediately',
+    description: 'Restore into the live databases now (local) or spin up a restore cluster (cloud)',
   },
   {
     key: 'schedule',
     label: 'Schedule Restore',
-    description: 'Schedule Restore for a specific date',
+    description: 'Run a staging restore at a future date and time',
   },
 ]
 
@@ -37,20 +43,41 @@ function formatBackupId(backup: BackupHistoryRow) {
   return raw
 }
 
-export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreBackupModalProps) {
-  const [selected, setSelected] = useState('immediate')
+function defaultScheduleValue() {
+  const when = new Date(Date.now() + 60 * 60 * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}T${pad(when.getHours())}:${pad(when.getMinutes())}`
+}
+
+export function RestoreBackupModal({
+  open,
+  backup,
+  onClose,
+  onSubmit,
+  isSubmitting = false,
+}: RestoreBackupModalProps) {
+  const [selected, setSelected] = useState('staging')
   const [confirmText, setConfirmText] = useState('')
+  const [scheduledAt, setScheduledAt] = useState(defaultScheduleValue)
 
   useEffect(() => {
     if (!open) {
-      setSelected('immediate')
+      setSelected('staging')
       setConfirmText('')
+      setScheduledAt(defaultScheduleValue())
     }
   }, [open])
 
-  if (!open || !backup) return null
+  const canSubmit = useMemo(() => {
+    if (confirmText.trim().toUpperCase() !== 'CONFIRM') return false
+    if (selected === 'schedule') {
+      const when = new Date(scheduledAt)
+      return !Number.isNaN(when.getTime()) && when.getTime() > Date.now() + 60_000
+    }
+    return true
+  }, [confirmText, selected, scheduledAt])
 
-  const canSubmit = confirmText.trim().toUpperCase() === 'CONFIRM'
+  if (!open || !backup) return null
 
   return createPortal(
     <div
@@ -126,6 +153,18 @@ export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreB
             </div>
           </div>
 
+          {selected === 'schedule' ? (
+            <label className="restore-backup-confirm">
+              <span className="restore-backup-confirm-label">Schedule date &amp; time</span>
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(event) => setScheduledAt(event.target.value)}
+                className="restore-backup-confirm-input"
+              />
+            </label>
+          ) : null}
+
           <label className="restore-backup-confirm">
             <span className="restore-backup-confirm-label">
               Type <span className="is-danger">CONFIRM</span> to Proceed
@@ -145,11 +184,17 @@ export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreB
           </button>
           <button
             type="button"
-            disabled={!canSubmit}
-            onClick={() => onSubmit(selected)}
+            disabled={!canSubmit || isSubmitting}
+            onClick={() =>
+              onSubmit({
+                mode: selected,
+                scheduledAt:
+                  selected === 'schedule' ? new Date(scheduledAt).toISOString() : undefined,
+              })
+            }
             className="ui-modal-btn restore-backup-submit"
           >
-            Restore Now
+            {isSubmitting ? 'Working…' : selected === 'schedule' ? 'Schedule Restore' : 'Restore Now'}
           </button>
         </div>
       </div>

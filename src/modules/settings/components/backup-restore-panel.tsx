@@ -477,17 +477,30 @@ export function BackupRestorePanel() {
       <RestoreBackupModal
         open={Boolean(restoreTarget)}
         backup={restoreTarget}
+        isSubmitting={restoreMutation.isPending}
         onClose={() => setRestoreTarget(null)}
-        onSubmit={(mode) => {
+        onSubmit={({ mode, scheduledAt }) => {
           if (!restoreTarget) return
           restoreMutation.mutate(
-            { id: restoreTarget.id, mode },
+            { id: restoreTarget.id, mode, scheduledAt },
             {
-              onSuccess: () => {
+              onSuccess: (result) => {
                 setRestoreTarget(null)
+                const status =
+                  result && typeof result === 'object' && 'restore' in result
+                    ? String((result as { restore?: { status?: string } }).restore?.status || '')
+                    : ''
+                if (status === 'scheduled') {
+                  toast.success('Restore scheduled')
+                  return
+                }
+                if (status === 'completed') {
+                  toast.success('Restore completed')
+                  return
+                }
                 toast.success('Restore started')
               },
-              onError: () => toast.error('Restore failed'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Restore failed')),
             },
           )
         }}
