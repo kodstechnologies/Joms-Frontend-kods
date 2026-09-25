@@ -437,6 +437,16 @@ const SpaceDetailsPage = lazy(() =>
     default: m.SpaceDetailsPage,
   })),
 )
+const SpaceBookingsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.SpaceBookingsPage,
+  })),
+)
+const SpaceRevenuePayoutsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.SpaceRevenuePayoutsPage,
+  })),
+)
 const CategoryManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.CategoryManagementPage,
@@ -1087,6 +1097,14 @@ export function AppRouter() {
                 <Route
                   path="/venues/management/profile/:venueId/space/:spaceId"
                   element={<SpaceDetailsPage />}
+                />
+                <Route
+                  path="/venues/management/profile/:venueId/space/:spaceId/bookings"
+                  element={<SpaceBookingsPage />}
+                />
+                <Route
+                  path="/venues/management/profile/:venueId/space/:spaceId/revenue"
+                  element={<SpaceRevenuePayoutsPage />}
                 />
                 <Route
                   path="/venues/management/profile/:venueId/space/:spaceId/analytics"

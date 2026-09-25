@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
+import { Eye, FolderTree, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/ui/button'
 import { categoryPath, useCategoryManagementScope } from './category-management-scope'
 import { DeleteCategoryModal } from './delete-category-modal'
 import { PauseCategoryModal } from './pause-category-modal'
+import { EditCategoryGroupModal } from './edit-category-group-modal'
 import {
   usePauseServiceCategory,
   useServiceCategory,
@@ -22,12 +23,11 @@ export const CategoryViewHeaderActions = () => {
   const scope = useCategoryManagementScope()
   const [pauseModalOpen, setPauseModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const pauseMutation = usePauseServiceCategory()
   const softDeleteMutation = useSoftDeleteServiceCategory()
   const { data: category } = useServiceCategory(id)
-  const relatedListPath = id
-    ? `${scope.relatedListPath}?category=${encodeURIComponent(category?.name || '')}&categoryId=${encodeURIComponent(id)}`
-    : scope.relatedListPath
+  const relatedListPath = scope.relatedListPath
 
   return (
     <>
@@ -40,6 +40,19 @@ export const CategoryViewHeaderActions = () => {
         <Button variant="secondary" onClick={() => navigate(relatedListPath)}>
           <Eye className="size-4" aria-hidden="true" />
           {scope.relatedListLabel}
+        </Button>
+
+        <Button
+          variant="secondary"
+          onClick={() => {
+            const el = document.getElementById('sub-categories-section')
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+        >
+          <FolderTree className="size-4" aria-hidden="true" />
+          Edit Group
         </Button>
 
         <Button variant="secondary" onClick={() => navigate(categoryPath(scope, `rename/${id}`))}>
@@ -97,6 +110,13 @@ export const CategoryViewHeaderActions = () => {
             },
           })
         }}
+      />
+
+      <EditCategoryGroupModal
+        open={editGroupModalOpen}
+        onClose={() => setEditGroupModalOpen(false)}
+        category={category || null}
+        isVenue={false}
       />
     </>
   )

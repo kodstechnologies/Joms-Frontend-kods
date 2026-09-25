@@ -94,10 +94,11 @@ export const useFinanceEscrowDetail = (id: string) =>
     refetchOnMount: 'always',
   })
 
-export const useFinancePayouts = (params?: FinanceListParams) =>
+export const useFinancePayouts = (params?: FinanceListParams, enabled = true) =>
   useQuery({
     queryKey: financeKeys.payouts(params),
     queryFn: () => fetchFinancePayouts(params),
+    enabled,
   })
 
 export const useFinancePayout = (id: string) =>

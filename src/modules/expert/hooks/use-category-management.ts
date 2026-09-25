@@ -17,6 +17,7 @@ import {
   softDeleteCategory,
   softDeleteSubCategory,
   updateCategory,
+  updateSubCategory,
   type AddSubCategoryPayload,
   type CategoryListParams,
   type CreateCategoryPayload,
@@ -88,6 +89,23 @@ export const useAddServiceSubCategory = () => {
   return useMutation({
     mutationFn: ({ categoryId, payload }: { categoryId: string; payload: AddSubCategoryPayload }) =>
       addSubCategory(categoryId, payload),
+    onSuccess: () => invalidateCategories(queryClient, queryKey),
+  })
+}
+
+export const useUpdateServiceSubCategory = () => {
+  const queryClient = useQueryClient()
+  const { queryKey } = useCategoryManagementScope()
+  return useMutation({
+    mutationFn: ({
+      categoryId,
+      subCategoryId,
+      payload,
+    }: {
+      categoryId: string
+      subCategoryId: string
+      payload: { name?: string; description?: string; vectorIcon?: string }
+    }) => updateSubCategory(categoryId, subCategoryId, payload),
     onSuccess: () => invalidateCategories(queryClient, queryKey),
   })
 }

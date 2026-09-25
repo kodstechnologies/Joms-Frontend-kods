@@ -15,6 +15,7 @@ import {
 import {
   AlertOctagon,
   ArrowLeft,
+  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -23,6 +24,7 @@ import {
   MapPin,
   RotateCcw,
   Star,
+  Wallet,
 } from 'lucide-react'
 
 import {
@@ -690,6 +692,26 @@ export function SpaceDetailsPage() {
             }}
           >
             Analytics
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<CalendarDays className="size-3.5" />}
+            onClick={() => {
+              setActionsOpen(false)
+              navigate(`/venues/management/profile/${venueId}/space/${spaceId}/bookings`)
+            }}
+          >
+            View Bookings
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Wallet className="size-3.5" />}
+            onClick={() => {
+              setActionsOpen(false)
+              navigate(`/venues/management/profile/${venueId}/space/${spaceId}/revenue`)
+            }}
+          >
+            View Revenue & Payouts
           </TableActionsItem>
           {!isSuspended && allowDisableVenues ? (
             <TableActionsItem

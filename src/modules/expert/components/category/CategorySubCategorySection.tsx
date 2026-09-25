@@ -13,7 +13,7 @@ interface Props {
 
 const CategorySubCategorySection = ({ subCategories }: Props) => {
   return (
-    <div className="mt-8">
+    <div className="mt-8" id="sub-categories-section">
       <h3 className={categoryViewTheme.sectionTitleClass}>Sub-Categories</h3>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

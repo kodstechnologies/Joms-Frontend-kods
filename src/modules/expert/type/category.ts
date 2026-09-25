@@ -20,6 +20,7 @@ export interface CategoryApiSubCategory {
   createdBy?: string | null
   createdByName?: string | null
   activeListings?: number
+  managementVisibleListings?: number
   totalListings?: number
   experts?: number
   services?: number
@@ -53,6 +54,7 @@ export interface ServiceCategoryApi {
   createdByName?: string | null
   subCategoryCount?: number
   activeListings?: number
+  managementVisibleListings?: number
   totalListings?: number
   experts?: number
   services?: number

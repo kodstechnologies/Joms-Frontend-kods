@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Ban, Pencil, PlusSquare, X } from 'lucide-react'
+import { Ban, Eye, FolderTree, Layers, Pencil, PlusSquare, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -16,6 +16,7 @@ import { getApiErrorMessage } from '@/shared/lib/api-error'
 import type { VenueCategory } from './venue-category-table-columns'
 import { CATEGORY_ACTION_ITEM_CLASS } from './category-list-shared'
 import { PauseCategoryModal } from './pause-category-modal'
+import { EditCategoryGroupModal } from './edit-category-group-modal'
 import {
   usePauseVenueCategory,
   useSoftDeleteVenueCategory,
@@ -34,6 +35,7 @@ interface Props {
 export function VenueCategoryActionsDropdown({ category }: Props) {
   const [open, setOpen] = useState(false)
   const [disableModalOpen, setDisableModalOpen] = useState(false)
+  const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const navigate = useNavigate()
   const pauseMutation = usePauseVenueCategory()
   const softDeleteMutation = useSoftDeleteVenueCategory()
@@ -69,6 +71,28 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
         <TableActionsItem
           className={CATEGORY_ACTION_ITEM_CLASS}
           onClick={() => {
+            navigate('/venues/management')
+            setOpen(false)
+          }}
+          icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
+        >
+          View Venues
+        </TableActionsItem>
+
+        <TableActionsItem
+          className={CATEGORY_ACTION_ITEM_CLASS}
+          onClick={() => {
+            navigate('/venues/management?view=spaces')
+            setOpen(false)
+          }}
+          icon={<Layers className="size-3.5 text-slate-700" aria-hidden="true" />}
+        >
+          View Spaces
+        </TableActionsItem>
+
+        <TableActionsItem
+          className={CATEGORY_ACTION_ITEM_CLASS}
+          onClick={() => {
             navigate(`/venues/categories/management/create-subcategory/${category.id}`)
             setOpen(false)
           }}
@@ -86,6 +110,17 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
           icon={<Pencil className="size-3.5 text-slate-700" aria-hidden="true" />}
         >
           Rename Category
+        </TableActionsItem>
+
+        <TableActionsItem
+          className={CATEGORY_ACTION_ITEM_CLASS}
+          onClick={() => {
+            navigate(`/venues/categories/management/view/${category.id}`)
+            setOpen(false)
+          }}
+          icon={<FolderTree className="size-3.5 text-slate-700" aria-hidden="true" />}
+        >
+          Edit Group
         </TableActionsItem>
 
         <TableActionsItem
@@ -128,6 +163,13 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
           Export Data
         </TableActionsItem>
       </TableActionsDropdown>
+
+      <EditCategoryGroupModal
+        open={editGroupModalOpen}
+        onClose={() => setEditGroupModalOpen(false)}
+        category={category}
+        isVenue={true}
+      />
 
       <PauseCategoryModal
         open={disableModalOpen}

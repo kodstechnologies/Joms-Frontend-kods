@@ -248,13 +248,14 @@ export type CompleteContactSetupPayload = {
 export type SubAdminInvite = {
   id: string
   inviteId: string
+  inviteCode?: string
+  inviteLink?: string
   username: string
   roleId: string
   roleCode: string
   roleName: string
   email: string
   status: 'pending' | 'accepted' | 'revoked'
-  inviteLink?: string
   timestamp?: string
   sentAt: string
   sentBy?: string

@@ -177,6 +177,18 @@ export const resumeVenueCategory = async (id: string) => {
   return response.data
 }
 
+export const updateVenueSubCategory = async (
+  categoryId: string,
+  subCategoryId: string,
+  payload: { name?: string; description?: string; vectorIcon?: string },
+) => {
+  const response = await venueApiClient.patch<ApiSuccessResponse<VenueCategoryApi>>(
+    `/venue-categories/${categoryId}/subcategories/${subCategoryId}`,
+    payload,
+  )
+  return response.data
+}
+
 export const softDeleteVenueCategory = async (id: string) => {
   const response = await venueApiClient.patch<ApiSuccessResponse<VenueCategoryApi>>(
     `/venue-categories/${id}/soft-delete`,

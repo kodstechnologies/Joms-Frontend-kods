@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Link2, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowLeft, Link2, Copy, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -229,15 +229,20 @@ export function InvitesOverviewPage() {
             onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
           >
             <TableActionsItem
-              icon={<Link2 className="size-3.5" />}
-              onClick={async () => {
-                setActiveDropdownId(null)
-                try {
-                  await copyInviteLink(row.original)
-                  toast.success('Invitation link copied')
-                } catch {
-                  toast.error('Unable to copy invitation link')
+              icon={<Copy className="size-3.5" />}
+              onClick={() => {
+                const inviteCode =
+                  row.original.inviteCode || row.original.inviteId || row.original.id
+                const inviteUrl =
+                  row.original.inviteLink ||
+                  `${window.location.origin}/invite/accept?code=${encodeURIComponent(inviteCode)}`
+                if (navigator.clipboard?.writeText) {
+                  void navigator.clipboard.writeText(inviteUrl)
+                  toast.success('Invitation link copied to clipboard')
+                } else {
+                  toast.info(`Invite link: ${inviteUrl}`)
                 }
+                setActiveDropdownId(null)
               }}
             >
               Copy Invitation Link
