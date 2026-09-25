@@ -65,6 +65,7 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { fetchExperts } from '@/modules/expert/api/expert-api'
 import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 
 const REFERRAL_SORT_FIELD_MAP = buildCatalogSortFieldMap(REFERRALS_TABLE_COLUMNS_CATALOG, {
@@ -609,6 +610,50 @@ export function ReferralManagementPage() {
     deleteSelectedReasons,
   ])
 
+  const openReferredUserProfile = useCallback(
+    async (record: ExpertInvite) => {
+      const referredId = String(record.referredUserId || '').trim()
+      const entityType = String(record.referredEntityType || '').toLowerCase()
+      if (referredId) {
+        await openPartnerProfile(
+          {
+            id: referredId,
+            partnerId: referredId,
+            serviceType: entityType.includes('venue') ? 'venue' : undefined,
+          },
+          navigate,
+        )
+        return
+      }
+
+      const email = String(record.referredExpertEmail || '')
+        .trim()
+        .toLowerCase()
+      if (!email) {
+        toast.error('This referred user has not created a profile yet.')
+        return
+      }
+
+      try {
+        const response = await fetchExperts({ search: email, limit: 20 })
+        const match = (response.data || []).find(
+          (expert) =>
+            String(expert.email || '')
+              .trim()
+              .toLowerCase() === email,
+        )
+        if (!match) {
+          toast.error('This referred user has not created a profile yet.')
+          return
+        }
+        await openPartnerProfile(match, navigate)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to open the referred user profile'))
+      }
+    },
+    [navigate],
+  )
+
   const renderActions = useCallback(
     (record: ExpertInvite) => {
       const id = record.referralId
@@ -695,6 +740,15 @@ export function ReferralManagementPage() {
             View Referrer Profile
           </TableActionsItem>
           <TableActionsItem
+            icon={<User className="size-3.5" strokeWidth={1.75} />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void openReferredUserProfile(record)
+            }}
+          >
+            View Referred User Profile
+          </TableActionsItem>
+          <TableActionsItem
             icon={<ExportDataIcon className="size-3.5" />}
             onClick={() => {
               setActiveDropdownId(null)
@@ -724,6 +778,7 @@ export function ReferralManagementPage() {
       handleResend,
       navigate,
       openDeleteModal,
+      openReferredUserProfile,
     ],
   )
 

@@ -89,6 +89,7 @@ export function CommunicationForm() {
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('edit') ?? ''
   const isEditMode = Boolean(editId)
+  const forceSchedule = searchParams.get('delivery') === 'schedule'
 
   const prefillChannelRaw = searchParams.get('channel') ?? ''
   const prefillAudienceRaw = searchParams.get('audience') ?? ''
@@ -137,7 +138,7 @@ export function CommunicationForm() {
           channel: item.channel ?? '',
           type: item.type ?? '',
           audiences: parseCommunicationAudiences(item.audience),
-          deliveryType: item.deliveryType ?? 'send-now',
+          deliveryType: forceSchedule ? 'schedule' : (item.deliveryType ?? 'send-now'),
           priority: item.priority ?? 'medium',
           scheduledAt: toDateTimeLocalValue(item.scheduledAt),
           subject: item.subject ?? '',
@@ -146,14 +147,19 @@ export function CommunicationForm() {
         }
       : {
           ...emptyForm,
+          deliveryType: forceSchedule ? 'schedule' : emptyForm.deliveryType,
           channel: prefillChannel,
           audiences: prefillAudience,
         }
 
   // Remount when switching create/edit / prefill so form state resets without setState-in-effect
-  const formKey =
-    editId ||
-    `create-${prefillChannel}-${prefillAudience.join(',') || 'all'}-${prefillPartnerIds.join(',') || 'all'}`
+  const formKey = [
+    editId || 'create',
+    forceSchedule ? 'schedule' : 'now',
+    prefillChannel,
+    prefillAudience.join(',') || 'all',
+    prefillPartnerIds.join(',') || 'all',
+  ].join('-')
 
   return (
     <CommunicationFormFields

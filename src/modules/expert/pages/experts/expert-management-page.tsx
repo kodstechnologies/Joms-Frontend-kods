@@ -187,13 +187,7 @@ export const ExpertManagementPage = () => {
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [
-      appliedAdvancedFilters,
-      activeStatus,
-      currentPage,
-      enhancedSearch,
-      serverSort.sortParams,
-    ],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -431,15 +425,52 @@ export const ExpertManagementPage = () => {
     [navigate],
   )
 
-  const openViewMicrosite = useCallback((expert: Expert) => {
-    const url = String(expert.microWebsiteUrl || '').trim()
-    if (!url) {
-      toast.error('Microsite is not set for this expert yet.')
+  const openPublicUrl = useCallback((url: string, missingMessage: string) => {
+    const value = url.trim()
+    if (!value) {
+      toast.error(missingMessage)
       return
     }
-    const href = /^https?:\/\//i.test(url) ? url : `https://${url}`
+    const href = /^https?:\/\//i.test(value) ? value : `https://${value}`
     window.open(href, '_blank', 'noopener,noreferrer')
   }, [])
+
+  const openViewPublicProfile = useCallback(
+    (expert: Expert) => {
+      openPublicUrl(
+        String(expert.microWebsiteUrl || ''),
+        'Public profile is not available for this expert yet.',
+      )
+    },
+    [openPublicUrl],
+  )
+
+  const openViewMicrosite = useCallback(
+    (expert: Expert) => {
+      openPublicUrl(
+        String(expert.microWebsiteUrl || ''),
+        'Microsite is not set for this expert yet.',
+      )
+    },
+    [openPublicUrl],
+  )
+
+  const openNotifyExpert = useCallback(
+    (expert: Expert) => {
+      const partnerId = String(expert.id || expert.expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'push',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
 
   const openManageListings = useCallback(
     (expert: Expert) => {
@@ -1023,6 +1054,16 @@ export const ExpertManagementPage = () => {
               View Profile
             </TableActionsItem>
             <TableActionsItem
+              icon={<ExternalLink className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewPublicProfile(expert)
+              }}
+            >
+              View Public Profile
+            </TableActionsItem>
+            <TableActionsItem
               icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
               className={ACTION_ITEM_CLASS}
               onClick={() => {
@@ -1101,6 +1142,16 @@ export const ExpertManagementPage = () => {
               }}
             >
               Communicate with Expert
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<Bell className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openNotifyExpert(expert)
+              }}
+            >
+              Notify Expert
             </TableActionsItem>
             <TableActionsItem
               icon={<ExternalLink className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -1218,6 +1269,8 @@ export const ExpertManagementPage = () => {
     openChangeCategory,
     openChangeMembershipForExpert,
     openCommunicateWithExpert,
+    openNotifyExpert,
+    openViewPublicProfile,
     openDeleteModal,
     openManageListings,
     openSuspendModal,
@@ -1423,8 +1476,6 @@ export const ExpertManagementPage = () => {
           </div>
         </div>
       )}
-
-
 
       <DataTable
         columns={columns}

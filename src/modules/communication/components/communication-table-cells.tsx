@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Ban, Copy, Eye, FileBarChart, Pause, Play } from 'lucide-react'
+import { Ban, CalendarDays, Copy, Eye, FileBarChart, Pause, Play } from 'lucide-react'
 
 import type { Communication, CommunicationStatus } from '../api/communication-api'
 import {
@@ -116,6 +116,32 @@ export function CommunicationActions({ communication }: { communication: Communi
       >
         View Details
       </TableActionsItem>
+      {canEdit(communication.status) &&
+      communication.status !== 'scheduled' &&
+      communication.status !== 'paused' ? (
+        <TableActionsItem
+          icon={<CalendarDays className="size-3.5" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setOpen(false)
+            navigate(`/communication/create?edit=${communication.id}&delivery=schedule`)
+          }}
+        >
+          Schedule
+        </TableActionsItem>
+      ) : null}
+      {communication.status === 'scheduled' || communication.status === 'paused' ? (
+        <TableActionsItem
+          icon={<CalendarDays className="size-3.5" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setOpen(false)
+            navigate(`/communication/create?edit=${communication.id}&delivery=schedule`)
+          }}
+        >
+          Reschedule
+        </TableActionsItem>
+      ) : null}
       {canEdit(communication.status) ? (
         <TableActionsItem
           icon={<img src={editIcon} alt="" className="size-3.5" aria-hidden="true" />}

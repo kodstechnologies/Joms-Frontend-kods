@@ -1,12 +1,18 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, ExternalLink, FileText, Flag, UserRound } from 'lucide-react'
+import { ArrowLeft, Copy, ExternalLink, FileText, Flag, RotateCcw, UserRound } from 'lucide-react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
-import { useFlagAuditLog, useMySubAdminLogs, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac'
+import {
+  useFlagAuditLog,
+  useMySubAdminLogs,
+  useRoleLogs,
+  useRollbackAuditLog,
+  useSubAdminLogs,
+} from '../hooks/use-rbac'
 import { fetchMySubAdminLogs, fetchRoleLogs, fetchSubAdminLogs } from '../api/rbac-api'
 import type { AdminLogSubject, AuditLog } from '../types/rbac'
 import { AdminNoteModal } from '../components/admin-note-modal'
@@ -274,6 +280,7 @@ export function AdminLogsPage() {
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
   const [roleUsersModalId, setRoleUsersModalId] = useState<string | null>(null)
   const [flagLogId, setFlagLogId] = useState<string | null>(null)
+  const [rollbackLog, setRollbackLog] = useState<AuditLog | null>(null)
   const { fileFormat } = useDefaultExportFormat()
 
   const logParams = useMemo(
@@ -315,6 +322,7 @@ export function AdminLogsPage() {
       : historySubAdminQuery
 
   const flagMutation = useFlagAuditLog()
+  const rollbackMutation = useRollbackAuditLog()
 
   const subject = logsQuery.data?.data.subject
   const logs = logsQuery.data?.data.logs ?? []
@@ -409,6 +417,32 @@ export function AdminLogsPage() {
     setActiveDropdownId(null)
   }, [])
 
+  const copyLogId = useCallback(async (logId: string) => {
+    if (!logId) {
+      toast.error('Log ID is missing.')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(logId)
+      toast.success('Log ID copied')
+    } catch {
+      toast.error('Failed to copy log ID')
+    }
+  }, [])
+
+  const confirmRollback = useCallback(async () => {
+    const logId = rollbackLog?.id || rollbackLog?._id || ''
+    if (!logId) return
+    try {
+      await rollbackMutation.mutateAsync(logId)
+      toast.success('Action rolled back')
+      setRollbackLog(null)
+      void logsQuery.refetch()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to roll back action'))
+    }
+  }, [logsQuery, rollbackLog, rollbackMutation])
+
   const renderAdminNoteCell = useCallback((note?: string) => {
     if (!note?.trim()) {
       return <span className="text-brand-muted">—</span>
@@ -465,10 +499,30 @@ export function AdminLogsPage() {
           >
             Export Logs
           </TableActionsItem>
+          <TableActionsItem
+            icon={<Copy className="size-3.5" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void copyLogId(logId)
+            }}
+          >
+            Copy Log ID
+          </TableActionsItem>
+          {log.canRollback && !log.rolledBack ? (
+            <TableActionsItem
+              icon={<RotateCcw className="size-3.5" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                setRollbackLog(log)
+              }}
+            >
+              Roll Back Action
+            </TableActionsItem>
+          ) : null}
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, fileFormat, openFlagModal, openHistory],
+    [activeDropdownId, copyLogId, fileFormat, openFlagModal, openHistory],
   )
 
   const userColumns = useMemo<ColumnDef<AuditLog>[]>(
@@ -706,6 +760,40 @@ export function AdminLogsPage() {
         onConfirm={handleFlag}
         isSubmitting={flagMutation.isPending}
       />
+      {rollbackLog ? (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-brand-surface w-full max-w-md rounded-xl border border-white/10 p-6">
+            <h3 className="text-brand-text text-lg font-semibold">Roll back this action?</h3>
+            <p className="text-muted mt-2 text-sm">
+              This restores the previous version
+              {rollbackLog.previousRole ? (
+                <>
+                  {' '}
+                  <span className="text-brand-text font-medium">{rollbackLog.previousRole}</span>
+                </>
+              ) : null}{' '}
+              recorded in log {rollbackLog.id || rollbackLog._id}.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                disabled={rollbackMutation.isPending}
+                onClick={() => setRollbackLog(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={rollbackMutation.isPending}
+                onClick={() => {
+                  void confirmRollback()
+                }}
+              >
+                Roll Back
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <RoleUsersModal
         open={Boolean(roleUsersModalId)}
         roleId={roleUsersModalId ?? ''}
