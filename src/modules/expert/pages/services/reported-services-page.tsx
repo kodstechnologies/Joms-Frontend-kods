@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { fetchServiceReports } from '../../api/service-api'
-import { getServiceManagementViewPath } from '../../lib/service-navigation'
+import { serviceDetailPath } from '../../lib/service-navigation'
 import { SERVICE_REPORTED_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
   DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS,
@@ -144,12 +145,13 @@ export function ServiceReportedServicesPage() {
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveDropdownId(null)
-                    navigate(
-                      getServiceManagementViewPath({
-                        _id: reportItem.serviceId,
-                        partnerId: reportItem.partnerId,
-                      }),
-                    )
+                    const partnerId = String(reportItem.partnerId || '').trim()
+                    const serviceId = String(reportItem.serviceId || '').trim()
+                    if (!partnerId || !serviceId) {
+                      toast.error('Service details link is incomplete for this report.')
+                      return
+                    }
+                    navigate(serviceDetailPath(partnerId, serviceId))
                   }}
                 >
                   View Service

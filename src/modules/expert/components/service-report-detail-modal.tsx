@@ -1,4 +1,4 @@
-import { X, AlertCircle, FileText, CheckCircle } from 'lucide-react'
+import { X, Package, AlertCircle, FileText, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
@@ -65,6 +65,8 @@ export function ServiceReportDetailModal({
 
   if (!isOpen || !report) return null
 
+  const submittedAt = report.submittedAt || report.createdAt
+
   const handleSave = async () => {
     setUpdating(true)
     try {
@@ -85,94 +87,103 @@ export function ServiceReportDetailModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0F172A] text-slate-100 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-          <div>
-            <span className="font-mono text-xs font-semibold text-[#E5B54E]">
-              {report.reportId}
-            </span>
-            <h2 className="text-lg font-bold text-white">Service Report Details</h2>
+    <>
+      <div
+        className="fixed inset-0 z-50 bg-[#050505]/80 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-white/10 bg-[#141414] text-white shadow-2xl transition-transform duration-300">
+        <div className="flex items-center justify-between border-b border-white/10 p-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-[#E5B54E]/15 p-2 text-[#E5B54E]">
+              <AlertCircle className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Report Details ({report.reportId})</h2>
+              <p className="text-xs text-white/50">
+                Filed on {submittedAt ? new Date(submittedAt).toLocaleString() : 'N/A'}
+              </p>
+            </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+            aria-label="Close"
           >
             <X className="size-5" />
           </button>
         </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto p-6">
-          <div className="grid grid-cols-2 gap-4 rounded-lg border border-slate-800/80 bg-slate-900/60 p-4">
-            <div>
-              <div className="text-xs text-slate-400">Reported Service</div>
-              <div className="font-semibold text-white">{report.serviceTitle}</div>
-              <div className="text-[11px] text-slate-400">ID: {report.serviceId}</div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">Reporter</div>
-              <div className="font-medium text-slate-200">{report.reporterName}</div>
-              <div className="text-[11px] text-slate-400">
-                {report.reporterType} (ID: {report.reporterId})
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">Issue Type</div>
-              <div className="mt-0.5 inline-flex items-center gap-1.5 rounded border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
-                <AlertCircle className="size-3" />
-                {report.issueType}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400">Submitted Date</div>
-              <div className="text-sm font-medium text-slate-300">
-                {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'N/A'}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-              Reason / Complaint Description
-            </h4>
-            <div className="rounded-lg border border-slate-800/60 bg-slate-900/40 p-3 text-sm text-slate-300">
-              {report.reason}
-            </div>
-          </div>
-
-          {report.supportingDocuments && report.supportingDocuments.length > 0 && (
-            <div>
-              <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                Supporting Documents ({report.supportingDocuments.length})
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {report.supportingDocuments.map((doc, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setMediaIndex(idx)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700"
-                  >
-                    <FileText className="size-3.5 text-blue-400" />
-                    Document {idx + 1}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4 border-t border-slate-800 pt-4">
-            <h4 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
-              Admin Investigation Controls
-            </h4>
-
-            <div className="grid grid-cols-2 gap-4">
+        <div className="flex-1 space-y-6 overflow-y-auto bg-[#141414] p-6">
+          <div className="space-y-3 rounded-xl border border-white/10 bg-[#050505] p-4">
+            <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-white/50 uppercase">
+              <Package className="size-4 text-[#E5B54E]" /> Reported Service & Reporter
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Investigation Status</label>
+                <span className="block text-white/40">Reported Service:</span>
+                <span className="text-sm font-semibold text-white">{report.serviceTitle}</span>
+                <span className="block text-[11px] text-white/40">ID: {report.serviceId}</span>
+              </div>
+              <div>
+                <span className="block text-white/40">Reported By ({report.reporterType}):</span>
+                <span className="text-sm font-semibold text-white">{report.reporterName}</span>
+                <span className="block text-[11px] text-white/40">ID: {report.reporterId}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-white/10 bg-[#050505] p-4">
+            <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-white/50 uppercase">
+              <FileText className="size-4 text-[#E5B54E]" /> Issue Summary
+            </h3>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-white/40">Issue Category:</span>
+                <span className="rounded-full bg-red-500/20 px-2.5 py-0.5 font-semibold text-red-400">
+                  {report.issueType}
+                </span>
+              </div>
+              <div>
+                <span className="mb-1 block text-white/40">Reason / Description:</span>
+                <p className="rounded-lg border border-white/5 bg-[#141414] p-3 leading-relaxed text-white/85">
+                  {report.reason}
+                </p>
+              </div>
+              {report.supportingDocuments && report.supportingDocuments.length > 0 ? (
+                <div>
+                  <span className="mb-1 block text-white/40">Supporting Documents:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {report.supportingDocuments.map((docUrl, idx) => (
+                      <button
+                        key={docUrl || idx}
+                        type="button"
+                        onClick={() => setMediaIndex(idx)}
+                        className="rounded bg-white/5 px-2.5 py-1 text-xs text-[#E5B54E] hover:underline"
+                      >
+                        Attachment {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="space-y-4 rounded-xl border border-white/10 bg-[#050505] p-4">
+            <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-white/50 uppercase">
+              <CheckCircle className="size-4 text-[#E5B54E]" /> Admin Investigation Workflow
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="mb-1 block text-white/50">Investigation Status</label>
                 <select
                   value={investigationStatus}
                   onChange={(e) => setInvestigationStatus(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-[#141414] p-2 text-white focus:border-[#E5B54E] focus:outline-none"
                 >
                   <option value="New">New</option>
                   <option value="Under Review">Under Review</option>
@@ -185,11 +196,11 @@ export function ServiceReportDetailModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Business Impact</label>
+                <label className="mb-1 block text-white/50">Business Impact</label>
                 <select
                   value={businessImpact}
                   onChange={(e) => setBusinessImpact(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-[#141414] p-2 text-white focus:border-[#E5B54E] focus:outline-none"
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -199,14 +210,14 @@ export function ServiceReportDetailModal({
               </div>
             </div>
 
-            <div>
-              <label className="mb-1 block text-xs text-slate-400">Final Outcome</label>
+            <div className="space-y-1 text-xs">
+              <label className="block text-white/50">Final Outcome (on closure)</label>
               <select
                 value={finalOutcome}
                 onChange={(e) => setFinalOutcome(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-white/10 bg-[#141414] p-2 text-white focus:border-[#E5B54E] focus:outline-none"
               >
-                <option value="">None Selected</option>
+                <option value="">-- Select Final Outcome --</option>
                 <option value="No Violation">No Violation</option>
                 <option value="Warning Issued">Warning Issued</option>
                 <option value="Service Suspended">Service Suspended</option>
@@ -217,30 +228,35 @@ export function ServiceReportDetailModal({
               </select>
             </div>
 
-            <div>
-              <label className="mb-1 block text-xs text-slate-400">Internal Admin Notes</label>
+            <div className="space-y-1 text-xs">
+              <label className="block text-white/50">Internal Admin Notes</label>
               <textarea
-                rows={3}
                 value={internalNotes}
                 onChange={(e) => setInternalNotes(e.target.value)}
-                placeholder="Add investigation notes, findings, or decision details..."
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 p-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                rows={3}
+                placeholder="Enter private investigation notes..."
+                className="w-full rounded-lg border border-white/10 bg-[#141414] p-2 text-white placeholder:text-white/30 focus:border-[#E5B54E] focus:outline-none"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-800 px-6 py-4">
-          <Button variant="outline" onClick={onClose} disabled={updating}>
+        <div className="flex items-center justify-end gap-3 border-t border-white/10 bg-[#141414] p-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="border-white/10 bg-[#050505] text-white/80 hover:bg-white/10 hover:text-white"
+          >
             Cancel
           </Button>
           <Button
-            onClick={handleSave}
+            type="button"
+            onClick={() => void handleSave()}
             disabled={updating}
-            className="bg-blue-600 text-white hover:bg-blue-700"
+            className="bg-[#E5B54E] font-semibold text-[#050505] hover:bg-[#d4a53d]"
           >
-            <CheckCircle className="mr-1.5 size-4" />
-            {updating ? 'Saving...' : 'Save Investigation'}
+            {updating ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>
@@ -249,12 +265,12 @@ export function ServiceReportDetailModal({
         open={mediaIndex != null}
         items={(report.supportingDocuments || []).map((url, idx) => ({
           url,
-          title: `Document ${idx + 1}`,
+          title: `Attachment ${idx + 1}`,
         }))}
         index={mediaIndex ?? 0}
         onClose={() => setMediaIndex(null)}
         onIndexChange={setMediaIndex}
       />
-    </div>
+    </>
   )
 }
