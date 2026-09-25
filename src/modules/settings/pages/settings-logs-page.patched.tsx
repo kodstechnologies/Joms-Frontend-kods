@@ -454,7 +454,15 @@ export function SettingsLogsPage() {
         accessorKey: 'role',
         header: 'Roles',
         cell: ({ row }) => (
-          <span className="text-brand-text text-sm">{row.original.role || 'Admin'}</span>
+          <button
+            type="button"
+            className="text-brand-text text-sm underline-offset-2 hover:underline"
+            onClick={() => {
+              void openViewRole(row.original)
+            }}
+          >
+            {row.original.role || 'Admin'}
+          </button>
         ),
       },
       {

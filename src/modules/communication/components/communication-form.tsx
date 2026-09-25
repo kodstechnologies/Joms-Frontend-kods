@@ -3,6 +3,7 @@ import { ArrowLeft, CalendarDays, Check, ChevronDown } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import type { Communication } from '../api/communication-api'
 import {
   COMMUNICATION_AUDIENCE_OPTIONS,
   COMMUNICATION_CHANNEL_OPTIONS,
@@ -77,6 +78,29 @@ const AUDIENCE_VALUES = new Set([
   'venue-management',
   'all-partners',
 ])
+
+const notifyDeliveryResult = (
+  result: Communication,
+  deliveryType: CommunicationDeliveryType,
+  mode: 'create' | 'update',
+) => {
+  const note = result.deliveryMeta?.note || result.failureReason || ''
+  if (result.status === 'failed') {
+    toast.error(note || 'Message delivery failed')
+    return
+  }
+  if ((result.analytics?.failed ?? 0) > 0) {
+    toast.warning(note || 'Some messages failed to send')
+    return
+  }
+  if (deliveryType === 'schedule') {
+    toast.success(
+      mode === 'update' ? 'Communication updated and scheduled' : 'Communication scheduled',
+    )
+    return
+  }
+  toast.success(mode === 'update' ? 'Communication updated and sent' : 'Communication sent')
+}
 
 const parsePartnerIds = (raw: string | null) =>
   (raw ?? '')
@@ -191,12 +215,18 @@ type CommunicationFormFieldsProps = {
   isSubmitting: boolean
   onCreate: (
     payload: CreateCommunicationPayload,
-    handlers: { onSuccess: () => void; onError: (error: unknown) => void },
+    handlers: {
+      onSuccess: (result: Communication) => void
+      onError: (error: unknown) => void
+    },
   ) => void
   onUpdate: (
     id: string,
     payload: CreateCommunicationPayload,
-    handlers: { onSuccess: () => void; onError: (error: unknown) => void },
+    handlers: {
+      onSuccess: (result: Communication) => void
+      onError: (error: unknown) => void
+    },
   ) => void
 }
 
@@ -323,12 +353,8 @@ function CommunicationFormFields({
 
     if (isEditMode) {
       onUpdate(editId, payload, {
-        onSuccess: () => {
-          toast.success(
-            deliveryType === 'schedule'
-              ? 'Communication updated and scheduled'
-              : 'Communication updated and sent',
-          )
+        onSuccess: (updated) => {
+          notifyDeliveryResult(updated, deliveryType, 'update')
           navigate('/communication/management')
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -337,10 +363,8 @@ function CommunicationFormFields({
     }
 
     onCreate(payload, {
-      onSuccess: () => {
-        toast.success(
-          deliveryType === 'schedule' ? 'Communication scheduled' : 'Communication saved',
-        )
+      onSuccess: (created) => {
+        notifyDeliveryResult(created, deliveryType, 'create')
         navigate('/communication/management')
       },
       onError: (error) => toast.error(getApiErrorMessage(error)),

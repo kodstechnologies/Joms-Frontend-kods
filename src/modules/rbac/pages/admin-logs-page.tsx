@@ -18,7 +18,6 @@ import type { AdminLogSubject, AuditLog } from '../types/rbac'
 import { AdminNoteModal } from '../components/admin-note-modal'
 import { FlagActionModal } from '../components/flag-action-modal'
 import { RbacLoader } from '../components/rbac-loader'
-import { RoleUsersModal } from '../components/role-users-modal'
 import { VersionHistoryPanel } from '../components/version-history-panel'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
@@ -168,9 +167,11 @@ function AdminInfoCard({
 function UserOverviewCard({
   subject,
   onOpenUser,
+  onOpenRole,
 }: {
   subject?: AdminLogSubject
   onOpenUser: (userId: string) => void
+  onOpenRole: (roleId: string) => void
 }) {
   if (!subject || (subject.type !== 'subAdmin' && subject.type !== 'superadmin')) {
     return (
@@ -200,7 +201,22 @@ function UserOverviewCard({
           </button>
         </OverviewField>
         <OverviewField label="Role">
-          <RoleNamePill label={roleLabel} />
+          {!isSuperAdmin && subject.roles.length ? (
+            <span className="inline-flex flex-wrap gap-1.5">
+              {subject.roles.map((role) => (
+                <button
+                  key={role.id}
+                  type="button"
+                  className="rbac-role-name-pill"
+                  onClick={() => onOpenRole(role.id)}
+                >
+                  {role.name}
+                </button>
+              ))}
+            </span>
+          ) : (
+            <RoleNamePill label={roleLabel} />
+          )}
         </OverviewField>
         <OverviewField label="Status">
           <EntityStatusPill status={subject.status} />
@@ -278,7 +294,6 @@ export function AdminLogsPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
-  const [roleUsersModalId, setRoleUsersModalId] = useState<string | null>(null)
   const [flagLogId, setFlagLogId] = useState<string | null>(null)
   const [rollbackLog, setRollbackLog] = useState<AuditLog | null>(null)
   const { fileFormat } = useDefaultExportFormat()
@@ -376,9 +391,13 @@ export function AdminLogsPage() {
               ? 'My Profile'
               : 'User'
 
-  const handleViewRoleUsers = useCallback((roleId: string) => {
-    setRoleUsersModalId(roleId)
-  }, [])
+  const handleViewRoleUsers = useCallback(
+    (roleId: string) => {
+      if (!roleId) return
+      navigate(`/settings/access/roles/${roleId}/users`)
+    },
+    [navigate],
+  )
 
   const handleOpenUser = useCallback(
     (userId: string) => {
@@ -709,7 +728,11 @@ export function AdminLogsPage() {
       {isRole ? (
         <RoleOverviewCard subject={subject} onViewRoleUsers={handleViewRoleUsers} />
       ) : (
-        <UserOverviewCard subject={subject} onOpenUser={handleOpenUser} />
+        <UserOverviewCard
+          subject={subject}
+          onOpenUser={handleOpenUser}
+          onOpenRole={handleViewRoleUsers}
+        />
       )}
 
       <div>
@@ -794,11 +817,6 @@ export function AdminLogsPage() {
           </div>
         </div>
       ) : null}
-      <RoleUsersModal
-        open={Boolean(roleUsersModalId)}
-        roleId={roleUsersModalId ?? ''}
-        onClose={() => setRoleUsersModalId(null)}
-      />
     </div>
   )
 }

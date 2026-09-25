@@ -112,8 +112,7 @@ type RoleHistoryRow = {
 
 const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   const previousVersion = log.metadata?.previousVersion as
-    | { roleIds?: string[]; firstName?: string; lastName?: string }
-    | undefined
+    { roleIds?: string[]; firstName?: string; lastName?: string } | undefined
 
   return {
     id: log.id || log._id || log.action,
@@ -140,14 +139,25 @@ function RolePill({ label }: { label: string }) {
   return <span className="rbac-role-name-pill">{label}</span>
 }
 
-function RolePills({ labels }: { labels: string[] }) {
+function RolePills({ labels, onSelect }: { labels: string[]; onSelect?: (label: string) => void }) {
   const names = labels.map((label) => label.trim()).filter(Boolean)
   if (!names.length) return <span>—</span>
   return (
     <span className="inline-flex flex-wrap gap-1.5">
-      {names.map((name) => (
-        <RolePill key={name} label={name} />
-      ))}
+      {names.map((name) =>
+        onSelect ? (
+          <button
+            key={name}
+            type="button"
+            className="rbac-role-name-pill"
+            onClick={() => onSelect(name)}
+          >
+            {name}
+          </button>
+        ) : (
+          <RolePill key={name} label={name} />
+        ),
+      )}
     </span>
   )
 }
@@ -445,7 +455,16 @@ export function AdminDetailPage() {
               <DetailField label="First Name">{subAdmin.firstName || '—'}</DetailField>
               <DetailField label="Last Name">{subAdmin.lastName || '—'}</DetailField>
               <DetailField label="Role">
-                <RolePills labels={roleNames} />
+                <RolePills
+                  labels={roleNames}
+                  onSelect={(name) => {
+                    const role = subAdmin.roles.find(
+                      (item) => item.name.toLowerCase() === name.toLowerCase(),
+                    )
+                    if (!role?.id) return
+                    navigate(`/settings/access/roles/${role.id}/users`)
+                  }}
+                />
               </DetailField>
               <DetailField label="Last Active">
                 {formatOverviewDate(subAdmin.lastActionAt || subAdmin.updatedAt)}

@@ -546,7 +546,15 @@ export function RbacHubPage() {
         id: 'roles-name',
         accessorKey: 'name',
         header: 'Role Name',
-        cell: ({ row }) => <span className="rbac-role-name-pill">{row.original.name}</span>,
+        cell: ({ row }) => (
+          <button
+            type="button"
+            className="rbac-role-name-pill"
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/users`)}
+          >
+            {row.original.name}
+          </button>
+        ),
       },
       'roles-description': {
         id: 'roles-description',
@@ -660,8 +668,17 @@ export function RbacHubPage() {
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
           menuWidth={180}
-          maxVisibleItems={8}
+          maxVisibleItems={9}
         >
+          <TableActionsItem
+            icon={<AccessViewUserIcon className="size-3.5 text-slate-700" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/settings/access/roles/${row.original.id}/users`)
+            }}
+          >
+            View Role
+          </TableActionsItem>
           <TableActionsItem
             icon={<AccessEditPermissionIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
@@ -779,14 +796,19 @@ export function RbacHubPage() {
         accessorFn: (row) => row.roles.map((r) => r.name).join(', '),
         header: 'Role Name',
         cell: ({ row }) => {
-          const names = row.original.roles.map((r) => r.name).filter(Boolean)
-          if (!names.length) return '—'
+          const roles = row.original.roles.filter((role) => role.name)
+          if (!roles.length) return '—'
           return (
             <span className="inline-flex flex-wrap gap-1.5">
-              {names.map((name) => (
-                <span key={name} className="rbac-role-name-pill">
-                  {name}
-                </span>
+              {roles.map((role) => (
+                <button
+                  key={role.id}
+                  type="button"
+                  className="rbac-role-name-pill"
+                  onClick={() => navigate(`/settings/access/roles/${role.id}/users`)}
+                >
+                  {role.name}
+                </button>
               ))}
             </span>
           )
@@ -875,8 +897,8 @@ export function RbacHubPage() {
           label="Open user actions"
           isOpen={activeDropdownId === row.original.id}
           onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
-          menuWidth={180}
-          maxVisibleItems={8}
+          menuWidth={220}
+          maxVisibleItems={12}
         >
           <TableActionsItem
             icon={<AccessViewUserIcon className="size-3.5 text-slate-700" />}
@@ -887,6 +909,18 @@ export function RbacHubPage() {
           >
             View user
           </TableActionsItem>
+          {row.original.roles.map((role) => (
+            <TableActionsItem
+              key={role.id}
+              icon={<Shield className="size-3.5 text-slate-700" strokeWidth={1.85} />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                navigate(`/settings/access/roles/${role.id}/users`)
+              }}
+            >
+              {row.original.roles.length > 1 ? `View ${role.name}` : 'View Role'}
+            </TableActionsItem>
+          ))}
           <TableActionsItem
             icon={<AccessChangeRoleIcon className="size-3.5 text-slate-700" />}
             onClick={() => {

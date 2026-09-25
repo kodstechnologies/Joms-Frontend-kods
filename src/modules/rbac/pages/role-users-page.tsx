@@ -156,7 +156,7 @@ export function RoleUsersPage() {
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => navigate(`/settings/access/roles/${id}/logs`)}
+          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
           className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

@@ -1,15 +1,20 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Ban, CalendarDays, Copy, Eye, FileBarChart, Pause, Play } from 'lucide-react'
+import { Ban, CalendarDays, Copy, Eye, FileBarChart, Pause, Play, RotateCcw } from 'lucide-react'
 
-import type { Communication, CommunicationStatus } from '../api/communication-api'
+import {
+  canRetryFailedMessages,
+  type Communication,
+  type CommunicationStatus,
+} from '../api/communication-api'
 import {
   useCancelCommunication,
   useDeleteCommunication,
   useDuplicateCommunication,
   usePauseCommunication,
   useResumeCommunication,
+  useRetryFailedCommunication,
 } from '../hooks/use-communications'
 import {
   TableActionsDropdown,
@@ -83,6 +88,7 @@ export function CommunicationActions({ communication }: { communication: Communi
   const cancelMutation = useCancelCommunication()
   const pauseMutation = usePauseCommunication()
   const resumeMutation = useResumeCommunication()
+  const retryMutation = useRetryFailedCommunication()
 
   const handleExportAnalytics = useCallback(async () => {
     try {
@@ -103,8 +109,8 @@ export function CommunicationActions({ communication }: { communication: Communi
       label="Communication actions"
       isOpen={open}
       onOpenChange={setOpen}
-      menuWidth={200}
-      maxVisibleItems={8}
+      menuWidth={230}
+      maxVisibleItems={9}
     >
       <TableActionsItem
         icon={<Eye className="size-3.5" />}
@@ -225,6 +231,32 @@ export function CommunicationActions({ communication }: { communication: Communi
           }}
         >
           Delete
+        </TableActionsItem>
+      ) : null}
+      {canRetryFailedMessages(communication) ? (
+        <TableActionsItem
+          icon={<RotateCcw className="size-3.5" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setOpen(false)
+            retryMutation.mutate(communication.id, {
+              onSuccess: (updated) => {
+                if (updated.status === 'failed' || (updated.analytics?.failed ?? 0) > 0) {
+                  toast.error(
+                    updated.deliveryMeta?.note ||
+                      updated.failureReason ||
+                      'Retry did not deliver every message',
+                  )
+                  return
+                }
+                toast.success(updated.deliveryMeta?.note || 'Failed messages retried')
+              },
+              onError: (error) =>
+                toast.error(getApiErrorMessage(error, 'Failed to retry messages')),
+            })
+          }}
+        >
+          Retry Failed Messages
         </TableActionsItem>
       ) : null}
       <TableActionsItem

@@ -305,3 +305,21 @@ export const resumeCommunication = async (id: string) => {
   )
   return response.data.data
 }
+
+export const retryFailedCommunication = async (id: string) => {
+  const response = await settingsApiClient.post<ApiEnvelope<Communication>>(
+    `/settings/communications/${id}/retry`,
+  )
+  return response.data.data
+}
+
+export const canRetryFailedMessages = (
+  communication: Pick<Communication, 'status'> & {
+    failedCount?: number
+    analytics?: { failed?: number }
+  },
+) => {
+  if (communication.status === 'failed') return true
+  const failed = communication.failedCount ?? communication.analytics?.failed ?? 0
+  return failed > 0 && !['draft', 'scheduled', 'cancelled', 'paused'].includes(communication.status)
+}
