@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Ban, Pencil, PlusSquare, X } from 'lucide-react'
+import { Ban, Eye, FolderTree, Pencil, PlusSquare, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -17,6 +17,7 @@ import type { Category } from './category-table-columns'
 import { CATEGORY_ACTION_ITEM_CLASS } from './category-list-shared'
 import { categoryPath, useCategoryManagementScope } from './category-management-scope'
 import { PauseCategoryModal } from './pause-category-modal'
+import { EditCategoryGroupModal } from './edit-category-group-modal'
 import {
   usePauseServiceCategory,
   useSoftDeleteServiceCategory,
@@ -35,6 +36,7 @@ interface Props {
 export function CategoryActionsDropdown({ category }: Props) {
   const [open, setOpen] = useState(false)
   const [disableModalOpen, setDisableModalOpen] = useState(false)
+  const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const navigate = useNavigate()
   const scope = useCategoryManagementScope()
   const pauseMutation = usePauseServiceCategory()
@@ -71,6 +73,17 @@ export function CategoryActionsDropdown({ category }: Props) {
         <TableActionsItem
           className={CATEGORY_ACTION_ITEM_CLASS}
           onClick={() => {
+            navigate(scope.relatedListPath)
+            setOpen(false)
+          }}
+          icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
+        >
+          {scope.relatedListLabel}
+        </TableActionsItem>
+
+        <TableActionsItem
+          className={CATEGORY_ACTION_ITEM_CLASS}
+          onClick={() => {
             navigate(categoryPath(scope, `create-subcategory/${category.id}`))
             setOpen(false)
           }}
@@ -88,6 +101,17 @@ export function CategoryActionsDropdown({ category }: Props) {
           icon={<Pencil className="size-3.5 text-slate-700" aria-hidden="true" />}
         >
           Rename Category
+        </TableActionsItem>
+
+        <TableActionsItem
+          className={CATEGORY_ACTION_ITEM_CLASS}
+          onClick={() => {
+            navigate(categoryPath(scope, `view/${category.id}`))
+            setOpen(false)
+          }}
+          icon={<FolderTree className="size-3.5 text-slate-700" aria-hidden="true" />}
+        >
+          Edit Group
         </TableActionsItem>
 
         <TableActionsItem
@@ -130,6 +154,13 @@ export function CategoryActionsDropdown({ category }: Props) {
           Export Data
         </TableActionsItem>
       </TableActionsDropdown>
+
+      <EditCategoryGroupModal
+        open={editGroupModalOpen}
+        onClose={() => setEditGroupModalOpen(false)}
+        category={category}
+        isVenue={false}
+      />
 
       <PauseCategoryModal
         open={disableModalOpen}

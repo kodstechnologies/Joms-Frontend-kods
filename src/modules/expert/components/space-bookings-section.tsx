@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { MoreVertical } from 'lucide-react'
+import { X } from 'lucide-react'
 
 import { useSpaceBookings } from '../hooks/use-venues'
-import type { SpaceBookingStatus } from '../api/venue-api'
+import type { SpaceBookingRow, SpaceBookingStatus } from '../api/venue-api'
 import { cn } from '@/shared/lib/cn'
 
 const TABS: { key: SpaceBookingStatus; label: string }[] = [
@@ -31,9 +31,16 @@ type SpaceBookingsSectionProps = {
   spaceId?: string
 }
 
+const formatBookingMoney = (row: SpaceBookingRow) => {
+  if (row.price == null) return '—'
+  const currency = row.currency && row.currency !== 'INR' ? `${row.currency} ` : '₹'
+  return `${currency}${row.price.toLocaleString('en-IN')}`
+}
+
 export function SpaceBookingsSection({ spaceId }: SpaceBookingsSectionProps) {
   const [status, setStatus] = useState<SpaceBookingStatus>('all')
   const [page, setPage] = useState(1)
+  const [selected, setSelected] = useState<SpaceBookingRow | null>(null)
   const { data, isLoading, isError } = useSpaceBookings(spaceId, status, page, 20)
 
   const rows = data?.data ?? []
@@ -133,10 +140,10 @@ export function SpaceBookingsSection({ spaceId }: SpaceBookingsSectionProps) {
                   <td className="px-3 py-3.5">
                     <button
                       type="button"
-                      className="text-[#777] hover:text-white"
-                      aria-label="Booking actions"
+                      onClick={() => setSelected(row)}
+                      className="text-[12px] font-semibold text-[#E0A263] hover:text-white"
                     >
-                      <MoreVertical className="size-4" />
+                      View
                     </button>
                   </td>
                 </tr>
@@ -189,6 +196,56 @@ export function SpaceBookingsSection({ spaceId }: SpaceBookingsSectionProps) {
           Next
         </button>
       </div>
+
+      {selected ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="space-booking-details-title"
+            className="w-full max-w-lg rounded-brand-lg border border-white/10 bg-[#121417] p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 id="space-booking-details-title" className="text-body-md font-bold text-white">
+                  {selected.name}
+                </h3>
+                <p className="mt-1 text-[12px] text-[#999]">{selected.eventId}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="rounded-lg p-1.5 text-[#777] hover:bg-white/10 hover:text-white"
+                aria-label="Close booking details"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
+              {[
+                ['Status', selected.statusLabel],
+                ['Event type', selected.eventType || '—'],
+                ['Event date', selected.eventDate || '—'],
+                ['Time', `${selected.startTime || '—'} – ${selected.endTime || '—'}`],
+                ['Client', selected.clientName || '—'],
+                ['Amount', formatBookingMoney(selected)],
+                ['Payment', selected.paymentStatus || '—'],
+                ['Attendees', String(selected.totalAttendees)],
+                ['Checked in', String(selected.checkedInAttendees)],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-[11px] text-[#777]">{label}</dt>
+                  <dd className="mt-0.5 font-medium text-white capitalize">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

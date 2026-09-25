@@ -108,6 +108,7 @@ export type SpaceBookingRow = {
   eventType: string
   price?: number
   currency?: string
+  paymentStatus?: string
   clientName?: string | null
 }
 

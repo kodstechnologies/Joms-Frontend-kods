@@ -12,6 +12,9 @@ import {
   Upload,
   Ban,
   LayoutDashboard,
+  CalendarDays,
+  Wallet,
+  Eye,
   Bell,
   Mail,
   FileText,
@@ -22,7 +25,7 @@ import {
   Hourglass,
   type LucideIcon,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   END_MUST_AFTER_START_MESSAGE,
@@ -408,6 +411,8 @@ export const VenueManagementPage = () => {
   }, [selectedVenueIds, bulkDisableMutation])
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const viewFromUrl = searchParams.get('view') || ''
 
   const { currentPage, setCurrentPage, activeStatus } = useVenueStore()
   const serverSort = useServerTableSort({
@@ -433,8 +438,16 @@ export const VenueManagementPage = () => {
         ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
+        view: viewFromUrl || undefined,
       }),
-    [appliedAdvancedFilters, currentPage, enhancedSearch, activeStatus, serverSort.sortParams],
+    [
+      appliedAdvancedFilters,
+      currentPage,
+      enhancedSearch,
+      activeStatus,
+      serverSort.sortParams,
+      viewFromUrl,
+    ],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -449,10 +462,17 @@ export const VenueManagementPage = () => {
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
           ...enhancedSearch.buildSearchParams(),
+          view: viewFromUrl || undefined,
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
+    [
+      activeStatus,
+      catalogColumnIds,
+      enhancedSearch,
+      exportColumnIds,
+      viewFromUrl,
+    ],
   )
 
   const {
@@ -553,6 +573,19 @@ export const VenueManagementPage = () => {
         partnerIds: partnerId,
       })
       navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openSpaceRoute = useCallback(
+    (venue: Venue, suffix = '') => {
+      const venueApiId = getVenueApiId(venue)
+      const spaceApiId = getVenueApiSpaceId(venue)
+      if (!venueApiId || !spaceApiId) {
+        toast.error('This row does not have a space to open.')
+        return
+      }
+      navigate(`/venues/management/profile/${venueApiId}/space/${spaceApiId}${suffix}`)
     },
     [navigate],
   )
@@ -1260,7 +1293,8 @@ export const VenueManagementPage = () => {
             label={`Open actions for ${venue.venueName}`}
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
-            maxVisibleItems={8}
+            menuWidth={220}
+            maxVisibleItems={10}
           >
             <TableActionsItem
               icon={<LayoutDashboard className="size-3.5 text-slate-700" />}
@@ -1271,6 +1305,39 @@ export const VenueManagementPage = () => {
               }}
             >
               View Profile
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<Eye className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSpaceRoute(venue)
+              }}
+            >
+              View Space Details
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<CalendarDays className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSpaceRoute(venue, '/bookings')
+              }}
+            >
+              View Bookings
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<Wallet className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSpaceRoute(venue, '/revenue')
+              }}
+            >
+              View Revenue & Payouts
             </TableActionsItem>
 
             <TableActionsItem
@@ -1371,6 +1438,7 @@ export const VenueManagementPage = () => {
     openEscalateForVenue,
     openSuspendModal,
     openTagModal,
+    openSpaceRoute,
     openViewHostProfile,
     selectedVenueIds,
     someVisibleVenuesSelected,
@@ -1547,6 +1615,8 @@ export const VenueManagementPage = () => {
           </div>
         </div>
       )}
+
+
 
       <DataTable
         columns={columns}

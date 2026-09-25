@@ -187,7 +187,13 @@ export const ExpertManagementPage = () => {
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
+    [
+      appliedAdvancedFilters,
+      activeStatus,
+      currentPage,
+      enhancedSearch,
+      serverSort.sortParams,
+    ],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -1417,6 +1423,8 @@ export const ExpertManagementPage = () => {
           </div>
         </div>
       )}
+
+
 
       <DataTable
         columns={columns}

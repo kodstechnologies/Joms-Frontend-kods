@@ -22,7 +22,7 @@ import {
   User,
   type LucideIcon,
 } from 'lucide-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   END_MUST_AFTER_START_MESSAGE,
@@ -102,9 +102,6 @@ import {
 } from '@/modules/my-tasks/api/escalation-api'
 
 export const ServiceManagementPage = () => {
-  const [searchParams] = useSearchParams()
-  const categoryFromUrl = searchParams.get('category') || ''
-  const categoryIdFromUrl = searchParams.get('categoryId') || ''
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
@@ -348,8 +345,6 @@ export const ServiceManagementPage = () => {
         ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
-        category: categoryFromUrl || undefined,
-        categoryId: categoryIdFromUrl || undefined,
       }),
     [
       appliedAdvancedFilters,
@@ -357,8 +352,6 @@ export const ServiceManagementPage = () => {
       currentPage,
       enhancedSearch,
       serverSort.sortParams,
-      categoryFromUrl,
-      categoryIdFromUrl,
     ],
   )
 
@@ -1177,6 +1170,8 @@ export const ServiceManagementPage = () => {
           </div>
         </div>
       )}
+
+
 
       <DataTable
         columns={columns}

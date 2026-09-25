@@ -66,7 +66,7 @@ const mapServiceSubCategory = (sub: CategoryApiSubCategory): Category['subCatego
     addedOn: formatDate(sub.createdAt),
     createdBy: sub.createdByName || sub.createdBy || 'Admin',
     updatedAt: formatDate(sub.updatedAt),
-    services: sub.services ?? sub.activeListings ?? 0,
+    services: sub.services ?? sub.managementVisibleListings ?? sub.activeListings ?? 0,
     experts: sub.experts ?? 0,
   }
 }
@@ -103,7 +103,7 @@ export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category =
     image: category.image || undefined,
     status: mapServiceStatus(category.status),
     subCategory: category.subCategoryCount ?? activeSubs.length,
-    services: category.services ?? category.activeListings ?? 0,
+    services: category.services ?? category.managementVisibleListings ?? category.activeListings ?? 0,
     experts: category.experts ?? 0,
     totalOrders: category.totalOrders ?? 0,
     completedOrders: category.completedOrders ?? 0,

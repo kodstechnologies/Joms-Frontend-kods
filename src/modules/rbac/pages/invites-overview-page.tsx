@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowLeft, Copy, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -228,6 +228,25 @@ export function InvitesOverviewPage() {
             isOpen={activeDropdownId === row.original.id}
             onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
           >
+            <TableActionsItem
+              icon={<Copy className="size-3.5" />}
+              onClick={() => {
+                const inviteCode =
+                  row.original.inviteCode || row.original.inviteId || row.original.id
+                const inviteUrl =
+                  row.original.inviteLink ||
+                  `${window.location.origin}/invite/accept?code=${encodeURIComponent(inviteCode)}`
+                if (navigator.clipboard?.writeText) {
+                  void navigator.clipboard.writeText(inviteUrl)
+                  toast.success('Invitation link copied to clipboard')
+                } else {
+                  toast.info(`Invite link: ${inviteUrl}`)
+                }
+                setActiveDropdownId(null)
+              }}
+            >
+              Copy Invitation Link
+            </TableActionsItem>
             <TableActionsItem
               icon={<RotateCcw className="size-3.5" />}
               onClick={() => {

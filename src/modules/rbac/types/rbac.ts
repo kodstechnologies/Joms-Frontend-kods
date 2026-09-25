@@ -248,6 +248,8 @@ export type CompleteContactSetupPayload = {
 export type SubAdminInvite = {
   id: string
   inviteId: string
+  inviteCode?: string
+  inviteLink?: string
   username: string
   roleId: string
   roleCode: string
