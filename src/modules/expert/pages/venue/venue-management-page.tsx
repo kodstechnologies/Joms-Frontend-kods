@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -413,8 +413,24 @@ export const VenueManagementPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const viewFromUrl = searchParams.get('view') || ''
+  const categoryIdFromUrl = searchParams.get('categoryId')?.trim() || ''
+  const categoryFromUrl = searchParams.get('category')?.trim() || ''
+  const subCategoryFromUrl = searchParams.get('subCategory')?.trim() || ''
 
   const { currentPage, setCurrentPage, activeStatus } = useVenueStore()
+
+  // Seed category filters when deep-linked from Category Management (View Venues / View Spaces).
+  useEffect(() => {
+    if (!categoryIdFromUrl && !categoryFromUrl && !subCategoryFromUrl) return
+
+    setAppliedAdvancedFilters({
+      ...(categoryIdFromUrl ? { 'venues.categoryId': categoryIdFromUrl } : {}),
+      ...(categoryFromUrl ? { 'venues.category': categoryFromUrl } : {}),
+      ...(subCategoryFromUrl ? { 'venues.subCategory': subCategoryFromUrl } : {}),
+    })
+    setCurrentPage(1)
+  }, [categoryIdFromUrl, categoryFromUrl, subCategoryFromUrl, setCurrentPage])
+
   const serverSort = useServerTableSort({
     sortFieldMap: VENUE_COLUMN_SORT_FIELDS,
     onPageReset: () => setCurrentPage(1),
@@ -439,6 +455,7 @@ export const VenueManagementPage = () => {
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
         view: viewFromUrl || undefined,
+        categoryId: categoryIdFromUrl || undefined,
       }),
     [
       appliedAdvancedFilters,
@@ -447,6 +464,7 @@ export const VenueManagementPage = () => {
       activeStatus,
       serverSort.sortParams,
       viewFromUrl,
+      categoryIdFromUrl,
     ],
   )
 
@@ -463,10 +481,18 @@ export const VenueManagementPage = () => {
           status: activeStatus !== 'all' ? activeStatus : undefined,
           ...enhancedSearch.buildSearchParams(),
           view: viewFromUrl || undefined,
+          categoryId: categoryIdFromUrl || undefined,
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds, viewFromUrl],
+    [
+      activeStatus,
+      catalogColumnIds,
+      categoryIdFromUrl,
+      enhancedSearch,
+      exportColumnIds,
+      viewFromUrl,
+    ],
   )
 
   const {

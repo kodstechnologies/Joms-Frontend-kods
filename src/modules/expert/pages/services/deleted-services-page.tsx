@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertCircle, Eye, RotateCcw, ShoppingBag, User } from 'lucide-react'
+import { AlertCircle, Eye, RotateCcw, ShoppingBag, Trash2, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
@@ -17,7 +17,7 @@ import {
 
 import { SERVICE_DELETED_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
-import { useRestoreService } from '../../hooks/use-services'
+import { usePurgeService, useRestoreService } from '../../hooks/use-services'
 import { useServiceStatusList } from '../../hooks/use-service-status-list'
 import {
   consultationPerformancePath,
@@ -76,6 +76,7 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service)
 export function DeletedServicesPage() {
   const navigate = useNavigate()
   const restoreServiceMutation = useRestoreService()
+  const purgeServiceMutation = usePurgeService()
   const catalogColumnIds = DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
   const { fileFormat } = useDefaultExportFormat()
   const [escalateTarget, setEscalateTarget] = useState<Service | null>(null)
@@ -165,6 +166,21 @@ export function DeletedServicesPage() {
       })
     },
     [restoreServiceMutation],
+  )
+
+  const handlePurge = useCallback(
+    (service: Service) => {
+      purgeServiceMutation.mutate(
+        { id: service._id, adminNotes: 'Permanently purged by administrator' },
+        {
+          onSuccess: () => toast.success(`Permanently purged ${service.title || 'listing'}`),
+          onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, 'Failed to permanently purge listing.'))
+          },
+        },
+      )
+    },
+    [purgeServiceMutation],
   )
 
   const closeEscalateModal = useCallback(() => {
@@ -266,6 +282,15 @@ export function DeletedServicesPage() {
                   Restore Service
                 </TableActionsItem>
                 <TableActionsItem
+                  icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    handlePurge(service)
+                  }}
+                >
+                  Permanently Purge Listing
+                </TableActionsItem>
+                <TableActionsItem
                   icon={<User className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
@@ -308,7 +333,15 @@ export function DeletedServicesPage() {
       ],
       SERVICE_COLUMN_SORT_FIELDS,
     )
-  }, [handleExportServiceRow, handleRestore, list, navigate, openOrdersAndRevenue, openViewExpert])
+  }, [
+    handleExportServiceRow,
+    handlePurge,
+    handleRestore,
+    list,
+    navigate,
+    openOrdersAndRevenue,
+    openViewExpert,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">

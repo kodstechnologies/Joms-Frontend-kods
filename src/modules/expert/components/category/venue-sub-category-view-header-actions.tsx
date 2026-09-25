@@ -10,8 +10,10 @@ import { PauseCategoryModal } from './pause-category-modal'
 import {
   usePauseVenueSubCategory,
   useSoftDeleteVenueSubCategory,
+  useVenueCategory,
 } from '../../hooks/use-venue-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { buildVenueManagementCategoryUrl } from '../../utils/venue-management-category-link'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 
 export const VenueSubCategoryViewHeaderActions = () => {
@@ -21,11 +23,24 @@ export const VenueSubCategoryViewHeaderActions = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const pauseMutation = usePauseVenueSubCategory()
   const softDeleteMutation = useSoftDeleteVenueSubCategory()
+  const { data: category } = useVenueCategory(categoryId)
+  const subCategory = category?.subCategories?.find((item) => item.id === subCategoryId)
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-end gap-3">
-        <Button variant="secondary" onClick={() => navigate('/venues/management')}>
+        <Button
+          variant="secondary"
+          onClick={() =>
+            navigate(
+              buildVenueManagementCategoryUrl({
+                categoryId,
+                categoryName: category?.name,
+                subCategoryName: subCategory?.name,
+              }),
+            )
+          }
+        >
           <Eye className="size-4" aria-hidden="true" />
           View Venues
         </Button>

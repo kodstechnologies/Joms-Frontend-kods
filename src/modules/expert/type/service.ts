@@ -14,8 +14,10 @@ export interface Service {
     | 'pending'
     | 'preview'
     | 'rejected'
+    | 'paused'
   serviceStatus?: ServiceRawStatus
   isSuspend?: boolean
+  isPaused?: boolean
   isDeleted?: boolean
   createdAt: string
   serviceType: string

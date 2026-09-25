@@ -143,7 +143,9 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
       header: 'Status',
       accessorFn: (row) => row.status ?? '',
       cell: ({ row }) => {
-        const { label, className } = getListingStatusDisplay(row.original.status, {
+        const statusForDisplay =
+          row.original.isPaused || row.original.status === 'paused' ? 'paused' : row.original.status
+        const { label, className } = getListingStatusDisplay(statusForDisplay, {
           isSuspend: row.original.isSuspend || row.original.status === 'suspended',
           isDeleted: Boolean(row.original.isDeleted) || row.original.status === 'deleted',
         })

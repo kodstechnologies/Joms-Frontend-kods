@@ -750,7 +750,12 @@ export function ExpertClientelePage() {
                 icon={<Eye className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
-                  toast.message(`Booking ${item.bookingId}`)
+                  const orderUrl = resolveClienteleOrderUrl(item)
+                  if (!orderUrl) {
+                    toast.error('Order details are not available for this booking.')
+                    return
+                  }
+                  navigate(orderUrl)
                 }}
               >
                 View Details
@@ -874,6 +879,7 @@ export function ExpertClientelePage() {
     openCommunicate,
     openProcessRefund,
     openViewPaymentDetails,
+    resolveClienteleOrderUrl,
     tableColumnPreferencesQuery.data,
   ])
 

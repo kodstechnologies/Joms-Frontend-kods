@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
@@ -14,6 +14,7 @@ import {
   Mail,
   Package,
   PauseCircle,
+  PlayCircle,
   BarChart3,
   ShoppingBag,
   Tag,
@@ -22,7 +23,7 @@ import {
   User,
   type LucideIcon,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   END_MUST_AFTER_START_MESSAGE,
@@ -47,9 +48,11 @@ import {
   useBulkHideServices,
   useBulkDisableServices,
 } from '../../hooks/use-services'
+import { useUnpauseServiceListing } from '../../hooks/use-service-drilldown'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import {
   getServiceManagementViewPath,
+  getServiceViewDetailsPath,
   servicePerformancePath,
   consultationPerformancePath,
 } from '../../lib/service-navigation'
@@ -137,6 +140,7 @@ export const ServiceManagementPage = () => {
   const deleteServiceMutation = useDeleteService()
   const bulkDeleteMutation = useBulkDeleteServices()
   const bulkPauseMutation = useBulkPauseServices()
+  const unpauseListingMutation = useUnpauseServiceListing()
   const bulkHideMutation = useBulkHideServices()
   const bulkDisableMutation = useBulkDisableServices()
 
@@ -296,12 +300,29 @@ export const ServiceManagementPage = () => {
   const { fileFormat } = useDefaultExportFormat()
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const categoryIdFromUrl = searchParams.get('categoryId')?.trim() || ''
+  const categoryFromUrl = searchParams.get('category')?.trim() || ''
+  const subCategoryFromUrl = searchParams.get('subCategory')?.trim() || ''
+
   const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useServiceStore()
   const serverSort = useServerTableSort({
     sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
     onPageReset: () => setCurrentPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+
+  // Seed category filters when deep-linked from Category Management (View Services).
+  useEffect(() => {
+    if (!categoryIdFromUrl && !categoryFromUrl && !subCategoryFromUrl) return
+
+    setAppliedAdvancedFilters({
+      ...(categoryIdFromUrl ? { 'services.categoryId': categoryIdFromUrl } : {}),
+      ...(categoryFromUrl ? { 'services.category': categoryFromUrl } : {}),
+      ...(subCategoryFromUrl ? { 'services.subCategory': subCategoryFromUrl } : {}),
+    })
+    setCurrentPage(1)
+  }, [categoryIdFromUrl, categoryFromUrl, subCategoryFromUrl, setCurrentPage])
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -321,10 +342,11 @@ export const ServiceManagementPage = () => {
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
           ...enhancedSearch.buildSearchParams(),
+          categoryId: categoryIdFromUrl || undefined,
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
+    [activeStatus, catalogColumnIds, categoryIdFromUrl, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -345,8 +367,16 @@ export const ServiceManagementPage = () => {
         ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
+        categoryId: categoryIdFromUrl || undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
+    [
+      appliedAdvancedFilters,
+      activeStatus,
+      categoryIdFromUrl,
+      currentPage,
+      enhancedSearch,
+      serverSort.sortParams,
+    ],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -384,6 +414,21 @@ export const ServiceManagementPage = () => {
     setPauseListingTarget(service)
     setIsBulkPauseModalOpen(true)
   }, [])
+
+  const handleResumeListing = useCallback(
+    async (service: Service) => {
+      try {
+        await unpauseListingMutation.mutateAsync({
+          serviceId: service._id,
+          payload: undefined as never,
+        })
+        toast.success(`Resumed ${service.title || 'listing'}`)
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, 'Failed to resume listing'))
+      }
+    },
+    [unpauseListingMutation],
+  )
 
   const openEscalateListing = useCallback((service: Service) => {
     setEscalateTarget(service)
@@ -823,6 +868,7 @@ export const ServiceManagementPage = () => {
         const isOpen = activeDropdownId === service._id
         const isSuspended = Boolean(service.isSuspend) || service.status === 'suspended'
         const isDeleted = Boolean(service.isDeleted) || service.status === 'deleted'
+        const isPaused = Boolean(service.isPaused) || service.status === 'paused'
 
         return (
           <TableActionsDropdown
@@ -836,7 +882,7 @@ export const ServiceManagementPage = () => {
               icon={<Eye className="size-3.5" aria-hidden="true" />}
               onClick={() => {
                 setActiveDropdownId(null)
-                navigate(getServiceManagementViewPath(service))
+                navigate(getServiceViewDetailsPath(service))
               }}
             >
               View Details
@@ -876,13 +922,23 @@ export const ServiceManagementPage = () => {
             ) : null}
             {!isSuspended && !isDeleted ? (
               <TableActionsItem
-                icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+                icon={
+                  isPaused ? (
+                    <PlayCircle className="size-3.5" aria-hidden="true" />
+                  ) : (
+                    <PauseCircle className="size-3.5" aria-hidden="true" />
+                  )
+                }
                 onClick={() => {
                   setActiveDropdownId(null)
+                  if (isPaused) {
+                    void handleResumeListing(service)
+                    return
+                  }
                   openPauseListing(service)
                 }}
               >
-                Pause Listing
+                {isPaused ? 'Resume Listing' : 'Pause Listing'}
               </TableActionsItem>
             ) : null}
             <TableActionsItem
@@ -948,6 +1004,7 @@ export const ServiceManagementPage = () => {
     openEscalateListing,
     openListingPerformance,
     openViewExpert,
+    handleResumeListing,
     openPauseListing,
     openSuspendModal,
     openTagModal,

@@ -14,6 +14,7 @@ import {
   useVenueCategory,
 } from '../../hooks/use-venue-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { buildVenueManagementCategoryUrl } from '../../utils/venue-management-category-link'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 
 export const VenueCategoryViewHeaderActions = () => {
@@ -26,8 +27,15 @@ export const VenueCategoryViewHeaderActions = () => {
   const softDeleteMutation = useSoftDeleteVenueCategory()
   const { data: category } = useVenueCategory(id)
 
-  const venuesPath = '/venues/management'
-  const spacesPath = '/venues/management?view=spaces'
+  const venuesPath = buildVenueManagementCategoryUrl({
+    categoryId: id || category?.id,
+    categoryName: category?.name,
+  })
+  const spacesPath = buildVenueManagementCategoryUrl({
+    categoryId: id || category?.id,
+    categoryName: category?.name,
+    view: 'spaces',
+  })
 
   return (
     <>

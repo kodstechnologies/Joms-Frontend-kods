@@ -10,9 +10,11 @@ import { DeleteCategoryModal } from './delete-category-modal'
 import { PauseCategoryModal } from './pause-category-modal'
 import {
   usePauseServiceSubCategory,
+  useServiceCategory,
   useSoftDeleteServiceSubCategory,
 } from '../../hooks/use-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { buildRelatedListCategoryUrl } from '../../utils/related-list-category-link'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 
 export const SubCategoryViewHeaderActions = () => {
@@ -23,11 +25,24 @@ export const SubCategoryViewHeaderActions = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const pauseMutation = usePauseServiceSubCategory()
   const softDeleteMutation = useSoftDeleteServiceSubCategory()
+  const { data: category } = useServiceCategory(categoryId)
+  const subCategory = category?.subCategories?.find((item) => item.id === subCategoryId)
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-end gap-3">
-        <Button variant="secondary" onClick={() => navigate(scope.relatedListPath)}>
+        <Button
+          variant="secondary"
+          onClick={() =>
+            navigate(
+              buildRelatedListCategoryUrl(scope.relatedListPath, {
+                categoryId,
+                categoryName: category?.name,
+                subCategoryName: subCategory?.name,
+              }),
+            )
+          }
+        >
           <Eye className="size-4" aria-hidden="true" />
           {scope.relatedListLabel}
         </Button>

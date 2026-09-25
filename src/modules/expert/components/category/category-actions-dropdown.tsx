@@ -30,6 +30,7 @@ import {
 } from '../../hooks/use-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
 import { SERVICE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { buildRelatedListCategoryUrl } from '../../utils/related-list-category-link'
 import {
   DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
   SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
@@ -154,7 +155,12 @@ export function CategoryActionsDropdown({ category }: Props) {
         <TableActionsItem
           className={CATEGORY_ACTION_ITEM_CLASS}
           onClick={() => {
-            navigate(scope.relatedListPath)
+            navigate(
+              buildRelatedListCategoryUrl(scope.relatedListPath, {
+                categoryId: category.id,
+                categoryName: category.name,
+              }),
+            )
             setOpen(false)
           }}
           icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}

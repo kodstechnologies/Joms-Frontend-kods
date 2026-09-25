@@ -386,6 +386,7 @@ export function buildServiceListQueryParams(
     const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
 
     const resolveParamBase = () => {
+      if (section === 'services' && fieldId === 'category') return 'category'
       if (section === 'experts' && fieldId === 'category') return 'expertCategory'
       if (section === 'customers' && fieldId === 'lifetimeSpend') return 'customerLifetimeSpend'
       if (section === 'customers' && fieldId === 'cancellationRate')

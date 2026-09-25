@@ -10,6 +10,7 @@ import {
   activateService,
   deleteService,
   restoreService,
+  purgeService,
   bulkDeleteServices,
   bulkPauseServices,
   bulkHideServices,
@@ -141,6 +142,20 @@ export const useRestoreService = () => {
     mutationFn: (id: string) => restoreService(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
+    },
+  })
+}
+
+export const usePurgeService = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, adminNotes }: { id: string; adminNotes: string }) =>
+      purgeService(id, { adminNotes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
     },
   })
 }

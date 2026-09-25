@@ -70,6 +70,13 @@ export const restoreService = async (id: string) => {
   return response.data
 }
 
+export const purgeService = async (id: string, payload: { adminNotes: string }) => {
+  const response = await expertApiClient.delete(`/services/internal/admin/services/${id}/purge`, {
+    data: payload,
+  })
+  return response.data
+}
+
 export const activateService = async (id: string) => {
   const response = await expertApiClient.patch<ServiceSuspendActivateResponse>(
     `/services/internal/admin/services/${id}/activate`,

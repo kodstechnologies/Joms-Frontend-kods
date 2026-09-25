@@ -29,6 +29,7 @@ import {
 } from '../../hooks/use-venue-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
 import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { buildVenueManagementCategoryUrl } from '../../utils/venue-management-category-link'
 import {
   DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
   VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
@@ -151,7 +152,12 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
         <TableActionsItem
           className={CATEGORY_ACTION_ITEM_CLASS}
           onClick={() => {
-            navigate('/venues/management')
+            navigate(
+              buildVenueManagementCategoryUrl({
+                categoryId: category.id,
+                categoryName: category.name,
+              }),
+            )
             setOpen(false)
           }}
           icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -162,7 +168,13 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
         <TableActionsItem
           className={CATEGORY_ACTION_ITEM_CLASS}
           onClick={() => {
-            navigate('/venues/management?view=spaces')
+            navigate(
+              buildVenueManagementCategoryUrl({
+                categoryId: category.id,
+                categoryName: category.name,
+                view: 'spaces',
+              }),
+            )
             setOpen(false)
           }}
           icon={<Layers className="size-3.5 text-slate-700" aria-hidden="true" />}
