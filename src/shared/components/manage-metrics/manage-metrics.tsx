@@ -62,14 +62,14 @@ type DragPayload = {
 }
 
 const TYPE_BADGE_STYLES: Record<string, string> = {
-  Count: 'bg-[#F6CB86]/20 text-[#F6CB86]',
-  Percentage: 'bg-[#E0A263]/35 text-[#F6CB86]',
-  Average: 'bg-[#E0A263]/30 text-[#E0A263]',
-  Currency: 'bg-[#F6CB86]/20 text-[#F6CB86]',
-  Number: 'bg-[#F6CB86]/20 text-[#F6CB86]',
-  Text: 'bg-[#F6CB86]/15 text-[#F6CB86]',
-  Status: 'bg-[#E0A263]/30 text-[#F6CB86]',
-  Date: 'bg-[#E0A263]/25 text-[#E0A263]',
+  Count: 'bg-white/10 text-white/80',
+  Percentage: 'bg-white/10 text-white/80',
+  Average: 'bg-white/10 text-white/80',
+  Currency: 'bg-white/10 text-white/80',
+  Number: 'bg-white/10 text-white/80',
+  Text: 'bg-white/10 text-white/80',
+  Status: 'bg-white/10 text-white/80',
+  Date: 'bg-white/10 text-white/80',
 }
 
 function TypeBadge({ type }: { type: string }) {
@@ -77,7 +77,7 @@ function TypeBadge({ type }: { type: string }) {
     <span
       className={cn(
         'shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold tracking-wide',
-        TYPE_BADGE_STYLES[type] ?? 'bg-[#F6CB86]/15 text-[#F6CB86]',
+        TYPE_BADGE_STYLES[type] ?? 'bg-white/10 text-white/80',
       )}
     >
       {type}
@@ -181,7 +181,8 @@ function SearchField({
   return (
     <div className="relative">
       <Search
-        className="pointer-events-none absolute top-1/2 left-3.5 z-10 size-4 -translate-y-1/2 text-white/40"
+        className="pointer-events-none absolute top-1/2 left-3.5 z-10 size-4 -translate-y-1/2 text-white/70"
+        strokeWidth={1.75}
         aria-hidden="true"
       />
       <input
@@ -241,7 +242,7 @@ function MetricRow({
         className="shrink-0 cursor-grab text-white/40 hover:text-white active:cursor-grabbing"
         aria-hidden="true"
       >
-        <GripVertical className="size-4" />
+        <GripVertical className="size-4 text-current" strokeWidth={1.75} />
       </span>
 
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
@@ -256,9 +257,9 @@ function MetricRow({
           type="button"
           aria-label={`Remove ${item.label}`}
           onClick={onRemove}
-          className="grid size-6 shrink-0 place-items-center rounded-md text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+          className="grid size-6 shrink-0 place-items-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
         >
-          <X className="size-3.5" aria-hidden="true" />
+          <X className="size-3.5 text-current" aria-hidden="true" strokeWidth={1.75} />
         </button>
       ) : null}
     </div>
@@ -307,7 +308,7 @@ function AvailableRow({
         className="shrink-0 cursor-grab text-white/40 hover:text-white active:cursor-grabbing"
         aria-hidden="true"
       >
-        <GripVertical className="size-4" />
+        <GripVertical className="size-4 text-current" strokeWidth={1.75} />
       </span>
 
       <div className="min-w-0 flex-1">
@@ -319,14 +320,9 @@ function AvailableRow({
         type="button"
         aria-label={`Add ${item.title}`}
         onClick={onAdd}
-        className={cn(
-          'ml-auto grid size-7 shrink-0 place-items-center rounded-md transition-colors',
-          highlighted
-            ? 'bg-[#F6CB86] text-[#050505] hover:bg-[#E0A263]'
-            : 'bg-[#F6CB86]/20 text-[#F6CB86] hover:bg-[#F6CB86] hover:text-[#050505]',
-        )}
+        className="ml-auto grid size-7 shrink-0 place-items-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
       >
-        <Plus className="size-4" aria-hidden="true" />
+        <Plus className="size-4 text-current" aria-hidden="true" strokeWidth={1.75} />
       </button>
     </div>
   )
@@ -750,7 +746,7 @@ export function ManageMetrics({
           aria-label="Go back"
           className="text-white/80 transition-colors hover:text-white"
         >
-          <ArrowLeft className="size-5" aria-hidden="true" />
+          <ArrowLeft className="size-5 text-current" strokeWidth={1.75} aria-hidden="true" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-white">Manage Metrics</h1>
