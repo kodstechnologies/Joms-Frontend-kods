@@ -158,7 +158,7 @@ export function SubAdminDetailPage() {
                   onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
                 >
                   <TableActionsItem
-                    icon={<Link2 className="size-3.5" />}
+                    icon={<Link2 className="size-3.5 text-slate-700" />}
                     onClick={async () => {
                       setActiveDropdownId(null)
                       try {
@@ -172,7 +172,7 @@ export function SubAdminDetailPage() {
                     Copy Invitation Link
                   </TableActionsItem>
                   <TableActionsItem
-                    icon={<RotateCcw className="size-3.5" />}
+                    icon={<RotateCcw className="size-3.5 text-slate-700" />}
                     onClick={() => {
                       setSelectedInvite(row.original)
                       setActionMode('reinvite')
@@ -182,14 +182,14 @@ export function SubAdminDetailPage() {
                     Re-Invite
                   </TableActionsItem>
                   <TableActionsItem
-                    icon={<XCircle className="text-brand-danger size-3.5" />}
+                    icon={<XCircle className="size-3.5 text-slate-700" />}
                     onClick={() => {
                       setSelectedInvite(row.original)
                       setActionMode('revoke')
                       setActiveDropdownId(null)
                     }}
                   >
-                    <span className="text-brand-danger">Revoke Invite</span>
+                    Revoke Invite
                   </TableActionsItem>
                 </TableActionsDropdown>
               )

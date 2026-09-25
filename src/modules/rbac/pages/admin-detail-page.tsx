@@ -112,7 +112,8 @@ type RoleHistoryRow = {
 
 const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   const previousVersion = log.metadata?.previousVersion as
-    { roleIds?: string[]; firstName?: string; lastName?: string } | undefined
+    | { roleIds?: string[]; firstName?: string; lastName?: string }
+    | undefined
 
   return {
     id: log.id || log._id || log.action,
@@ -393,26 +394,24 @@ export function AdminDetailPage() {
           </button>
           <button
             type="button"
-            className="ad-btn ad-btn-outline border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+            className="ad-btn ad-btn-outline"
             onClick={() => setResetMfaOpen(true)}
           >
             <KeyRound className="size-4" aria-hidden="true" />
             Reset MFA
           </button>
           {isActive ? (
-            <button type="button" className="ad-btn ad-btn-danger" onClick={handleSuspend}>
-              <span className="ad-btn-icon-circle">
-                <X className="size-3" aria-hidden="true" />
-              </span>
+            <button type="button" className="ad-btn ad-btn-outline" onClick={handleSuspend}>
+              <X className="size-4" aria-hidden="true" />
               Suspend
             </button>
           ) : (
-            <button type="button" className="ad-btn ad-btn-peach" onClick={handleReactivate}>
+            <button type="button" className="ad-btn ad-btn-outline" onClick={handleReactivate}>
               <UserCheck className="size-4" aria-hidden="true" />
               Reactivate
             </button>
           )}
-          <button type="button" className="ad-btn ad-btn-danger" onClick={handleDelete}>
+          <button type="button" className="ad-btn ad-btn-outline" onClick={handleDelete}>
             <Trash2 className="size-4" aria-hidden="true" />
             Delete User
           </button>
@@ -461,7 +460,7 @@ export function AdminDetailPage() {
                   <button
                     type="button"
                     onClick={() => setResetMfaOpen(true)}
-                    className="ml-1 text-xs font-medium text-amber-500 underline underline-offset-2 hover:text-amber-400"
+                    className="text-brand-text ml-1 text-xs font-medium underline underline-offset-2 hover:text-white"
                   >
                     Reset MFA
                   </button>

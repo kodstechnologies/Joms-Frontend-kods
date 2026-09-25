@@ -663,7 +663,7 @@ export function RbacHubPage() {
           maxVisibleItems={8}
         >
           <TableActionsItem
-            icon={<AccessEditPermissionIcon />}
+            icon={<AccessEditPermissionIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/roles/${row.original.id}/edit`)
@@ -672,8 +672,7 @@ export function RbacHubPage() {
             Edit permission
           </TableActionsItem>
           <TableActionsItem
-            className="ui-table-actions-item-danger"
-            icon={<AccessRemoveRoleIcon />}
+            icon={<AccessRemoveRoleIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               handleDeleteRole(row.original.id)
@@ -683,7 +682,7 @@ export function RbacHubPage() {
           </TableActionsItem>
           {row.original.status === 'active' ? (
             <TableActionsItem
-              icon={<AccessDisableRoleIcon />}
+              icon={<AccessDisableRoleIcon className="size-3.5 text-slate-700" />}
               onClick={() => {
                 setActiveDropdownId(null)
                 handleDisableRole(row.original.id)
@@ -694,22 +693,18 @@ export function RbacHubPage() {
           ) : (
             <TableActionsItem
               icon={
-                <Shield
-                  className="text-brand-success size-3.5"
-                  strokeWidth={1.85}
-                  aria-hidden="true"
-                />
+                <Shield className="size-3.5 text-slate-700" strokeWidth={1.85} aria-hidden="true" />
               }
               onClick={() => {
                 setActiveDropdownId(null)
                 handleEnableRole(row.original.id)
               }}
             >
-              <span className="text-brand-success">Enable Role</span>
+              Enable Role
             </TableActionsItem>
           )}
           <TableActionsItem
-            icon={<AccessEditScopeIcon />}
+            icon={<AccessEditScopeIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/roles/${row.original.id}/edit`)
@@ -718,7 +713,7 @@ export function RbacHubPage() {
             Edit scope
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessAssignUserIcon />}
+            icon={<AccessAssignUserIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate('/settings/access/users/create')
@@ -727,7 +722,7 @@ export function RbacHubPage() {
             Assign new user
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessViewLogsIcon />}
+            icon={<AccessViewLogsIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/roles/${row.original.id}/logs`)
@@ -736,7 +731,7 @@ export function RbacHubPage() {
             View Logs
           </TableActionsItem>
           <TableActionsItem
-            icon={<ExportDataIcon className="size-3.5" />}
+            icon={<ExportDataIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               void handleExportRole(row.original)
@@ -745,8 +740,7 @@ export function RbacHubPage() {
             Export Role
           </TableActionsItem>
           <TableActionsItem
-            className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
-            icon={<ShieldAlert className="size-3.5 text-amber-500" />}
+            icon={<ShieldAlert className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               setRevokeRoleTarget(row.original)
@@ -885,7 +879,7 @@ export function RbacHubPage() {
           maxVisibleItems={8}
         >
           <TableActionsItem
-            icon={<AccessViewUserIcon />}
+            icon={<AccessViewUserIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/users/${row.original.id}`)
@@ -894,7 +888,7 @@ export function RbacHubPage() {
             View user
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessChangeRoleIcon />}
+            icon={<AccessChangeRoleIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/users/create?edit=${row.original.id}`)
@@ -904,8 +898,7 @@ export function RbacHubPage() {
           </TableActionsItem>
           {row.original.roles && row.original.roles.length > 0 ? (
             <TableActionsItem
-              className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
-              icon={<ShieldAlert className="size-3.5 text-amber-500" />}
+              icon={<ShieldAlert className="size-3.5 text-slate-700" />}
               onClick={() => {
                 setActiveDropdownId(null)
                 setRevokeUserRoleTarget(row.original)
@@ -915,7 +908,7 @@ export function RbacHubPage() {
             </TableActionsItem>
           ) : null}
           <TableActionsItem
-            icon={<AccessViewUserLogsIcon />}
+            icon={<AccessViewUserLogsIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/settings/access/users/${row.original.id}/logs`)
@@ -924,7 +917,7 @@ export function RbacHubPage() {
             View user logs
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessPasswordResetIcon />}
+            icon={<AccessPasswordResetIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setPasswordResetUser(row.original)
               setActiveDropdownId(null)
@@ -933,8 +926,7 @@ export function RbacHubPage() {
             Password reset
           </TableActionsItem>
           <TableActionsItem
-            className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
-            icon={<KeyRound className="size-3.5 text-amber-500" />}
+            icon={<KeyRound className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               setResetMfaUserTarget(row.original)
@@ -943,7 +935,7 @@ export function RbacHubPage() {
             Reset MFA
           </TableActionsItem>
           <TableActionsItem
-            icon={<AccessRemoveUserIcon />}
+            icon={<AccessRemoveUserIcon className="size-3.5 text-slate-700" />}
             onClick={() => {
               setActiveDropdownId(null)
               handleDeleteUser(row.original.id)
@@ -953,8 +945,7 @@ export function RbacHubPage() {
           </TableActionsItem>
           {row.original.status === 'active' ? (
             <TableActionsItem
-              className="ui-table-actions-item-danger"
-              icon={<AccessSuspendUserIcon />}
+              icon={<AccessSuspendUserIcon className="size-3.5 text-slate-700" />}
               onClick={() => {
                 setActiveDropdownId(null)
                 handleSuspendUser(row.original.id)
@@ -966,7 +957,7 @@ export function RbacHubPage() {
             <TableActionsItem
               icon={
                 <UserCheck
-                  className="text-brand-success size-3.5"
+                  className="size-3.5 text-slate-700"
                   strokeWidth={1.85}
                   aria-hidden="true"
                 />
@@ -976,7 +967,7 @@ export function RbacHubPage() {
                 handleReactivateUser(row.original.id)
               }}
             >
-              <span className="text-brand-success">Reactivate user</span>
+              Reactivate user
             </TableActionsItem>
           )}
         </TableActionsDropdown>

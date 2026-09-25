@@ -125,7 +125,7 @@ export function RoleUsersPage() {
                 maxVisibleItems={8}
               >
                 <TableActionsItem
-                  icon={<AccessViewUserIcon />}
+                  icon={<AccessViewUserIcon className="size-3.5 text-slate-700" />}
                   onClick={() => {
                     setActiveDropdownId(null)
                     navigate(`/settings/access/users/${row.original.id}`)
@@ -134,8 +134,7 @@ export function RoleUsersPage() {
                   View user
                 </TableActionsItem>
                 <TableActionsItem
-                  className="text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
-                  icon={<ShieldAlert className="size-3.5 text-amber-500" />}
+                  icon={<ShieldAlert className="size-3.5 text-slate-700" />}
                   onClick={() => {
                     setActiveDropdownId(null)
                     setRevokeUserRoleTarget(row.original)
@@ -196,9 +195,9 @@ export function RoleUsersPage() {
           <button
             type="button"
             onClick={() => setRevokeRoleTarget(role)}
-            className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-500 transition-colors hover:bg-amber-500/20"
+            className="text-brand-text hover:bg-brand-surface flex items-center gap-1.5 rounded-lg border border-white/15 bg-transparent px-3 py-1.5 text-xs font-medium transition-colors hover:border-white/25"
           >
-            <ShieldAlert className="size-3.5" />
+            <ShieldAlert className="size-3.5 text-slate-700" />
             Revoke Role from All
           </button>
         ) : null}

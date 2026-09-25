@@ -34,7 +34,7 @@ export function ResetMfaModal({
       >
         <div className="ui-modal-header">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-white/10 text-white">
               <KeyRound className="size-5" aria-hidden="true" />
             </span>
             <h2 id="reset-mfa-title" className="text-h3 text-brand-text">
@@ -68,9 +68,7 @@ export function ResetMfaModal({
             </div>
             <div className="flex justify-between">
               <span className="text-brand-muted">Current 2FA Status:</span>
-              <span
-                className={`font-semibold ${user.mfaEnabled ? 'text-brand-success' : 'text-amber-400'}`}
-              >
+              <span className="font-semibold text-white">
                 {user.mfaEnabled ? 'Enabled' : 'Disabled / Not Setup'}
               </span>
             </div>
@@ -84,8 +82,8 @@ export function ResetMfaModal({
             ) : null}
           </div>
 
-          <div className="rounded-brand-md flex items-start gap-3 border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-300">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-400" aria-hidden="true" />
+          <div className="rounded-brand-md flex items-start gap-3 border border-white/15 bg-white/5 p-3.5 text-xs text-white/80">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-white" aria-hidden="true" />
             <p className="leading-relaxed">
               <strong>Instant action:</strong> This will clear the user&apos;s current authenticator
               app secret. An immediate 2FA setup prompt will be presented to the user requiring them
@@ -108,7 +106,7 @@ export function ResetMfaModal({
             type="button"
             onClick={() => onConfirm(user)}
             disabled={isSubmitting}
-            className="bg-amber-600 font-medium text-white hover:bg-amber-500"
+            className="bg-brand-accent font-medium text-[#050505] hover:brightness-95"
           >
             {isSubmitting ? 'Resetting MFA...' : 'Confirm Reset MFA'}
           </Button>

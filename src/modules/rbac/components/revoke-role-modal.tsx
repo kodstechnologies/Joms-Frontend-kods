@@ -58,7 +58,7 @@ function RevokeRoleContent({
       >
         <div className="ui-modal-header">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-white/10 text-white">
               <ShieldAlert className="size-5" aria-hidden="true" />
             </span>
             <h2 id="revoke-role-title" className="text-h3 text-brand-text">
@@ -92,14 +92,14 @@ function RevokeRoleContent({
             </div>
             <div className="flex justify-between">
               <span className="text-brand-muted">Assigned Users:</span>
-              <span className="font-semibold text-amber-400">
+              <span className="font-semibold text-white">
                 {userCount} user{userCount === 1 ? '' : 's'}
               </span>
             </div>
           </div>
 
-          <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200/90">
-            <AlertTriangle className="size-4 shrink-0 text-amber-400" aria-hidden="true" />
+          <div className="flex items-start gap-2.5 rounded-lg border border-white/15 bg-white/5 p-3 text-xs text-white/80">
+            <AlertTriangle className="size-4 shrink-0 text-white" aria-hidden="true" />
             <span>
               This will immediately remove this role from all assigned users and mark the role as
               disabled. Affected users will lose associated permissions.
@@ -121,7 +121,7 @@ function RevokeRoleContent({
             type="button"
             disabled={isSubmitting}
             onClick={() => void onConfirm(role)}
-            className="h-9 rounded-lg bg-amber-600 px-4 text-sm font-semibold text-white shadow-none hover:bg-amber-700"
+            className="bg-brand-accent h-9 rounded-lg px-4 text-sm font-semibold text-[#050505] shadow-none hover:brightness-95"
           >
             {isSubmitting ? 'Revoking...' : 'Confirm Revoke Role'}
           </Button>
@@ -165,7 +165,7 @@ function RevokeUserRoleContent({
       >
         <div className="ui-modal-header">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-white/10 text-white">
               <ShieldAlert className="size-5" aria-hidden="true" />
             </span>
             <h2 id="revoke-user-role-title" className="text-h3 text-brand-text">
@@ -200,7 +200,7 @@ function RevokeUserRoleContent({
             {targetRoleId ? (
               <div className="flex justify-between">
                 <span className="text-brand-muted">Role to Revoke:</span>
-                <span className="font-semibold text-amber-400">{displayName}</span>
+                <span className="font-semibold text-white">{displayName}</span>
               </div>
             ) : userRoles.length > 1 ? (
               <div className="pt-2">
@@ -220,15 +220,15 @@ function RevokeUserRoleContent({
             ) : (
               <div className="flex justify-between">
                 <span className="text-brand-muted">Role to Revoke:</span>
-                <span className="font-semibold text-amber-400">
+                <span className="font-semibold text-white">
                   {userRoles[0]?.name || displayName}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200/90">
-            <AlertTriangle className="size-4 shrink-0 text-amber-400" aria-hidden="true" />
+          <div className="flex items-start gap-2.5 rounded-lg border border-white/15 bg-white/5 p-3 text-xs text-white/80">
+            <AlertTriangle className="size-4 shrink-0 text-white" aria-hidden="true" />
             <span>
               The user will immediately lose all permissions and privileges granted by this role.
             </span>
@@ -249,7 +249,7 @@ function RevokeUserRoleContent({
             type="button"
             disabled={isSubmitting || !effectiveRoleId}
             onClick={() => void onConfirm(user, effectiveRoleId)}
-            className="h-9 rounded-lg bg-amber-600 px-4 text-sm font-semibold text-white shadow-none hover:bg-amber-700"
+            className="bg-brand-accent h-9 rounded-lg px-4 text-sm font-semibold text-[#050505] shadow-none hover:brightness-95"
           >
             {isSubmitting ? 'Revoking...' : 'Confirm Revoke'}
           </Button>

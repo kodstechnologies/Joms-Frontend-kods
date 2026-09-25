@@ -229,7 +229,7 @@ export function InvitesOverviewPage() {
             onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
           >
             <TableActionsItem
-              icon={<Copy className="size-3.5" />}
+              icon={<Copy className="size-3.5 text-slate-700" />}
               onClick={() => {
                 const inviteCode =
                   row.original.inviteCode || row.original.inviteId || row.original.id
@@ -248,7 +248,7 @@ export function InvitesOverviewPage() {
               Copy Invitation Link
             </TableActionsItem>
             <TableActionsItem
-              icon={<RotateCcw className="size-3.5" />}
+              icon={<RotateCcw className="size-3.5 text-slate-700" />}
               onClick={() => {
                 setSelectedInvite(row.original)
                 setActionMode('reinvite')
@@ -258,14 +258,14 @@ export function InvitesOverviewPage() {
               Re-Invite
             </TableActionsItem>
             <TableActionsItem
-              icon={<XCircle className="text-brand-danger size-3.5" />}
+              icon={<XCircle className="size-3.5 text-slate-700" />}
               onClick={() => {
                 setSelectedInvite(row.original)
                 setActionMode('revoke')
                 setActiveDropdownId(null)
               }}
             >
-              <span className="text-brand-danger">Revoke Invite</span>
+              Revoke Invite
             </TableActionsItem>
           </TableActionsDropdown>
         )

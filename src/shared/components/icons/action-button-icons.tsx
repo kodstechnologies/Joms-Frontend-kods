@@ -131,29 +131,29 @@ export function AccessChangeRoleIcon({ className, ...props }: SVGProps<SVGSVGEle
       aria-hidden="true"
       {...props}
     >
-      <circle cx="7" cy="7" r="7" fill="currentColor" />
+      <circle cx="7" cy="7" r="5.4" stroke="currentColor" strokeWidth="1.25" />
       <path
         d="M9.6 5.15A3.15 3.15 0 0 0 4.7 4.55"
-        stroke="#fff"
+        stroke="currentColor"
         strokeWidth="1.15"
         strokeLinecap="round"
       />
       <path
         d="M4.55 3.35v1.45h1.45"
-        stroke="#fff"
+        stroke="currentColor"
         strokeWidth="1.15"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
         d="M4.4 8.85a3.15 3.15 0 0 0 4.9.6"
-        stroke="#fff"
+        stroke="currentColor"
         strokeWidth="1.15"
         strokeLinecap="round"
       />
       <path
         d="M9.45 10.65V9.2H8"
-        stroke="#fff"
+        stroke="currentColor"
         strokeWidth="1.15"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -244,11 +244,11 @@ export function AccessSuspendUserIcon({ className, ...props }: SVGProps<SVGSVGEl
       aria-hidden="true"
       {...props}
     >
-      <circle cx="7" cy="7" r="7" fill="#D3191C" />
+      <circle cx="7" cy="7" r="5.4" stroke="currentColor" strokeWidth="1.25" />
       <path
         d="M4.6 4.6 9.4 9.4M9.4 4.6 4.6 9.4"
-        stroke="#fff"
-        strokeWidth="1.5"
+        stroke="currentColor"
+        strokeWidth="1.35"
         strokeLinecap="round"
       />
     </svg>
@@ -295,10 +295,10 @@ export function AccessRemoveRoleIcon({ className, ...props }: SVGProps<SVGSVGEle
       aria-hidden="true"
       {...props}
     >
-      <circle cx="7" cy="7" r="5.4" stroke="#D3191C" strokeWidth="1.25" />
+      <circle cx="7" cy="7" r="5.4" stroke="currentColor" strokeWidth="1.25" />
       <path
         d="M4.7 4.7 9.3 9.3M9.3 4.7 4.7 9.3"
-        stroke="#D3191C"
+        stroke="currentColor"
         strokeWidth="1.35"
         strokeLinecap="round"
       />
