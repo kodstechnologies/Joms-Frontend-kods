@@ -428,6 +428,22 @@ export const updateServiceReport = async (id: string, payload: Record<string, un
   return response.data
 }
 
+export type SubmitServiceReportPayload = {
+  serviceId: string
+  partnerId?: string
+  issueType: string
+  reason: string
+  reporterId: string
+  reporterName: string
+  reporterType?: string
+  supportingDocuments?: string[]
+}
+
+export const submitServiceReport = async (payload: SubmitServiceReportPayload) => {
+  const response = await expertApiClient.post('/services/internal/reports/services', payload)
+  return response.data
+}
+
 export const exportServiceReportsCSV = async (params?: Record<string, unknown>) => {
   const data = await fetchServiceReports({ ...params, limit: 1000 })
   const items = data?.data?.items || data?.items || []

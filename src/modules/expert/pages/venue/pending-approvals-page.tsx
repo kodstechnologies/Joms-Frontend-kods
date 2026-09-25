@@ -118,7 +118,7 @@ export function VenuePendingApprovalsPage() {
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
-                    navigate(`/venues/management/create?venueId=${getVenueApiId(venue)}&view=true`)
+                    navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
                   }}
                 >
                   View Details
