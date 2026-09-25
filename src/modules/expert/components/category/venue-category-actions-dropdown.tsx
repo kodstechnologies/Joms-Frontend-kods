@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { Ban, Eye, FolderTree, Layers, Pencil, PlusSquare, X } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { AlertTriangle, Ban, Eye, FolderTree, Layers, Pencil, PlusSquare, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -8,8 +8,14 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateCategoryApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
@@ -36,10 +42,26 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
   const [open, setOpen] = useState(false)
   const [disableModalOpen, setDisableModalOpen] = useState(false)
   const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
+  const [escalateOpen, setEscalateOpen] = useState(false)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
   const navigate = useNavigate()
   const pauseMutation = usePauseVenueCategory()
   const softDeleteMutation = useSoftDeleteVenueCategory()
   const { fileFormat } = useDefaultExportFormat()
+
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
+
+  const detailsUrl = `/venues/categories/management/view/${category.id}`
 
   const handleExportData = useCallback(async () => {
     try {
@@ -58,6 +80,64 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
       toast.error(getApiErrorMessage(error, 'Failed to export category'))
     }
   }, [category, fileFormat])
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateOpen(false)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    const categoryId = String(category.id || '').trim()
+    if (!categoryId) {
+      toast.error('Category ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+
+    setIsEscalating(true)
+    try {
+      await escalateCategoryApplication(categoryId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        entityTitle: `${category.name || categoryId} — Venue Category`,
+        applicationUrl: detailsUrl,
+        escalationTarget: 'application',
+        metadata: {
+          source: 'venue_category_management',
+          categoryType: 'venue',
+          categoryId: category.categoryId || categoryId,
+        },
+      })
+      toast.success('Escalated — assigned admin will see this in My Tasks')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate category.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    category.categoryId,
+    category.id,
+    category.name,
+    closeEscalateModal,
+    detailsUrl,
+    escalateAdminNotes,
+    selectedEscalationOption,
+  ])
 
   return (
     <>
@@ -115,7 +195,7 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
         <TableActionsItem
           className={CATEGORY_ACTION_ITEM_CLASS}
           onClick={() => {
-            navigate(`/venues/categories/management/view/${category.id}`)
+            navigate(detailsUrl)
             setOpen(false)
           }}
           icon={<FolderTree className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -162,6 +242,17 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
         >
           Export Data
         </TableActionsItem>
+
+        <TableActionsItem
+          className={CATEGORY_ACTION_ITEM_CLASS}
+          onClick={() => {
+            setOpen(false)
+            setEscalateOpen(true)
+          }}
+          icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+        >
+          Escalate
+        </TableActionsItem>
       </TableActionsDropdown>
 
       <EditCategoryGroupModal
@@ -190,6 +281,24 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
             },
           })
         }}
+      />
+
+      <DecisionActionModal
+        open={escalateOpen}
+        variant="escalate"
+        title="Escalate"
+        description="Are you sure you want to escalate this category? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
       />
     </>
   )

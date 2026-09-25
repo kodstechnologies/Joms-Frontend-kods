@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, MessageSquare, RotateCcw } from 'lucide-react'
+import { AlertTriangle, Eye, MessageSquare, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
@@ -29,6 +29,12 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalatePartnerApplication } from '@/modules/my-tasks/api/escalation-api'
+import {
   VENUE_DELETED_MODULE_KEY,
   DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS,
   VENUE_DELETED_TABLE_COLUMNS_CATALOG,
@@ -41,6 +47,21 @@ export function VenueDeletedPage() {
   const { allowAddVenues } = useVenueManagementControls()
   const restoreVenueMutation = useRestoreVenue()
   const { fileFormat } = useDefaultExportFormat()
+
+  const [escalateTarget, setEscalateTarget] = useState<Venue | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const list = useVenueStatusList({
     preferencesKey: VENUE_DELETED_MODULE_KEY,
@@ -107,6 +128,67 @@ export function VenueDeletedPage() {
     },
     [navigate],
   )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+
+    const partnerId = getVenuePartnerId(escalateTarget)
+    const venueId = getVenueApiId(escalateTarget)
+    if (!partnerId) {
+      toast.error('Venue partner ID is missing.')
+      return
+    }
+    if (!venueId) {
+      toast.error('Venue ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const venueName = String(escalateTarget.venueName || venueId).trim()
+
+    setIsEscalating(true)
+    try {
+      await escalatePartnerApplication(partnerId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        venueId,
+        partnerId,
+        entityTitle: `${venueName} — Deleted Venue`,
+        applicationUrl: `/venues/management/profile/${encodeURIComponent(venueId)}`,
+        escalationTarget: 'application',
+        metadata: { source: 'deleted_venues', venueId },
+      })
+      toast.success('Escalated — assigned admin will see this in My Tasks')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate venue.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
 
   const columns = useMemo<ColumnDef<Venue>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
@@ -177,6 +259,15 @@ export function VenueDeletedPage() {
                 >
                   Communicate with Host
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    setEscalateTarget(venue)
+                  }}
+                >
+                  Escalate
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -239,6 +330,25 @@ export function VenueDeletedPage() {
         emptyMessage="No deleted venues found."
       />
       {list.exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate"
+        headerDescription="Are you sure you want to escalate this venue? It will be reviewed by the selected sub-admin."
+        description=""
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

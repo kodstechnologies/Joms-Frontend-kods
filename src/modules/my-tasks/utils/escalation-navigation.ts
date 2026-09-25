@@ -69,6 +69,10 @@ const buildFallbackUrl = ({
       return `/settings/logs?logId=${encodeURIComponent(entityId)}`
     case 'incident':
       return `/settings/main?tab=incident&incidentId=${encodeURIComponent(entityId)}`
+    case 'category':
+      return `/categories/management/view/${entityId}`
+    case 'referral':
+      return `/referrals/management?referralId=${encodeURIComponent(entityId)}`
     default:
       return null
   }
@@ -84,6 +88,11 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
   if (
     storedOrEmpty.includes('/orders/') ||
     storedOrEmpty.includes('/bookings/') ||
+    storedOrEmpty.includes('/venues/management/profile/') ||
+    storedOrEmpty.includes('/categories/management/view/') ||
+    storedOrEmpty.includes('/venues/categories/management/view/') ||
+    storedOrEmpty.includes('/experts/categories/management/view/') ||
+    (storedOrEmpty.includes('/referrals/management') && storedOrEmpty.includes('referralId=')) ||
     /\/experts\/management\/profile\/[^/]+\/(service|consultation)\//.test(storedOrEmpty)
   ) {
     return withPartnerReviewTab(storedOrEmpty, target.escalationTarget)
@@ -113,12 +122,14 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
     resolved = storedOrEmpty || canonical || null
   } else if (target.entityType === 'partner' && target.serviceType === 'venue') {
     const storedKycId = getVenueKycIdFromUrl(storedOrEmpty)
-    if (storedOrEmpty.includes('/experts/management/profile/')) resolved = storedOrEmpty
+    if (storedOrEmpty.includes('/venues/management/profile/')) resolved = storedOrEmpty
+    else if (storedOrEmpty.includes('/experts/management/profile/')) resolved = storedOrEmpty
     else if (storedKycId && storedKycId !== target.entityId) resolved = storedOrEmpty
     else resolved = canonical
   } else if (target.entityType === 'partner') {
     // Reported-experts / clientele deep-links to profile (or nested order/booking under profile)
-    if (storedOrEmpty.includes('/experts/management/profile/')) resolved = storedOrEmpty
+    if (storedOrEmpty.includes('/venues/management/profile/')) resolved = storedOrEmpty
+    else if (storedOrEmpty.includes('/experts/management/profile/')) resolved = storedOrEmpty
     else resolved = storedOrEmpty || canonical || null
   } else {
     resolved = storedOrEmpty || canonical || null

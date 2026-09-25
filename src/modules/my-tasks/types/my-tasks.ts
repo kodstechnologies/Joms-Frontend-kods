@@ -16,6 +16,8 @@ export type MyTask = {
     | 'support_ticket'
     | 'settings_log'
     | 'incident'
+    | 'category'
+    | 'referral'
   entityId?: string
   venueId?: string
   title: string

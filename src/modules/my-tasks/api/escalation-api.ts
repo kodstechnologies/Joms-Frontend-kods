@@ -13,6 +13,8 @@ export type AdminEscalationEntityType =
   | 'support_ticket'
   | 'settings_log'
   | 'incident'
+  | 'category'
+  | 'referral'
 
 export type AdminEscalation = {
   _id?: string
@@ -218,6 +220,28 @@ export const escalateIncidentApplication = async (
 ) => {
   const response = await adminApiClient.patch(
     `/admin/internal/admin/incidents/${id}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateCategoryApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/categories/${id}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateReferralApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/referrals/${id}/escalate`,
     payload,
   )
   return response.data

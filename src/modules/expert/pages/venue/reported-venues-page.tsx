@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Ban, Eye, MessageSquare } from 'lucide-react'
+import { AlertTriangle, Ban, Eye, MessageSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
-import { fetchVenueReports } from '../../api/venue-api'
+import { fetchVenueReports, updateVenueReport } from '../../api/venue-api'
 import { defaultParseResponse, useReportedList } from '../../hooks/use-reported-list'
 import {
   VenueReportDetailModal,
@@ -27,6 +28,13 @@ import {
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { Button } from '@/shared/components/ui/button'
 import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalatePartnerApplication } from '@/modules/my-tasks/api/escalation-api'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import {
   VENUE_REPORTED_MODULE_KEY,
   DEFAULT_VENUE_REPORTED_VISIBLE_COLUMN_IDS,
   VENUE_REPORTED_TABLE_COLUMNS_CATALOG,
@@ -34,8 +42,24 @@ import {
 
 export function VenueReportedVenuesPage() {
   const navigate = useNavigate()
+  const authUser = useAuthStore((state) => state.user)
   const [selectedReport, setSelectedReport] = useState<VenueReportItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const [escalateTarget, setEscalateTarget] = useState<VenueReportItem | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const list = useReportedList<VenueReportItem>({
     moduleKey: 'venue-management',
@@ -65,6 +89,86 @@ export function VenueReportedVenuesPage() {
     },
     [navigate],
   )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+
+    const partnerId = String(escalateTarget.partnerId || '').trim()
+    const venueId = String(escalateTarget.venueId || '').trim()
+    if (!partnerId) {
+      toast.error('Venue partner ID is missing.')
+      return
+    }
+    if (!venueId) {
+      toast.error('Venue ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const reportId = String(escalateTarget.id || escalateTarget.reportId || '').trim()
+    const note = escalateAdminNotes.trim()
+
+    setIsEscalating(true)
+    try {
+      await escalatePartnerApplication(partnerId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: note,
+        venueId,
+        partnerId,
+        entityTitle: `Venue report ${escalateTarget.reportId || reportId}`,
+        applicationUrl: `/venues/management/profile/${encodeURIComponent(venueId)}`,
+        escalationTarget: 'application',
+        metadata: {
+          reportId: escalateTarget.reportId || reportId,
+          issueType: escalateTarget.issueType,
+          source: 'reported_venues',
+          venueId,
+        },
+      })
+
+      if (reportId) {
+        await updateVenueReport(reportId, {
+          investigationStatus: 'Escalated',
+          adminWhoEscalated: authUser?.fullname || authUser?.email || 'Admin',
+          internalNotes: note,
+        })
+      }
+
+      toast.success('Case escalated to My Tasks')
+      closeEscalateModal()
+      list.reload()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate case.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    authUser?.email,
+    authUser?.fullname,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    list,
+    selectedEscalationOption,
+  ])
 
   const columns = useMemo<ColumnDef<VenueReportItem>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
@@ -120,6 +224,15 @@ export function VenueReportedVenuesPage() {
                   }}
                 >
                   Communicate with Host
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    setEscalateTarget(reportItem)
+                  }}
+                >
+                  Escalate Case
                 </TableActionsItem>
               </TableActionsDropdown>
             )
@@ -186,6 +299,25 @@ export function VenueReportedVenuesPage() {
           setSelectedReport(null)
         }}
         onUpdated={list.reload}
+      />
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate Case"
+        headerDescription="Are you sure you want to escalate this case? It will be reviewed by the selected sub-admin."
+        description=""
+        submitLabel="Escalate Case"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
       />
     </div>
   )

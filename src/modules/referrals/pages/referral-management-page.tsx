@@ -1,18 +1,23 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ClipboardList, Trash2, User } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, ClipboardList, Trash2, User } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import {
   MODERATION_CATEGORY_SLUGS,
   recordModerationReasonUsage,
 } from '@/modules/settings/api/templates-api'
 import { useModerationReasonOptions } from '@/modules/settings/hooks/use-templates'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateReferralApplication } from '@/modules/my-tasks/api/escalation-api'
 import { InviteExpertReferralModal } from '../components/invite-expert-referral-modal'
 import { ReferralDetailsModal } from '../components/referral-details-modal'
 import { ReferralStatsBar } from '../components/referral-stats-bar'
@@ -443,6 +448,7 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
 
 export function ReferralManagementPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { currentPage, setCurrentPage } = useReferralStore()
 
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
@@ -460,7 +466,21 @@ export function ReferralManagementPage() {
   const [deleteSelectedReasons, setDeleteSelectedReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [escalateTarget, setEscalateTarget] = useState<ExpertInvite | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
   const { fileFormat } = useDefaultExportFormat()
+
+  const { data: assigneesData } = useEscalationAssignees('referrals.*')
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const {
     options: deleteReasonOptions,
@@ -502,6 +522,40 @@ export function ReferralManagementPage() {
 
   const expertInvites = useMemo(() => expertData?.data?.invites ?? [], [expertData?.data?.invites])
   const meta = expertData?.data?.meta
+
+  // My Tasks deep-link: /referrals/management?referralId=… → open Invites Details popup
+  useEffect(() => {
+    const referralId = String(searchParams.get('referralId') || '').trim()
+    if (!referralId) return
+
+    let cancelled = false
+    const openFromQuery = async () => {
+      const fromList = expertInvites.find(
+        (invite) =>
+          String(invite.referralId || '').trim() === referralId ||
+          String(invite._id || '').trim() === referralId,
+      )
+      if (fromList) {
+        if (!cancelled) setDetailsExpert(fromList)
+        return
+      }
+      try {
+        const result = await fetchExpertInvites({ referralId, limit: 1, page: 1 })
+        const match = result.data?.invites?.[0]
+        if (!cancelled && match) setDetailsExpert(match)
+        else if (!cancelled) toast.error('Referral invite not found.')
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(error, 'Failed to open referral details.'))
+        }
+      }
+    }
+
+    void openFromQuery()
+    return () => {
+      cancelled = true
+    }
+  }, [expertInvites, searchParams])
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -654,6 +708,72 @@ export function ReferralManagementPage() {
     [navigate],
   )
 
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    const referralId = String(escalateTarget.referralId || escalateTarget._id || '').trim()
+    if (!referralId) {
+      toast.error('Referral ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const titleName = escalateTarget.referredExpertName || escalateTarget.referrerName || referralId
+
+    setIsEscalating(true)
+    try {
+      await escalateReferralApplication(referralId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        entityTitle: `${titleName} — Referral`,
+        applicationUrl: `/referrals/management?referralId=${encodeURIComponent(referralId)}`,
+        escalationTarget: 'application',
+        metadata: {
+          source: 'referral_management',
+          referralId,
+          sourceType: escalateTarget.sourceType,
+        },
+      })
+      toast.success('Escalated — assigned admin will see this in My Tasks')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate referral.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
+
+  const closeDetailsModal = useCallback(() => {
+    setDetailsExpert(null)
+    if (searchParams.has('referralId')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('referralId')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   const renderActions = useCallback(
     (record: ExpertInvite) => {
       const id = record.referralId
@@ -766,6 +886,15 @@ export function ReferralManagementPage() {
             }}
           >
             Export Referral Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<AlertTriangle className="size-3.5 text-slate-700" strokeWidth={1.75} />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setEscalateTarget(record)
+            }}
+          >
+            Escalate
           </TableActionsItem>
         </TableActionsDropdown>
       )
@@ -903,8 +1032,26 @@ export function ReferralManagementPage() {
 
       <ReferralDetailsModal
         open={Boolean(detailsExpert)}
-        onClose={() => setDetailsExpert(null)}
+        onClose={closeDetailsModal}
         expertInvite={detailsExpert}
+      />
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate"
+        description="Are you sure you want to escalate this referral? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
       />
 
       <DecisionActionModal
