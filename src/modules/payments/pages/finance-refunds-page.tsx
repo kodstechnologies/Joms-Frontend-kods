@@ -310,12 +310,6 @@ export function FinanceRefundsPage() {
       const partnerId = String(record.partnerId || '').trim()
 
       const assertCanActOnRefund = (action: 'approve' | 'reject') => {
-        if (!isRefund) {
-          toast.error(
-            `Cannot ${action} a dispute from this action — open the dispute record instead`,
-          )
-          return false
-        }
         if (!canActOnRefund) {
           const statusLabel = refundStatus || 'unknown'
           toast.error(
@@ -362,28 +356,32 @@ export function FinanceRefundsPage() {
           >
             View Partner
           </TableActionsItem>
-          <TableActionsItem
-            icon={<Check className="size-3.5 text-emerald-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => {
-              setActiveDropdownId(null)
-              if (!assertCanActOnRefund('approve')) return
-              setApproveTarget(record)
-            }}
-          >
-            Approve Refund
-          </TableActionsItem>
-          <TableActionsItem
-            icon={<X className="text-brand-danger size-3.5" aria-hidden="true" />}
-            className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
-            onClick={() => {
-              setActiveDropdownId(null)
-              if (!assertCanActOnRefund('reject')) return
-              setRejectTarget(record)
-            }}
-          >
-            Reject Refund
-          </TableActionsItem>
+          {isRefund ? (
+            <TableActionsItem
+              icon={<Check className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+              onClick={() => {
+                setActiveDropdownId(null)
+                if (!assertCanActOnRefund('approve')) return
+                setApproveTarget(record)
+              }}
+            >
+              Approve Refund
+            </TableActionsItem>
+          ) : null}
+          {isRefund ? (
+            <TableActionsItem
+              icon={<X className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+              onClick={() => {
+                setActiveDropdownId(null)
+                if (!assertCanActOnRefund('reject')) return
+                setRejectTarget(record)
+              }}
+            >
+              Reject Refund
+            </TableActionsItem>
+          ) : null}
           <TableActionsItem
             icon={<ArrowLeftRight className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
