@@ -111,7 +111,7 @@ export const VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = 
     label: 'Space Status',
     type: 'Status',
     description: 'Current space status',
-    defaultVisible: false,
+    defaultVisible: true,
   },
   {
     id: 'space-price',

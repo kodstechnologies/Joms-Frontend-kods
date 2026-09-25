@@ -1135,8 +1135,12 @@ export const VenueManagementPage = () => {
         accessorKey: 'status',
         header: 'Venue Status',
         cell: ({ row }) => {
-          const { label, className } = getListingStatusDisplay(row.original.status, {
-            isSuspend: row.original.isSuspend,
+          // When a space is attached to the row, mirror Space Details status.
+          const statusToShow = row.original.spaceStatus || row.original.status
+          const { label, className } = getListingStatusDisplay(statusToShow, {
+            isSuspend:
+              row.original.isSuspend ||
+              String(row.original.spaceStatus || '').toLowerCase() === 'suspended',
           })
 
           return <span className={className}>{label}</span>
@@ -1188,8 +1192,12 @@ export const VenueManagementPage = () => {
         accessorKey: 'spaceStatus',
         header: 'Space Status',
         cell: ({ row }) => {
-          const status = row.original.spaceStatus || 'active'
-          const { label, className } = getListingStatusDisplay(status, {})
+          if (!row.original.spaceStatus) {
+            return <span className="text-slate-500">—</span>
+          }
+          const { label, className } = getListingStatusDisplay(row.original.spaceStatus, {
+            isSuspend: String(row.original.spaceStatus || '').toLowerCase() === 'suspended',
+          })
           return <span className={className}>{label}</span>
         },
       },
