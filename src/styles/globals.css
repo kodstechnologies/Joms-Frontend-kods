@@ -2670,7 +2670,8 @@ select.settings-control,
 /* ===== Backup Configuration page ===== */
 .backup-config-page {
   display: flex;
-  max-width: 999px;
+  width: 100%;
+  max-width: none;
   flex-direction: column;
   gap: 20px;
 }
