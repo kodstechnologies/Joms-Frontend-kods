@@ -127,6 +127,7 @@ export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
         aria-modal="true"
         aria-label="Alerts"
         aria-hidden={!open}
+        inert={!open}
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
           <h2 className="text-brand-text text-lg font-semibold tracking-tight">
