@@ -17,7 +17,7 @@ import {
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
-import { seedFinanceRefundCase } from '@/modules/payments/api/finance-api'
+import { useAdminRefundFlow } from '@/modules/payments/hooks/use-admin-refund-flow'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -237,52 +237,27 @@ export function ConsultationPerformancePage() {
     [navigate],
   )
 
+  const { openRefund, refundModal } = useAdminRefundFlow({
+    onRefunded: () => void bookingsQuery.refetch(),
+  })
+
   const openProcessRefund = useCallback(
-    async (booking: ConsultationBookingRow) => {
+    (booking: ConsultationBookingRow) => {
       const existingRefundId = String(booking.refundId || '').trim()
       if (existingRefundId) {
         navigate(`/finance/refunds/${encodeURIComponent(existingRefundId)}`)
         return
       }
 
-      const paymentId = resolvePaymentId(booking)
-      if (!paymentId) {
-        toast.error('Payment ID is missing for this booking. Cannot process refund.')
-        return
-      }
-
-      try {
-        const response = await seedFinanceRefundCase({
-          mode: 'refund_request',
-          module: 'service',
-          paymentId,
-          amount: Number(booking.price) || undefined,
-          reason: `Consultation booking ${booking.bookingId || booking.id}`,
-        })
-        const seededRefundId = String(
-          response?.data?.refund?._id || response?.data?.refund?.refundId || '',
-        ).trim()
-        const disputeId = String(
-          response?.data?.dispute?._id || response?.data?.dispute?.disputeId || '',
-        ).trim()
-
-        if (seededRefundId) {
-          navigate(`/finance/refunds/${encodeURIComponent(seededRefundId)}`)
-          return
-        }
-        if (disputeId) {
-          navigate(`/finance/refunds/${encodeURIComponent(disputeId)}/dispute`)
-          return
-        }
-        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
-      } catch (error) {
-        toast.error(
-          getApiErrorMessage(error, 'Failed to open refund flow. Opening payment details.'),
-        )
-        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
-      }
+      openRefund({
+        paymentId: resolvePaymentId(booking),
+        amount: Number(booking.price) || 0,
+        currency: booking.currency,
+        reason: `Consultation booking ${booking.bookingId || booking.id}`,
+        refundRequested: Boolean(booking.refundRequested),
+      })
     },
-    [navigate, resolvePaymentId],
+    [navigate, openRefund, resolvePaymentId],
   )
 
   const closeEscalateModal = useCallback(() => {
@@ -767,7 +742,7 @@ export function ConsultationPerformancePage() {
                 icon={<Banknote className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
-                  void openProcessRefund(booking)
+                  openProcessRefund(booking)
                 }}
               >
                 Process Refund
@@ -822,6 +797,7 @@ export function ConsultationPerformancePage() {
       />
 
       {filterModals}
+      {refundModal}
 
       <DecisionActionModal
         open={Boolean(escalateTarget)}

@@ -246,6 +246,7 @@ export type ServiceOrderRow = {
   payoutStatusLabel: string | null
   payoutAmount: number | null
   disputed: boolean
+  refundRequested?: boolean
   disputeId: string | null
   disputeStatus: string | null
   disputeRaisedAt: string | null

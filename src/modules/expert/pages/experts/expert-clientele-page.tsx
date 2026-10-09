@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
-import { seedFinanceRefundCase } from '@/modules/payments/api/finance-api'
+import { useAdminRefundFlow } from '@/modules/payments/hooks/use-admin-refund-flow'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -140,6 +140,7 @@ const EMPTY_METRICS: Metrics = {
 }
 
 const EMPTY_CLIENTELE_ITEMS: ClienteleItem[] = []
+const OPEN_CLIENT_DISPUTE_STATUSES = new Set(['Open', 'Under Review'])
 
 const EXPERT_CLIENTELE_COLUMN_SORT_FIELDS = buildDefaultTableSortFieldMap(
   EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG.map((column) => column.id),
@@ -351,6 +352,7 @@ export function ExpertClientelePage() {
     isLoading: loading,
     isError,
     error,
+    refetch: refetchClientele,
   } = useQuery({
     queryKey: ['expert-clientele', expertId, listQueryParams],
     queryFn: () => fetchExpertClientele(expertId, listQueryParams),
@@ -543,52 +545,28 @@ export function ExpertClientelePage() {
     selectedEscalationOption,
   ])
 
+  const { openRefund, refundModal } = useAdminRefundFlow({
+    onRefunded: () => void refetchClientele(),
+  })
+
   const openProcessRefund = useCallback(
-    async (item: ClienteleItem) => {
+    (item: ClienteleItem) => {
       const existingRefundId = String(item.refundId || '').trim()
       if (existingRefundId) {
         navigate(`/finance/refunds/${encodeURIComponent(existingRefundId)}`)
         return
       }
 
-      const paymentId = resolvePaymentId(item)
-      if (!paymentId) {
-        toast.error('Payment ID is missing for this booking. Cannot process refund.')
-        return
-      }
-
-      try {
-        const response = await seedFinanceRefundCase({
-          mode: 'refund_request',
-          module: 'service',
-          paymentId,
-          amount: Number(item.orderValue ?? item.price) || undefined,
-          reason: `Clientele booking ${item.bookingId}`,
-        })
-        const seededRefundId = String(
-          response?.data?.refund?._id || response?.data?.refund?.refundId || '',
-        ).trim()
-        const disputeId = String(
-          response?.data?.dispute?._id || response?.data?.dispute?.disputeId || '',
-        ).trim()
-
-        if (seededRefundId) {
-          navigate(`/finance/refunds/${encodeURIComponent(seededRefundId)}`)
-          return
-        }
-        if (disputeId) {
-          navigate(`/finance/refunds/${encodeURIComponent(disputeId)}/dispute`)
-          return
-        }
-        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
-      } catch (error) {
-        toast.error(
-          getApiErrorMessage(error, 'Failed to open refund flow. Opening payment details.'),
-        )
-        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
-      }
+      openRefund({
+        paymentId: resolvePaymentId(item),
+        amount: Number(item.orderValue ?? item.price) || 0,
+        reason: `Clientele booking ${item.bookingId}`,
+        refundRequested:
+          Boolean(item.disputeRaised) &&
+          OPEN_CLIENT_DISPUTE_STATUSES.has(String(item.disputeStatus || '')),
+      })
     },
-    [navigate, resolvePaymentId],
+    [navigate, openRefund, resolvePaymentId],
   )
 
   const dataColumnsById = useMemo<Record<string, ColumnDef<ClienteleItem>>>(
@@ -845,7 +823,7 @@ export function ExpertClientelePage() {
                 icon={<Banknote className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
-                  void openProcessRefund(item)
+                  openProcessRefund(item)
                 }}
               >
                 Process Refund
@@ -959,6 +937,7 @@ export function ExpertClientelePage() {
         }}
       />
       {exportFilterModals}
+      {refundModal}
 
       <DecisionActionModal
         open={Boolean(escalateTarget)}

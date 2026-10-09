@@ -77,6 +77,7 @@ export type ConsultationBookingRow = {
   paymentMethod?: string | null
   transactionId?: string | null
   refundIssued?: boolean
+  refundRequested?: boolean
   refundId?: string | null
   refundAmount?: number | null
   refundStatus?: string | null

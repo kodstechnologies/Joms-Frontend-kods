@@ -17,7 +17,7 @@ import {
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
-import { seedFinanceRefundCase } from '@/modules/payments/api/finance-api'
+import { useAdminRefundFlow } from '@/modules/payments/hooks/use-admin-refund-flow'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -31,7 +31,7 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { SERVICE_PERFORMANCE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_PERFORMANCE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -96,7 +96,8 @@ export function ServicePerformancePage() {
 
   const [page, setPage] = useState(1)
   const serverSort = useServerTableSort({
-    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    defaultSortBy: 'ordered-at',
+    sortFieldMap: SERVICE_PERFORMANCE_COLUMN_SORT_FIELDS,
     onPageReset: () => setPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
@@ -219,52 +220,27 @@ export function ServicePerformancePage() {
     [navigate],
   )
 
+  const { openRefund, refundModal } = useAdminRefundFlow({
+    onRefunded: () => void ordersQuery.refetch(),
+  })
+
   const openProcessRefund = useCallback(
-    async (order: ServiceOrderRow) => {
+    (order: ServiceOrderRow) => {
       const existingRefundId = String(order.refundId || '').trim()
       if (existingRefundId) {
         navigate(`/finance/refunds/${encodeURIComponent(existingRefundId)}`)
         return
       }
 
-      const paymentId = resolvePaymentId(order)
-      if (!paymentId) {
-        toast.error('Payment ID is missing for this order. Cannot process refund.')
-        return
-      }
-
-      try {
-        const response = await seedFinanceRefundCase({
-          mode: 'refund_request',
-          module: 'service',
-          paymentId,
-          amount: Number(order.totalPaid ?? order.price) || undefined,
-          reason: `Service order ${order.orderId}`,
-        })
-        const seededRefundId = String(
-          response?.data?.refund?._id || response?.data?.refund?.refundId || '',
-        ).trim()
-        const disputeId = String(
-          response?.data?.dispute?._id || response?.data?.dispute?.disputeId || '',
-        ).trim()
-
-        if (seededRefundId) {
-          navigate(`/finance/refunds/${encodeURIComponent(seededRefundId)}`)
-          return
-        }
-        if (disputeId) {
-          navigate(`/finance/refunds/${encodeURIComponent(disputeId)}/dispute`)
-          return
-        }
-        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
-      } catch (error) {
-        toast.error(
-          getApiErrorMessage(error, 'Failed to open refund flow. Opening payment details.'),
-        )
-        navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
-      }
+      openRefund({
+        paymentId: resolvePaymentId(order),
+        amount: Number(order.totalPaid ?? order.price) || 0,
+        currency: order.currency,
+        reason: `Service order ${order.orderId}`,
+        refundRequested: Boolean(order.refundRequested),
+      })
     },
-    [navigate, resolvePaymentId],
+    [navigate, openRefund, resolvePaymentId],
   )
 
   const closeEscalateModal = useCallback(() => {
@@ -777,7 +753,7 @@ export function ServicePerformancePage() {
                 icon={<Banknote className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
-                  void openProcessRefund(order)
+                  openProcessRefund(order)
                 }}
               >
                 Process Refund
@@ -798,7 +774,10 @@ export function ServicePerformancePage() {
       },
     }
 
-    return withServerSortMeta([...preferenceColumns, actionsColumn], SERVICE_COLUMN_SORT_FIELDS)
+    return withServerSortMeta(
+      [...preferenceColumns, actionsColumn],
+      SERVICE_PERFORMANCE_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeActionMenu,
     dataColumnsById,
@@ -846,6 +825,7 @@ export function ServicePerformancePage() {
       />
 
       {filterModals}
+      {refundModal}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
