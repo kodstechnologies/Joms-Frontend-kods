@@ -59,14 +59,17 @@ import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { useServiceOrders, useServicePerformance } from '../../hooks/use-service-drilldown'
 import { buildServicePerformanceCards } from '../../utils/service-performance-metrics'
 import { PaymentDetailsModal } from '../../components/service-drilldown/payment-details-modal'
-import { ShimmerBlock, StatusPill } from '../../components/service-drilldown/drilldown-primitives'
+import {
+  ShimmerBlock,
+  TableStatusPill,
+} from '../../components/service-drilldown/drilldown-primitives'
 import {
   DASH,
   formatCurrency,
   formatDate,
-  formatDateTime,
   titleCase,
 } from '../../components/service-drilldown/drilldown-format'
+import { renderTableDateTimeCell } from '@/shared/components/table/table-datetime-column'
 import { serviceDetailPath, serviceOrderDetailPath } from '../../lib/service-navigation'
 import type { ServiceOrderRow, ServiceOrdersQuery } from '../../type/service-drilldown'
 
@@ -423,9 +426,7 @@ export function ServicePerformancePage() {
         accessorKey: 'orderId',
         header: 'Order ID',
         cell: ({ row }) => (
-          <span className="ui-table-id text-muted font-mono text-xs uppercase">
-            {row.original.orderId.slice(-8)}
-          </span>
+          <span className="ui-table-id uppercase">{row.original.orderId.slice(-8)}</span>
         ),
       },
       'client-id': {
@@ -433,9 +434,7 @@ export function ServicePerformancePage() {
         accessorKey: 'clientId',
         header: 'Client ID',
         cell: ({ row }) => (
-          <span className="ui-table-id text-muted font-mono text-xs uppercase">
-            {formatClientCode(row.original.clientId)}
-          </span>
+          <span className="ui-table-id uppercase">{formatClientCode(row.original.clientId)}</span>
         ),
       },
       'client-name': {
@@ -450,180 +449,136 @@ export function ServicePerformancePage() {
         id: 'listing-type',
         accessorFn: (row) => listingTypeLabel(row),
         header: 'Listing Type',
-        cell: ({ row }) => (
-          <span className="text-sm text-white">{listingTypeLabel(row.original)}</span>
-        ),
+        cell: ({ row }) => listingTypeLabel(row.original),
       },
       'order-status': {
         id: 'order-status',
         accessorKey: 'orderStatus',
         header: 'Order Status',
-        cell: ({ row }) => <StatusPill status={row.original.orderStatus} />,
+        cell: ({ row }) => <TableStatusPill status={row.original.orderStatus} />,
       },
       'pricing-type': {
         id: 'pricing-type',
         accessorKey: 'pricingType',
         header: 'Pricing Type',
-        cell: ({ row }) => (
-          <span className="text-sm text-white">{titleCase(row.original.pricingType)}</span>
-        ),
+        cell: ({ row }) => titleCase(row.original.pricingType) || DASH,
       },
       'client-source': {
         id: 'client-source',
         accessorKey: 'clientSource',
         header: 'Client Source',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">{row.original.clientSource || DASH}</span>
-        ),
+        cell: ({ row }) => row.original.clientSource || DASH,
       },
       'client-phone': {
         id: 'client-phone',
         accessorKey: 'clientPhone',
         header: 'Client Phone Number',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">{row.original.clientPhone || DASH}</span>
-        ),
+        cell: ({ row }) => row.original.clientPhone || DASH,
       },
       'ordered-at': {
         id: 'ordered-at',
         accessorKey: 'orderedAt',
         header: 'Ordered At',
-        cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDate(row.original.orderedAt)}</span>
-        ),
+        cell: ({ row }) => renderTableDateTimeCell(row.original.orderedAt),
       },
       'start-date': {
         id: 'start-date',
         accessorKey: 'startDate',
         header: 'Start Date',
-        cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDateTime(row.original.startDate)}</span>
-        ),
+        cell: ({ row }) => renderTableDateTimeCell(row.original.startDate),
       },
       'end-date': {
         id: 'end-date',
         accessorKey: 'endDate',
         header: 'End Date',
-        cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDateTime(row.original.endDate)}</span>
-        ),
+        cell: ({ row }) => renderTableDateTimeCell(row.original.endDate),
       },
       'delivery-duration': {
         id: 'delivery-duration',
         accessorKey: 'deliveryDuration',
         header: 'Delivery Duration',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">{row.original.deliveryDuration || DASH}</span>
-        ),
+        cell: ({ row }) => row.original.deliveryDuration || DASH,
       },
       price: {
         id: 'price',
         accessorKey: 'price',
         header: 'Price',
-        cell: ({ row }) => (
-          <span className="font-semibold text-white">
-            {formatCurrency(row.original.price, row.original.currency)}
-          </span>
-        ),
+        cell: ({ row }) => formatCurrency(row.original.price, row.original.currency),
       },
       'payment-id': {
         id: 'payment-id',
         accessorKey: 'paymentId',
         header: 'Payment ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id text-muted font-mono text-xs">
-            {row.original.paymentId || DASH}
-          </span>
-        ),
+        cell: ({ row }) => <span className="ui-table-id">{row.original.paymentId || DASH}</span>,
       },
       'payment-method': {
         id: 'payment-method',
         accessorKey: 'paymentMethod',
         header: 'Payment Method',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">
-            {row.original.paymentMethod ? titleCase(row.original.paymentMethod) : DASH}
-          </span>
-        ),
+        cell: ({ row }) =>
+          row.original.paymentMethod ? titleCase(row.original.paymentMethod) : DASH,
       },
       'transaction-id': {
         id: 'transaction-id',
         accessorKey: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
-          <span className="ui-table-id text-muted font-mono text-xs">
-            {row.original.transactionId || DASH}
-          </span>
+          <span className="ui-table-id">{row.original.transactionId || DASH}</span>
         ),
       },
       rating: {
         id: 'rating',
         accessorKey: 'rating',
         header: 'Rating',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">
-            {row.original.rating === null ? DASH : `★ ${row.original.rating.toFixed(1)}`}
-          </span>
-        ),
+        cell: ({ row }) =>
+          row.original.rating === null ? DASH : `★ ${row.original.rating.toFixed(1)}`,
       },
       'payout-status': {
         id: 'payout-status',
         accessorKey: 'payoutStatus',
         header: 'Payout Status',
-        cell: ({ row }) =>
-          row.original.payoutStatus ? (
-            <StatusPill
-              status={row.original.payoutStatus}
-              label={row.original.payoutStatusLabel || undefined}
-            />
-          ) : (
-            <span className="text-muted text-sm">{DASH}</span>
-          ),
+        cell: ({ row }) => (
+          <TableStatusPill
+            status={row.original.payoutStatus}
+            label={row.original.payoutStatusLabel || undefined}
+          />
+        ),
       },
       disputed: {
         id: 'disputed',
         accessorKey: 'disputed',
         header: 'Disputed',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">{row.original.disputed ? 'Yes' : 'No'}</span>
-        ),
+        cell: ({ row }) => (row.original.disputed ? 'Yes' : 'No'),
       },
       'dispute-period-lapsed': {
         id: 'dispute-period-lapsed',
         accessorKey: 'disputePeriodLapsed',
         header: 'Dispute Period Lapsed',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">
-            {row.original.disputePeriodLapsed === null
-              ? DASH
-              : row.original.disputePeriodLapsed
-                ? 'Yes'
-                : 'No'}
-          </span>
-        ),
+        cell: ({ row }) =>
+          row.original.disputePeriodLapsed === null
+            ? DASH
+            : row.original.disputePeriodLapsed
+              ? 'Yes'
+              : 'No',
       },
       'dispute-end-date': {
         id: 'dispute-end-date',
         accessorKey: 'disputeEndDate',
         header: 'Dispute Period End Date',
-        cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDate(row.original.disputeEndDate)}</span>
-        ),
+        cell: ({ row }) => renderTableDateTimeCell(row.original.disputeEndDate),
       },
       'dispute-raised-at': {
         id: 'dispute-raised-at',
         accessorKey: 'disputeRaisedAt',
         header: 'Dispute Raised At',
-        cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDate(row.original.disputeRaisedAt)}</span>
-        ),
+        cell: ({ row }) => renderTableDateTimeCell(row.original.disputeRaisedAt),
       },
       'dispute-ticket-id': {
         id: 'dispute-ticket-id',
         accessorFn: (row) => row.disputeId || row.supportTicketId || '',
         header: 'Dispute / Ticket ID',
         cell: ({ row }) => (
-          <span className="ui-table-id text-muted font-mono text-xs">
+          <span className="ui-table-id">
             {row.original.disputeId || row.original.supportTicketId || DASH}
           </span>
         ),
@@ -632,40 +587,28 @@ export function ServicePerformancePage() {
         id: 'refund-issued',
         accessorKey: 'refundIssued',
         header: 'Refund Issued',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">{row.original.refundIssued ? 'Yes' : 'No'}</span>
-        ),
+        cell: ({ row }) => (row.original.refundIssued ? 'Yes' : 'No'),
       },
       'refund-amount': {
         id: 'refund-amount',
         accessorKey: 'refundAmount',
         header: 'Refund Amount',
-        cell: ({ row }) => (
-          <span className="text-muted text-sm">
-            {row.original.refundAmount === null
-              ? DASH
-              : formatCurrency(row.original.refundAmount, row.original.currency)}
-          </span>
-        ),
+        cell: ({ row }) =>
+          row.original.refundAmount === null
+            ? DASH
+            : formatCurrency(row.original.refundAmount, row.original.currency),
       },
       'refund-status': {
         id: 'refund-status',
         accessorKey: 'refundStatus',
         header: 'Refund Status',
-        cell: ({ row }) =>
-          row.original.refundStatus ? (
-            <StatusPill status={row.original.refundStatus} />
-          ) : (
-            <span className="text-muted text-sm">{DASH}</span>
-          ),
+        cell: ({ row }) => <TableStatusPill status={row.original.refundStatus} />,
       },
       'refunded-at': {
         id: 'refunded-at',
         accessorKey: 'refundedAt',
         header: 'Refunded At',
-        cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDate(row.original.refundedAt)}</span>
-        ),
+        cell: ({ row }) => renderTableDateTimeCell(row.original.refundedAt),
       },
     }),
     [],
