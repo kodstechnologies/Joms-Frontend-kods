@@ -11,6 +11,14 @@ import { cn } from '@/shared/lib/cn'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 
+const SORTABLE_HEADERS = [
+  { id: 'admin', label: 'Admin' },
+  { id: 'role', label: 'Roles' },
+  { id: 'reason', label: 'Reason' },
+  { id: 'lockedSince', label: 'Locked Since' },
+  { id: 'duration', label: 'Duration' },
+] as const
+
 function AccountDetailsModal({
   open,
   account,
@@ -156,6 +164,12 @@ export function LockedAccountsPage() {
     )
   }
 
+  const ariaSortFor = (columnId: string) => {
+    const active = serverSort.sorting[0]
+    if (!active || active.id !== columnId) return 'none'
+    return active.desc ? 'descending' : 'ascending'
+  }
+
   const handleUnlock = useCallback(
     (id: string) => {
       unlockMutation.mutate(id, {
@@ -199,43 +213,17 @@ export function LockedAccountsPage() {
           <table className="locked-accounts-table">
             <thead>
               <tr>
-                <th
-                  onClick={() => handleColumnSort('admin')}
-                  className="cursor-pointer select-none"
-                >
-                  <div className="inline-flex items-center gap-1.5">
-                    Admin {renderSortIcon('admin')}
-                  </div>
-                </th>
-                <th onClick={() => handleColumnSort('role')} className="cursor-pointer select-none">
-                  <div className="inline-flex items-center gap-1.5">
-                    Roles {renderSortIcon('role')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleColumnSort('reason')}
-                  className="cursor-pointer select-none"
-                >
-                  <div className="inline-flex items-center gap-1.5">
-                    Reason {renderSortIcon('reason')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleColumnSort('lockedSince')}
-                  className="cursor-pointer select-none"
-                >
-                  <div className="inline-flex items-center gap-1.5">
-                    Locked Since {renderSortIcon('lockedSince')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleColumnSort('duration')}
-                  className="cursor-pointer select-none"
-                >
-                  <div className="inline-flex items-center gap-1.5">
-                    Duration {renderSortIcon('duration')}
-                  </div>
-                </th>
+                {SORTABLE_HEADERS.map(({ id, label }) => (
+                  <th key={id} aria-sort={ariaSortFor(id)}>
+                    <button
+                      type="button"
+                      onClick={() => handleColumnSort(id)}
+                      className="focus-visible:ring-brand-primary inline-flex cursor-pointer items-center gap-1.5 rounded select-none focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                      {label} {renderSortIcon(id)}
+                    </button>
+                  </th>
+                ))}
                 <th className="text-right">Actions</th>
               </tr>
             </thead>

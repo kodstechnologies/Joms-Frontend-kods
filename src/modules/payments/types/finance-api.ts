@@ -26,6 +26,15 @@ export type FinanceDashboardSummary = {
   totalPlatformRevenue: number
   collectionsThisMonth: number
   gmv?: number
+  charts?: FinanceDashboardCharts
+}
+
+export type FinanceDashboardCharts = {
+  dailyRevenue: Array<{ date: string; revenue: number }>
+  monthlyRevenue: Array<{ month: string; revenue: number }>
+  revenueByModule: Array<{ module: string; amount: number }>
+  escrowByModule: Array<{ module: string; amount: number }>
+  upcomingPayouts: Array<{ date: string; amount: number }>
 }
 
 export type FinancePayment = {

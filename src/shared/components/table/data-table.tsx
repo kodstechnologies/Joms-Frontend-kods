@@ -273,77 +273,69 @@ export function DataTable<TData>({
                 key={headerGroup.id}
                 className={cn(isCategoryTone ? 'text-muted' : 'text-brand-text')}
               >
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    scope="col"
-                    className={cn(
-                      'px-3 py-3 whitespace-nowrap',
-                      header.column.columnDef.meta?.headerClassName,
-                    )}
-                  >
-                    {header.isPlaceholder ? null : (
-                      <div
-                        className={cn(
-                          'inline-flex items-center gap-1.5',
-                          isHeaderSortable(header.column, manualSorting) &&
-                            showSortIcons &&
-                            'cursor-pointer select-none',
-                        )}
-                        onClick={
-                          isHeaderSortable(header.column, manualSorting) && showSortIcons
-                            ? () => {
-                                const column = header.column
-                                const columnId = column.id
-                                if (!columnId) return
+                {headerGroup.headers.map((header) => {
+                  const columnId = header.column.id
+                  const canSort = isHeaderSortable(header.column, manualSorting) && showSortIcons
+                  const sorted = canSort ? sorting.find((item) => item.id === columnId) : undefined
+                  const ariaSort = !canSort
+                    ? undefined
+                    : sorted
+                      ? sorted.desc
+                        ? 'descending'
+                        : 'ascending'
+                      : 'none'
+                  const headerContent = flexRender(
+                    header.column.columnDef.header,
+                    header.getContext(),
+                  )
 
-                                const current = sorting.find((item) => item.id === columnId)
-                                let next: SortingState
-                                if (!current) {
-                                  next = [{ id: columnId, desc: false }]
-                                } else if (!current.desc) {
-                                  next = [{ id: columnId, desc: true }]
-                                } else {
-                                  next = []
-                                }
-                                onSortingChange(next)
-                              }
-                            : undefined
-                        }
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {isHeaderSortable(header.column, manualSorting) &&
-                          showSortIcons &&
-                          (() => {
-                            const columnId = header.column.id
-                            const sorted = sorting.find((item) => item.id === columnId)
-                            if (sorted?.desc === false) {
-                              return (
-                                <ArrowUp
-                                  className="text-brand-primary size-[18px]"
-                                  aria-hidden="true"
-                                />
-                              )
-                            }
-                            if (sorted?.desc === true) {
-                              return (
-                                <ArrowDown
-                                  className="text-brand-primary size-[18px]"
-                                  aria-hidden="true"
-                                />
-                              )
-                            }
-                            return (
-                              <ArrowUpDown
-                                className="text-muted/50 size-[18px]"
-                                aria-hidden="true"
-                              />
-                            )
-                          })()}
-                      </div>
-                    )}
-                  </th>
-                ))}
+                  const toggleSort = () => {
+                    if (!columnId) return
+                    let next: SortingState
+                    if (!sorted) {
+                      next = [{ id: columnId, desc: false }]
+                    } else if (!sorted.desc) {
+                      next = [{ id: columnId, desc: true }]
+                    } else {
+                      next = []
+                    }
+                    onSortingChange(next)
+                  }
+
+                  const sortIcon =
+                    sorted?.desc === false ? (
+                      <ArrowUp className="text-brand-primary size-[18px]" aria-hidden="true" />
+                    ) : sorted?.desc === true ? (
+                      <ArrowDown className="text-brand-primary size-[18px]" aria-hidden="true" />
+                    ) : (
+                      <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
+                    )
+
+                  return (
+                    <th
+                      key={header.id}
+                      scope="col"
+                      aria-sort={ariaSort}
+                      className={cn(
+                        'px-3 py-3 whitespace-nowrap',
+                        header.column.columnDef.meta?.headerClassName,
+                      )}
+                    >
+                      {header.isPlaceholder ? null : canSort ? (
+                        <button
+                          type="button"
+                          onClick={toggleSort}
+                          className="focus-visible:ring-brand-primary inline-flex cursor-pointer items-center gap-1.5 rounded select-none focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          {headerContent}
+                          {sortIcon}
+                        </button>
+                      ) : (
+                        <div className="inline-flex items-center gap-1.5">{headerContent}</div>
+                      )}
+                    </th>
+                  )
+                })}
               </tr>
             ))}
           </thead>

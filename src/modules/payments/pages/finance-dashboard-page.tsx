@@ -20,14 +20,16 @@ import { useNavigate } from 'react-router-dom'
 import type { ComponentType, PropsWithChildren, ReactNode } from 'react'
 
 import {
-  escrowStatusBreakdown,
-  monthlyComparisonSeries,
-  revenueByCategorySeries,
-  revenueFeeTrendSeries,
-  weeklyPayoutSeries,
+  FINANCE_CATEGORY_COLORS,
+  FINANCE_MODULE_LABELS,
+  type EscrowStatusItem,
+  type MonthlyRevenuePoint,
   type RevenueCategoryPoint,
+  type RevenueTrendPoint,
   type TrendMetric,
+  type WeeklyPayoutPoint,
 } from '@/modules/payments/config/finance-dashboard.config'
+import type { FinanceDashboardCharts } from '@/modules/payments/types/finance-api'
 import {
   DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
   FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP,
@@ -38,7 +40,10 @@ import {
 } from '@/modules/payments/config/finance-dashboard-metrics.config'
 import { useFinanceDashboard } from '@/modules/payments/hooks/use-finance'
 import { formatInr } from '@/modules/payments/utils/finance-mappers'
-import { buildFinanceDashboardMetricCards } from '@/modules/payments/utils/finance-dashboard-metrics'
+import {
+  buildFinanceDashboardMetricCards,
+  NO_DATA_VALUE,
+} from '@/modules/payments/utils/finance-dashboard-metrics'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
@@ -49,8 +54,6 @@ import { StatCardSkeleton, ChartSkeleton } from '@/shared/components/ui/skeleton
 import { cn } from '@/shared/lib/cn'
 
 const BRAND_GREEN = 'var(--brand-green)'
-const BRAND_ORANGE = 'var(--brand-orange)'
-const BRAND_BLUE = 'var(--brand-blue)'
 const BRAND_MUTED = 'var(--brand-muted)'
 
 const tooltipStyle = {
@@ -101,6 +104,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 function TrendBadge({ change, changeNote }: Pick<TrendMetric, 'change' | 'changeNote'>) {
+  if (!change) return null
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
       <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
@@ -219,18 +223,11 @@ function RevenueFeeTooltip({
 }) {
   if (!active || !payload?.length) return null
 
-  const platformFee = payload.find((p) => p.dataKey === 'platformFee')?.value
   const revenue = payload.find((p) => p.dataKey === 'revenue')?.value
 
   return (
     <div style={tooltipStyle}>
       <p className="text-body-sm-semibold text-brand-text-dark mb-2">{label}</p>
-      <p className="text-body-sm" style={{ color: BRAND_BLUE }}>
-        Platform fee:{' '}
-        <span className="text-brand-text-dark font-semibold">
-          ₹{platformFee?.toLocaleString('en-IN')}
-        </span>
-      </p>
       <p className="text-body-sm" style={{ color: BRAND_GREEN }}>
         Revenue:{' '}
         <span className="text-brand-text-dark font-semibold">
@@ -252,23 +249,11 @@ function MonthlyComparisonTooltip({
 }) {
   if (!active || !payload?.length) return null
 
-  const mrr = payload.find((p) => p.name === 'MRR')?.value
-  const netProfit = payload.find((p) => p.name === 'Net Profit')?.value
   const totalRevenue = payload.find((p) => p.name === 'Total Revenue')?.value
 
   return (
     <div style={tooltipStyle}>
       <p className="text-body-sm-semibold text-brand-text-dark mb-2">{label}</p>
-      <p className="text-body-sm" style={{ color: BRAND_BLUE }}>
-        MRR:{' '}
-        <span className="text-brand-text-dark font-semibold">₹{mrr?.toLocaleString('en-IN')}</span>
-      </p>
-      <p className="text-body-sm" style={{ color: BRAND_ORANGE }}>
-        Net Profit:{' '}
-        <span className="text-brand-text-dark font-semibold">
-          ₹{netProfit?.toLocaleString('en-IN')}
-        </span>
-      </p>
       <p className="text-body-sm" style={{ color: BRAND_GREEN }}>
         Total Revenue:{' '}
         <span className="text-brand-text-dark font-semibold">
@@ -327,6 +312,72 @@ function CategoryLegend({ items }: { items: RevenueCategoryPoint[] }) {
   )
 }
 
+function ChartEmptyState({ height }: { height: string }) {
+  return (
+    <div
+      className="text-body-sm text-muted flex w-full items-center justify-center"
+      style={{ height }}
+    >
+      No data recorded for this period yet.
+    </div>
+  )
+}
+
+const moduleLabel = (module: string) => FINANCE_MODULE_LABELS[module] ?? module
+
+const shortDay = (isoDate: string) =>
+  new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  })
+
+type DashboardChartSeries = {
+  revenueTrend: RevenueTrendPoint[]
+  revenueByCategory: RevenueCategoryPoint[]
+  monthlyRevenue: MonthlyRevenuePoint[]
+  escrowBreakdown: EscrowStatusItem[]
+  weeklyPayouts: WeeklyPayoutPoint[]
+}
+
+function buildChartSeries(charts?: FinanceDashboardCharts): DashboardChartSeries {
+  const revenueTotal = (charts?.revenueByModule ?? []).reduce((sum, row) => sum + row.amount, 0)
+  return {
+    revenueTrend: (charts?.dailyRevenue ?? []).map((row) => ({
+      date: shortDay(row.date),
+      revenue: row.revenue,
+    })),
+    revenueByCategory: (charts?.revenueByModule ?? []).map((row, index) => ({
+      name: moduleLabel(row.module),
+      amount: row.amount,
+      percent: revenueTotal > 0 ? Math.round((row.amount / revenueTotal) * 100) : 0,
+      color: FINANCE_CATEGORY_COLORS[index % FINANCE_CATEGORY_COLORS.length],
+    })),
+    monthlyRevenue: (charts?.monthlyRevenue ?? []).map((row) => ({
+      month: new Date(`${row.month}-01T00:00:00Z`).toLocaleDateString('en-IN', {
+        month: 'short',
+        timeZone: 'UTC',
+      }),
+      totalRevenue: row.revenue,
+    })),
+    escrowBreakdown: (charts?.escrowByModule ?? []).map((row, index) => ({
+      label: moduleLabel(row.module),
+      value: row.amount,
+      color: FINANCE_CATEGORY_COLORS[index % FINANCE_CATEGORY_COLORS.length],
+    })),
+    weeklyPayouts: (charts?.upcomingPayouts ?? []).map((row) => ({
+      day: new Date(`${row.date}T00:00:00Z`).toLocaleDateString('en-IN', {
+        weekday: 'short',
+        timeZone: 'UTC',
+      }),
+      amount: row.amount,
+    })),
+  }
+}
+
+const hasValues = (rows: Array<Record<string, unknown>>, key: string) =>
+  rows.some((row) => Number(row[key]) > 0)
+
 function formatCurrency(value: number) {
   return `₹${value.toLocaleString('en-IN')}`
 }
@@ -357,39 +408,35 @@ export function FinanceDashboardPage() {
     [visibleMetricCards],
   )
 
-  const keyFinancialMetrics = useMemo(
+  const keyFinancialMetrics = useMemo<KeyMetric[]>(
     () => [
       {
         label: 'GMV',
-        value: summary?.gmv ? formatInr(summary.gmv) : '₹10,00,000',
-        change: '18.4%',
-        changeType: 'up' as const,
+        value: summary?.gmv != null ? formatInr(summary.gmv) : NO_DATA_VALUE,
         icon: RupeeGlyphIcon,
       },
       {
         label: 'Platform Revenue',
-        value: summary?.totalPlatformRevenue
-          ? formatInr(summary.totalPlatformRevenue)
-          : '₹1,16,986',
-        change: '22.3%',
-        changeType: 'up' as const,
+        value: summary ? formatInr(summary.totalPlatformRevenue) : NO_DATA_VALUE,
         icon: RevenueChartIcon,
       },
       {
         label: 'In Escrow',
-        value: summary?.totalInEscrow ? formatInr(summary.totalInEscrow) : '₹8,43,290',
-        subtext: `${summary?.activeEscrows ?? 12} Holds`,
+        value: summary ? formatInr(summary.totalInEscrow) : NO_DATA_VALUE,
+        subtext: summary ? `${summary.activeEscrows} Holds` : undefined,
         icon: EscrowLockIcon,
       },
       {
         label: 'Pending Payouts',
-        value: summary?.pendingPayouts ? formatInr(summary.pendingPayouts) : '₹2,14,500',
-        subtext: `${summary?.pendingPayoutCount ?? 5} Pending`,
+        value: summary ? formatInr(summary.pendingPayouts) : NO_DATA_VALUE,
+        subtext: summary ? `${summary.pendingPayoutCount} Pending` : undefined,
         icon: null,
       },
     ],
     [summary],
   )
+
+  const chartSeries = useMemo(() => buildChartSeries(summary?.charts), [summary])
 
   return (
     <div className="space-y-6">
@@ -475,60 +522,51 @@ export function FinanceDashboardPage() {
         <>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
             <ChartCard
-              title="Revenue & Fee Trends"
+              title="Revenue Trend (last 14 days)"
               className="h-[382px]"
               onRefresh={refetch}
               isRefreshing={isRefetching}
             >
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
-                    data={revenueFeeTrendSeries}
-                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="revenueAreaFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={BRAND_GREEN} stopOpacity={0.35} />
-                        <stop offset="100%" stopColor={BRAND_GREEN} stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="platformFeeAreaFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity={0.45} />
-                        <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                    />
-                    <YAxis
-                      domain={[0, 60000]}
-                      ticks={[0, 20000, 40000, 60000]}
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                      tickFormatter={(v) => v.toLocaleString('en-IN')}
-                    />
-                    <Tooltip content={<RevenueFeeTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke={BRAND_GREEN}
-                      strokeWidth={2}
-                      fill="url(#revenueAreaFill)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="platformFee"
-                      stroke={BRAND_BLUE}
-                      strokeWidth={2}
-                      fill="url(#platformFeeAreaFill)"
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
+              {hasValues(chartSeries.revenueTrend, 'revenue') ? (
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                      data={chartSeries.revenueTrend}
+                      margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="revenueAreaFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={BRAND_GREEN} stopOpacity={0.35} />
+                          <stop offset="100%" stopColor={BRAND_GREEN} stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                        tickFormatter={(v) => Number(v).toLocaleString('en-IN')}
+                      />
+                      <Tooltip content={<RevenueFeeTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke={BRAND_GREEN}
+                        strokeWidth={2}
+                        fill="url(#revenueAreaFill)"
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <ChartEmptyState height="300px" />
+              )}
             </ChartCard>
 
             <ChartCard
@@ -537,99 +575,97 @@ export function FinanceDashboardPage() {
               onRefresh={refetch}
               isRefreshing={isRefetching}
             >
-              <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-6 xl:flex-row">
-                <div className="h-[220px] w-[220px] shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={revenueByCategorySeries}
-                        dataKey="amount"
-                        nameKey="name"
-                        innerRadius={60}
-                        outerRadius={95}
-                        stroke="rgba(255,255,255,0.06)"
-                        strokeWidth={2}
-                      >
-                        {revenueByCategorySeries.map((item) => (
-                          <Cell key={item.name} fill={item.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
+              {chartSeries.revenueByCategory.length ? (
+                <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-6 xl:flex-row">
+                  <div className="h-[220px] w-[220px] shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartSeries.revenueByCategory}
+                          dataKey="amount"
+                          nameKey="name"
+                          innerRadius={60}
+                          outerRadius={95}
+                          stroke="rgba(255,255,255,0.06)"
+                          strokeWidth={2}
+                        >
+                          {chartSeries.revenueByCategory.map((item) => (
+                            <Cell key={item.name} fill={item.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="w-full flex-1">
+                    <CategoryLegend items={chartSeries.revenueByCategory} />
+                  </div>
                 </div>
-                <div className="w-full flex-1">
-                  <CategoryLegend items={revenueByCategorySeries} />
-                </div>
-              </div>
+              ) : (
+                <ChartEmptyState height="300px" />
+              )}
             </ChartCard>
           </div>
 
-          <ChartCard title="Monthly Comparison" onRefresh={refetch} isRefreshing={isRefetching}>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={monthlyComparisonSeries}
-                  margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                  barGap={6}
-                >
-                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                  />
-                  <YAxis
-                    domain={[0, 100000]}
-                    ticks={[0, 20000, 40000, 60000, 80000, 100000]}
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                    tickFormatter={(v) => v.toLocaleString('en-IN')}
-                  />
-                  <Tooltip
-                    content={<MonthlyComparisonTooltip />}
-                    cursor={{ fill: 'transparent' }}
-                  />
-                  <Legend
-                    wrapperStyle={{ color: BRAND_MUTED, fontSize: 12, paddingTop: 12 }}
-                    formatter={(value) => <span className="text-body-sm text-muted">{value}</span>}
-                  />
-                  <Bar
-                    dataKey="totalRevenue"
-                    name="Total Revenue"
-                    fill={BRAND_GREEN}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={32}
-                  />
-                  <Bar
-                    dataKey="mrr"
-                    name="MRR"
-                    fill={BRAND_BLUE}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={32}
-                  />
-                  <Bar
-                    dataKey="netProfit"
-                    name="Net Profit"
-                    fill={BRAND_ORANGE}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={32}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <ChartCard title="Monthly Revenue" onRefresh={refetch} isRefreshing={isRefetching}>
+            {hasValues(chartSeries.monthlyRevenue, 'totalRevenue') ? (
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartSeries.monthlyRevenue}
+                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                    barGap={6}
+                  >
+                    <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                      tickFormatter={(v) => Number(v).toLocaleString('en-IN')}
+                    />
+                    <Tooltip
+                      content={<MonthlyComparisonTooltip />}
+                      cursor={{ fill: 'transparent' }}
+                    />
+                    <Legend
+                      wrapperStyle={{ color: BRAND_MUTED, fontSize: 12, paddingTop: 12 }}
+                      formatter={(value) => (
+                        <span className="text-body-sm text-muted">{value}</span>
+                      )}
+                    />
+                    <Bar
+                      dataKey="totalRevenue"
+                      name="Total Revenue"
+                      fill={BRAND_GREEN}
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={32}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <ChartEmptyState height="300px" />
+            )}
           </ChartCard>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <ChartCard
-              title="Escrow Status Breakdown"
+              title="Escrow Breakdown by Module"
               onRefresh={refetch}
               isRefreshing={isRefetching}
             >
               <div className="space-y-5">
-                {escrowStatusBreakdown.map((item) => {
-                  const widthPercent = Math.round((item.value / totalEscrowAmount) * 100)
+                {chartSeries.escrowBreakdown.length ? null : (
+                  <p className="text-body-sm text-muted">No funds are currently held in escrow.</p>
+                )}
+                {chartSeries.escrowBreakdown.map((item) => {
+                  const widthPercent =
+                    totalEscrowAmount > 0 ? Math.round((item.value / totalEscrowAmount) * 100) : 0
 
                   return (
                     <div key={item.label} className="space-y-2">
@@ -658,42 +694,44 @@ export function FinanceDashboardPage() {
             </ChartCard>
 
             <ChartCard
-              title="Weekly Payout Schedule"
+              title="Payouts Due (next 7 days)"
               onRefresh={refetch}
               isRefreshing={isRefetching}
             >
-              <div className="h-[280px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={weeklyPayoutSeries}
-                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                  >
-                    <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis
-                      dataKey="day"
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                    />
-                    <YAxis
-                      domain={[0, 100000]}
-                      ticks={[0, 20000, 40000, 60000, 80000, 100000]}
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                      tickFormatter={(v) => v.toLocaleString('en-IN')}
-                    />
-                    <Tooltip content={<WeeklyPayoutTooltip />} cursor={{ fill: 'transparent' }} />
-                    <Bar
-                      dataKey="amount"
-                      name="Amount"
-                      fill="var(--brand-accent)"
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={48}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {hasValues(chartSeries.weeklyPayouts, 'amount') ? (
+                <div className="h-[280px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartSeries.weeklyPayouts}
+                      margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                    >
+                      <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                      <XAxis
+                        dataKey="day"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                        tickFormatter={(v) => Number(v).toLocaleString('en-IN')}
+                      />
+                      <Tooltip content={<WeeklyPayoutTooltip />} cursor={{ fill: 'transparent' }} />
+                      <Bar
+                        dataKey="amount"
+                        name="Amount"
+                        fill="var(--brand-accent)"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={48}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <ChartEmptyState height="280px" />
+              )}
             </ChartCard>
           </div>
         </>

@@ -1146,18 +1146,33 @@ export const LeaderboardPage = () => {
                 </th>
                 {visibleColumns.map((column) => {
                   const isSortable = SORTABLE_LEADERBOARD_COLUMN_IDS.has(column.id)
+                  const active = serverSort.sorting[0]
+                  const ariaSort = !isSortable
+                    ? undefined
+                    : active?.id === column.id
+                      ? active.desc
+                        ? 'descending'
+                        : 'ascending'
+                      : 'none'
                   return (
-                    <th key={column.id} scope="col" className="px-3 py-3 whitespace-nowrap">
-                      <div
-                        className={cn(
-                          'inline-flex items-center gap-1.5',
-                          isSortable && 'cursor-pointer select-none',
-                        )}
-                        onClick={isSortable ? () => handleColumnSort(column.id) : undefined}
-                      >
-                        {column.label}
-                        {isSortable ? renderSortIcon(column.id) : null}
-                      </div>
+                    <th
+                      key={column.id}
+                      scope="col"
+                      aria-sort={ariaSort}
+                      className="px-3 py-3 whitespace-nowrap"
+                    >
+                      {isSortable ? (
+                        <button
+                          type="button"
+                          onClick={() => handleColumnSort(column.id)}
+                          className="focus-visible:ring-brand-primary inline-flex cursor-pointer items-center gap-1.5 rounded select-none focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          {column.label}
+                          {renderSortIcon(column.id)}
+                        </button>
+                      ) : (
+                        <div className="inline-flex items-center gap-1.5">{column.label}</div>
+                      )}
                     </th>
                   )
                 })}
