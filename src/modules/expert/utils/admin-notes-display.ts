@@ -5,7 +5,6 @@ export type AdminNoteLogEntry = {
   createdBy?: string | null
 }
 
-/** Admin notes for profile sidebar — newest entry first. */
 export function adminNoteTextsNewestFirst(
   log?: AdminNoteLogEntry[] | null,
   legacyInternalNotes?: string | null,

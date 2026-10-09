@@ -18,7 +18,6 @@ export function AuthenticatorSetupGate() {
   const { mfa, isLoading: isPolicyLoading } = useSecurityPolicy()
   const isSubAdmin = Boolean(user && !user.isSuperAdmin)
 
-  // Fast polling (5s) for subadmins to detect super-admin role/MFA changes in real time
   const meQuery = useRbacMe(isSubAdmin ? { refetchInterval: 5_000 } : undefined)
   const contactQuery = useContactSetupProfile(
     isSubAdmin,
@@ -29,7 +28,6 @@ export function AuthenticatorSetupGate() {
     ? contactQuery.data?.data.profile?.mfaEnabled
     : (meQuery.data?.data.mfaEnabled ?? meQuery.data?.data.profile?.mfaEnabled)
 
-  // Prefer live server state over local storage state
   const enrolled = typeof liveEnrolled === 'boolean' ? liveEnrolled : Boolean(user?.mfaEnabled)
   const enrollmentResolved =
     typeof liveEnrolled === 'boolean' ||
@@ -42,7 +40,6 @@ export function AuthenticatorSetupGate() {
   const roleRequiresMfa = Boolean(meQuery.data?.data?.mfaRequired)
   const requiresMfaSetup = Boolean(meQuery.data?.data?.requiresMfaSetup)
 
-  // If policy, role, or reset requires MFA, or if sub-admin is not enrolled
   const requiresAuthenticator =
     policyRequiresMfa || roleRequiresMfa || requiresMfaSetup || (isSubAdmin && !enrolled)
   const inSetupFlow = isAuthenticatorSetupRoute(location.pathname, location.search)

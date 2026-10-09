@@ -312,7 +312,6 @@ export const ServiceManagementPage = () => {
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
-  // Seed category filters when deep-linked from Category Management (View Services).
   useEffect(() => {
     if (!categoryIdFromUrl && !categoryFromUrl && !subCategoryFromUrl) return
 

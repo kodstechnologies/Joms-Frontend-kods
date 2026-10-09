@@ -6,13 +6,10 @@ export type TrendBadgeTone = 'positive' | 'danger'
 
 type TrendBadgeProps = {
   tone?: TrendBadgeTone
-  /** When set, drives the icon and defaults tone if not provided. */
   direction?: 'up' | 'down'
   children: ReactNode
   className?: string
-  /** Hide the default trending icon. */
   hideIcon?: boolean
-  /** Replace the default trending icon (e.g. Clock3). */
   icon?: ReactNode
 }
 
@@ -21,11 +18,6 @@ const TONE_CLASS: Record<TrendBadgeTone, string> = {
   danger: 'ui-trend-badge-danger',
 }
 
-/**
- * Formats a trend % for the badge.
- * Backend may send a signed `changePercent` (e.g. -5.2) and/or `direction`.
- * Always shows `+` / `-` with the absolute value (except exact 0 → `0%`).
- */
 export function formatTrendPercent(percentage: number, direction?: 'up' | 'down'): string {
   const abs = Math.abs(percentage)
   if (abs === 0) return '0%'
@@ -33,10 +25,6 @@ export function formatTrendPercent(percentage: number, direction?: 'up' | 'down'
   return `${isDown ? '-' : '+'}${abs}%`
 }
 
-/**
- * Ensures a backend change string (e.g. "5.2%" or "-5.2%") shows the correct sign
- * for the badge direction. Avoids double signs.
- */
 export function ensureTrendChangeSign(change: string, direction?: 'up' | 'down'): string {
   const trimmed = change.trim()
   if (!trimmed) return trimmed
@@ -58,10 +46,6 @@ export function ensureTrendChangeSign(change: string, direction?: 'up' | 'down')
   return `${isDown ? '-' : '+'}${absBody}`
 }
 
-/**
- * Unicons `uil:arrow-growth`
- * Figma: 16×16 icon frame. Path fills #00A63E; vector bounds ≈ 13.34×8 at (1.33, 4).
- */
 function ArrowGrowthIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -78,7 +62,6 @@ function ArrowGrowthIcon({ className }: { className?: string }) {
   )
 }
 
-/** Unicons `uil:chart-down` — same 16×16 frame as arrow-growth */
 function ChartDownIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -95,11 +78,6 @@ function ChartDownIcon({ className }: { className?: string }) {
   )
 }
 
-/**
- * Figma `ui-trend-badge ui-trend-badge-positive`
- * — min 69×33 · radius 10 · pad 8×6 · gap 5 · bg #00A63E33 (grows with value)
- * — icon 16×16 (uil:arrow-growth) · value min 36×17 Figtree Medium 14/17 · #00A63E
- */
 export function TrendBadge({
   tone,
   direction,

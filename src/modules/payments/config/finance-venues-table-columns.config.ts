@@ -9,7 +9,6 @@ export type FinanceVenuesTableColumnCatalogItem = {
 }
 
 export const FINANCE_VENUES_TABLE_COLUMNS_CATALOG: FinanceVenuesTableColumnCatalogItem[] = [
-  // Existing venue-specific columns (keep visible)
   {
     id: 'venue-id',
     label: 'Venue ID',
@@ -59,7 +58,6 @@ export const FINANCE_VENUES_TABLE_COLUMNS_CATALOG: FinanceVenuesTableColumnCatal
     description: 'Revenue amount',
     defaultVisible: true,
   },
-  // Financial Transactions (Excel) — hidden until data exists
   {
     id: 'transaction-id',
     label: 'Transaction ID',

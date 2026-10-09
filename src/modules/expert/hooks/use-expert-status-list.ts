@@ -25,9 +25,7 @@ type UseExpertStatusListArgs = {
   catalogColumnIds: string[]
   exportFileName: string
   exportColumnMap?: ExportColumnMap
-  /** Extra client filter after fetch (e.g. suspended list). */
   filterExperts?: (experts: Expert[]) => Expert[]
-  /** When false, export every mapped column. Default true. */
   restrictExportToVisibleColumns?: boolean
 }
 

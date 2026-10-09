@@ -87,12 +87,10 @@ function EditCategoryGroupModalDialog({
   const [selectedSubIds, setSelectedSubIds] = useState<Set<string>>(new Set())
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Service mutations
   const updateServiceSubMutation = useUpdateServiceSubCategory()
   const pauseServiceSubMutation = usePauseServiceSubCategory()
   const resumeServiceSubMutation = useResumeServiceSubCategory()
 
-  // Venue mutations
   const updateVenueSubMutation = useUpdateVenueSubCategory()
   const pauseVenueSubMutation = usePauseVenueSubCategory()
   const resumeVenueSubMutation = useResumeVenueSubCategory()
@@ -155,7 +153,6 @@ function EditCategoryGroupModalDialog({
           }
         }),
       )
-      // Auto-select this item for editing if not already selected
       setSelectedSubIds((prev) => {
         if (!prev.has(id)) {
           const next = new Set(prev)
@@ -254,7 +251,6 @@ function EditCategoryGroupModalDialog({
         className="ui-modal-shell flex max-h-[90vh] w-full max-w-[680px] flex-col text-left"
         onClick={(event) => event.stopPropagation()}
       >
-        {/* Header */}
         <div className="ui-modal-header flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
@@ -280,7 +276,6 @@ function EditCategoryGroupModalDialog({
           </button>
         </div>
 
-        {/* Instructions & Controls */}
         <div className="space-y-3 px-6 pt-4 pb-2">
           <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-300/90">
             Select particular sub-categories in this group to edit. Only selected sub-categories
@@ -318,7 +313,6 @@ function EditCategoryGroupModalDialog({
           </div>
         </div>
 
-        {/* Sub-categories List */}
         <div className="flex-1 space-y-3 overflow-y-auto px-6 py-3 [scrollbar-width:thin]">
           {filteredItems.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-500">
@@ -428,7 +422,6 @@ function EditCategoryGroupModalDialog({
           )}
         </div>
 
-        {/* Footer */}
         <div className="ui-modal-footer flex items-center justify-between border-t border-white/10 px-6 py-4">
           <span className="text-xs text-slate-400">
             {selectedSubIds.size} of {items.length} sub-categories selected

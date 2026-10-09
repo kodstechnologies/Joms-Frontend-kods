@@ -10,10 +10,6 @@ const SYNC_INTERVAL_MS = 5_000
 const permissionFingerprint = (permissions: string[] = []) =>
   [...permissions].map(String).sort().join('|')
 
-/**
- * Keep sub-admin sidebar/permissions in sync with live role assignments.
- * Role updates by a super-admin must appear without requiring a full re-login.
- */
 export function useSyncSubAdminPermissions() {
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)

@@ -5,7 +5,6 @@ type VenueManagementCategoryLinkOptions = {
   view?: 'spaces' | null
 }
 
-/** Deep-link into Venue Management main table with category (and optional spaces) filters. */
 export function buildVenueManagementCategoryUrl({
   categoryId,
   categoryName,

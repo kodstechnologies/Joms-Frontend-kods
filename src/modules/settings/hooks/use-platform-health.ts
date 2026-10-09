@@ -101,7 +101,6 @@ export const usePlatformHealthOperations = (filters: PlatformHealthFilters = {})
   })
 }
 
-/** Progressive section queries for the Platform Health page. */
 export const usePlatformHealthSections = (
   filters: PlatformHealthFilters = {},
   infrastructureFilters: PlatformHealthFilters = filters,

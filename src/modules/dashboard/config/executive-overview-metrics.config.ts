@@ -15,7 +15,6 @@ export type ExecutiveOverviewMetricCatalogItem = {
 }
 
 const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
-  // —— Core (defaults) ——
   [
     'total-platform-revenue',
     'Total Platform Revenue',
@@ -85,7 +84,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'All-time GMV divided by unique paying users',
   ],
 
-  // —— Finance Operations ——
   ['pending-payouts', 'Pending Payouts', 'Currency', 'Payout amount awaiting release to partners'],
   [
     'avg-payout-cycle-time',
@@ -96,7 +94,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
   ['refund-rate', 'Refund Rate (%)', 'Percentage', 'Refunded amount ÷ paid GMV'],
   ['chargeback-rate', 'Chargeback Rate (%)', 'Percentage', 'Chargeback amount ÷ paid GMV'],
 
-  // —— Services ——
   [
     'total-listed-services',
     'Total Listed Services',
@@ -136,7 +133,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'Clients with more than one service order ÷ unique service clients',
   ],
 
-  // —— Consultations ——
   [
     'total-listed-consultations',
     'Total Listed Consultations',
@@ -181,7 +177,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'Clients with more than one consultation ÷ unique consultation clients',
   ],
 
-  // —— Venues ——
   ['total-venues', 'Total Venues', 'Count', 'Total venue listings including inactive'],
   ['active-venues', 'Active Venues', 'Count', 'Venues currently available'],
   [
@@ -205,7 +200,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
   ],
   ['avg-venue-rating', 'Avg. Venue Rating', 'Rating', 'Average approved venue/event rating (0–5)'],
 
-  // —— Platform & operations ——
   ['admin-actions-mtd', 'Admin Actions (MTD)', 'Count', 'Admin audit log entries this month'],
   [
     'critical-actions-logged',
@@ -226,7 +220,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'Impersonation sessions logged this month',
   ],
 
-  // —— Platform health ——
   [
     'system-uptime',
     'System Uptime (%)',

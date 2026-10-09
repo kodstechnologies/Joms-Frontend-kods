@@ -119,7 +119,6 @@ export const useInfiniteMyNotifications = (
   }
 }
 
-/** Sentinel at list bottom — loads the next page when it enters the scroll viewport. */
 export const useInboxInfiniteScroll = ({
   enabled,
   hasNextPage,

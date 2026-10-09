@@ -436,14 +436,10 @@ export function ExpertClientelePage() {
         return consultationBookingPath(expertId, listingId, orderId)
       }
 
-      // Custom quotations / milestone proposals use the proposal order detail route.
       if (listingType.includes('custom') || item.bookingSource === 'Custom Order') {
-        // For custom rows, listingId is the proposal id; service performance expects a service id.
-        // Prefer proposal detail under the same service drilldown when possible.
         return serviceOrderDetailPath(expertId, listingId, orderId, 'proposal')
       }
 
-      // Exact service order detail path (not bare expert profile).
       return serviceOrderDetailPath(expertId, listingId, orderId, 'order')
     },
     [expertId],
@@ -484,7 +480,6 @@ export function ExpertClientelePage() {
 
     setIsEscalating(true)
     try {
-      // Escalate the listing entity so My Tasks opens order details (not partner profile/application).
       if (isConsultation) {
         await escalateConsultationApplication(listingId, {
           assigneeSubAdminId: selectedEscalationOption,

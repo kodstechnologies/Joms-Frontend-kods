@@ -446,7 +446,6 @@ export function ModuleMetricsPage({
     saveMetricsMutation.isPending ||
     resetMetricsMutation.isPending
 
-  // Only render sections that were requested AND have catalog data
   const showDashboard = includeDashboard && resolvedMetricCatalog.length > 0
   const showTableColumns = includeTableColumns && resolvedColumnCatalog.length > 0
 

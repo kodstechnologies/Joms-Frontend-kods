@@ -192,7 +192,6 @@ export const navigationConfig: NavItem[] = [
         label: 'Financial Reconciliation',
         to: '/finance/reconciliation',
       },
-      // Category Management muted — mock-only, no finance category API (route kept, hidden from nav)
     ],
   },
   {

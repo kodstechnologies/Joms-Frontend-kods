@@ -116,7 +116,6 @@ export function VenuePaymentDetailViewPage() {
   const ownerId = str(payment.partnerId, snapshot.partnerId) || '—'
   const clientId = str(payment.userId, snapshot.userId) || '—'
   const clientName = str(snapshot.userName, moduleData.userName, moduleData.clientName) || clientId
-  // Older rows wrongly stored payer name as partnerName — never show client as owner.
   const rawOwnerName = str(snapshot.partnerName)
   const lookedUpOwner = ownerId !== '—' ? partnerNameMap?.[ownerId] : null
   const ownerName =
@@ -189,9 +188,7 @@ export function VenuePaymentDetailViewPage() {
       paymentCompletedOn:
         status === 'Paid' ? formatDate(payment.updatedAt || payment.createdAt) : '—',
       eventCompletedOn: endAt ? formatDate(endAt) : '—',
-      // Not modeled on Payment / venue booking today — only escrow holds have expectedReleaseAt.
       depositReleaseDate: str(snapshot.depositReleaseDate) || 'Not applicable',
-      // Payment has settlementStatus only (pending|settled), no calendar settlement date field.
       finalSettlementDate:
         str(snapshot.finalSettlementDate) ||
         (payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Not set'),
@@ -213,7 +210,9 @@ export function VenuePaymentDetailViewPage() {
         (snapshot.spaceId || moduleData.spaceId ? '—' : 'No space on booking'),
       location,
       approvedStatus: (status === 'Paid' ? 'Approved' : 'Pending') as
-        'Approved' | 'Pending' | 'Rejected',
+        | 'Approved'
+        | 'Pending'
+        | 'Rejected',
     },
     parties: {
       clientId,

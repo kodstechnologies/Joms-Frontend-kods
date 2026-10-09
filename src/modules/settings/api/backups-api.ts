@@ -29,8 +29,6 @@ export const runBackup = async (payload?: {
   scope?: string
   createdBy?: string
 }) => {
-  // Local/hybrid full dumps every module DB synchronously and often exceeds the
-  // shared 30s axios timeout — surface that as a failure even when the job finishes.
   const response = await settingsApiClient.post<ApiEnvelope<BackupHistoryRow>>(
     '/settings/backups/run',
     payload,

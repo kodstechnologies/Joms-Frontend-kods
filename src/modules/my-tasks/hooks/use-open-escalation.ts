@@ -19,7 +19,6 @@ const readKycId = (payload: unknown): string => {
 
 const needsVenueKycLookup = (target: EscalationNavigationTarget) => {
   if (target.entityType !== 'partner' || !target.entityId) return false
-  // Suspended/deleted/reported venue escalate deep-links to venue profile — skip KYC redirect.
   if (target.applicationUrl?.includes('/venues/management/profile/')) return false
   if (target.serviceType === 'venue') return true
   return Boolean(target.applicationUrl?.includes('source=venue_kyc'))

@@ -24,7 +24,6 @@ const defaultById: Record<string, { value: string; changePercent: number }> = {
   'average-first-response-time': { value: '00:00:00', changePercent: 0 },
   'average-resolution-time': { value: '00:00:00', changePercent: 0 },
   'tickets-resolved-today': { value: '0', changePercent: 0 },
-  // legacy keys fallback
   'my-open-tickets': { value: '0', changePercent: 0 },
   'avg-response-time': { value: '00:00:00', changePercent: 0 },
   'avg-resolution-time': { value: '00:00:00', changePercent: 0 },

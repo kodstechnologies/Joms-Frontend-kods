@@ -102,7 +102,6 @@ export function StatusPill({ status, label }: { status?: string | null; label?: 
   )
 }
 
-/** Status chip sized like the shared management tables (ui-data-table cells). */
 export function TableStatusPill({ status, label }: { status?: string | null; label?: string }) {
   const normalized = String(status || '').toLowerCase()
   if (!normalized && !label) return <>{DASH}</>

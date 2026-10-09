@@ -19,7 +19,6 @@ type TableActionsDropdownProps = {
   menuClassName?: string
   buttonClassName?: string
   menuWidth?: number
-  /** When set, menu scrolls after this many visible items (~40px each). */
   maxVisibleItems?: number
   tone?: 'dark' | 'light'
 }

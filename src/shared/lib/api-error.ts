@@ -11,10 +11,6 @@ const readMessage = (value: unknown): string | null => {
   return trimmed ? trimmed : null
 }
 
-/**
- * Prefer backend `message` when present; otherwise use `fallback`.
- * Use for all API failure toasts: `toast.error(getApiErrorMessage(error, 'Failed to ...'))`
- */
 export function getApiErrorMessage(
   error: unknown,
   fallback = 'Something went wrong. Please try again.',
@@ -61,7 +57,6 @@ export function getApiErrorMessage(
       }
     }
 
-    // Avoid Axios' generic "Request failed with status code N" when the API sent no message.
     return fallback
   }
 
@@ -73,7 +68,6 @@ export function getApiErrorMessage(
     if (/status code 413/i.test(error.message)) {
       return FILE_TOO_LARGE_MESSAGE
     }
-    // Skip Axios-style generic messages if somehow not detected as AxiosError.
     if (/^request failed with status code \d+$/i.test(error.message.trim())) {
       return fallback
     }
@@ -83,7 +77,6 @@ export function getApiErrorMessage(
   return fallback
 }
 
-/** Alias — same behavior as getApiErrorMessage. */
 export function apiErrorMessage(
   error: unknown,
   fallback = 'Something went wrong. Please try again.',

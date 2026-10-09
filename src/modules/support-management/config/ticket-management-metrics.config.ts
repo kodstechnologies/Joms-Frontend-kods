@@ -14,7 +14,6 @@ export type TicketManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Catalog aligned to JOMS Support Management sheet dashboard metrics. */
 const TICKET_MANAGEMENT_METRIC_DEFS: MetricRowTuple[] = [
   ['total-tickets', 'Total Tickets', 'Count', 'Total tickets in the system', true],
   [

@@ -18,8 +18,6 @@ const PROD_SERVICE_URLS = {
 
 const localApiBaseUrl = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || LOCAL_API_BASE_URL)
 
-// Production uses per-service subdomains.
-// Local dev uses direct service ports unless an override is set.
 const resolveApiUrl = (override: string | undefined, port: number, prodDefault: string) => {
   if (override) return trimTrailingSlash(override)
   if (import.meta.env.PROD) return prodDefault

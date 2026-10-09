@@ -27,7 +27,6 @@ type InPageMediaViewerProps = {
   onIndexChange?: (index: number) => void
 }
 
-/** Fullscreen in-page image/PDF viewer — does not open a new browser tab. */
 export function InPageMediaViewer({
   open,
   items,

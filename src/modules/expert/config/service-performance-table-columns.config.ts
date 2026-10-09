@@ -183,7 +183,6 @@ export const SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG: ServicePerformanceTableC
       description: 'Refund completion timestamp',
       defaultVisible: false,
     },
-    // Product extras (not in Excel Orders Table)
     {
       id: 'listing-type',
       label: 'Listing Type',

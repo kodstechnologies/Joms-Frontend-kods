@@ -162,7 +162,6 @@ export const getStatusClassName = (status: MembershipPlan['status']) => {
   }
 }
 
-/** Figma deleted badge date: DD-MM-YYYY */
 export const formatMembershipDateSlash = (value?: string | null) => {
   if (!value) return '—'
   const date = new Date(value)

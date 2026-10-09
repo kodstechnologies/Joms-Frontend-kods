@@ -89,7 +89,6 @@ export function formatReferralMetricValue(
   value: number | string | undefined | null,
   options?: { appendDays?: boolean },
 ): string {
-  // null / undefined / empty → em dash (cannot compute or not tracked)
   if (value === undefined || value === null || value === '') {
     return '—'
   }
@@ -98,7 +97,6 @@ export function formatReferralMetricValue(
     return text || '—'
   }
   if (typeof value !== 'number' || Number.isNaN(value)) return '—'
-  // Real zeros render as 0 / 0%
   if (format === 'integer') return value.toLocaleString('en-US')
   if (format === 'percentage') return `${value}%`
   const decimal = value.toLocaleString('en-US', {
@@ -114,7 +112,6 @@ export function mergeReferralMetrics(partial?: Partial<ReferralMetrics> | null):
     ...REFERRAL_METRICS_SEED,
     ...(partial ?? {}),
   } as ReferralMetrics
-  // Coerce any lingering nulls from older API payloads to seed defaults (0 / "—")
   for (const key of Object.keys(REFERRAL_METRICS_SEED) as Array<keyof ReferralMetricsValues>) {
     if (merged[key] === null || merged[key] === undefined) {
       ;(merged as ReferralMetricsValues)[key] = REFERRAL_METRICS_SEED[key] as never

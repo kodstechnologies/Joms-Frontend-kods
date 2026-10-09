@@ -79,7 +79,6 @@ function splitTimestamp(value: string) {
   const trimmed = String(value || '').trim()
   if (!trimmed) return { date: '—', time: '' }
 
-  // "26/02/2026 02:30 PM" or "26th Feb 02:30 PM"
   const parts = trimmed.split(/\s+/)
   if (parts.length >= 3 && /(AM|PM)/i.test(parts[parts.length - 1])) {
     return {

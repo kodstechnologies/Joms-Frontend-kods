@@ -34,7 +34,6 @@ export function MaintenanceProvider({ children }: PropsWithChildren) {
   })
 
   const status = query.data || DEFAULT_MAINTENANCE_STATUS
-  // Super admins who are already logged in can keep access to turn maintenance off.
   const isBlocked = Boolean(status.active) && !user?.isSuperAdmin
   const isLoading = query.isLoading
   const refetch = query.refetch

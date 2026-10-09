@@ -28,7 +28,7 @@ interface GoogleMapPickerProps {
   className?: string
 }
 
-const DEFAULT_CENTER = { lat: 12.9716, lng: 77.5946 } // Bengaluru default
+const DEFAULT_CENTER = { lat: 12.9716, lng: 77.5946 }
 
 const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1a1d24' }] },

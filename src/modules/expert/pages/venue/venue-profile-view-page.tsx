@@ -134,11 +134,9 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'health', label: 'Profile Health' },
 ]
 
-/** Figma Profile & Account — View (48×25 · radius 8 · solid #F6CB86) */
 const PROFILE_VIEW_BTN =
   'inline-flex h-[25px] min-w-[48px] items-center justify-center rounded-[8px] bg-[#F6CB86] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-black transition-[filter] hover:brightness-95'
 
-/** Figma Profile & Account — Check Timelines (110×30 · radius 10 · gold gradient) */
 const PROFILE_CHECK_TIMELINES_BTN =
   'inline-flex h-[30px] min-w-[110px] items-center justify-center gap-2.5 rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-[#050505] transition-[filter] hover:brightness-95'
 
@@ -312,7 +310,6 @@ const formatVenueKycStatusLabel = (status?: string | null) => {
     return 'Verified'
   }
   if (normalized === 'REJECTED') return 'Rejected'
-  // DRAFT / PREVIEW / empty: Admin never shows "Draft". After Partner submit this is Review Pending.
   return 'Review Pending'
 }
 
@@ -332,7 +329,6 @@ const getVenueKycStatusTone = (status?: string | null) => {
   return 'inline-flex h-[25px] items-center justify-center rounded-[10px] border border-amber-500/30 bg-amber-500/15 px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-amber-300'
 }
 
-/** Fits ~3 stacked cards; scroll when more than 3 items. */
 const SIDEBAR_CARDS_SCROLL =
   'max-h-[11.5rem] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]'
 

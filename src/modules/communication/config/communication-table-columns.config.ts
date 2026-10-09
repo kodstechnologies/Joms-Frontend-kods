@@ -1,5 +1,3 @@
-/** Table-column catalog for Communication management metrics page. */
-
 export const COMMUNICATION_TABLE_COLUMNS_CATALOG = [
   {
     id: 'message-id',

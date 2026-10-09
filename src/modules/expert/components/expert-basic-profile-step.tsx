@@ -59,7 +59,6 @@ export const ExpertBasicProfileStep = ({
     targetValue: '',
   })
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (
@@ -312,7 +311,6 @@ export const ExpertBasicProfileStep = ({
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Left Column: Media & Identity Details */}
           <div className="space-y-6">
             <div className="relative">
               <button
@@ -478,11 +476,9 @@ export const ExpertBasicProfileStep = ({
             </div>
           </div>
 
-          {/* Right Column: Professional Information & Services */}
           <div className="space-y-6">
             <h3 className="text-sm font-bold text-white">Professional Information</h3>
 
-            {/* Industry Dropdown */}
             <div ref={industryContainerRef} className="relative">
               <label className="mb-2 block text-xs font-medium text-white">Industry</label>
               <div className="relative">
@@ -685,7 +681,6 @@ export const ExpertBasicProfileStep = ({
               )}
             </div>
 
-            {/* Offerings Dropdown & Multi-Select */}
             <div ref={offeringContainerRef} className="relative">
               <div className="mb-2 flex items-center justify-between">
                 <label className="block text-xs font-medium text-white">Offerings</label>
@@ -732,7 +727,6 @@ export const ExpertBasicProfileStep = ({
                 </button>
               </div>
 
-              {/* Offerings Suggestions Dropdown */}
               {offeringDropdownOpen && (
                 <div className="absolute z-50 mb-2 max-h-56 w-full overflow-y-auto rounded-lg border border-white/10 bg-[#161616] p-2 shadow-2xl backdrop-blur-md">
                   {filteredOfferings.length === 0 ? (
@@ -765,7 +759,6 @@ export const ExpertBasicProfileStep = ({
                 </div>
               )}
 
-              {/* Selected Offerings Chips */}
               {formData.offerings.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">

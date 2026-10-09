@@ -14,7 +14,6 @@ export type RbacHubMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Spec: JOMS_KODS_Web_Admin_Panel_full_data.json → RBAC Management → Dashboard Metrics */
 const RBAC_HUB_METRIC_DEFS: MetricRowTuple[] = [
   ['total-user', 'Total Admin Users', 'Count', 'Total admin users registered', true],
   ['total-active-users', 'Active Admin Users', 'Count', 'Admin users with active accounts', true],

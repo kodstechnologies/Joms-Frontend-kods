@@ -23,7 +23,6 @@ type VerificationOtpModalProps = {
   verifyOtp?: (target: string, code: string) => Promise<void>
 }
 
-/** Survives React Strict Mode remount so one Verify click cannot fire two OTP APIs. */
 const inflightOtpSends = new Map<string, Promise<boolean>>()
 const recentOtpSendAt = new Map<string, number>()
 const OTP_CLIENT_DEDUP_MS = 3_000
@@ -154,7 +153,6 @@ export function VerificationOtpModal({
     if (!value) return
 
     const sendKey = buildOtpSendKey(type, value)
-    // Same open session / Strict Mode remount: do not send again.
     if (openSendKeyRef.current === sendKey) return
     openSendKeyRef.current = sendKey
 

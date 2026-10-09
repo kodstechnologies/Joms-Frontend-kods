@@ -334,7 +334,6 @@ export function SettingsLogsPage() {
 
   const openCommunicate = useCallback(
     (log: SettingsLog) => {
-      // Sub-admins do not support push; open email compose for admins audience.
       const params = new URLSearchParams({
         channel: 'email',
         audience: 'admins',
@@ -409,8 +408,6 @@ export function SettingsLogsPage() {
         toast.error('Admin user ID is missing for this log.')
         return
       }
-      // Settings logs store auth Admin ids; RBAC user-logs API now resolves authAdminId /
-      // SubAdmin._id / super-admin auth id.
       navigate(`/settings/access/users/${encodeURIComponent(adminId)}/logs`)
     },
     [navigate],

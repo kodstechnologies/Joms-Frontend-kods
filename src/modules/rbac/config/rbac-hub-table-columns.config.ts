@@ -6,7 +6,6 @@ export type RbacHubTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-/** Spec: Admin Users Table */
 export const RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG: RbacHubTableColumnCatalogItem[] = [
   {
     id: 'users-admin-code',
@@ -101,7 +100,6 @@ export const RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG: RbacHubTableColumnCatalogItem
   },
 ]
 
-/** Spec: Admin Roles Table */
 export const RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG: RbacHubTableColumnCatalogItem[] = [
   {
     id: 'roles-role-id',
@@ -196,7 +194,6 @@ export const RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG: RbacHubTableColumnCatalogItem
   },
 ]
 
-/** Spec: Invited Admin Users Table */
 export const RBAC_HUB_INVITES_TABLE_COLUMNS_CATALOG: RbacHubTableColumnCatalogItem[] = [
   {
     id: 'invites-invite-id',

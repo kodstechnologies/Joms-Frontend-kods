@@ -193,7 +193,6 @@ export function ExpertSuspendedExpertsPage() {
         assigneeName: selectedAssignee?.fullname || '',
         adminNote: escalateAdminNotes.trim(),
         targetAdminId: selectedEscalationOption,
-        // Deep-link assignee My Tasks to expert profile (not application KYC view).
         applicationUrl: `/experts/management/profile/${encodeURIComponent(partnerId)}`,
         entityTitle: `${expertName} — Suspended Expert Compliance`,
         escalationTarget: 'application',

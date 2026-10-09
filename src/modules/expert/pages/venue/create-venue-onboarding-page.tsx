@@ -128,8 +128,6 @@ export function CreateVenueOnboardingPage() {
         longitude: venue.location?.longitude ?? prev.longitude,
         parkingAvailable: venue.parkingAvailable ?? prev.parkingAvailable,
         accessibility: venue.accessibility ?? prev.accessibility,
-        // Prefer saved URLs; drop local File[] once the server has images so
-        // Next → Previous does not show uploaded files twice.
         venueImageUrls:
           Array.isArray(venue.venueImages) && venue.venueImages.length > 0
             ? venue.venueImages

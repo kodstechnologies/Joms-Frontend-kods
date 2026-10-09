@@ -4,7 +4,6 @@ import type { PlatformHealthMetric } from '@/modules/settings/types/platform-hea
 import { TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { cn } from '@/shared/lib/cn'
 
-/** Figma metric card — 280×130 · radius 10 · #141414 (fills auto-fill tracks) */
 const METRIC_CARD_CLASS =
   'flex h-[130px] w-full max-w-[280px] min-w-0 flex-col rounded-[10px] bg-[#141414] p-4 transition-colors hover:bg-[#1a1a1a]'
 

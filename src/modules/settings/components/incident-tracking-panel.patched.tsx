@@ -254,7 +254,6 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
   const deepLinkId = String(highlightIncidentId || '').trim()
 
   const listQueryParams = useMemo(() => {
-    // Deep-link from My Tasks: ignore advanced filters so assigned row is not filtered out.
     const filters = deepLinkId ? {} : appliedFilters
     return buildPrefixedListQueryParams(filters, {
       page: deepLinkId ? 1 : page,
@@ -316,7 +315,6 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
     )
   }, [deepLinkId, deepLinkQuery.data, deepLinkQuery.isLoading, isLoading, rows])
 
-  // Only open Assign modal from explicit action — not from My Tasks deep-link.
   const selectedRow = selected
 
   useEffect(() => {

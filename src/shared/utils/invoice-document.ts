@@ -87,7 +87,6 @@ const safeText = (value?: string | null, fallback = '—') => {
 const formatDisplayDate = (value?: string | Date | null) => {
   if (!value) return '—'
   const raw = String(value).trim()
-  // Already formatted display strings from API (e.g. "13 Aug 2026")
   if (/^\d{1,2}\s+[A-Za-z]{3}\s+\d{4}/.test(raw)) return raw
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return raw || '—'

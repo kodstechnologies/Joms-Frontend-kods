@@ -52,7 +52,6 @@ export function VenueProfileAnalyticsPage() {
   const { data } = useVenueFullView(venueId ?? '')
   const [activeTab, setActiveTab] = useState<AnalyticsTabKey>('overview')
 
-  // Fetch real-time venue profile analytics from venue-service (port 8005)
   const analyticsQuery = useVenueProfileAnalytics(venueId)
   const analyticsData = analyticsQuery.data
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
@@ -76,7 +75,8 @@ export function VenueProfileAnalyticsPage() {
 
   const venueAnalyticsCards = useMemo(() => {
     const venueAnalytics = data?.data?.profile as
-      ({ analytics?: Record<string, unknown> } & Record<string, unknown>) | undefined
+      | ({ analytics?: Record<string, unknown> } & Record<string, unknown>)
+      | undefined
     const allCards = buildVenueProfileAnalyticsMetricCards(
       analyticsData,
       venueAnalytics?.analytics ?? null,

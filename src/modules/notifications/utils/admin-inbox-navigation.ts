@@ -197,18 +197,15 @@ export const resolveAdminInboxNavigation = (item: InAppNotification): AdminInbox
     item.eventType,
     item.metadata?.eventType,
     inferEventTypeFromBody(item.body),
-    // Title carries "Payment gateway not responding" for Razorpay-disabled alerts
     inferEventTypeFromBody(item.title || ''),
   )
 
-  // Prefer typed routes over stale deep links (older alerts pointed at /settings/health)
   if (eventType === 'PAYMENT_GATEWAY_DOWN' || eventType === 'PAYMENT_GATEWAY_CONFIG_CHANGED') {
     const resolvedGateway = resolveByEventType(eventType, ids)
     if (resolvedGateway) return resolvedGateway
   }
 
   if (fromLink && fromLink !== '/my-tasks') {
-    // Remap legacy gateway-down deep links that still point at health
     if (
       (fromLink === '/settings/health' || fromLink.startsWith('/settings/health?')) &&
       (String(item.body || '')

@@ -18,7 +18,6 @@ export function StatCard({ title, value, className, isTextValue }: StatCardProps
       <p className="text-body-sm text-muted truncate font-medium">{title}</p>
       <p
         className={cn(
-          /* Figma: Figtree SemiBold 20/20 · letter-spacing 0 */
           'mt-2 text-[20px] leading-5 font-semibold tracking-normal text-white',
           isTextValue ? 'line-clamp-2' : 'truncate',
         )}

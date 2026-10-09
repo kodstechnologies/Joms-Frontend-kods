@@ -27,7 +27,6 @@ type UseReportedListArgs<T> = {
   exportFileName: string
   exportColumnMap: ExportColumnMap<T>
   fetchReports: (params: Record<string, unknown>) => Promise<unknown>
-  /** Normalize API payload → items + pagination. */
   parseResponse: (response: unknown) => {
     items: T[]
     total: number
@@ -78,8 +77,6 @@ export function useReportedList<T>({
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
 
-  // Keep latest fetch/parse fns without putting them in effect deps (inline parseResponse
-  // was recreating every render → infinite reload / perpetual buffering).
   const fetchReportsRef = useRef(fetchReports)
   const parseResponseRef = useRef(parseResponse)
   fetchReportsRef.current = fetchReports

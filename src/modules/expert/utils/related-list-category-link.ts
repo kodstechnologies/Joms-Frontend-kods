@@ -4,7 +4,6 @@ type RelatedListCategoryLinkOptions = {
   subCategoryName?: string | null
 }
 
-/** Deep-link into a related list (e.g. Services / Experts) with category filters. */
 export function buildRelatedListCategoryUrl(
   relatedListPath: string,
   { categoryId, categoryName, subCategoryName }: RelatedListCategoryLinkOptions = {},

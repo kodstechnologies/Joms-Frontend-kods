@@ -34,7 +34,6 @@ type DocumentReviewViewerProps = {
   hideActions?: boolean
   isSubmitting?: boolean
   mimeType?: string
-  /** When set, load via backend proxy (avoids Cloudinary browser CORS / attachment issues). */
   partnerId?: string
   documentType?: PartnerDocumentType
   onClose: () => void
@@ -54,8 +53,6 @@ const isPdfFile = (url: string, filename: string, mimeType?: string) => {
   ) {
     return true
   }
-  // Cloudinary raw/image PDF delivery paths often keep `.pdf` in public_id;
-  // private download URLs use `format=pdf` instead.
   if (isCloudinaryUrl(url)) {
     const lower = url.toLowerCase()
     if (lower.includes('format=pdf') || lower.includes('/raw/upload/')) return true
@@ -176,15 +173,12 @@ function DocumentReviewViewerContent({
 
     const load = async () => {
       try {
-        // Same-origin proxy avoids Cloudinary CORS + Content-Disposition: attachment.
         if (partnerId && documentType) {
           const blob = await fetchPartnerDocumentBlob(partnerId, documentType)
           applyBlob(blob)
           return
         }
 
-        // Browser fetch to Cloudinary usually fails CORS. Embed the delivery URL
-        // directly for PDFs/images instead of converting to a blob.
         if (isCloudinaryUrl(url)) {
           if (isMounted) {
             setBlobData({

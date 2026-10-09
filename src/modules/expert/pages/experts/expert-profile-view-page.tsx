@@ -197,11 +197,9 @@ const TABS: { key: TabKey; label: string }[] = [
 const PROFILE_BTN_PRIMARY =
   'inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-1.5 text-[12px] font-semibold text-[#050505] transition-[filter] hover:brightness-95'
 
-/** Figma Profile & Account — View (48×25 · radius 8 · solid #F6CB86) */
 const PROFILE_BTN_VIEW =
   'inline-flex h-[25px] min-w-[48px] items-center justify-center rounded-[8px] bg-[#F6CB86] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-black transition-[filter] hover:brightness-95'
 
-/** Figma Profile & Account — Check Timelines (110×30 · radius 10 · gold gradient) */
 const PROFILE_BTN_CHECK_TIMELINES =
   'inline-flex h-[30px] min-w-[110px] items-center justify-center gap-2.5 rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-[#050505] transition-[filter] hover:brightness-95'
 
@@ -214,7 +212,6 @@ const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)
 
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
 
-/** Figma Profile Health — type/status chips (height 25 · radius 10 · padding 10) */
 const PROFILE_HEALTH_CHIP =
   'inline-flex h-[25px] items-center justify-center rounded-[10px] px-[10px] text-[12px] leading-[12px] font-semibold tracking-normal whitespace-nowrap text-white'
 
@@ -1692,7 +1689,8 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }

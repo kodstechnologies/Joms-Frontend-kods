@@ -83,7 +83,6 @@ const firstNonEmpty = (...values: unknown[]) => {
   return null
 }
 
-/** True when the stored "name" is actually an id (or missing). */
 export const needsPartnerDisplayName = (payment: FinancePayment, snapshotName?: string | null) => {
   const partnerId = firstNonEmpty(payment.partnerId, payment.moduleSnapshot?.partnerId)
   const name = firstNonEmpty(snapshotName, payment.moduleSnapshot?.partnerName)

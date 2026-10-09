@@ -63,7 +63,6 @@ export const useServiceListingControls = () => {
       listing.allowNewConsultationListings,
     ) ?? listing.allowNewConsultationListings
 
-  // Strict: only show AI UI when settings explicitly enable it.
   const displayAiPriceRecommendation = query.data
     ? query.data.pricingDetails.displayAiPriceRecommendation === true
     : false

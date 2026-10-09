@@ -26,7 +26,6 @@ export function AdvanceFilterIcon({ className, ...props }: SVGProps<SVGSVGElemen
   )
 }
 
-/** Figma `solar:export-linear` — 20×20 frame; path ≈ 13.33×13.34 at (3.33, 3.33); stroke 1.5 */
 export function ExportDataIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -50,9 +49,6 @@ export function ExportDataIcon({ className, ...props }: SVGProps<SVGSVGElement>)
   )
 }
 
-/**
- * Figma `basil:sort-outline` — table header sort mark, 16×16
- */
 export function SortOutlineIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -70,9 +66,6 @@ export function SortOutlineIcon({ className, ...props }: SVGProps<SVGSVGElement>
   )
 }
 
-/**
- * Figma `oui:nav-manage` — Manage Metrics icon, always 20×20
- */
 export function ManageMetricsIcon({
   className,
   alt = '',
@@ -91,7 +84,6 @@ export function ManageMetricsIcon({
   )
 }
 
-/** Settings / Access — user row actions */
 const accessIconClass = 'size-3.5 shrink-0'
 
 export function AccessViewUserIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
@@ -255,7 +247,6 @@ export function AccessSuspendUserIcon({ className, ...props }: SVGProps<SVGSVGEl
   )
 }
 
-/** Settings / Access — role row actions */
 export function AccessEditPermissionIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <svg

@@ -77,7 +77,6 @@ export function formatDisplayClock(
   } else if (format === 'YYYY-MM-DD') {
     datePart = `${parts.year}-${parts.month}-${parts.day}`
   } else {
-    // DD/MM/YY (and default): day-first with full year, matching topbar design.
     datePart = `${parts.day}/${parts.month}/${parts.year}`
   }
 

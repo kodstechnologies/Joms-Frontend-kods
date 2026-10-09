@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
 
-/** Venue-only multi-select helpers for status list tables. */
 export function useVenueRowSelection(visibleIds: string[]) {
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
 

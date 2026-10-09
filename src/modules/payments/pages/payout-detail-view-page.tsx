@@ -72,7 +72,6 @@ export function PayoutDetailViewPage() {
     enabled: needsPartnerLookup,
   })
 
-  // Deep-link: /finance/payouts/:id?action=release opens the release note modal once.
   useEffect(() => {
     if (searchParams.get('action') !== 'release' || !payout || !canRelease) return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot deep link open

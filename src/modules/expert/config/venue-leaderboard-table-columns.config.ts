@@ -124,7 +124,6 @@ export const VENUE_LEADERBOARD_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   profileHealth: 'profile-health-score',
   clientSatisfaction: 'client-satisfaction-score',
   totalRevenue: 'total-revenue',
-  // Dropped venue-inapplicable listing columns → nearest useful metric columns
   servicesListed: 'total-revenue',
   consultationsListed: 'client-satisfaction-score',
   'services-listed': 'total-revenue',

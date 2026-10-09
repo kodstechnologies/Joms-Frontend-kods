@@ -1,4 +1,3 @@
-/** Fallback chart and metric samples shown before live finance data loads. */
 export type TrendMetric = {
   label: string
   value: string

@@ -97,9 +97,7 @@ import {
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { mapColumnsCatalog, mapMetricsCatalog, type ModuleMetricsDefinition } from './types'
 
-/** Expert-ecosystem entries — written as explicit objects (avoid stamp helpers). */
 export const EXPERT_ECOSYSTEM_MODULE_METRICS: Record<string, ModuleMetricsDefinition> = {
-  // --- analytics / performance ---
   'expert-profile-analytics': {
     moduleKey: EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
     moduleName: 'Expert Profile Analytics',
@@ -192,7 +190,6 @@ export const EXPERT_ECOSYSTEM_MODULE_METRICS: Record<string, ModuleMetricsDefini
     metrics: mapMetricsCatalog(VENUE_DASHBOARD_METRICS_CATALOG),
   },
 
-  // --- management / queues / leaderboards ---
   'expert-leaderboard': {
     moduleKey: EXPERT_LEADERBOARD_MODULE_KEY,
     moduleName: 'Expert Leaderboard',

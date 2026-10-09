@@ -102,7 +102,6 @@ const DocumentCard = ({
 }) => {
   const blobUrl = useMemo(() => {
     if (!file) return null
-    // Ensure Blob has proper PDF MIME type if it's a PDF to avoid Chrome viewer errors
     const isPdf = fileName.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf'
     if (isPdf && file.type !== 'application/pdf') {
       return URL.createObjectURL(new Blob([file], { type: 'application/pdf' }))

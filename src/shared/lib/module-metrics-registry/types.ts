@@ -32,7 +32,6 @@ type ColumnSource = {
   defaultVisible?: boolean
 }
 
-/** Project module metric catalogs into the shared metrics-page shape. */
 export function mapMetricsCatalog(items: readonly MetricSource[]): MetricsCatalogItem[] {
   return items.map(({ id, label, type, description, defaultActive }) => ({
     id,
@@ -43,7 +42,6 @@ export function mapMetricsCatalog(items: readonly MetricSource[]): MetricsCatalo
   }))
 }
 
-/** Project table-column catalogs into the shared metrics-page shape. */
 export function mapColumnsCatalog(items: readonly ColumnSource[]): MetricsCatalogItem[] {
   return items.map(({ id, label, type, description, defaultVisible }) => ({
     id,

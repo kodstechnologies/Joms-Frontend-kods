@@ -53,7 +53,6 @@ import {
 } from '@/modules/payments/config/finance-memberships-table-columns.config'
 import { mapColumnsCatalog, mapMetricsCatalog, type ModuleMetricsDefinition } from './types'
 
-/** Finance-domain entries — written as explicit objects (avoid stamp helpers). */
 export const FINANCE_MODULE_METRICS: Record<string, ModuleMetricsDefinition> = {
   'finance-dashboard': {
     moduleKey: FINANCE_DASHBOARD_MODULE_KEY,

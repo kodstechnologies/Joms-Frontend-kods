@@ -424,7 +424,6 @@ export const VenueManagementPage = () => {
 
   const { currentPage, setCurrentPage, activeStatus } = useVenueStore()
 
-  // Seed category filters when deep-linked from Category Management (View Venues / View Spaces).
   useEffect(() => {
     if (!categoryIdFromUrl && !categoryFromUrl && !subCategoryFromUrl) return
 
@@ -982,7 +981,6 @@ export const VenueManagementPage = () => {
   const metricsLoading = managementMetricsQuery.isLoading
   const skeletonCount = activeMetricIds?.length || defaultMetricIds.length
 
-  // Status quick-links are always shown (not controlled by Manage Metrics)
   const statusCards: {
     id: string
     label: string
@@ -1135,7 +1133,6 @@ export const VenueManagementPage = () => {
         accessorKey: 'status',
         header: 'Venue Status',
         cell: ({ row }) => {
-          // When a space is attached to the row, mirror Space Details status.
           const statusToShow = row.original.spaceStatus || row.original.status
           const { label, className } = getListingStatusDisplay(statusToShow, {
             isSuspend:

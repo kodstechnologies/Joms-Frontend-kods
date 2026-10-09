@@ -322,7 +322,6 @@ export const ExpertManagementPage = () => {
     )
   }, [])
 
-  // Bulk Mutations & Logic
   const bulkSuspendMutation = useBulkSuspendExperts()
   const bulkDeactivateMutation = useBulkDeactivateExperts()
   const bulkUpdateMembershipMutation = useBulkUpdateMembershipExperts()
@@ -336,7 +335,6 @@ export const ExpertManagementPage = () => {
   const [bulkMembershipAction, setBulkMembershipAction] = useState<'upgrade' | 'downgrade'>(
     'upgrade',
   )
-  /** When set, membership modal targets this partner instead of table selection. */
   const [membershipTargetPartnerIds, setMembershipTargetPartnerIds] = useState<string[]>([])
   const [membershipModalSubscription, setMembershipModalSubscription] =
     useState<MembershipSubscription | null>(null)

@@ -35,7 +35,6 @@ export async function submitMembershipPlanChangeForApproval(
     payload.adminNotes?.trim() ||
     `Membership ${actionLabel} requested for ${subscription.partnerName || 'member'}`
 
-  // Assignee is resolved on the backend to the current super admin.
   return escalateMembershipUpgradeApplication(subscription._id, {
     assigneeSubAdminId: '',
     adminNote,

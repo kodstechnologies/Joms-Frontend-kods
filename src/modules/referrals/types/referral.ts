@@ -66,7 +66,6 @@ export type ReferralMetrics = {
   pendingRewards: number
   rewardsDistributed: number
   rewardDistributionRate: number
-  // Legacy optional fields
   userToUserShareRate?: number
   adminSendSuccessRate?: number
   onboardingRate?: number

@@ -291,8 +291,6 @@ export const CreateServiceListingPage = () => {
     isReady: listingControlsReady,
   } = useServiceListingControls()
 
-  // Admin create flow: prefer live admin module settings (same source as Settings tab).
-  // Ignore placeholderData defaults so AI isn't forced ON before real settings load.
   const adminServiceSettings = useSettingsModule('service')
   const adminAiFlag =
     adminServiceSettings.data?.config?.pricingDetails?.displayAiPriceRecommendation
@@ -922,8 +920,6 @@ export const CreateServiceListingPage = () => {
     return true
   }
 
-  // Partner submissions stay in preview until submit/approve.
-  // Admin create also stays preview until this publish step. Never publish live/in-review/rejected.
   const shouldPublishListing = listingStatus === 'preview' || (!isEditMode && listingStatus === '')
 
   const finishListing = (kind: 'service' | 'consultation') => {

@@ -87,7 +87,6 @@ type DecisionActionModalProps = {
   isSubmitting?: boolean
   submitDisabled?: boolean
   showTimeline?: boolean
-  /** When true, existing suspensions may keep a start date earlier than today. */
   timelineAllowPastStart?: boolean
   startDate?: string
   onStartDateChange?: (value: string) => void

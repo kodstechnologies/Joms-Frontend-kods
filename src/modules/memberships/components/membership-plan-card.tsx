@@ -124,7 +124,6 @@ export function MembershipPlanCard({
 
   return (
     <article className="relative mx-auto flex min-h-[567px] w-full max-w-[350px] flex-col rounded-[10px] bg-[#141414]">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#050505]">
@@ -256,7 +255,6 @@ export function MembershipPlanCard({
 
       <HRule />
 
-      {/* Pricing — single for paused/inactive, triple for active/deleted */}
       {isLifecycleCard ? (
         <div className="flex items-stretch gap-4 px-5 py-4">
           <div className="min-w-0">
@@ -298,7 +296,6 @@ export function MembershipPlanCard({
 
       <HRule />
 
-      {/* Features */}
       <div className="px-5 py-4">
         <p className={cn('mb-3 text-[12px] leading-[14px] font-medium', MUTE)}>Features</p>
         <ul className="max-h-[125px] space-y-2.5 overflow-hidden">
@@ -319,7 +316,6 @@ export function MembershipPlanCard({
 
       <HRule />
 
-      {/* Subscription Stats */}
       <div className="px-5 py-4">
         <p className={cn('mb-3 text-[12px] leading-[14px] font-medium', MUTE)}>
           Subscription Stats
@@ -361,7 +357,6 @@ export function MembershipPlanCard({
         </div>
       </div>
 
-      {/* Meta + CTA */}
       <div className="mt-auto flex flex-col gap-3 px-5 pt-1 pb-5">
         {!isDeleted ? (
           <div className="flex items-center justify-between gap-3">

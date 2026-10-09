@@ -161,7 +161,6 @@ export const CreateExpertPage = () => {
           payload: buildSubmitPayload(formData),
         })
 
-        // Partner was submitted. Check if KYC auto-approval had a warning.
         const kycWarning = (result as { kycWarning?: string } | undefined)?.kycWarning
 
         if (isEditMode) {

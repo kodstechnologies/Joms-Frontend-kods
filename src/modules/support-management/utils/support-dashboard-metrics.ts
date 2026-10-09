@@ -39,7 +39,6 @@ const defaultValues: Record<string, string> = {
   'first-contact-resolution': '0.0%',
   'customer-satisfaction': '0.0%',
   'active-support-agents': '0',
-  // legacy keys fallback
   'total-tickets': '0',
   'open-tickets': '0',
   'assigned-to-me': '0',

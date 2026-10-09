@@ -31,8 +31,6 @@ export function SidebarGroup({
   const isTopLevel = depth === 0
   const isActiveModule = isTopLevel && activeTopLevelKey === item.key
   const isInactiveModule = isTopLevel && Boolean(activeTopLevelKey) && !isActiveModule
-  // When no module matches the current URL (e.g. /support/past-tickets/...), every
-  // top-level group must still navigate — otherwise Support/Settings become dead clicks.
   const shouldSwitchModule = isTopLevel && !isActiveModule
 
   const syncKey = `${isActiveModule}:${isInactiveModule}:${isChildActive}`
@@ -51,7 +49,6 @@ export function SidebarGroup({
   const hasChildren = children.length > 0
   const firstTo = getFirstNavigableTo(item)
 
-  // Expanded: only the active module can open its submenu. Other modules switch by navigating.
   const canExpandOwnSubmenu =
     hasChildren && !compact && !shouldSwitchModule && (isActiveModule || !isTopLevel)
 
@@ -59,7 +56,6 @@ export function SidebarGroup({
 
   let itemTo: string | undefined
   if (shouldSwitchModule && !compact) {
-    // Clicking another module (or any module when none is active) jumps to its first page
     itemTo = firstTo
   } else if (hasChildren) {
     itemTo = compact ? firstTo : undefined

@@ -14,7 +14,6 @@ export type SupportDashboardMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Catalog aligned to JOMS Support Dashboard sheet metrics. */
 const SUPPORT_DASHBOARD_METRIC_DEFS: MetricRowTuple[] = [
   [
     'total-open-tickets',

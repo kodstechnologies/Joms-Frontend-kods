@@ -24,9 +24,7 @@ type UseServiceStatusListArgs = {
   catalogColumnIds: string[]
   exportFileName: string
   exportColumnMap?: ExportColumnMap
-  /** When false, export every mapped column (pending approvals). Default true. */
   restrictExportToVisibleColumns?: boolean
-  /** When false, omit live search from export base params. Default true. */
   includeSearchInExport?: boolean
 }
 

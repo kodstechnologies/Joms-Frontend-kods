@@ -440,7 +440,6 @@ function SecurityComplianceChartLegend(props: {
 
 function formatSecurityMonthLabel(value: string | number) {
   const raw = String(value)
-  // Accept YYYY-MM, YYYY-MM-DD, or already-short labels like "Jan"
   const match = raw.match(/^(\d{4})-(\d{2})/)
   if (match) {
     const monthIndex = Number(match[2]) - 1

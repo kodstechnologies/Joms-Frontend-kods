@@ -7,9 +7,7 @@ import { categoryFormTheme } from './category-form.theme'
 
 interface InfoTooltipProps {
   text: string
-  /** Figma-measured tooltip width in px */
   width?: number
-  /** Figma-measured tooltip min-height in px */
   minHeight?: number
 }
 

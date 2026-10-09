@@ -51,7 +51,6 @@ function wrapPdfToken(token: string) {
   return chunkPdfToken(token)
 }
 
-/** PDF built-in fonts cannot draw ₹, which otherwise renders as spaced-out garbage. */
 export function toPdfExportText(value: unknown): string {
   const text = exportDisplayValue(value)
     .replaceAll('\u20B9', 'Rs.')

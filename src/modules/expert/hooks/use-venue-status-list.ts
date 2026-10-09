@@ -17,9 +17,7 @@ import type { Venue } from '../type/venue'
 type ExportColumnMap = Record<string, { header: string; accessor: (venue: Venue) => string }>
 
 type UseVenueStatusListArgs = {
-  /** Column-preferences key (may be venue-suspended / venue-deleted). */
   preferencesKey: string
-  /** Advanced-filter module key (often venue-management). */
   filterModuleKey: ModuleFilterKey
   status: string
   sortFieldMap: Record<string, string | null | undefined>

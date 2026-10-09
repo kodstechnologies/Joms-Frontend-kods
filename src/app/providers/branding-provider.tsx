@@ -34,7 +34,6 @@ export function BrandingProvider({ children }: PropsWithChildren) {
   })
 
   const branding = useMemo<BrandingState>(() => {
-    // On error / empty payload, keep the general branding defaults.
     if (brandingQuery.isError || !brandingQuery.data) {
       return DEFAULT_BRANDING
     }

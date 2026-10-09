@@ -11,7 +11,6 @@ const unwrapExcelTextFormula = (value: string) => {
   return raw
 }
 
-/** Normalize pasted/imported numbers such as +91 98765 43210, 09876543210, or Excel 9.87E+09. */
 export const normalizeImportedMobileNumber = (value: string): string => {
   const raw = unwrapExcelTextFormula(String(value || ''))
   if (!raw) return ''

@@ -63,7 +63,6 @@ const buildCategoryFormData = (payload: CreateCategoryPayload) => {
     formData.append('image', payload.imageFile)
   }
 
-  // Keep subCategories JSON small — icons are uploaded as vectorIcons files.
   const subCategories = payload.subCategories.map((sub) => ({
     name: sub.name,
     description: sub.description,

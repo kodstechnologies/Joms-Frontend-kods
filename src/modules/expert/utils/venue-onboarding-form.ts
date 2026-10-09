@@ -312,7 +312,6 @@ export const buildLocationFormData = async (form: VenueOnboardingFormData): Prom
   formData.append('parkingAvailable', form.parkingAvailable ? 'true' : 'false')
   formData.append('accessibility', form.accessibility ? 'true' : 'false')
 
-  // Re-upload whatever is currently shown: saved URLs + newly picked files.
   const existingFiles = await Promise.all(
     form.venueImageUrls.filter(Boolean).map((url, index) => urlToVenueImageFile(url, index)),
   )

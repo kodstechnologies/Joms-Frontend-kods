@@ -43,12 +43,8 @@ export function BackupConfigurationPanel({ value, onChange }: BackupConfiguratio
       patchAutomatic({ storageLocation: nextStorage, backupType: 'full' })
       return
     }
-    // Leaving Cloud: keep an explicit type. Default to full so "Run Backup"
-    // matches the locked Cloud full-cluster expectation users just left.
     const nextType =
-      backup.backupType === 'partial' || backup.backupType === 'full'
-        ? backup.backupType
-        : 'full'
+      backup.backupType === 'partial' || backup.backupType === 'full' ? backup.backupType : 'full'
     patchAutomatic({
       storageLocation: nextStorage,
       backupType: cloudOnly ? 'full' : nextType,
@@ -192,16 +188,11 @@ export function BackupConfigurationPanel({ value, onChange }: BackupConfiguratio
           <label className="backup-config-field-label" htmlFor="backup-retention">
             Retention Period
           </label>
-          {cloudOnly ? (
-            <p className="backup-config-hint">Retention is managed in AWS RDS</p>
-          ) : null}
+          {cloudOnly ? <p className="backup-config-hint">Retention is managed in AWS RDS</p> : null}
           <div className="backup-config-select-wrap">
             <select
               id="backup-retention"
-              className={cn(
-                'backup-config-control backup-config-select',
-                cloudOnly && 'is-locked',
-              )}
+              className={cn('backup-config-control backup-config-select', cloudOnly && 'is-locked')}
               value={backup.retentionPeriod}
               disabled={cloudOnly}
               onChange={(event) => patchAutomatic({ retentionPeriod: event.target.value })}

@@ -176,7 +176,6 @@ export function CommunicationForm() {
           audiences: prefillAudience,
         }
 
-  // Remount when switching create/edit / prefill so form state resets without setState-in-effect
   const formKey = [
     editId || 'create',
     forceSchedule ? 'schedule' : 'now',

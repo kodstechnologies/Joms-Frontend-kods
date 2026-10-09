@@ -34,11 +34,6 @@ export const getServiceManagementViewPath = (
   return `/services/management/view/${service._id}?${params.toString()}`
 }
 
-/**
- * View Details from Services Management:
- * - Review Pending → application/review page (`/services/management/view/...`)
- * - Live and other statuses → expert service/consultation details page
- */
 export const getServiceViewDetailsPath = (service: ServiceViewTarget) => {
   const isConsultation = (service.serviceType || '').toLowerCase().includes('consultation')
   const partnerId = String(service.partnerId || '').trim()

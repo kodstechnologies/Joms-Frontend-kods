@@ -155,7 +155,6 @@ export function FinanceServicesPage() {
       setAppliedFilters({})
     }
 
-    // Always refetch for the tab (cache was keeping prior tab data until full refresh)
     if (tabId === 'escrow') {
       void queryClient.invalidateQueries({ queryKey: ['finance-escrow'] })
     } else {
@@ -217,7 +216,6 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              // Escrow rows use EscrowHold._id — payment detail API expects Payment._id
               navigate(
                 record.tab === 'escrow'
                   ? `/finance/escrow/${record.id}`

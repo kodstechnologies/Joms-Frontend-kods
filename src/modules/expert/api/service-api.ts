@@ -121,7 +121,6 @@ export const updateServiceGallery = async (
     formData.append('existingImages', JSON.stringify(existingImageUrls))
   }
 
-  // Do not set Content-Type manually — the browser must add the multipart boundary.
   const response = await expertApiClient.patch<ServiceDetailResponse>(
     `/api/admin/services/${id}/gallery`,
     formData,

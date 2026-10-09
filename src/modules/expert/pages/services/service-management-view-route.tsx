@@ -36,10 +36,6 @@ async function probeKind(id: string, preferred: ListingKind | null): Promise<Lis
   }
 }
 
-/**
- * Admin management lists mix Service + Consultation rows.
- * Resolve the correct view when `type` is missing or points at the wrong collection.
- */
 export const ServiceManagementViewRoute = () => {
   const { id = '' } = useParams<{ id: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -75,7 +71,6 @@ export const ServiceManagementViewRoute = () => {
     return () => {
       cancelled = true
     }
-    // Re-resolve when the listing id changes. Type param updates are applied by this effect itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: avoid loop on setSearchParams
   }, [id])
 

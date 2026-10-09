@@ -891,8 +891,6 @@ export const LeaderboardPage = () => {
       : defaultVisibleColumnIds
     let mappedIds = rawIds.map((id) => legacyColumnIdMap[id] ?? id)
 
-    // Venue: ensure CSAT + revenue stay visible even with older saved prefs,
-    // and drop listing columns that no longer exist for venues.
     if (isVenueLeaderboard) {
       mappedIds = mappedIds.filter(
         (id) => id !== 'services-listed' && id !== 'consultations-listed',

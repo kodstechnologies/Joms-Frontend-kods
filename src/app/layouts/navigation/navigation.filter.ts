@@ -32,7 +32,6 @@ function isNavItemVisible(
 ): boolean {
   const isSuperAdmin = user?.isSuperAdmin ?? false
 
-  // Module permission grants override superAdminOnly (e.g. Settings / Support roles).
   if (item.permissionModule) {
     return hasModuleAccess(user, item.permissionModule)
   }

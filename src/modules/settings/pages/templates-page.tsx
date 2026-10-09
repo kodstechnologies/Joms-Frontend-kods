@@ -101,7 +101,6 @@ function ReasonFormModal({
         className="radius-popup bg-brand-surface flex flex-col overflow-hidden border border-white/10"
         style={{ width: '514px', maxWidth: 'calc(100vw - 32px)' }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <h2 className="invite-modal-title">{mode === 'create' ? 'New Reason' : 'Edit Reason'}</h2>
           <button
@@ -113,7 +112,6 @@ function ReasonFormModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="space-y-4 overflow-y-auto px-5 py-5">
           <div>
             <label className="invite-modal-field-label mb-1.5 block">
@@ -159,7 +157,6 @@ function ReasonFormModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center gap-3 border-t border-white/10 px-5 py-4">
           <button type="button" onClick={onClose} className="ui-cta ui-cta-ghost flex-1">
             Cancel
@@ -360,7 +357,6 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        {/* Left: Categories */}
         <aside className="border-white/10 lg:border-r lg:pr-6">
           <p className="text-body-md-semibold text-brand-text">Categories</p>
           <div className="bg-brand-surface mt-3 flex h-10 items-center gap-3 rounded-lg border border-white/[0.08] px-3">
@@ -413,7 +409,6 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           </div>
         </aside>
 
-        {/* Right: Reasons */}
         <section className="min-w-0">
           {selectedCategory ? (
             <>

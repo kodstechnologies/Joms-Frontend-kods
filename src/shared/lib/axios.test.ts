@@ -41,8 +41,6 @@ describe('getApiErrorMessage offline', () => {
       isOffline: true,
       code: 'ERR_NETWORK',
     })
-    // axios.isAxiosError checks for isAxiosError on the object plus a private flag.
-    // Use a real AxiosError-shaped object via the helper path:
     expect(
       getApiErrorMessage(
         Object.assign(new Error('You are offline. Check your connection and try again.'), {

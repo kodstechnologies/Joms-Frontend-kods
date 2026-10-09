@@ -17,7 +17,6 @@ function kebabToCamel(id: string): string {
   return id.replace(/-([a-z0-9])/gi, (_, char: string) => char.toUpperCase())
 }
 
-/** Match Manage Metrics catalog ids (`booking-id`, `users-fullname`) to export map keys. */
 export function resolveExportColumnMapKey<T>(
   columnMap: ExportColumnMap<T>,
   id: string,
@@ -923,7 +922,6 @@ export function buildCommunicationListQueryParams(
   if (sortBy) params.sortBy = sortBy
   if (sortOrder) params.sortOrder = sortOrder
 
-  // Preserve any extra query params (e.g. column search keys) from callers.
   Object.entries(rest).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return
     if (params[key] !== undefined) return
@@ -1456,7 +1454,6 @@ export function buildExpertMembershipsListQueryParams(
     params.amountMax = params.purchasedPriceMax
   }
 
-  // Column search aliases → API query fields
   if (typeof searchById === 'string' && searchById.trim() && params.subscriptionId == null) {
     params.subscriptionId = searchById.trim()
   }

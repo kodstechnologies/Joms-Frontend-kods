@@ -39,7 +39,6 @@ function createBookingRows(tab: EscrowManagementTab, count: number): EscrowBooki
   })
 }
 
-/** Booking tab preview rows for the escrow management layout. */
 export const escrowBookingPreviewRows: EscrowBookingRow[] = [
   ...createBookingRows('all', 20),
   ...createBookingRows('by-service', 15),

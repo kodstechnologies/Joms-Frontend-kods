@@ -1,4 +1,3 @@
-/** True when both values are set and end is strictly before start (ISO / YYYY-MM-DD / datetime-local). */
 export function isEndBeforeStart(start: string | null | undefined, end: string | null | undefined) {
   if (!start?.trim() || !end?.trim()) return false
   const startMs = new Date(start).getTime()
@@ -40,7 +39,6 @@ export const END_MUST_AFTER_START_MESSAGE =
   'End date must be at least one day after the start date.'
 export const START_BEFORE_TODAY_MESSAGE = 'Start date cannot be before today.'
 
-/** Clears end when start moves past it so the pair stays valid. */
 export function clampEndToStart(start: string, end: string): string {
   if (!start || !end) return end
   return isEndBeforeStart(start, end) ? '' : end

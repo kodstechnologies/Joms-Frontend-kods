@@ -95,7 +95,6 @@ const DEFAULT_METRIC_IDS =
     ? DEFAULT_REFERRALS_ACTIVE_METRIC_IDS
     : REFERRAL_METRIC_DEFINITIONS.map((metric) => metric.id)
 
-/** Figma resend: envelope with circular refresh arrow */
 function ResendInvitationIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -523,7 +522,6 @@ export function ReferralManagementPage() {
   const expertInvites = useMemo(() => expertData?.data?.invites ?? [], [expertData?.data?.invites])
   const meta = expertData?.data?.meta
 
-  // My Tasks deep-link: /referrals/management?referralId=… → open Invites Details popup
   useEffect(() => {
     const referralId = String(searchParams.get('referralId') || '').trim()
     if (!referralId) return

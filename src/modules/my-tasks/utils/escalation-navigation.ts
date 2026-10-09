@@ -84,7 +84,6 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
   const storedOrEmpty = stored && stored !== '/' ? stored : ''
   const metadataIncidentId = String(target.metadata?.incidentId || '').trim()
 
-  // Explicit operational deep-links always win (order/booking/profile nested paths).
   if (
     storedOrEmpty.includes('/orders/') ||
     storedOrEmpty.includes('/bookings/') ||
@@ -98,7 +97,6 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
     return withPartnerReviewTab(storedOrEmpty, target.escalationTarget)
   }
 
-  // Incident assignments: prefer stored URL / display INC_* code over DB entity id.
   if (target.entityType === 'incident') {
     if (storedOrEmpty.includes('/settings/main') && storedOrEmpty.includes('incidentId=')) {
       return storedOrEmpty
@@ -116,7 +114,6 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
     else if (storedOrEmpty.includes('/space/')) resolved = storedOrEmpty
     else return null
   } else if (target.entityType === 'consultation' || target.entityType === 'service') {
-    // Prefer caller-provided deep-link (e.g. order details) over generic listing view.
     resolved = storedOrEmpty || canonical || null
   } else if (target.entityType === 'finance') {
     resolved = storedOrEmpty || canonical || null
@@ -127,7 +124,6 @@ export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
     else if (storedKycId && storedKycId !== target.entityId) resolved = storedOrEmpty
     else resolved = canonical
   } else if (target.entityType === 'partner') {
-    // Reported-experts / clientele deep-links to profile (or nested order/booking under profile)
     if (storedOrEmpty.includes('/venues/management/profile/')) resolved = storedOrEmpty
     else if (storedOrEmpty.includes('/experts/management/profile/')) resolved = storedOrEmpty
     else resolved = storedOrEmpty || canonical || null

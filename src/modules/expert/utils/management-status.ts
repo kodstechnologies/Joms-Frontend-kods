@@ -136,7 +136,6 @@ export const isSubmittedListingStatus = (status: string | null | undefined) => {
   return Boolean(normalized) && !['preview', 'draft'].includes(normalized)
 }
 
-/** Partner-facing labels for services, consultations, venues, and spaces. */
 export const getListingStatusDisplay = (
   status: string | null | undefined,
   options?: { isSuspend?: boolean; isDeleted?: boolean },
@@ -149,7 +148,6 @@ export const getListingStatusDisplay = (
   }
 }
 
-/** Overlay chips on expert profile service listing thumbnails. */
 export const getProfileServiceListingStatusDisplay = (
   status: string | null | undefined,
   options?: { isSuspend?: boolean; isDeleted?: boolean },
