@@ -233,7 +233,12 @@ export const useUpdateVenueSubCategory = () => {
     }: {
       categoryId: string
       subCategoryId: string
-      payload: { name?: string; description?: string; vectorIcon?: string }
+      payload: {
+        name?: string
+        description?: string
+        vectorIcon?: string
+        vectorIconFile?: File | null
+      }
     }) => updateVenueSubCategory(categoryId, subCategoryId, payload),
     onSuccess: () => invalidateVenueCategories(queryClient),
   })

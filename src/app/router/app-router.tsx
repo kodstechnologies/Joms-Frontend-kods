@@ -685,6 +685,12 @@ const RenameVenueCategoryPage = lazy(() =>
   })),
 )
 
+const RenameVenueSubCategoryPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.RenameVenueSubCategoryPage,
+  })),
+)
+
 const VenueCategoryViewPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueCategoryViewPage,
@@ -1142,6 +1148,10 @@ export function AppRouter() {
                 <Route
                   path="/venues/categories/management/rename/:id"
                   element={<RenameVenueCategoryPage />}
+                />
+                <Route
+                  path="/venues/categories/management/rename-subcategory/:id/:subCategoryId"
+                  element={<RenameVenueSubCategoryPage />}
                 />
                 <Route
                   path="/venues/categories/management/filter"

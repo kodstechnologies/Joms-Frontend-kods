@@ -101,7 +101,7 @@ function EditCategoryGroupModalDialog({
       const status: 'Active' | 'Paused' =
         String(sub.status || '').toLowerCase() === 'paused' ? 'Paused' : 'Active'
       return {
-        id: String(sub.subCategoryId || sub.id || ''),
+        id: String(sub.id || ''),
         originalName: sub.name || '',
         originalDescription: sub.description || '',
         originalStatus: status,

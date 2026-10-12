@@ -134,6 +134,7 @@ export const addVenueSubCategories = async (
   newSubCategories: AddSubCategoryPayload[],
 ) => {
   const existingSubs = (existing.subCategories || []).map((sub) => ({
+    ...(sub.id || sub._id ? { id: String(sub.id || sub._id) } : {}),
     name: sub.name,
     description: sub.description || '',
     vectorIcon: sub.vectorIcon || '',
@@ -179,11 +180,32 @@ export const resumeVenueCategory = async (id: string) => {
 export const updateVenueSubCategory = async (
   categoryId: string,
   subCategoryId: string,
-  payload: { name?: string; description?: string; vectorIcon?: string },
+  payload: {
+    name?: string
+    description?: string
+    vectorIcon?: string
+    vectorIconFile?: File | null
+  },
 ) => {
+  let body: FormData | { name?: string; description?: string; vectorIcon?: string } = {
+    name: payload.name,
+    description: payload.description,
+  }
+  let headers: { 'Content-Type': string } | undefined
+
+  if (payload.vectorIconFile) {
+    const formData = new FormData()
+    if (payload.name !== undefined) formData.append('name', payload.name)
+    if (payload.description !== undefined) formData.append('description', payload.description)
+    formData.append('vectorIcon', payload.vectorIconFile)
+    body = formData
+    headers = { 'Content-Type': 'multipart/form-data' }
+  }
+
   const response = await venueApiClient.patch<ApiSuccessResponse<VenueCategoryApi>>(
     `/venue-categories/${categoryId}/subcategories/${subCategoryId}`,
-    payload,
+    body,
+    headers ? { headers } : undefined,
   )
   return response.data
 }
