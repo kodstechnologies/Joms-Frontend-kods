@@ -44,6 +44,7 @@ function labelToMetricId(label: string): string | null {
   return map[label] ?? null
 }
 
+// A missing change is filled in as 6.7 percent up versus last month.
 function withDesignTrend(metric: TrendMetric | undefined | null, fallbackLabel = '—'): TrendMetric {
   if (!metric) {
     return placeholder(fallbackLabel)
@@ -77,6 +78,7 @@ export function resolveFinanceDashboardMetricId(id: string): string {
   return FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id
 }
 
+// Escrow, payouts, disputes, and platform revenue use the live summary. Payout cycle time, chargeback rate, net revenue, and failed transactions stay on sample figures, and gross margin, net profit, and refund rate are added again from the sample set.
 export function buildFinanceDashboardMetricCards(
   summary?: FinanceDashboardSummary | null,
 ): FinanceDashboardMetricCard[] {

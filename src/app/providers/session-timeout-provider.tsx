@@ -16,6 +16,7 @@ const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'focus',
 ]
 
+// Idle time comes from security settings and never drops below 15 minutes. The sign-out runs once.
 export function SessionTimeoutProvider({ children }: PropsWithChildren) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const token = useAuthStore((state) => state.token)

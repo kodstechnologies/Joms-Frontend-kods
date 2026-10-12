@@ -40,6 +40,7 @@ const parseCsvLine = (line: string, delimiter: string): string[] => {
   return cols
 }
 
+// The most common of comma, semicolon, and tab is used. Characters inside quotes do not count. Comma is the fallback.
 const detectDelimiter = (headerLine: string): string => {
   const counts: Record<string, number> = { ',': 0, ';': 0, '\t': 0 }
   let inQuotes = false
@@ -59,6 +60,7 @@ const numberToDigitString = (value: number) => {
   return String(Math.round(Math.abs(value)))
 }
 
+// A number is rounded to digits so a phone is not left in scientific form. A mailto link is stored as the address.
 const excelCellToString = (value: unknown): string => {
   if (value == null || value === '') return ''
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -84,6 +86,7 @@ const excelCellToString = (value: unknown): string => {
 const isImportablePhone = (value: string) =>
   /^[0-9]{10}$/.test(normalizeImportedMobileNumber(value))
 
+// A row is kept only when it has a name, an email, and a 10-digit phone. A header row is dropped.
 const extractRecipient = (cols: string[]): BulkInviteRecipient | null => {
   const cells = cols.map((col) => String(col || '').trim())
   if (!cells.some(Boolean)) return null
@@ -109,6 +112,7 @@ const extractRecipient = (cols: string[]): BulkInviteRecipient | null => {
   return { name, email, phone }
 }
 
+// A repeated email keeps the first row. A phone stored in scientific form is still used, and a warning is added. A header row is not counted as invalid.
 export const parseRecipientRowsWithMeta = (rows: string[][]): BulkInviteParseResult => {
   const seenEmails = new Set<string>()
   const recipients: BulkInviteRecipient[] = []
@@ -158,6 +162,7 @@ export const parseRecipientRowsWithMeta = (rows: string[][]): BulkInviteParseRes
 export const parseRecipientRows = (rows: string[][]): BulkInviteRecipient[] =>
   parseRecipientRowsWithMeta(rows).recipients
 
+// A byte-order mark is stripped. Comma, semicolon, or tab is chosen from whichever appears most in the first line.
 export const parseCsvRecipientsWithMeta = (text: string): BulkInviteParseResult => {
   const lines = text
     .replace(/^\uFEFF/, '')
@@ -175,6 +180,7 @@ export const parseCsvRecipientsWithMeta = (text: string): BulkInviteParseResult 
 export const parseCsvRecipients = (text: string): BulkInviteRecipient[] =>
   parseCsvRecipientsWithMeta(text).recipients
 
+// Only the first sheet is read. A workbook with no sheet returns no recipients. A numeric cell is stored as digits.
 export const parseXlsxRecipientsWithMeta = async (file: File): Promise<BulkInviteParseResult> => {
   const excelModule = await import('exceljs')
   const ExcelJS = excelModule.default ?? excelModule
@@ -197,6 +203,7 @@ export const parseXlsxRecipientsWithMeta = async (file: File): Promise<BulkInvit
   return parseRecipientRowsWithMeta(rows)
 }
 
+// A legacy .xls file is rejected. An .xlsx file is read as a workbook, and any other file is read as CSV.
 export const parseBulkInviteFile = async (file: File): Promise<BulkInviteParseResult> => {
   const lower = file.name.toLowerCase()
   if (lower.endsWith('.xls') && !lower.endsWith('.xlsx')) {

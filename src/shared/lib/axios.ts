@@ -19,6 +19,7 @@ const SESSION_TERMINATED_MESSAGES = [
   'session expired',
 ]
 
+// A 401 or 403 signs them out only when the account is suspended, inactive, disabled, or the session has ended.
 function isSessionTerminated(error: {
   response?: { status?: number; data?: { message?: string; data?: { code?: string } } }
 }) {
@@ -35,6 +36,7 @@ function isSessionTerminated(error: {
 
 let lastOfflineToastAt = 0
 
+// The offline message is shown at most once every few seconds.
 function notifyOffline() {
   const now = Date.now()
   if (now - lastOfflineToastAt < 4000) return
@@ -46,6 +48,7 @@ function isBrowserOffline() {
   return typeof navigator !== 'undefined' && navigator.onLine === false
 }
 
+// Each call sends the saved token. A successful call counts as activity. A terminated session clears the login and returns them to the sign-in page.
 function attachAuthInterceptor(client: AxiosInstance) {
   client.interceptors.request.use((config) => {
     if (isBrowserOffline()) {

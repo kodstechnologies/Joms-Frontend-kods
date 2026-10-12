@@ -74,6 +74,7 @@ export const getModulePlaceholder = <M extends SettingsModule>(
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+// A missing incoming value keeps the default. Keys that are not in the defaults are not added.
 export const mergeWithDefaults = <T>(defaults: T, incoming: unknown): T => {
   if (incoming == null) return defaults
   if (!isRecord(defaults) || !isRecord(incoming)) return (incoming as T) ?? defaults
@@ -101,6 +102,7 @@ export type BrandingConfigSource = {
   } | null
 }
 
+// A blank name or favicon falls back to the default. The logo is allowed to stay empty.
 export const resolveBranding = (
   config?: BrandingConfigSource | PlatformSettings | null,
   options?: { preferDefaultsOnEmpty?: boolean },

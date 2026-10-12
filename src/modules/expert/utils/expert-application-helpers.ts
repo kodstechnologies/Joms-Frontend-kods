@@ -5,20 +5,24 @@ import type {
 } from '../type/expert-application-view'
 import type { ExpertServiceCategoryGroups } from '../api/expert-onboarding-api'
 
+// Identity counts only when both the PAN number and the PAN file are on the profile.
 export const hasAdminIdentityKyc = (expert?: ExpertApplicationExpert) => {
   const identity = expert?.identityVerification
   return Boolean(identity?.panNumber && identity?.panCardFile)
 }
 
+// Approved when final review says so, or when the profile is verified and the PAN is on file.
 export const isAdminKycApproved = (expert?: ExpertApplicationExpert) =>
   expert?.finalReview?.approvalStatus === 'approved' ||
   (expert?.finalReview?.isVerified === true && hasAdminIdentityKyc(expert))
 
+// Pending, approved, and rejected all count as submitted. A blank status does not.
 export const isSubmittedKycStatus = (status?: string | null) => {
   const normalized = String(status || '').toUpperCase()
   return normalized === 'PENDING' || normalized === 'APPROVED' || normalized === 'REJECTED'
 }
 
+// A partner who is exempt, or whose KYC is not mandatory, is treated as already submitted.
 export const isKycSubmittedForApplication = (
   expert?: ExpertApplicationExpert,
   kyc?: ExpertApplicationKyc,
@@ -28,6 +32,7 @@ export const isKycSubmittedForApplication = (
   isSubmittedKycStatus(kyc?.status) ||
   isAdminKycApproved(expert)
 
+// When the KYC record has no status, an approved identity review is shown as approved.
 export const getDisplayKycStatus = (
   expert?: ExpertApplicationExpert,
   kyc?: ExpertApplicationKyc,
@@ -43,6 +48,7 @@ export const formatServiceTypeDisplay = (serviceType?: string) => {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
+// The role shown is the job they marked as current. A past job is not used.
 export const getExpertCurrentRole = (expert?: ExpertApplicationExpert) => {
   const currentJob = expert?.workExperience?.find((entry) => entry.currentlyWorking)
   const jobTitle = currentJob?.jobTitle?.trim()
@@ -63,6 +69,7 @@ const getSubCategoryId = (entry: unknown) => {
   return String(entry ?? '')
 }
 
+// A stored display name is used as it is. An id is replaced with the category name, and a bare id is left blank.
 export const resolveExpertServiceCategoryDisplay = (
   expert?: ExpertApplicationExpert,
   categoryGroups?: ExpertServiceCategoryGroups,

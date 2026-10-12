@@ -24,6 +24,7 @@ function upsertFavicon(href: string) {
   document.head.appendChild(link)
 }
 
+// Branding is loaded only after sign-in. A failed load keeps the default name and icon, and both are applied to the browser tab.
 export function BrandingProvider({ children }: PropsWithChildren) {
   const token = useAuthStore((state) => state.token)
   const brandingQuery = useQuery({

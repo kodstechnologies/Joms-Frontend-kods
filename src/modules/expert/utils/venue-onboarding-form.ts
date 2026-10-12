@@ -117,6 +117,7 @@ const GST_DOCUMENT_KEYS = new Set(['gstCertificate', 'gstUndertakingDocument', '
 const isGstKycDocument = (doc: VenueKycDocumentRule) =>
   GST_DOCUMENT_KEYS.has(doc.key) || Boolean(doc.requiredIfGstEnabled)
 
+// A GST document is required only when GST is switched on. Every other document is required unless the rule says otherwise.
 export const isVenueKycDocumentRequired = (doc: VenueKycDocumentRule, hasGST: boolean) => {
   if (isGstKycDocument(doc)) {
     return hasGST === true
@@ -124,6 +125,7 @@ export const isVenueKycDocumentRequired = (doc: VenueKycDocumentRule, hasGST: bo
   return doc.required !== false
 }
 
+// GST documents are hidden when the venue has no GST.
 export const getVenueKycUploadSections = (rules?: VenueDocumentRules | null, hasGST = true) => {
   const keepVisible = (docs: VenueKycDocumentRule[]) =>
     hasGST ? docs : docs.filter((doc) => !isGstKycDocument(doc))
@@ -135,6 +137,7 @@ export const getVenueKycUploadSections = (rules?: VenueDocumentRules | null, has
   }
 }
 
+// The two GST undertaking keys count as the same document.
 export const hasVenueKycDocument = (
   form: Pick<VenueOnboardingFormData, 'kycDocuments' | 'kycDocumentUrls'>,
   key: string,
@@ -152,6 +155,7 @@ export const hasVenueKycDocument = (
   return false
 }
 
+// PAN is always required, even when the category rules do not list it.
 export const missingRequiredVenueKycDocument = (
   form: VenueOnboardingFormData,
   rules?: VenueDocumentRules | null,
@@ -321,6 +325,7 @@ export const buildLocationFormData = async (form: VenueOnboardingFormData): Prom
   return formData
 }
 
+// GST files are left out of the upload when GST is switched off.
 export const buildKycFormData = (form: VenueOnboardingFormData): FormData => {
   const formData = new FormData()
 
@@ -361,6 +366,7 @@ const parseOptionalNumber = (value?: string | number | null) => {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+// A number or a plain string is read as years. A JSON object can carry years and months, including a founding year.
 export const parseHostingSince = (value: unknown): { years?: number; months?: number } => {
   if (value == null || value === '') return {}
 
@@ -394,6 +400,7 @@ export const parseHostingSince = (value: unknown): { years?: number; months?: nu
   return {}
 }
 
+// Nothing is sent when the years are blank. Missing months are sent as zero.
 export const toHostingSincePayload = (form: VenueOnboardingFormData) => {
   const years = parseOptionalNumber(form.hostingSinceYears)
   if (years == null) return null
@@ -408,6 +415,7 @@ const isCalendarYear = (years: number) => {
   return years >= 1900 && years <= currentYear + 1
 }
 
+// A calendar year is shown as the year. A smaller number is shown as a count of years and months.
 export const formatHostingSince = (years?: number, months?: number) => {
   if (years == null && (months == null || months === 0)) return '-'
   if (years != null && isCalendarYear(years)) return String(years)
@@ -429,12 +437,14 @@ export const resolveHostingSinceLabel = (
   return formatHostingSince(years, months)
 }
 
+// A short value is left visible. A longer one keeps the start and the end, and masks at least four characters.
 export const maskSensitiveValue = (value: string, visibleStart = 2, visibleEnd = 1) => {
   if (!value || value.length <= visibleStart + visibleEnd) return value
   const maskedLength = Math.max(value.length - visibleStart - visibleEnd, 4)
   return value.slice(0, visibleStart) + '*'.repeat(maskedLength) + value.slice(-visibleEnd)
 }
 
+// The two GST undertaking fields are copied onto each other so either key finds the file.
 export const extractKycDocumentUrls = (businessKyc?: Record<string, unknown> | null) => {
   const urls: Record<string, string> = {}
   if (!businessKyc) return urls
@@ -460,6 +470,7 @@ export type VenueOnboardingFieldErrors = Record<string, string>
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// Phone and email must be verified before the first step passes. GST and its state are required only when GST is on. The account is not created until verification is confirmed.
 export const getVenueOnboardingStepErrors = (
   step: number,
   form: VenueOnboardingFormData,

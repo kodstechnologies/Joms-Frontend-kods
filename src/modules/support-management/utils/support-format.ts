@@ -73,6 +73,7 @@ export const SUPPORT_ESCALATION_PATHWAY_OPTIONS = [
   'Technical Support',
 ] as const
 
+// Events are treated as venues. Payment and refund issues need finance access. Anything else stays with support.
 export const getSupportModuleEscalationPermission = (module?: string | null): string => {
   const value = String(module || '')
     .trim()
@@ -101,6 +102,7 @@ export const getSupportModuleEscalationPermission = (module?: string | null): st
 
 export type SelectOption = { value: string; label: string }
 
+// A current value that is not in the list is kept at the top. A dash is not added.
 export function toSelectOptions(
   values: readonly string[],
   current?: string | null,
@@ -118,11 +120,13 @@ export const PRIORITY_SELECT_OPTIONS: SelectOption[] = PRIORITY_CYCLE.map((value
   label: getPriorityLabel(value),
 }))
 
+// The next status follows the cycle, and closed wraps back to open.
 export const nextStatus = (status: TicketStatus): TicketStatus => {
   const idx = STATUS_CYCLE.indexOf(status)
   return STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length]
 }
 
+// The next priority follows the cycle, and low wraps back to critical.
 export const nextPriority = (priority: TicketPriority): TicketPriority => {
   const idx = PRIORITY_CYCLE.indexOf(priority)
   return PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length]
@@ -146,6 +150,7 @@ export const getPriorityClassName = (priority: TicketPriority) =>
     priority === 'low' && 'border-brand-positive/40 bg-brand-positive/10 text-brand-positive',
   )
 
+// An unknown escalation status is shown as a blank label.
 export const getEscalationStatusLabel = (status?: EscalationStatus | string | null) => {
   const map: Record<EscalationStatus, string> = {
     pending: 'Pending',
@@ -172,9 +177,11 @@ export const getEscalationStatusClassName = (status?: EscalationStatus | string 
   )
 }
 
+// A resolved or closed ticket is treated as finished.
 export const isTerminalTicketStatus = (status?: TicketStatus | string | null) =>
   status === 'resolved' || status === 'closed'
 
+// Less than a minute is shown as under a minute. A bad duration is a dash.
 export function formatSlaDuration(ms: number) {
   if (!Number.isFinite(ms) || ms < 0) return '—'
 
@@ -189,6 +196,7 @@ export function formatSlaDuration(ms: number) {
   return `${hours}h ${String(minutes).padStart(2, '0')}m`
 }
 
+// Time still left is shown as a duration. Time already passed is shown as overdue.
 export function formatSlaCountdown(remainingMs: number) {
   if (!Number.isFinite(remainingMs)) return '—'
   if (remainingMs >= 0) return formatSlaDuration(remainingMs)
@@ -197,6 +205,7 @@ export function formatSlaCountdown(remainingMs: number) {
 
 const pad2 = (value: number) => String(value).padStart(2, '0')
 
+// Ticket times are shown in India time. A missing or bad date is a dash.
 export function formatTicketDateTime(value?: string | Date | null) {
   if (!value) return '—'
   const date = value instanceof Date ? value : new Date(value)
@@ -218,6 +227,7 @@ export function formatTicketDateTime(value?: string | Date | null) {
   return `${pick('day')} ${pick('month')} ${pick('year')} ${pick('hour')}:${pick('minute')}`
 }
 
+// A clock string that is already stored is padded. Otherwise the time between start and end is used, and a negative span is a dash.
 export function formatTicketDurationHms(
   value?: string | null,
   start?: string | null,
@@ -240,12 +250,14 @@ export function formatTicketDurationHms(
   return '—'
 }
 
+// A blank value and the word Unassigned are both shown as a dash.
 export const dashIfEmpty = (value?: string | null) => {
   const text = String(value || '').trim()
   if (!text || text === 'Unassigned') return '—'
   return text
 }
 
+// An expert and a service partner are both shown as a service partner.
 export const getReporterTypeLabel = (type: string) => {
   const map: Record<string, string> = {
     user: 'User',
@@ -290,6 +302,7 @@ export type TicketIntelligenceContext = {
   issueDetail: string
 }
 
+// A general category is not used as the issue name. The event name comes from the event module only when no event context is stored. Detail is cut at 120 characters.
 export function resolveTicketIntelligenceContext(
   ticket?: {
     eventContext?: JsonContext | null

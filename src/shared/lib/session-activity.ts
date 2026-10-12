@@ -11,6 +11,7 @@ function readStoredActivity() {
   }
 }
 
+// Records the latest activity in this tab and in local storage so other tabs share the same idle clock.
 export function markSessionActivity() {
   lastActivityAt = Date.now()
   try {
@@ -20,6 +21,7 @@ export function markSessionActivity() {
   }
 }
 
+// Uses the later time from this tab or any other tab, so activity in one tab keeps the others signed in.
 export function getLastSessionActivity() {
   const stored = typeof window !== 'undefined' ? readStoredActivity() : 0
   if (stored > lastActivityAt) lastActivityAt = stored

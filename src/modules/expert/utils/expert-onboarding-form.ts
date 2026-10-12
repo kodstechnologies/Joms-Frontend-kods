@@ -438,6 +438,7 @@ export const mapExpertProfileToOnboardingForm = (profile: {
   }
 }
 
+// Zero years and months are shown as not available.
 export const formatExperience = (years?: number | string, months?: number | string) => {
   const y = Number(years) || 0
   const m = Number(months) || 0
@@ -452,6 +453,7 @@ export type ExpertOnboardingFieldErrors = Record<string, string>
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// Phone and email must be verified. PAN is always required, and the government id is used as the PAN when that type is chosen. GST is required only when it is on. A sample work file is required only when creating. An end date cannot be before the start date unless they still work there. The gallery is capped at 5 images.
 export const getExpertOnboardingStepErrors = (
   step: number,
   form: ExpertOnboardingFormData,

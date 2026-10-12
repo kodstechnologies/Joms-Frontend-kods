@@ -5,6 +5,7 @@ export type ManagementStatusKey = 'pending' | 'approved' | 'suspended' | 'delete
 const normalizeStatusToken = (status: string | null | undefined) =>
   (status || '').toLowerCase().replace(/_/g, ' ').trim()
 
+// Deleted and suspended flags win over the status text. Draft, preview, and submitted are shown as pending. Live and active are shown as approved.
 export const normalizeManagementStatus = (
   status: string | null | undefined,
   options?: { isSuspend?: boolean; isDeleted?: boolean },
@@ -74,6 +75,7 @@ export const getManagementStatusDisplay = (
   }
 }
 
+// Active stays Active. Live, instant, approved, and published are labelled Live. Draft and preview stay Preview.
 const formatListingStatusLabel = (status: string | null | undefined, key: ManagementStatusKey) => {
   if (key === 'deleted') return 'Deleted'
   if (key === 'suspended') return 'Suspended'
@@ -131,6 +133,7 @@ const getProfileServiceListingStatusClassName = (
   return cn(base, 'bg-white/50 text-[#050505]')
 }
 
+// A preview or a draft has not been submitted. Any other status has.
 export const isSubmittedListingStatus = (status: string | null | undefined) => {
   const normalized = normalizeStatusToken(status)
   return Boolean(normalized) && !['preview', 'draft'].includes(normalized)

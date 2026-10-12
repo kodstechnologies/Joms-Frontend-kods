@@ -27,6 +27,7 @@ export function useAdminRefundFlow({ onRefunded }: { onRefunded?: () => void } =
   const queryClient = useQueryClient()
   const [target, setTarget] = useState<AdminRefundTarget | null>(null)
 
+  // A refund opens only after the client has asked for one, and only when the payment id is present.
   const openRefund = useCallback((next: AdminRefundTarget) => {
     if (!next.refundRequested) {
       toast.error(

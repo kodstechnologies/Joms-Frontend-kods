@@ -60,6 +60,7 @@ export type AppRestrictions = {
   venue?: AppVenueRestrictions
 }
 
+// Reads the public switches for creating experts, listings, and venues. A missing body is treated as no extra limits.
 export const fetchAppRestrictions = async (): Promise<AppRestrictions> => {
   const response = await settingsApiClient.get<{
     success: boolean
@@ -77,5 +78,6 @@ export const useAppRestrictions = () => {
   })
 }
 
+// The first real true or false wins. Undefined values are skipped, so a missing setting does not count as off.
 export const firstDefinedBoolean = (...values: Array<boolean | undefined>) =>
   values.find((value) => typeof value === 'boolean')

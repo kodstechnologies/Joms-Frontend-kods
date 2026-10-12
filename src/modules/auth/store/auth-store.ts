@@ -41,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       setSession: (user, token) => set({ isAuthenticated: true, user, token }),
+      // The stored profile is left as it is when none of the new values actually differ.
       updateUser: (partial) =>
         set((state) => {
           if (!state.user) return state
@@ -61,12 +62,14 @@ export const useAuthStore = create<AuthState>()(
           }
         }),
       clearSession: () => set({ isAuthenticated: false, user: null, token: null }),
+      // A super admin is treated as having every permission.
       hasPermission: (key, minLevel = PERMISSION_LEVELS.FULL) => {
         const user = get().user
         if (!user) return false
         const grants = user.permissions.map((grant) => normalizePermissionGrant(grant))
         return hasPermissionGrant(grants, key, minLevel, user.isSuperAdmin)
       },
+      // A super admin is treated as having every module.
       hasModuleAccess: (module) => {
         const user = get().user
         if (!user) return false

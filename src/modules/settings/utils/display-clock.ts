@@ -16,6 +16,7 @@ type TimezoneInfo = {
   abbr: string
 }
 
+// Kolkata, IST, and +5:30 are India time. An unknown label is also shown as India time.
 export function resolveTimezone(timezoneLabel: string): TimezoneInfo {
   const label = timezoneLabel.toLowerCase()
 
@@ -62,6 +63,7 @@ function getZonedParts(date: Date, timeZone: string) {
   }
 }
 
+// The default date layout is day, month, year. The clock uses the timezone from display settings.
 export function formatDisplayClock(
   date: Date,
   dateTimeFormat?: string | null,

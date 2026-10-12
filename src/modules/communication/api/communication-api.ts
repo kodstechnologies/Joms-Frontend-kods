@@ -2,7 +2,12 @@ import { settingsApiClient } from '@/shared/lib/axios'
 
 export type CommunicationChannel = 'in-app' | 'email' | 'push'
 export type CommunicationType =
-  'transactional' | 'marketing' | 'promotional' | 'reminder' | 'announcement' | 'system'
+  | 'transactional'
+  | 'marketing'
+  | 'promotional'
+  | 'reminder'
+  | 'announcement'
+  | 'system'
 export type CommunicationAudience =
   | 'all-users'
   | 'experts'
@@ -15,6 +20,7 @@ export type CommunicationAudience =
   | 'venue-management'
   | 'all-partners'
 
+// A comma-separated audience is split, and a repeated audience is kept once.
 export const parseCommunicationAudiences = (
   audience: CommunicationAudience | CommunicationAudience[] | string | null | undefined,
 ): CommunicationAudience[] => {
@@ -313,6 +319,7 @@ export const retryFailedCommunication = async (id: string) => {
   return response.data.data
 }
 
+// A failed send can be retried. A draft, a schedule, a cancellation, or a pause cannot, even when some messages failed.
 export const canRetryFailedMessages = (
   communication: Pick<Communication, 'status'> & {
     failedCount?: number

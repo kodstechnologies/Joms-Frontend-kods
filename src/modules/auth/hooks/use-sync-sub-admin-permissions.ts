@@ -10,6 +10,7 @@ const SYNC_INTERVAL_MS = 5_000
 const permissionFingerprint = (permissions: string[] = []) =>
   [...permissions].map(String).sort().join('|')
 
+// Reloads this admin's permissions every few seconds and when the tab is focused. A failed reload leaves the current permissions in place.
 export function useSyncSubAdminPermissions() {
   const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)

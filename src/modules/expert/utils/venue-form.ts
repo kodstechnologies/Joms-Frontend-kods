@@ -23,6 +23,7 @@ export const WEEK_DAYS = [
 
 const toDayKey = (day: string) => day.trim().slice(0, 3).toLowerCase()
 
+// Every day starts at 09:00 to 18:00 and is switched off.
 export const createDefaultWeeklyAvailability = (): WeeklyAvailabilityEntry[] =>
   WEEK_DAYS.map((day) => ({
     day,
@@ -31,6 +32,7 @@ export const createDefaultWeeklyAvailability = (): WeeklyAvailabilityEntry[] =>
     enabled: false,
   }))
 
+// A day that was not saved is left off. A saved day with no enabled flag is treated as on.
 export const hydrateWeeklyAvailability = (
   savedWeekly?: Array<{ day?: string; from?: string; to?: string; enabled?: boolean }> | null,
 ): WeeklyAvailabilityEntry[] => {
@@ -67,6 +69,7 @@ export type AmenityMediaFields = {
   id?: string
 }
 
+// The image is used first, then the icon, then the 3D icon, then the vector.
 export const resolveAmenityMediaUrl = (item?: AmenityMediaFields | null) =>
   item?.image || item?.icon || item?.icon3D || item?.vectorIcon || null
 
@@ -240,6 +243,7 @@ export const createEmptyVenueFormData = (): VenueFormData => ({
   blockedDates: [],
 })
 
+// Contact, submitted, and completed all land on the last step. An unknown step starts again at venue details.
 export const mapCurrentStepToUiStep = (currentStep?: string): number => {
   switch (currentStep) {
     case 'venue_details':
@@ -270,6 +274,7 @@ const cancellationHoursMap: Record<string, number> = {
   '12hrs': 12,
 }
 
+// An unknown cancellation policy is treated as 48 hours.
 export const mapCancellationPolicyToHours = (policy: string) => cancellationHoursMap[policy] ?? 48
 
 const reverseCancellationHoursMap: Record<number, string> = {
@@ -279,9 +284,11 @@ const reverseCancellationHoursMap: Record<number, string> = {
   12: '12hrs',
 }
 
+// A missing hour count, or one the form does not list, is saved as 48 hours.
 export const mapHoursToCancellationPolicy = (hours?: number) =>
   reverseCancellationHoursMap[hours ?? 48] ?? '48hrs'
 
+// Only a restaurant is sent as a restaurant. Every other space type is sent as an auditorium.
 export const mapSpaceTypeToApi = (spaceType: string) => {
   if (spaceType === 'restaurant') return 'restaurant'
   return 'auditorium'
@@ -308,7 +315,8 @@ export const mapDraftToVenueFormData = (
   const space = spaces[0]
   const pricing = (space?.pricing as Array<Record<string, unknown>> | undefined)?.[0]
   const availability = space?.availability as
-    { weeklyAvailability?: WeeklyAvailabilityEntry[] } | undefined
+    | { weeklyAvailability?: WeeklyAvailabilityEntry[] }
+    | undefined
   const terms = profile?.terms as Record<string, unknown> | undefined
   const gallery = space?.galleryContact as Record<string, unknown> | undefined
   const amenitiesDoc =
@@ -371,7 +379,8 @@ export const mapDraftToVenueFormData = (
       : String(terms?.terms || ''),
     cancellationPolicy: mapHoursToCancellationPolicy(
       (terms?.cancellation as Record<string, unknown> | undefined)?.freeCancellationHours as
-        number | undefined,
+        | number
+        | undefined,
     ),
     refundPercentage: String(
       (terms?.cancellation as Record<string, unknown> | undefined)?.refundPercentage ?? '',

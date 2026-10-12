@@ -19,6 +19,7 @@ export type PolicyEditorValues = {
   notifyVia: PolicyNotifyVia
 }
 
+// Email, in-app, and push all start switched on.
 export const defaultNotifyVia = (): PolicyNotifyVia => ({
   email: true,
   inApp: true,
@@ -48,6 +49,7 @@ export const toDateInputValue = (value: Date) => {
   return `${year}-${month}-${day}`
 }
 
+// The minor number goes up by one. A version that is not major.minor becomes V1.0.
 export const bumpPolicyVersion = (version: string) => {
   const match = version.trim().match(/^v?(\d+)\.(\d+)$/i)
   if (!match) return 'V1.0'
@@ -56,6 +58,7 @@ export const bumpPolicyVersion = (version: string) => {
   return `V${major}.${minor}`
 }
 
+// A skipped send shows its note, or nothing when there is no note.
 export const formatPolicyNotificationToast = (notifications?: PolicyNotificationsResult | null) => {
   if (!notifications || notifications.skipped) {
     return notifications?.note || null
@@ -63,6 +66,7 @@ export const formatPolicyNotificationToast = (notifications?: PolicyNotification
   return notifications.note || 'Partner notifications dispatched.'
 }
 
+// Today uses the current time. A future date starts at midnight on that day.
 export const resolveEffectivePayload = (values: PolicyEditorValues) => {
   if (values.effectiveTiming === 'today') {
     const now = new Date()

@@ -2,6 +2,7 @@ export type DocumentReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 export type DocumentDecisionVariant = 'approve' | 'reject' | 'requestChanges'
 
+// A document with no file has no review status. Anything not already approved or rejected is still pending.
 export function resolveDocumentReviewStatus(
   url?: string | null,
   reviewStatus?: DocumentReviewStatus | null,
@@ -11,6 +12,7 @@ export function resolveDocumentReviewStatus(
   return 'PENDING'
 }
 
+// Only uploaded documents count. The check passes when every one of those is approved, including when none were uploaded.
 export function areUploadedDocumentsApproved(
   items: Array<{ uploaded?: unknown; status?: string | null }>,
 ): boolean {

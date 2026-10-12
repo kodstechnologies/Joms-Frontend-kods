@@ -6,6 +6,7 @@ import {
 import type { PlatformSettings } from '../types/settings'
 import { platformDefaults } from '../config/settings.config'
 
+// PDF stays PDF. Excel, XLSX, and XLS become Excel. A blank value and anything else become CSV.
 export function resolveDefaultExportFormat(value?: string | null): ExportFormatOption {
   const normalized = String(value || '')
     .trim()

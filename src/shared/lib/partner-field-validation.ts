@@ -69,6 +69,7 @@ export function getGovernmentIdMeta(idType: string) {
   return type ? GOVERNMENT_ID_META[type] : null
 }
 
+// A blank type is left blank. Aadhaar, driving licence, and EPIC spellings are accepted as the standard types.
 export function normalizeGovernmentIdType(value: string): GovernmentIdType | '' {
   const trimmed = value.trim()
   if (!trimmed) return ''
@@ -76,22 +77,27 @@ export function normalizeGovernmentIdType(value: string): GovernmentIdType | '' 
   return ID_TYPE_ALIASES[trimmed.toLowerCase()] || ''
 }
 
+// Spaces and symbols are removed, and the value is stored in capitals.
 export function normalizePanNumber(value: string): string {
   return value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
 }
 
+// Spaces and symbols are removed, and the GSTIN is stored in capitals.
 export function normalizeGstNumber(value: string): string {
   return value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
 }
 
+// PAN is cut at 10 characters after it is cleaned.
 export function sanitizePanInput(value: string): string {
   return normalizePanNumber(value).slice(0, 10)
 }
 
+// A GSTIN is cut at 15 characters after it is cleaned.
 export function sanitizeGstInput(value: string): string {
   return normalizeGstNumber(value).slice(0, 15)
 }
 
+// Aadhaar keeps digits only. The other types are capitals and are cut to the length of that document.
 export function normalizeGovernmentIdNumber(idType: string, value: string): string {
   const type = normalizeGovernmentIdType(idType)
   const raw = value.trim()
@@ -124,6 +130,7 @@ export function sanitizeGovernmentIdInput(idType: string, value: string): string
   return normalizeGovernmentIdNumber(idType, value)
 }
 
+// An empty PAN is required. A value that is not five letters, four digits, and a letter is refused.
 export function validatePanNumber(value: string): string | null {
   const pan = normalizePanNumber(value)
   if (!pan) return 'PAN number is required.'
@@ -131,6 +138,7 @@ export function validatePanNumber(value: string): string | null {
   return null
 }
 
+// An empty GSTIN is required. The value must match the 15-character GSTIN pattern.
 export function validateGstNumber(value: string): string | null {
   const gst = normalizeGstNumber(value)
   if (!gst) return 'GST number is required.'
@@ -138,6 +146,7 @@ export function validateGstNumber(value: string): string | null {
   return null
 }
 
+// The type is required, and only Aadhaar, PAN, passport, driving licence, or voter ID are accepted.
 export function validateGovernmentIdType(value: string): string | null {
   if (!value.trim()) return 'ID type is required.'
   if (!normalizeGovernmentIdType(value)) {
@@ -146,6 +155,7 @@ export function validateGovernmentIdType(value: string): string | null {
   return null
 }
 
+// A number cannot be checked until the type is chosen. Aadhaar must be 12 digits and cannot start with 0 or 1.
 export function validateGovernmentIdNumber(idType: string, value: string): string | null {
   const type = normalizeGovernmentIdType(idType)
   if (!type) {
@@ -188,6 +198,7 @@ export function validateGovernmentIdNumber(idType: string, value: string): strin
   return null
 }
 
+// A blank address is refused. An address with no scheme is tried as https.
 export function isValidHttpUrl(value: string): boolean {
   const trimmed = value.trim()
   if (!trimmed) return false

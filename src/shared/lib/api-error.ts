@@ -11,6 +11,7 @@ const readMessage = (value: unknown): string | null => {
   return trimmed ? trimmed : null
 }
 
+// Uses the message from the server. A file that is too large, and a broken upload, are shown as the size limit. A raw status code is not shown.
 export function getApiErrorMessage(
   error: unknown,
   fallback = 'Something went wrong. Please try again.',
@@ -84,6 +85,7 @@ export function apiErrorMessage(
   return getApiErrorMessage(error, fallback)
 }
 
+// Refuses a file larger than 100 MB.
 export function assertFileWithinUploadLimit(file: File) {
   if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
     throw new Error(FILE_TOO_LARGE_MESSAGE)

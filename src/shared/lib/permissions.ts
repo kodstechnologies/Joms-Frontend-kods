@@ -38,6 +38,7 @@ export type ParsedPermissionGrant = {
   level: PermissionLevel
 }
 
+// A grant with no level is treated as full access.
 export const parsePermissionGrant = (grant = ''): ParsedPermissionGrant => {
   const value = String(grant || '').trim()
   if (!value) return { key: '', level: PERMISSION_LEVELS.FULL }
@@ -52,6 +53,7 @@ export const parsePermissionGrant = (grant = ''): ParsedPermissionGrant => {
   return { key, level }
 }
 
+// Full access is stored as the permission key alone, with no level suffix.
 export const formatPermissionGrant = (
   key: string,
   level: PermissionLevel = PERMISSION_LEVELS.FULL,
@@ -61,13 +63,16 @@ export const formatPermissionGrant = (
   return `${key}:${level}`
 }
 
+// Older events permissions are read as venue permissions.
 export const normalizePermissionKey = (key: string) => LEGACY_PERMISSION_MAP[key] || key
 
+// Rewrites a stored grant so an old events permission keeps its level under venues.
 export const normalizePermissionGrant = (grant: string) => {
   const { key, level } = parsePermissionGrant(grant)
   return formatPermissionGrant(normalizePermissionKey(key), level)
 }
 
+// When the same permission is listed twice, the later level is the one that counts.
 export const indexPermissionGrants = (grants: string[] = []) => {
   const map = new Map<string, PermissionLevel>()
   grants.forEach((grant) => {
@@ -79,6 +84,7 @@ export const indexPermissionGrants = (grants: string[] = []) => {
   return map
 }
 
+// Read only is met by every level except restricted. Full is met only by full. Scoped and secondary approval are also met by full.
 export const levelMeetsRequirement = (
   actualLevel: PermissionLevel,
   requiredLevel: PermissionLevel = PERMISSION_LEVELS.FULL,
@@ -101,6 +107,7 @@ export const levelMeetsRequirement = (
   return actualLevel === requiredLevel
 }
 
+// A super admin always passes. A restricted grant never does, even when the screen only asks to view.
 export const hasPermissionGrant = (
   grants: string[] = [],
   requiredKey: string,
@@ -115,6 +122,7 @@ export const hasPermissionGrant = (
   return levelMeetsRequirement(actualLevel, minLevel)
 }
 
+// A super admin can open every module. A module is open when at least one of its permissions is not restricted.
 export const hasModulePermissionAccess = (
   grants: string[] = [],
   modulePrefix: string,
@@ -140,6 +148,7 @@ export const mapToGrants = (map: Record<string, PermissionLevel | undefined>) =>
     .filter(([, level]) => Boolean(level))
     .map(([key, level]) => formatPermissionGrant(key, level as PermissionLevel))
 
+// Duplicate grants are dropped after old events permissions are rewritten as venues.
 export const normalizeUserPermissions = (permissions: string[] = []) => [
   ...new Set(permissions.map((grant) => normalizePermissionGrant(grant))),
 ]

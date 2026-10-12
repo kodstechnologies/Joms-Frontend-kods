@@ -81,6 +81,7 @@ import { type OtpSchema, otpSchema } from '@/modules/auth/validations/otp-schema
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { OtpInput } from '@/shared/components/form/otp-input'
 
+// When the login response has no admin record, the session is treated as a super admin so the panel can still open.
 function buildSessionUser(admin: AdminSessionUser | undefined, fallbackEmail: string): AdminUser {
   if (admin) {
     return {
@@ -133,6 +134,7 @@ export function LoginPage() {
     defaultValues: { code: '' },
   })
 
+  // Sends them back to the page they were opening, unless that page is the sign-in screen.
   const postLoginPath = (sessionUser: AdminUser) => {
     const from = (
       location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null
@@ -144,6 +146,7 @@ export function LoginPage() {
     return getDefaultHomeRoute(sessionUser)
   }
 
+  // The session is saved before the profile loads. Contact details still owed send them to that page even if the profile request fails.
   const finalizeLogin = async (
     token: string,
     admin: AdminSessionUser | undefined,
@@ -194,6 +197,7 @@ export function LoginPage() {
     navigate(postLoginPath(sessionUser), { replace: true })
   }
 
+  // A password that does not need a second step signs them in at once. Otherwise the code step is shown and the token is held back.
   const onSubmitCredentials = async (values: LoginSchema) => {
     if (isLoginPending) return
     try {
@@ -236,6 +240,7 @@ export function LoginPage() {
     }
   }
 
+  // An SMS code is 4 digits. Email and authenticator codes are 6. A missing email sends them back to the password step.
   const onSubmitOtp = async (values: OtpSchema) => {
     if (isVerifyPending) return
     if (!pendingEmail) {

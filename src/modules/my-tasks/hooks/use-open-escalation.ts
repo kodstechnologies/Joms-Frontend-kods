@@ -17,6 +17,7 @@ const readKycId = (payload: unknown): string => {
   return String(record.data?._id || record._id || '').trim()
 }
 
+// A venue partner looks up KYC unless the link is already a venue profile.
 const needsVenueKycLookup = (target: EscalationNavigationTarget) => {
   if (target.entityType !== 'partner' || !target.entityId) return false
   if (target.applicationUrl?.includes('/venues/management/profile/')) return false
@@ -24,6 +25,7 @@ const needsVenueKycLookup = (target: EscalationNavigationTarget) => {
   return Boolean(target.applicationUrl?.includes('source=venue_kyc'))
 }
 
+// Opening the review starts it. A failure to start still opens the screen. A venue KYC id that is only the partner id is looked up again.
 export const useOpenEscalation = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()

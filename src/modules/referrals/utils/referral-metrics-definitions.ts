@@ -40,6 +40,7 @@ export const REFERRAL_METRICS_SEED: ReferralMetricsValues = {
 
 export const REFERRAL_METRIC_TREND_PERCENT = 0
 
+// A reward unlocks on the first booking or a membership purchase. Retention is counted for 30 days.
 export const REFERRAL_REWARD_UNLOCK_RULE = {
   goalEvents: ['signup', 'kyc', 'first_booking', 'membership_purchase'] as const,
   unlockAnyOf: ['first_booking', 'membership_purchase'] as const,
@@ -84,6 +85,7 @@ export const REFERRAL_METRIC_DEFINITIONS: ReferralMetricDefinition[] =
     registryType: item.type as ReferralMetricDefinition['registryType'],
   })).filter((item) => Boolean(item.key))
 
+// A blank or non-numeric figure is a dash. A day average gets the word Days.
 export function formatReferralMetricValue(
   format: ReferralMetricFormat,
   value: number | string | undefined | null,
@@ -107,6 +109,7 @@ export function formatReferralMetricValue(
   return decimal
 }
 
+// A null figure from the server is replaced by the seed value so a card does not go blank.
 export function mergeReferralMetrics(partial?: Partial<ReferralMetrics> | null): ReferralMetrics {
   const merged = {
     ...REFERRAL_METRICS_SEED,

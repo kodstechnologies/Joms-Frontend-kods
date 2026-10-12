@@ -7,6 +7,7 @@ import {
   setRegisteredPushToken,
 } from '@/modules/notifications/lib/push-token-session'
 
+// The push token is removed first, and a failure there does not stop the sign-out. Cached queries are cleared either way.
 export function useLogoutMutation() {
   const queryClient = useQueryClient()
 

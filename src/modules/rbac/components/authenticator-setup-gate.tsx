@@ -11,6 +11,7 @@ import {
   myProfileAuthenticatorSetupPath,
 } from '../utils/authenticator-setup'
 
+// The setup prompt stays up until the authenticator is enrolled, when policy, the role, or a reset requires it. A sub-admin without one is included. The prompt is hidden on the setup page itself.
 export function AuthenticatorSetupGate() {
   const location = useLocation()
   const navigate = useNavigate()

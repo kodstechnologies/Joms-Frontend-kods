@@ -25,6 +25,7 @@ export const isVenueServiceType = (serviceType?: string | null) =>
     .trim()
     .toLowerCase() === 'venue'
 
+// A partner is a venue partner when their service type is venue, or when a venue KYC record is already attached.
 export const isVenuePartner = (partner?: PartnerProfileRef | null) => {
   if (!partner) return false
   if (
@@ -43,6 +44,7 @@ const getPartnerProfileId = (partner: PartnerProfileRef) =>
 export const getVenueKycApplicationPath = (kycId: string) =>
   `/experts/management/application/${kycId}?source=venue_kyc`
 
+// A venue application opens only after KYC is submitted. An expert application always opens on the expert id.
 export const getExpertApplicationPath = (expert: {
   id: string
   serviceType?: string | null
@@ -60,6 +62,7 @@ export const getExpertApplicationPath = (expert: {
   return `/experts/management/application/${expert.id}`
 }
 
+// A venue KYC that exists but is not submitted shows an error and stays put. A missing venue KYC id falls through to the profile lookup.
 export const openExpertApplicationView = async (
   expert: {
     id: string
@@ -100,6 +103,7 @@ const readKycId = (payload: unknown): string => {
   return String(record.data?._id || record._id || '').trim()
 }
 
+// Tries the full venue, then the venue list, then a submitted KYC. An unsubmitted KYC is not opened.
 export const resolveVenuePartnerProfilePath = async (partnerId: string): Promise<string | null> => {
   try {
     const response = await fetchVenueFullView(partnerId)
@@ -146,6 +150,7 @@ export const openVenuePartnerProfile = async (partnerId: string, navigate: Navig
   toast.error('Venue profile not found for this partner.')
 }
 
+// A venue partner is opened on the venue profile. Everyone else is opened on the expert profile.
 export const openPartnerProfile = async (
   partner: PartnerProfileRef,
   navigate: NavigateFunction,
@@ -161,6 +166,7 @@ export const openPartnerProfile = async (
   navigate(`/experts/management/profile/${partnerId}`)
 }
 
+// KYC that has not been submitted is refused for both venues and experts.
 export const openExpertKycFromProfile = async (
   partnerId: string,
   serviceType: string | null | undefined,

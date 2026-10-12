@@ -1,6 +1,7 @@
 import type { MembershipFeatures, MembershipPlan, MembershipPlanConfig } from '../types/membership'
 import type { MembershipSubscription } from '../types/membership-subscription'
 
+// A populated plan name is used first. A stored name that already ends with the billing cycle has that cycle stripped off.
 export const resolveSubscriptionPlanName = (
   subscription: MembershipSubscription,
   plan?: MembershipPlan | null,
@@ -112,6 +113,7 @@ export const getHistoryActionTitle = (action: string) => {
   }
 }
 
+// An upgrade done by the platform is worded as a platform change. A downgrade is worded as a request, not a completed change.
 export const getHistoryActionDescription = (entry: HistoryEntry, fallbackPrice?: number) => {
   const priceText = fallbackPrice ? formatCurrency(fallbackPrice) : ''
   const cycleSuffix = entry.billingCycleName
@@ -139,6 +141,7 @@ export const getHistoryActionDescription = (entry: HistoryEntry, fallbackPrice?:
   }
 }
 
+// A user plan is labelled Users. Every other type is labelled Experts.
 export const getTypeLabel = (type: MembershipPlan['type']) =>
   type === 'user' ? 'Users' : 'Experts'
 
@@ -172,6 +175,7 @@ export const formatMembershipDateSlash = (value?: string | null) => {
   return `${dd}-${mm}-${yyyy}`
 }
 
+// A benefit that is switched off is left out. An older plan still lists the fixed profile and account-manager lines.
 export const getFeatureLines = (
   features: MembershipFeatures | MembershipPlanConfig | undefined,
 ) => {
@@ -200,6 +204,7 @@ export const getFeatureLines = (
   return lines
 }
 
+// A zero discount leaves the price unchanged.
 export const getDiscountedPrice = (price: number, discount: number) => {
   if (!discount) return price
   return price - (price * discount) / 100

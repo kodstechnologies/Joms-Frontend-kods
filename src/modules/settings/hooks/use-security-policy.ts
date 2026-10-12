@@ -22,6 +22,7 @@ type PublicSecurityPolicy = {
   mfa?: SecuritySettings['mfa'] & { requireForAllAdmins?: boolean }
 }
 
+// An older all-admins switch is read as the sub-admin switch. More than one method is reduced to one, and email is the fallback.
 function normalizeMfaPolicy(
   mfa: PublicSecurityPolicy['mfa'] | SecuritySettings['mfa'] | undefined,
 ): SecuritySettings['mfa'] {
@@ -45,6 +46,7 @@ function normalizeMfaPolicy(
   }
 }
 
+// Reads the public security policy without a token. A missing timeout or password rule falls back to the defaults.
 async function fetchPublicSecurityPolicy(): Promise<
   PublicSecurityPolicy & { mfa: SecuritySettings['mfa'] }
 > {
@@ -67,6 +69,7 @@ async function fetchPublicSecurityPolicy(): Promise<
   }
 }
 
+// A signed-in admin uses the saved security settings. The public policy is used when they are signed out, or when that save cannot be read. Only 15, 30, 45, 60, and 120 minute timeouts are kept.
 export function useSecurityPolicy() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const token = useAuthStore((state) => state.token)
@@ -88,7 +91,9 @@ export function useSecurityPolicy() {
   })
 
   const config = (authedQuery.data?.config || publicQuery.data) as
-    Partial<SecuritySettings> | PublicSecurityPolicy | undefined
+    | Partial<SecuritySettings>
+    | PublicSecurityPolicy
+    | undefined
 
   const passwordPolicy = {
     ...DEFAULT_PASSWORD_POLICY,

@@ -10,6 +10,7 @@ const formatDate = (value?: string | null) => {
   return date.toLocaleDateString('en-GB')
 }
 
+// An active service category is shown as accepted. A status the panel does not know is also shown as accepted.
 const mapServiceStatus = (status?: string): string => {
   switch (status) {
     case 'ACTIVE':
@@ -23,6 +24,7 @@ const mapServiceStatus = (status?: string): string => {
   }
 }
 
+// A venue sub-category uses the paused flag. A service sub-category uses the status text.
 const mapSubStatus = (
   sub: CategoryApiSubCategory,
   kind: 'service' | 'venue',
@@ -33,8 +35,10 @@ const mapSubStatus = (
   return sub.status === 'PAUSED' ? 'Paused' : 'Active'
 }
 
+// The stored id is preferred over the display id, so pause and edit hit the real record.
 const resolveDocId = (doc: { _id?: string; id?: string }) => String(doc._id ?? doc.id ?? '')
 
+// Uses the code already on the record. Otherwise the last three characters of the id are shown as the category code.
 const toCategoryId = (category: { _id?: string; id?: string; categoryId?: string }) => {
   const docId = resolveDocId(category)
   return category.categoryId || `CAT${docId.slice(-3).toUpperCase()}`
@@ -51,6 +55,7 @@ const formatRevenueLabel = (category: { revenue?: number; revenueLabel?: string 
   return '₹0.00'
 }
 
+// The short code is only for display. Actions still use the real id.
 const toSubCategoryId = (subId: string) => `SUB${subId.toString().slice(-3).toUpperCase()}`
 
 const mapServiceSubCategory = (sub: CategoryApiSubCategory): Category['subCategories'][number] => {
@@ -90,6 +95,7 @@ const mapVenueSubCategory = (
   }
 }
 
+// A deleted service sub-category is left off the list. Repeat booking is shown as a percent, and a missing one is zero.
 export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category => {
   const activeSubs = (category.subCategories || []).filter((sub) => sub.status !== 'DELETED')
   const repeatPct = typeof category.repeatBookingPct === 'number' ? category.repeatBookingPct : 0
@@ -120,6 +126,7 @@ export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category =
   }
 }
 
+// A deleted category stays deleted even if it is also paused. Deleted sub-categories are left off the list.
 export const mapVenueCategoryToUi = (category: VenueCategoryApi): VenueCategory => {
   const status = category.isDeleted ? 'Deleted' : category.isPaused ? 'Paused' : 'Accepted'
 

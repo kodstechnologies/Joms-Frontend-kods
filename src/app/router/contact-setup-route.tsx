@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { useRbacMe } from '@/modules/rbac/hooks/use-rbac'
 
+// A sub-admin who still owes contact details cannot leave that page. One who has finished is sent away from it.
 export function ContactSetupRoute() {
   const location = useLocation()
   const user = useAuthStore((state) => state.user)

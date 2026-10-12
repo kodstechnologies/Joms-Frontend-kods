@@ -1,6 +1,7 @@
 export const MOBILE_NUMBER_PATTERN = /^[0-9]{10}$/
 const SCIENTIFIC_PHONE_PATTERN = /^[+-]?\d+(?:\.\d+)?[eE][+-]?\d+$/
 
+// Only digits are kept, and the number is cut at 10 digits.
 export const sanitizeMobileNumber = (value: string) => value.replace(/\D/g, '').slice(0, 10)
 
 const unwrapExcelTextFormula = (value: string) => {
@@ -11,6 +12,7 @@ const unwrapExcelTextFormula = (value: string) => {
   return raw
 }
 
+// An Excel formula or a scientific number is turned back into digits. A leading 0 or 91 is dropped so 10 digits remain.
 export const normalizeImportedMobileNumber = (value: string): string => {
   const raw = unwrapExcelTextFormula(String(value || ''))
   if (!raw) return ''
@@ -33,9 +35,11 @@ export const normalizeImportedMobileNumber = (value: string): string => {
   return digits
 }
 
+// Detects a phone that Excel stored as a scientific number, including one wrapped in a text formula.
 export const isScientificPhoneValue = (value: string) =>
   SCIENTIFIC_PHONE_PATTERN.test(unwrapExcelTextFormula(String(value || '')).replace(/\s+/g, ''))
 
+// The number is required and must be exactly 10 digits.
 export const validateMobileNumber = (value: string): string | null => {
   const phone = value.trim()
   if (!phone) return 'Phone number is required.'

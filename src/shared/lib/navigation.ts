@@ -8,6 +8,7 @@ const hasHistoryEntry = () => {
   return typeof idx === 'number' ? idx > 0 : window.history.length > 1
 }
 
+// Goes back when this tab has history. Otherwise it replaces the page with the fallback.
 export const navigateBackOrFallback = (
   navigate: NavigateFunction,
   fallback: To,

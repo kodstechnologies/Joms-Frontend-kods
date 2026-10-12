@@ -57,12 +57,14 @@ export const titleCase = (value?: string | null) => {
 
 const PRICING_TYPE_SUFFIX = /\s*\((fixed|tiered|custom|milestone)\)\s*$/i
 
+// The pricing type in brackets is taken off the service name.
 export const displayServiceTitle = (value?: string | null) => {
   if (!value) return ''
   const cleaned = String(value).replace(PRICING_TYPE_SUFFIX, '').trim()
   return cleaned || String(value)
 }
 
+// The pricing type is shown as a service label, and the word Service is not added twice.
 export const formatServiceTypeLabel = (pricingType?: string | null) => {
   if (!pricingType) return '—'
   const fromSuffix = String(pricingType).match(PRICING_TYPE_SUFFIX)?.[1]
@@ -70,6 +72,7 @@ export const formatServiceTypeLabel = (pricingType?: string | null) => {
   return /service$/i.test(label) ? label : `${label} Service`
 }
 
+// Paid and fulfilled are shown as paid. Failed and expired are shown as failed. Everything else stays pending.
 export const mapPaymentStatus = (status: string) => {
   if (status === 'paid' || status === 'fulfilled') return 'Paid' as const
   if (status === 'failed' || status === 'expired') return 'Failed' as const
@@ -83,6 +86,7 @@ const firstNonEmpty = (...values: unknown[]) => {
   return null
 }
 
+// A partner name is still needed when the stored name is missing, or is only the partner id or the customer id.
 export const needsPartnerDisplayName = (payment: FinancePayment, snapshotName?: string | null) => {
   const partnerId = firstNonEmpty(payment.partnerId, payment.moduleSnapshot?.partnerId)
   const name = firstNonEmpty(snapshotName, payment.moduleSnapshot?.partnerName)
@@ -99,6 +103,7 @@ const moneyNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback
 }
 
+// Tax defaults to 18 percent. Commission defaults to 20 percent for a venue and 10 percent otherwise, and to nothing when the platform is the one being paid. Membership pays the partner nothing.
 export const derivePaymentMoneyFields = (payment: FinancePayment) => {
   const snapshot = payment.moduleSnapshot || {}
   const moduleData = payment.moduleData || {}
@@ -158,6 +163,7 @@ export const derivePaymentMoneyFields = (payment: FinancePayment) => {
 }
 
 const formatPct = (value: number) => `${Number(value || 0).toFixed(value % 1 === 0 ? 0 : 2)}%`
+// A dummy payment is labelled Dummy. Anything with a Razorpay id is labelled Razorpay.
 const gatewayLabel = (payment: FinancePayment) => {
   const method = String(payment.paymentMethod || '').toUpperCase()
   if (method === 'DUMMY') return 'Dummy'
@@ -165,6 +171,7 @@ const gatewayLabel = (payment: FinancePayment) => {
   return method || 'Razorpay'
 }
 
+// The owner name ignores a snapshot that is only an id, then falls back to the partner lookup.
 export const mapPaymentToRevenueRow = (
   payment: FinancePayment,
   partnerNameMap?: Record<string, string> | null,
@@ -213,6 +220,7 @@ export const mapPaymentToRevenueRow = (
   }
 }
 
+// Held is shown as active. Released to a payout is shown as released. Refunded or cancelled is shown as a dispute. Any other status stays active.
 export const mapEscrowStatus = (status: string): 'Active' | 'Released' | 'Dispute' => {
   if (status === 'held') return 'Active'
   if (status === 'released_to_payout') return 'Released'
@@ -236,6 +244,7 @@ export const mapEscrowToRow = (escrow: FinanceEscrowHold) => ({
   lastUpdated: formatDate(escrow.createdAt),
 })
 
+// A venue partner, expert, or organisation keeps that label. Any other type is shown in title case.
 export const mapPayeeType = (value?: string | null) => {
   if (value === 'venue_partner') return 'Venue Partner'
   if (value === 'expert') return 'Expert'
@@ -243,6 +252,7 @@ export const mapPayeeType = (value?: string | null) => {
   return titleCase(value)
 }
 
+// A payout paused for a dispute is shown as on hold. Anything not paid, failed, processing, or cancelled stays pending.
 export const mapPayoutStatus = (status: string) => {
   if (status === 'paid') return 'Paid' as const
   if (status === 'failed') return 'Failed' as const
@@ -252,6 +262,7 @@ export const mapPayoutStatus = (status: string) => {
   return 'Pending' as const
 }
 
+// A payout can be released only when it is scheduled, waiting for approval, or has already failed.
 export const canReleasePayout = (status?: string | null) =>
   ['scheduled', 'pending_approval', 'failed'].includes(String(status || ''))
 
@@ -298,6 +309,7 @@ export const mapPayoutToAdminRow = (payout: FinancePayout) => {
   }
 }
 
+// A full or partial refund is shown as resolved. Waiting for information and an escalation are both shown as in review.
 export const mapDisputeStatus = (status: string) => {
   if (status === 'resolved_full_refund' || status === 'resolved_partial_refund') {
     return 'Resolved' as const
@@ -309,6 +321,7 @@ export const mapDisputeStatus = (status: string) => {
   return titleCase(status) as 'Resolved' | 'Rejected' | 'Pending' | 'Open' | 'In Review'
 }
 
+// A processed refund is shown as resolved. One that was started or failed stays pending.
 export const mapRefundStatus = (status: string) => {
   if (status === 'processed') return 'Resolved' as const
   if (status === 'rejected') return 'Rejected' as const

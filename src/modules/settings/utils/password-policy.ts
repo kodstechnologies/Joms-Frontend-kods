@@ -15,6 +15,7 @@ export const DEFAULT_SESSION_TIMEOUT_MINUTES = 30
 
 const SPECIAL_CHAR_REGEX = /[!@#$%^&*]/
 
+// The length rule is always listed. The other rules appear only when that switch is on.
 export function describePasswordPolicy(policy: PasswordPolicy = DEFAULT_PASSWORD_POLICY) {
   const rules = [`Password must be at least ${policy.minimumLength} characters long.`]
   if (policy.requireUppercase) rules.push('Must include an uppercase letter (A-Z).')
@@ -26,6 +27,7 @@ export function describePasswordPolicy(policy: PasswordPolicy = DEFAULT_PASSWORD
   return rules
 }
 
+// Checks the password against the security settings. A missing length is treated as 8. Only the listed special characters count.
 export function validatePasswordAgainstPolicy(
   password: string,
   policy: PasswordPolicy = DEFAULT_PASSWORD_POLICY,

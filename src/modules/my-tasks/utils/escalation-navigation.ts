@@ -10,12 +10,14 @@ export type EscalationNavigationTarget = {
   metadata?: Record<string, unknown>
 }
 
+// Banking and KYC open those tabs. Any other target does not add a tab.
 const partnerReviewTab = (escalationTarget?: string) => {
   if (escalationTarget === 'banking') return 'banking'
   if (escalationTarget === 'kyc') return 'kyc'
   return null
 }
 
+// The review tab is added only on an expert application link, and only when the link does not already have one.
 const withPartnerReviewTab = (url: string, escalationTarget?: string) => {
   const tab = partnerReviewTab(escalationTarget)
   if (!tab || !url.includes('/experts/management/application/')) return url
@@ -29,6 +31,7 @@ const withPartnerReviewTab = (url: string, escalationTarget?: string) => {
 
 const APPLICATION_ID_FROM_URL = /\/application\/([^/?#]+)/
 
+// Only a link marked as venue KYC yields an application id.
 export const getVenueKycIdFromUrl = (url?: string) => {
   if (!url || !url.includes('source=venue_kyc')) return ''
   return url.match(APPLICATION_ID_FROM_URL)?.[1] || ''
@@ -78,6 +81,7 @@ const buildFallbackUrl = ({
   }
 }
 
+// A stored profile, order, booking, or category link is kept. An incident uses the id from its metadata when the stored link is not the settings page. A venue space with no venue id is not opened.
 export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
   const canonical = buildFallbackUrl(target)
   const stored = target.applicationUrl?.trim()
