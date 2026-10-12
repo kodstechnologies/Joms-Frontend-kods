@@ -131,7 +131,7 @@ function MergeTicketsModalInner({
                     type="checkbox"
                     checked={selectedTickets.includes(ticket.id)}
                     onChange={() => toggleTicket(ticket.id)}
-                    className="mt-1 rounded border-slate-700 bg-transparent"
+                    className="ui-table-checkbox mt-1"
                   />
                   <span>
                     <span className="text-body-sm-medium text-brand-text block">

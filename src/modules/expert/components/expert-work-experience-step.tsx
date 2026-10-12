@@ -5,6 +5,7 @@ import {
   type ExpertOnboardingFormData,
   type ExpertWorkExperienceEntry,
 } from '../utils/expert-onboarding-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 const fieldClass = 'ui-input'
 
@@ -33,10 +34,13 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
   }
 
   const removeEntry = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      workExperience: prev.workExperience.filter((_, i) => i !== index),
-    }))
+    setFormData((prev) => {
+      const remaining = prev.workExperience.filter((_, i) => i !== index)
+      return {
+        ...prev,
+        workExperience: remaining.length > 0 ? remaining : [createEmptyWorkExperienceEntry()],
+      }
+    })
   }
 
   return (
@@ -52,20 +56,20 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
             <div key={index} className="space-y-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-white">Work Title {index + 1}</h3>
-                {formData.workExperience.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeEntry(index)}
-                    className="ui-cta ui-cta-negative border-brand-danger/50 text-body-sm border bg-transparent px-3 py-1"
-                  >
-                    Remove
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => removeEntry(index)}
+                  className="inline-flex h-[35px] w-[72px] items-center justify-center rounded-[10px] border border-[#D3191C] bg-[#141414] px-[10px] text-[14px] leading-5 font-semibold tracking-normal text-white"
+                >
+                  Remove
+                </button>
               </div>
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">Job Title</label>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Job Title <RequiredMark />
+                  </label>
                   <input
                     value={entry.jobTitle}
                     onChange={(e) => updateEntry(index, { jobTitle: e.target.value })}
@@ -75,7 +79,9 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">Company name</label>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Company name <RequiredMark />
+                  </label>
                   <input
                     value={entry.companyName}
                     onChange={(e) => updateEntry(index, { companyName: e.target.value })}
@@ -109,7 +115,19 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                   <input
                     type="date"
                     value={entry.startDate}
-                    onChange={(e) => updateEntry(index, { startDate: e.target.value })}
+                    max={!entry.currentlyWorking && entry.endDate ? entry.endDate : undefined}
+                    onChange={(e) => {
+                      const startDate = e.target.value
+                      const shouldClearEnd =
+                        !entry.currentlyWorking &&
+                        entry.endDate &&
+                        startDate &&
+                        entry.endDate < startDate
+                      updateEntry(index, {
+                        startDate,
+                        ...(shouldClearEnd ? { endDate: '' } : {}),
+                      })
+                    }}
                     className={`${fieldClass} [color-scheme:dark]`}
                   />
                 </div>
@@ -119,6 +137,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                   <input
                     type="date"
                     value={entry.endDate}
+                    min={entry.startDate || undefined}
                     disabled={entry.currentlyWorking}
                     onChange={(e) => updateEntry(index, { endDate: e.target.value })}
                     className={`${fieldClass} [color-scheme:dark] disabled:opacity-40`}
@@ -136,7 +155,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                       endDate: e.target.checked ? '' : entry.endDate,
                     })
                   }
-                  className="rounded border-slate-700 bg-transparent"
+                  className="ui-table-checkbox"
                 />
                 Currently working here
               </label>

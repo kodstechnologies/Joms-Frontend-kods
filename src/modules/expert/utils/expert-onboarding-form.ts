@@ -1,3 +1,15 @@
+import {
+  isValidHttpUrl,
+  normalizeGovernmentIdNumber,
+  normalizeGstNumber,
+  normalizePanNumber,
+  validateGovernmentIdNumber,
+  validateGovernmentIdType,
+  validateGstNumber,
+  validatePanNumber,
+} from '@/shared/lib/partner-field-validation'
+import { validateMobileNumber } from '@/shared/lib/phone'
+
 export type ExpertWorkExperienceEntry = {
   jobTitle: string
   companyName: string
@@ -27,6 +39,7 @@ export type ExpertOnboardingFormData = {
   coverImageUrl: string
   profileImageUrl: string
   sampleWorkFileName: string
+  sampleWorkFileUrl: string
 
   idType: string
   idNumber: string
@@ -83,6 +96,7 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
   coverImageUrl: '',
   profileImageUrl: '',
   sampleWorkFileName: '',
+  sampleWorkFileUrl: '',
 
   idType: '',
   idNumber: '',
@@ -110,15 +124,27 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
   isEmailVerified: false,
 })
 
-export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormData => {
+export const buildBasicProfileFormData = (
+  form: ExpertOnboardingFormData,
+  creator?: { name?: string | null; kind?: 'superadmin' | 'subadmin' | null } | null,
+): FormData => {
   const formData = new FormData()
 
   formData.append('fullname', form.fullname.trim())
   formData.append('email', form.email.trim())
   formData.append('phoneNumber', form.phoneNumber.trim())
+  formData.append('location', form.location.trim())
+  formData.append('bio', form.bio.trim())
+  formData.append('phoneVerified', form.isPhoneVerified ? 'true' : 'false')
+  formData.append('emailVerified', form.isEmailVerified ? 'true' : 'false')
+  formData.append('createdBy', 'Admin')
+  if (creator?.name?.trim()) {
+    formData.append('createdByName', creator.name.trim())
+  }
+  if (creator?.kind) {
+    formData.append('createdByKind', creator.kind)
+  }
 
-  if (form.location) formData.append('location', form.location.trim())
-  if (form.bio) formData.append('bio', form.bio.trim())
   if (form.industry) formData.append('industry', form.industry.trim())
 
   if (form.experienceYears !== '') {
@@ -128,27 +154,27 @@ export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormD
     formData.append('experienceMonths', String(Number(form.experienceMonths) || 0))
   }
 
-  if (form.serviceType) formData.append('serviceType', form.serviceType)
+  formData.append('serviceType', form.serviceType)
+  formData.append('serviceCategory', JSON.stringify(form.serviceCategory))
 
-  if (form.serviceCategory.length > 0) {
-    formData.append('serviceCategory', JSON.stringify(form.serviceCategory))
-  }
   if (form.offerings.length > 0) {
     formData.append('offerings', JSON.stringify(form.offerings))
   }
 
-  if (form.sampleWorkLink) {
-    const rawLink = form.sampleWorkLink.trim()
-    const link =
-      rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')
-        ? `https://${rawLink}`
-        : rawLink
-    formData.append('sampleWorkLink', link)
-  }
+  const rawLink = form.sampleWorkLink.trim()
+  const link =
+    rawLink && !rawLink.startsWith('http://') && !rawLink.startsWith('https://')
+      ? `https://${rawLink}`
+      : rawLink
+  formData.append('sampleWorkLink', link)
 
   if (form.coverImage) formData.append('coverImage', form.coverImage)
   if (form.profileImage) formData.append('profileImage', form.profileImage)
-  if (form.sampleWorkFile) formData.append('sampleWorkFile', form.sampleWorkFile)
+  if (form.sampleWorkFile) {
+    formData.append('sampleWorkFile', form.sampleWorkFile)
+  } else if (form.sampleWorkFileUrl) {
+    formData.append('sampleWorkFile', form.sampleWorkFileUrl)
+  }
 
   return formData
 }
@@ -157,12 +183,17 @@ export const buildIdentityVerificationFormData = (form: ExpertOnboardingFormData
   const formData = new FormData()
 
   formData.append('idType', form.idType)
-  formData.append('idNumber', form.idNumber.trim())
+  formData.append('idNumber', normalizeGovernmentIdNumber(form.idType, form.idNumber))
   formData.append('gstAvailable', form.gstAvailable ? 'true' : 'false')
-  formData.append('panNumber', form.panNumber.trim())
+  formData.append(
+    'panNumber',
+    normalizePanNumber(
+      form.idType.trim().toLowerCase() === 'pan' ? form.idNumber || form.panNumber : form.panNumber,
+    ),
+  )
 
   if (form.gstAvailable) {
-    if (form.gstNumber) formData.append('gstNumber', form.gstNumber.trim())
+    if (form.gstNumber) formData.append('gstNumber', normalizeGstNumber(form.gstNumber))
     if (form.gstCertificateFile) {
       formData.append('gstCertificateFile', form.gstCertificateFile)
     }
@@ -271,26 +302,22 @@ export const mapExpertProfileToOnboardingForm = (profile: {
   const basic = profile.basicProfile || {}
   const identity = (profile.identityVerification || {}) as Record<string, unknown>
 
-  // Robust category extraction: handles strings, objects { name, _id }, and display arrays
-  const rawCategories =
-    Array.isArray(basic.serviceCategoryDisplay) && basic.serviceCategoryDisplay.length > 0
-      ? basic.serviceCategoryDisplay
-      : Array.isArray(basic.serviceCategory) && basic.serviceCategory.length > 0
-        ? basic.serviceCategory
-        : Array.isArray(profile.subCategory)
-          ? profile.subCategory
-          : []
+  const toCategoryValue = (item: unknown) => {
+    if (typeof item === 'string') return item
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>
+      return String(obj.name || obj.title || obj._id || obj.id || '')
+    }
+    return ''
+  }
 
-  const serviceCategory = rawCategories
-    .map((item: unknown) => {
-      if (typeof item === 'string') return item
-      if (item && typeof item === 'object') {
-        const obj = item as Record<string, unknown>
-        return String(obj.name || obj.title || obj._id || '')
-      }
-      return ''
-    })
-    .filter(Boolean)
+  const rawCategories = [
+    ...(Array.isArray(basic.serviceCategoryDisplay) ? basic.serviceCategoryDisplay : []),
+    ...(Array.isArray(basic.serviceCategory) ? basic.serviceCategory : []),
+    ...(Array.isArray(profile.subCategory) ? profile.subCategory : []),
+  ]
+
+  const serviceCategory = [...new Set(rawCategories.map(toCategoryValue).filter(Boolean))]
 
   const rawOfferings = Array.isArray(basic.offerings) ? basic.offerings : []
   const offerings = rawOfferings
@@ -380,6 +407,7 @@ export const mapExpertProfileToOnboardingForm = (profile: {
     coverImageUrl: basic.coverImage || '',
     profileImageUrl: basic.profileImage || '',
     sampleWorkFileName: fileNameFromUrl(basic.sampleWorkFile),
+    sampleWorkFileUrl: basic.sampleWorkFile || '',
 
     idType: String(identity.idType || identity.id_type || ''),
     idNumber: String(identity.idNumber || identity.id_number || ''),
@@ -405,11 +433,12 @@ export const mapExpertProfileToOnboardingForm = (profile: {
 
     internalNotes: profile.finalReview?.internalNotes || profile.adminNotes || '',
     isVerified: Boolean(profile.finalReview?.isVerified ?? profile.isVerified),
-    isPhoneVerified: Boolean(profile.phoneVerified ?? true),
-    isEmailVerified: Boolean(profile.emailVerified ?? true),
+    isPhoneVerified: Boolean(profile.phoneVerified),
+    isEmailVerified: Boolean(profile.emailVerified),
   }
 }
 
+// Zero years and months are shown as not available.
 export const formatExperience = (years?: number | string, months?: number | string) => {
   const y = Number(years) || 0
   const m = Number(months) || 0
@@ -419,3 +448,118 @@ export const formatExperience = (years?: number | string, months?: number | stri
   if (m) parts.push(`${m} Month${m === 1 ? '' : 's'}`)
   return parts.join(' ')
 }
+
+export type ExpertOnboardingFieldErrors = Record<string, string>
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Phone and email must be verified. PAN is always required, and the government id is used as the PAN when that type is chosen. GST is required only when it is on. A sample work file is required only when creating. An end date cannot be before the start date unless they still work there. The gallery is capped at 5 images.
+export const getExpertOnboardingStepErrors = (
+  step: number,
+  form: ExpertOnboardingFormData,
+  isEdit: boolean,
+): ExpertOnboardingFieldErrors => {
+  const errors: ExpertOnboardingFieldErrors = {}
+
+  if (step === 1) {
+    if (!form.fullname.trim()) errors.fullname = 'Full name is required.'
+    else if (form.fullname.trim().length < 3) {
+      errors.fullname = 'Full name must be at least 3 characters.'
+    }
+    if (!form.location.trim()) errors.location = 'Location is required.'
+    if (!form.bio.trim()) errors.bio = 'Profile bio is required.'
+    if (!form.sampleWorkLink.trim()) errors.sampleWorkLink = 'Sample work link is required.'
+    else if (!isValidHttpUrl(form.sampleWorkLink)) {
+      errors.sampleWorkLink = 'Sample work link must be a valid URL.'
+    }
+    if (!isEdit && !form.sampleWorkFile && !form.sampleWorkFileName) {
+      errors.sampleWorkFile = 'Sample work file is required.'
+    }
+
+    const phoneError = validateMobileNumber(form.phoneNumber)
+    if (phoneError) errors.phoneNumber = phoneError
+    else if (!form.isPhoneVerified) errors.phoneNumber = 'Please verify the phone number.'
+
+    if (!form.email.trim()) errors.email = 'Email ID is required.'
+    else if (!EMAIL_PATTERN.test(form.email.trim())) {
+      errors.email = 'Please enter a valid email address.'
+    } else if (!form.isEmailVerified) {
+      errors.email = 'Please verify the email ID.'
+    }
+
+    if (!form.serviceType) errors.serviceType = 'Service type is required.'
+    if (form.serviceCategory.length === 0) {
+      errors.serviceCategory = 'At least one expert category is required.'
+    }
+  }
+
+  if (step === 2) {
+    const idTypeError = validateGovernmentIdType(form.idType)
+    if (idTypeError) errors.idType = idTypeError
+    const idNumberError = validateGovernmentIdNumber(form.idType, form.idNumber)
+    if (idNumberError) errors.idNumber = idNumberError
+    const panError = validatePanNumber(
+      form.idType.trim().toLowerCase() === 'pan' ? form.idNumber || form.panNumber : form.panNumber,
+    )
+    if (panError) errors.panNumber = panError
+    if (form.gstAvailable) {
+      const gstError = validateGstNumber(form.gstNumber)
+      if (gstError) errors.gstNumber = gstError
+    }
+    if (!form.panCardFile && !form.panCardFileName) {
+      errors.panCardFile = 'PAN card document is required.'
+    }
+    if (!form.certificateFile && !form.certificateFileName) {
+      errors.certificateFile = 'Certificate / license document is required.'
+    }
+    if (form.gstAvailable && !form.gstCertificateFile && !form.gstCertificateFileName) {
+      errors.gstCertificateFile = 'GST certificate is required.'
+    }
+  }
+
+  if (step === 3) {
+    const validEntries = form.workExperience.filter(
+      (entry) => entry.jobTitle.trim() || entry.companyName.trim(),
+    )
+    if (validEntries.length === 0) {
+      errors.workExperience = 'At least one work experience entry is required.'
+      errors['workExperience.0.jobTitle'] = 'Job title is required.'
+      errors['workExperience.0.companyName'] = 'Company name is required.'
+    } else {
+      form.workExperience.forEach((entry, index) => {
+        const hasAny = entry.jobTitle.trim() || entry.companyName.trim()
+        if (!hasAny) return
+        if (!entry.jobTitle.trim()) {
+          errors[`workExperience.${index}.jobTitle`] = 'Job title is required.'
+        }
+        if (!entry.companyName.trim()) {
+          errors[`workExperience.${index}.companyName`] = 'Company name is required.'
+        }
+        if (
+          !entry.currentlyWorking &&
+          entry.startDate &&
+          entry.endDate &&
+          entry.endDate < entry.startDate
+        ) {
+          errors[`workExperience.${index}.endDate`] = 'End date must be on or after the start date.'
+        }
+      })
+    }
+  }
+
+  if (step === 4 && form.galleryPreviews.length > 5) {
+    errors.galleryImages = 'A maximum of 5 images are allowed.'
+  }
+
+  if (step === 5 && !form.isVerified) {
+    errors.isVerified = 'Please verify the profile before submission.'
+  }
+
+  return errors
+}
+
+export const getExpertOnboardingStepError = (
+  step: number,
+  form: ExpertOnboardingFormData,
+  isEdit: boolean,
+) => Object.values(getExpertOnboardingStepErrors(step, form, isEdit))[0] ?? null

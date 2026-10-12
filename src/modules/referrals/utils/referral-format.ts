@@ -18,6 +18,7 @@ export const formatReferralDateTime = (value?: string | null) => {
   }).format(new Date(value))
 }
 
+// A missing end date is treated as 45 days after the start. The span is never shown as less than one day.
 export const formatReferralDateRange = (start?: string | null, end?: string | null) => {
   if (!start) return { range: '—', days: '—' }
 
@@ -45,6 +46,7 @@ export const formatReferralDateRange = (start?: string | null, end?: string | nu
   }
 }
 
+// An accepted status, a success label, or any signup date or referred user counts as used.
 export const isReferralUsed = (
   invite?: {
     status?: string | null
@@ -63,6 +65,7 @@ export const isReferralUsed = (
   )
 }
 
+// A rejected invite uses the same badge as an expired one.
 export const getReferralStatusClassName = (status: string) => {
   switch (status) {
     case 'accepted':
@@ -78,6 +81,7 @@ export const getReferralStatusClassName = (status: string) => {
   }
 }
 
+// A stored label is shown as it is. Otherwise accepted is Successful, pending is Invited, and rejected is Cancelled.
 export const getReferralStatusLabel = (status: string, statusLabel?: string | null) => {
   if (statusLabel) return statusLabel
   switch (status) {
@@ -94,6 +98,7 @@ export const getReferralStatusLabel = (status: string, statusLabel?: string | nu
   }
 }
 
+// The day gets st, nd, rd, or th. The 11th, 12th, and 13th stay th.
 export const formatInviteDetailDateTime = (value?: string | null) => {
   if (!value) return '—'
 
@@ -118,6 +123,7 @@ export const formatInviteDetailDateTime = (value?: string | null) => {
   return `${day}${suffix} ${month}, ${time}`
 }
 
+// An invite from an admin, or one with no name, is shown as the platform.
 export const getInvitedByLabel = (invitedBy?: string) => {
   if (!invitedBy || invitedBy.toLowerCase() === 'admin') return 'Platform'
   return invitedBy

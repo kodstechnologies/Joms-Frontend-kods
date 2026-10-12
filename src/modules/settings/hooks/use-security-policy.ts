@@ -8,6 +8,10 @@ import { settingsKeys } from '@/modules/settings/hooks/use-settings'
 import type { SecuritySettings } from '@/modules/settings/types/settings'
 import { securityDefaults } from '@/modules/settings/config/settings.config'
 import {
+  selectedMfaMethod,
+  selectSingleMfaMethod,
+} from '@/modules/settings/utils/security-settings'
+import {
   DEFAULT_PASSWORD_POLICY,
   DEFAULT_SESSION_TIMEOUT_MINUTES,
 } from '@/modules/settings/utils/password-policy'
@@ -18,6 +22,7 @@ type PublicSecurityPolicy = {
   mfa?: SecuritySettings['mfa'] & { requireForAllAdmins?: boolean }
 }
 
+// An older all-admins switch is read as the sub-admin switch. More than one method is reduced to one, and email is the fallback.
 function normalizeMfaPolicy(
   mfa: PublicSecurityPolicy['mfa'] | SecuritySettings['mfa'] | undefined,
 ): SecuritySettings['mfa'] {
@@ -31,12 +36,17 @@ function normalizeMfaPolicy(
         : typeof legacyRequireForAllAdmins === 'boolean'
           ? legacyRequireForAllAdmins
           : securityDefaults.mfa.requireForAllSubAdmins,
-    authenticatorApp: source.authenticatorApp ?? securityDefaults.mfa.authenticatorApp,
-    smsOtp: source.smsOtp ?? securityDefaults.mfa.smsOtp,
-    emailOtp: source.emailOtp ?? securityDefaults.mfa.emailOtp,
+    ...selectSingleMfaMethod(
+      selectedMfaMethod({
+        authenticatorApp: source.authenticatorApp ?? false,
+        smsOtp: source.smsOtp ?? false,
+        emailOtp: source.emailOtp ?? true,
+      }),
+    ),
   }
 }
 
+// Reads the public security policy without a token. A missing timeout or password rule falls back to the defaults.
 async function fetchPublicSecurityPolicy(): Promise<
   PublicSecurityPolicy & { mfa: SecuritySettings['mfa'] }
 > {
@@ -59,6 +69,7 @@ async function fetchPublicSecurityPolicy(): Promise<
   }
 }
 
+// A signed-in admin uses the saved security settings. The public policy is used when they are signed out, or when that save cannot be read. Only 15, 30, 45, 60, and 120 minute timeouts are kept.
 export function useSecurityPolicy() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const token = useAuthStore((state) => state.token)
@@ -87,9 +98,12 @@ export function useSecurityPolicy() {
     ...(config && 'passwordPolicy' in config ? config.passwordPolicy : {}),
   }
 
-  const sessionTimeoutMinutes =
-    (config && 'sessionTimeout' in config ? config.sessionTimeout?.durationMinutes : undefined) ??
-    DEFAULT_SESSION_TIMEOUT_MINUTES
+  const ALLOWED_SESSION_TIMEOUTS = [15, 30, 45, 60, 120]
+  const rawTimeout =
+    config && 'sessionTimeout' in config ? Number(config.sessionTimeout?.durationMinutes) : NaN
+  const sessionTimeoutMinutes = ALLOWED_SESSION_TIMEOUTS.includes(rawTimeout)
+    ? rawTimeout
+    : DEFAULT_SESSION_TIMEOUT_MINUTES
 
   const mfa = normalizeMfaPolicy(
     config && 'mfa' in config ? (config.mfa as SecuritySettings['mfa']) : undefined,

@@ -1,5 +1,5 @@
 import type { ExpertProfileAnalyticsMetricCard } from '@/modules/expert/utils/expert-profile-analytics-metrics'
-import { exportSheetsToExcel } from '@/shared/utils/export-utils'
+import { exportSheetsToFile } from '@/shared/utils/export-utils'
 
 type MetricRow = {
   label: string
@@ -51,12 +51,15 @@ function formatTrend(trend?: number) {
   return `${sign}${trend}%`
 }
 
-export async function exportExpertProfileAnalyticsToExcel(data: ExpertProfileAnalyticsExportData) {
+export async function exportExpertProfileAnalyticsToExcel(
+  data: ExpertProfileAnalyticsExportData,
+  format = 'excel',
+) {
   const date = new Date().toISOString().slice(0, 10)
   const safeName = data.expertName.replace(/[^\w-]+/g, '_').slice(0, 40) || 'expert'
   const filePrefix = `expert_profile_analytics_${safeName}_${date}`
 
-  await exportSheetsToExcel(
+  await exportSheetsToFile(
     [
       {
         name: 'Profile Summary',
@@ -120,5 +123,6 @@ export async function exportExpertProfileAnalyticsToExcel(data: ExpertProfileAna
       },
     ],
     filePrefix,
+    format,
   )
 }

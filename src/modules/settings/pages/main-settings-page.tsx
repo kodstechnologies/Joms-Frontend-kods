@@ -45,7 +45,13 @@ export function MainSettingsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState<SettingsTab>('platform')
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
+    const fromQuery = searchParams.get('tab')
+    if (isSettingsTab(fromQuery)) return fromQuery
+    const fromState = (location.state as { settingsTab?: SettingsTab } | null)?.settingsTab
+    if (fromState && isSettingsTab(fromState)) return fromState
+    return 'platform'
+  })
   const [hydratedLocationState, setHydratedLocationState] = useState(location.state)
   const [hydratedTabQuery, setHydratedTabQuery] = useState(searchParams.get('tab'))
 

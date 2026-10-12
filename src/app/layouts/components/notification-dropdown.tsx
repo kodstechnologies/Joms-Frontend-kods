@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Bell, X } from 'lucide-react'
 
 import {
+  NOTIFICATION_PAGE_SIZE,
+  useInboxInfiniteScroll,
+  useInfiniteMyNotifications,
   useMarkNotificationRead,
-  useMyNotifications,
   useUnreadNotificationCount,
   type InAppNotification,
 } from '@/modules/notifications'
@@ -135,19 +137,30 @@ type NotificationPanelProps = {
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
   const navigate = useNavigate()
-  const notificationsQuery = useMyNotifications(open, 'notification')
-  const markReadMutation = useMarkNotificationRead()
-  const notifications = useMemo(
-    () => notificationsQuery.data?.data ?? [],
-    [notificationsQuery.data?.data],
+  const notificationsQuery = useInfiniteMyNotifications(
+    open,
+    'notification',
+    NOTIFICATION_PAGE_SIZE,
   )
-  const totalCount = notificationsQuery.data?.meta?.total ?? notifications.length
+  const markReadMutation = useMarkNotificationRead()
+  const notifications = notificationsQuery.notifications
+  const totalCount = notificationsQuery.totalCount
   const { todayItems, olderItems } = useMemo(() => splitInboxByDay(notifications), [notifications])
 
   const selectedId = useMemo(
     () => notifications.find((item) => !item.isRead)?.id ?? notifications[0]?.id ?? null,
     [notifications],
   )
+
+  const sentinelRef = useInboxInfiniteScroll({
+    enabled: open,
+    hasNextPage: Boolean(notificationsQuery.hasNextPage),
+    isFetchingNextPage: notificationsQuery.isFetchingNextPage,
+    fetchNextPage: () => {
+      void notificationsQuery.fetchNextPage()
+    },
+    itemCount: notifications.length,
+  })
 
   useEffect(() => {
     if (!open) return
@@ -202,7 +215,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {notificationsQuery.isLoading ? (
+          {notificationsQuery.isLoading && notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
               <div className="border-brand-accent size-8 animate-spin rounded-full border-2 border-t-transparent" />
               <p className="text-brand-muted text-xs">Loading notifications...</p>
@@ -231,6 +244,13 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                 selectedId={selectedId}
                 onSelect={handleSelect}
               />
+              <div ref={sentinelRef} className="h-8 w-full" aria-hidden="true" />
+              {notificationsQuery.isFetchingNextPage ? (
+                <div className="flex items-center justify-center gap-2 px-6 py-4">
+                  <div className="border-brand-accent size-5 animate-spin rounded-full border-2 border-t-transparent" />
+                  <p className="text-brand-muted text-xs">Loading more...</p>
+                </div>
+              ) : null}
             </>
           )}
         </div>

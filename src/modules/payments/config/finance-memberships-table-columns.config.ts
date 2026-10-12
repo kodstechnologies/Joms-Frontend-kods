@@ -122,7 +122,6 @@ export const FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG: FinanceMembershipsTableC
       description: 'Subscription status',
       defaultVisible: true,
     },
-    // Legacy columns kept visible so existing UI does not empty
     {
       id: 'subscription-id',
       label: 'Subscription ID',

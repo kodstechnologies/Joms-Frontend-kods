@@ -14,6 +14,20 @@ export type CommunicationAudience =
   | 'service-management'
   | 'venue-management'
   | 'all-partners'
+
+// A comma-separated audience is split, and a repeated audience is kept once.
+export const parseCommunicationAudiences = (
+  audience: CommunicationAudience | CommunicationAudience[] | string | null | undefined,
+): CommunicationAudience[] => {
+  const values = Array.isArray(audience)
+    ? audience
+    : String(audience || '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+  return [...new Set(values)] as CommunicationAudience[]
+}
+
 export type CommunicationDeliveryType = 'send-now' | 'schedule'
 export type CommunicationPriority = 'low' | 'medium' | 'high' | 'critical'
 export type CommunicationStatus =
@@ -45,7 +59,7 @@ export type Communication = {
   channelLabel: string
   type: CommunicationType
   typeLabel: string
-  audience: CommunicationAudience
+  audience: CommunicationAudience | CommunicationAudience[]
   audienceLabel: string
   audienceSize: number
   contentPreview: string
@@ -90,18 +104,29 @@ export type CommunicationMetricCard = {
 
 export type CommunicationMetrics = {
   cards: CommunicationMetricCard[]
+  trends?: Record<string, { direction: 'up' | 'down'; percentage: number; label: string }>
   totalMessagesSent: number
   activeCampaigns: number
   channelsUsed: number
   scheduledMessages: number
   failedUndelivered: number
+  draftMessages?: number
+  withdrawnCommunications?: number
+  totalCommunications?: number
+  totalClicks?: number
   sent?: number
   delivered?: number
   failed?: number
+  opened?: number
+  clicked?: number
+  bounced?: number
   openRate?: number
   clickThroughRate?: number
   deliveryRate?: number
   bounceRate?: number
+  mostUsedChannel?: string
+  mostEngagedAudience?: string
+  topPerformingCampaign?: string
 }
 
 export type CommunicationOption = {
@@ -120,7 +145,7 @@ export type CreateCommunicationPayload = {
   title: string
   channel: CommunicationChannel
   type: CommunicationType
-  audience: CommunicationAudience
+  audience: CommunicationAudience | CommunicationAudience[]
   deliveryType: CommunicationDeliveryType
   priority?: CommunicationPriority
   scheduledAt?: string | null
@@ -280,4 +305,23 @@ export const resumeCommunication = async (id: string) => {
     `/settings/communications/${id}/resume`,
   )
   return response.data.data
+}
+
+export const retryFailedCommunication = async (id: string) => {
+  const response = await settingsApiClient.post<ApiEnvelope<Communication>>(
+    `/settings/communications/${id}/retry`,
+  )
+  return response.data.data
+}
+
+// A failed send can be retried. A draft, a schedule, a cancellation, or a pause cannot, even when some messages failed.
+export const canRetryFailedMessages = (
+  communication: Pick<Communication, 'status'> & {
+    failedCount?: number
+    analytics?: { failed?: number }
+  },
+) => {
+  if (communication.status === 'failed') return true
+  const failed = communication.failedCount ?? communication.analytics?.failed ?? 0
+  return failed > 0 && !['draft', 'scheduled', 'cancelled', 'paused'].includes(communication.status)
 }

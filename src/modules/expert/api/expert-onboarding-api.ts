@@ -110,7 +110,7 @@ export type ExpertServiceCategoryItem = {
 }
 
 export const fetchServiceCategoriesByType = async (params: {
-  servicetype: 'concierge' | 'venue'
+  servicetype: 'concierge' | 'venue' | 'expert' | 'service'
   search?: string
 }) => {
   const response = await authApiClient.get<

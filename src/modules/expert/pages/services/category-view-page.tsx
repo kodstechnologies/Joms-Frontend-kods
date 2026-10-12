@@ -31,7 +31,7 @@ export const CategoryViewPage = () => {
             breadcrumb={category.name}
             backPath={scope.basePath}
           />
-          <CategoryViewHeaderActions />
+          <CategoryViewHeaderActions category={category} />
         </div>
 
         <div className="mt-2">

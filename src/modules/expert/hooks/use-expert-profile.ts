@@ -73,6 +73,7 @@ export const useUpdateExpertCustomLinkVisibility = (partnerId?: string) => {
       void queryClient.invalidateQueries({ queryKey: ['expert-custom-link', partnerId] })
       void queryClient.invalidateQueries({ queryKey: ['expert-profile', partnerId] })
       void queryClient.invalidateQueries({ queryKey: ['expert-analytics', partnerId] })
+      void queryClient.invalidateQueries({ queryKey: ['experts'] })
     },
   })
 }

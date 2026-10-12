@@ -8,6 +8,7 @@ import {
 
 export { MAX_UPLOAD_FILE_SIZE_MB, FILE_TOO_LARGE_MESSAGE }
 
+// A file over the size limit is refused and a message is shown. An empty selection is ignored.
 export function guardUploadFile(file: File | null | undefined): file is File {
   if (!file) return false
 
@@ -20,6 +21,7 @@ export function guardUploadFile(file: File | null | undefined): file is File {
   }
 }
 
+// Keeps only the files that are within the size limit.
 export function guardUploadFiles(files: FileList | File[] | null | undefined): File[] {
   if (!files?.length) return []
 

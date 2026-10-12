@@ -23,6 +23,14 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
     cell: ({ row }) => <span className="escalation-cell-primary">{row.original.escalationId}</span>,
   },
   {
+    id: 'entity-title',
+    accessorKey: 'entityTitle',
+    header: 'Expert / Entity',
+    cell: ({ row }) => (
+      <span className="escalation-cell-primary">{row.original.entityTitle || '—'}</span>
+    ),
+  },
+  {
     id: 'roles-id',
     accessorKey: 'roleId',
     header: 'Roles ID',
@@ -31,7 +39,7 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
   {
     id: 'role-name',
     accessorKey: 'roleName',
-    header: 'Role Name',
+    header: 'Assigned To',
     cell: ({ row }) => <span className="escalation-cell-primary">{row.original.roleName}</span>,
   },
   {

@@ -1,5 +1,5 @@
 import type { PlatformHealthDashboard, PlatformHealthMetric } from '../types/platform-health'
-import { exportSheetsToExcel } from '@/shared/utils/export-utils'
+import { exportSheetsToFile } from '@/shared/utils/export-utils'
 
 export type PlatformHealthExportData = {
   rangeLabel: string
@@ -11,13 +11,16 @@ export type PlatformHealthExportData = {
 const rowsFromPairs = (rows: Array<{ label: string; value: string | number }>) =>
   rows.map((row) => [row.label, row.value])
 
-export async function exportPlatformHealthToExcel(data: PlatformHealthExportData) {
+export async function exportPlatformHealthToExcel(
+  data: PlatformHealthExportData,
+  format = 'excel',
+) {
   const date = new Date().toISOString().slice(0, 10)
   const filePrefix = `platform_health_${date}`
   const charts = data.dashboard?.charts
   const summary = data.dashboard?.summary
 
-  await exportSheetsToExcel(
+  await exportSheetsToFile(
     [
       {
         name: 'Metrics',
@@ -151,5 +154,6 @@ export async function exportPlatformHealthToExcel(data: PlatformHealthExportData
       },
     ].filter((sheet) => sheet.rows.length > 0),
     filePrefix,
+    format,
   )
 }

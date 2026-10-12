@@ -52,8 +52,8 @@ export const EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIt
     id: 'category',
     label: 'Category',
     type: 'Text',
-    description: 'Marketplace category',
-    defaultVisible: false,
+    description: 'Core category selected for the expert',
+    defaultVisible: true,
   },
   {
     id: 'service-type',
@@ -80,7 +80,7 @@ export const EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIt
     id: 'created-by',
     label: 'Created By',
     type: 'Text',
-    description: 'Registration source (User / Admin)',
+    description: 'Admin / User, with creator name when available',
     defaultVisible: false,
   },
   {
@@ -328,6 +328,55 @@ export const EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIt
     description: 'NPS from reviews',
     defaultVisible: false,
   },
+  {
+    id: 'digilocker-status',
+    label: 'DigiLocker Status',
+    type: 'Status',
+    description: 'Same DigiLocker verification signal (Yes/No)',
+    defaultVisible: false,
+  },
+  {
+    id: 'microsite-status',
+    label: 'Microsite Status',
+    type: 'Status',
+    description: 'Public microsite Active / Suspended',
+    defaultVisible: false,
+  },
+  {
+    id: 'linked-report-cases',
+    label: 'Linked Report Cases',
+    type: 'Count',
+    description: 'Open report cases linked to this expert',
+    defaultVisible: false,
+  },
+  {
+    id: 'active-orders-impacted',
+    label: 'Active Orders Impacted',
+    type: 'Count',
+    description: 'In-progress service orders (same signal as ongoing orders)',
+    defaultVisible: false,
+  },
+  {
+    id: 'scheduled-consultations',
+    label: 'Scheduled Consultations',
+    type: 'Count',
+    description: 'Upcoming / scheduled consultation bookings',
+    defaultVisible: false,
+  },
+  {
+    id: 'banking-status',
+    label: 'Banking Status',
+    type: 'Status',
+    description: 'Concierge or venue banking verification status',
+    defaultVisible: false,
+  },
+  {
+    id: 'venue-kyc-status',
+    label: 'Venue KYC Status',
+    type: 'Status',
+    description: 'Venue KYC verification status when applicable',
+    defaultVisible: false,
+  },
 ]
 
 export const DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS =
@@ -373,8 +422,8 @@ export const EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: ExpertTableColumnCa
     id: 'category',
     label: 'Category',
     type: 'Text',
-    description: 'Marketplace category',
-    defaultVisible: false,
+    description: 'Core category selected for the expert',
+    defaultVisible: true,
   },
   {
     id: 'service-type',
@@ -658,8 +707,8 @@ export const EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIte
     id: 'category',
     label: 'Category',
     type: 'Text',
-    description: 'Marketplace category',
-    defaultVisible: false,
+    description: 'Core category selected for the expert',
+    defaultVisible: true,
   },
   {
     id: 'suspension-status',

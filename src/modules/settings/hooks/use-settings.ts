@@ -22,6 +22,7 @@ import { mergeWithDefaults } from '../utils/branding-config'
 export const settingsKeys = {
   all: ['settings'] as const,
   module: (module: SettingsModule) => [...settingsKeys.all, module] as const,
+  branding: () => [...settingsKeys.all, 'branding'] as const,
   logs: (params?: object) => [...settingsKeys.all, 'logs', params] as const,
   log: (id: string) => [...settingsKeys.all, 'log', id] as const,
   logMetrics: (params?: object) => [...settingsKeys.all, 'logs', 'metrics', params] as const,
@@ -50,11 +51,15 @@ export const useUpdateSettings = <M extends SettingsModule>(module: M) => {
       void queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'logs'] })
       if (module === 'platform') {
         void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
+        void queryClient.invalidateQueries({ queryKey: settingsKeys.branding() })
       }
       if (module === 'security') {
         void queryClient.invalidateQueries({
           queryKey: ['settings', 'public', 'security-policy'],
         })
+      }
+      if (module === 'service' || module === 'venue' || module === 'expert') {
+        void queryClient.invalidateQueries({ queryKey: ['app-restrictions'] })
       }
       if (module === 'service') {
         void queryClient.invalidateQueries({ queryKey: ['service-public-settings'] })
@@ -80,17 +85,24 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
       void queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'logs'] })
       if (module === 'platform') {
         void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
+        void queryClient.invalidateQueries({ queryKey: settingsKeys.branding() })
       }
       if (module === 'security') {
         void queryClient.invalidateQueries({
           queryKey: ['settings', 'public', 'security-policy'],
         })
       }
+      if (module === 'service' || module === 'venue' || module === 'expert') {
+        void queryClient.invalidateQueries({ queryKey: ['app-restrictions'] })
+      }
       if (module === 'service') {
         void queryClient.invalidateQueries({ queryKey: ['service-public-settings'] })
       }
       if (module === 'venue') {
         void queryClient.invalidateQueries({ queryKey: ['venue-public-settings'] })
+      }
+      if (module === 'expert') {
+        void queryClient.invalidateQueries({ queryKey: ['expert-public-settings'] })
       }
     },
   })

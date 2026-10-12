@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { CloudUpload } from 'lucide-react'
 import { guardUploadFile } from '@/shared/lib/upload-file'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AdminNotesModal } from './admin-notes-modal'
 import { ChooseErrorTemplateModal } from './choose-error-template-modal'
@@ -19,6 +20,7 @@ import {
 } from '../hooks/use-settings'
 import {
   dateFormatOptions,
+  exportFormatOptionLabels,
   exportFormatOptions,
   languageOptions,
   refreshIntervalOptions,
@@ -63,8 +65,8 @@ function BrandingUploadTile({
       const result = await uploadBrandingAsset(kind, file)
       onUploaded(result.url)
       toast.success(`${label} uploaded`)
-    } catch {
-      toast.error(`Failed to upload ${label.toLowerCase()}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, `Failed to upload ${label.toLowerCase()}`))
     } finally {
       setUploading(false)
     }
@@ -159,8 +161,8 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         errorTemplates: result.templates,
         customErrorMessage: result.selectedMessage || value.generalSettings.customErrorMessage,
       })
-    } catch {
-      toast.error('Failed to fetch templates')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to fetch templates'))
     }
   }
 
@@ -283,7 +285,7 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           >
             {exportFormatOptions.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {exportFormatOptionLabels[option]}
               </option>
             ))}
           </SettingsSelectField>

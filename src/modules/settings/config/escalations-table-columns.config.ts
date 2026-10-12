@@ -15,6 +15,13 @@ export const ESCALATIONS_TABLE_COLUMNS_CATALOG: EscalationsTableColumnCatalogIte
     defaultVisible: true,
   },
   {
+    id: 'entity-title',
+    label: 'Expert / Entity',
+    type: 'Text',
+    description: 'Expert or entity under review',
+    defaultVisible: true,
+  },
+  {
     id: 'roles-id',
     label: 'Roles ID',
     type: 'Text',
@@ -23,9 +30,9 @@ export const ESCALATIONS_TABLE_COLUMNS_CATALOG: EscalationsTableColumnCatalogIte
   },
   {
     id: 'role-name',
-    label: 'Role Name',
+    label: 'Assigned To',
     type: 'Text',
-    description: 'Assigned role name',
+    description: 'Sub-admin assigned to review',
     defaultVisible: true,
   },
   {
@@ -64,6 +71,7 @@ export const DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS = ESCALATIONS_TABLE_COLUMNS_
 
 export const ESCALATIONS_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   escalationId: 'escalation-id',
+  entityTitle: 'entity-title',
   roleId: 'roles-id',
   rolesId: 'roles-id',
   roleName: 'role-name',

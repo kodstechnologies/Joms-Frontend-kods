@@ -16,6 +16,7 @@ import {
 } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AnalyticsWidget } from '@/shared/components/dashboard/analytics-widget'
 import { ChartCard } from '@/shared/components/dashboard/chart-card'
@@ -36,15 +37,14 @@ import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useExecutiveOverview } from '@/modules/dashboard/hooks/use-executive-overview'
 import { logExecutiveOverviewExport } from '@/modules/dashboard/api/executive-overview-api'
 import { buildExecutiveKpiStats } from '@/modules/dashboard/utils/executive-overview-metrics'
-import {
-  buildExecutiveOverviewCsv,
-  downloadCsv,
-} from '@/modules/dashboard/utils/executive-overview-export'
+import { exportExecutiveOverviewToExcel } from '@/modules/dashboard/utils/export-executive-overview'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 const PIE_COLORS = ['#EF4444', '#F97316', '#FFC849', '#10B981', '#06B6D4', '#8B5CF6']
 
 export function ExecutiveOverviewPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const overviewQuery = useExecutiveOverview()
   const isLoading = overviewQuery.isLoading
   const payload = overviewQuery.data
@@ -99,8 +99,8 @@ export function ExecutiveOverviewPage() {
     try {
       await overviewQuery.refresh()
       toast.success('Executive overview refreshed')
-    } catch {
-      toast.error('Failed to refresh overview')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to refresh overview'))
     }
   }
 
@@ -110,14 +110,21 @@ export function ExecutiveOverviewPage() {
       return
     }
     try {
-      downloadCsv(
-        `executive-overview-${new Date().toISOString().slice(0, 10)}.csv`,
-        buildExecutiveOverviewCsv(payload),
+      await exportExecutiveOverviewToExcel(
+        {
+          kpis: visibleKpiStats,
+          engagement: engagementMetrics,
+          revenueMemberGrowth,
+          membershipTrends,
+          conversionFunnel,
+          serviceDistribution,
+        },
+        fileFormat,
       )
       await logExecutiveOverviewExport()
-      toast.success('Export downloaded')
-    } catch {
-      toast.error('Failed to export overview data')
+      toast.success(`Exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export overview data'))
     }
   }
 

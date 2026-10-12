@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Download, Eye, TrendingUp } from 'lucide-react'
+import { Download, Eye } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
 import { fetchFinancePayoutById, fetchFinancePayouts } from '@/modules/payments/api/finance-api'
@@ -16,7 +18,12 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-payouts-table-columns.config'
+import {
+  DEFAULT_FINANCE_PAYOUTS_VISIBLE_COLUMN_IDS,
+  FINANCE_PAYOUTS_METRICS_CATALOG,
+  FINANCE_PAYOUTS_MODULE_KEY,
+  FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-payouts-table-columns.config'
 import { FINANCE_PAYOUT_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
 import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_PAYOUT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -40,6 +47,13 @@ import {
   FINANCE_TABLE_CELL_CLASS,
 } from '@/modules/payments/constants/finance-table-styles'
 import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
+import { assembleFinanceTableColumns } from '@/modules/payments/utils/finance-table-column-utils'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 
 const PAGE_SIZE = 10
 
@@ -50,18 +64,30 @@ const SORT_FIELD_MAP = buildCatalogSortFieldMap(
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: PayoutRow) => string }> =
   {
-    payoutId: { header: 'Payout ID', accessor: (row) => exportDisplayValue(row.payoutId) },
+    'payout-id': { header: 'Payout ID', accessor: (row) => exportDisplayValue(row.payoutId) },
     recipient: { header: 'Recipient', accessor: (row) => exportDisplayValue(row.recipient) },
     type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
     amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
     method: { header: 'Method', accessor: (row) => exportDisplayValue(row.method) },
-    initiatedDate: {
+    'initiated-date': {
       header: 'Initiated Date',
       accessor: (row) => exportDisplayValue(row.initiatedDate),
     },
     description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
     status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
   }
+
+const PAYOUT_COLUMN_LEGACY_ID_MAP: Record<string, string> = {
+  'payee-name': 'recipient',
+  'payout-status': 'status',
+  'scheduled-date': 'initiated-date',
+  'gross-amount': 'amount',
+  'net-payout': 'amount',
+}
+
+const DEFAULT_PAYOUT_METRIC_IDS = FINANCE_PAYOUTS_METRICS_CATALOG.filter(
+  (metric) => metric.defaultActive,
+).map((metric) => metric.id)
 
 function SummaryCard({
   label,
@@ -74,15 +100,14 @@ function SummaryCard({
   change: string
   changeNote: string
 }) {
+  const isDown = change.trim().startsWith('-')
+  const direction = isDown ? 'down' : 'up'
   return (
     <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
       <p className="text-body-sm-medium text-muted">{label}</p>
       <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
-          <TrendingUp className="size-3" />
-          {change}
-        </span>
+        <TrendBadge direction={direction}>{ensureTrendChangeSign(change, direction)}</TrendBadge>
         <span className="text-body-sm text-muted">{changeNote}</span>
       </div>
     </div>
@@ -100,6 +125,18 @@ export function PayoutManagementPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_PAYOUTS_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_PAYOUTS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: PAYOUT_COLUMN_LEGACY_ID_MAP,
+  })
+  const activeMetricIds = useActiveMetricIds(FINANCE_PAYOUTS_MODULE_KEY, DEFAULT_PAYOUT_METRIC_IDS)
 
   const listQueryParams = useMemo(
     () =>
@@ -143,8 +180,9 @@ export function PayoutManagementPage() {
       EXPORT_COLUMN_MAP,
       'finance_payouts_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -156,32 +194,43 @@ export function PayoutManagementPage() {
     onExportData: handleExportData,
   })
 
-  const summaryCards = [
-    {
-      label: 'Total Payments',
-      value: String(meta?.total ?? 0),
-      change: '—',
-      changeNote: 'all payouts',
-    },
-    {
-      label: 'Pending',
-      value: formatInr(summary?.pendingPayouts ?? 0),
-      change: String(summary?.pendingPayoutCount ?? 0),
-      changeNote: 'awaiting release',
-    },
-    {
-      label: 'Completed',
-      value: formatInr(summary?.totalPlatformRevenue ?? 0),
-      change: '—',
-      changeNote: 'platform captured',
-    },
-    {
-      label: 'Failed',
-      value: String(rows.filter((r) => r.status === 'Failed').length),
-      change: '—',
-      changeNote: 'this page',
-    },
-  ]
+  const summaryCards = useMemo(
+    () =>
+      orderByActiveMetricIds(
+        [
+          {
+            id: 'total-payments',
+            label: 'Total Payments',
+            value: String(meta?.total ?? 0),
+            change: '—',
+            changeNote: 'all payouts',
+          },
+          {
+            id: 'pending',
+            label: 'Pending',
+            value: formatInr(summary?.pendingPayouts ?? 0),
+            change: String(summary?.pendingPayoutCount ?? 0),
+            changeNote: 'awaiting release',
+          },
+          {
+            id: 'completed',
+            label: 'Completed',
+            value: formatInr(summary?.totalPlatformRevenue ?? 0),
+            change: '—',
+            changeNote: 'platform captured',
+          },
+          {
+            id: 'failed',
+            label: 'Failed',
+            value: String(rows.filter((r) => r.status === 'Failed').length),
+            change: '—',
+            changeNote: 'this page',
+          },
+        ],
+        activeMetricIds,
+      ),
+    [activeMetricIds, meta?.total, rows, summary],
+  )
 
   const renderActions = useCallback(
     (record: PayoutRow) => (
@@ -216,7 +265,9 @@ export function PayoutManagementPage() {
                 )
                 toast.success('Invoice downloaded')
               })
-              .catch(() => toast.error('Failed to download invoice'))
+              .catch((error) =>
+                toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+              )
           }}
         >
           Download Invoice
@@ -226,107 +277,114 @@ export function PayoutManagementPage() {
     [activeDropdownId, logoUrl, navigate],
   )
 
-  const columns = useMemo<ColumnDef<PayoutRow>[]>(
-    () =>
-      withServerSortMeta(
-        [
-          {
-            id: 'select',
-            header: () => (
-              <input
-                type="checkbox"
-                aria-label="Select all payouts"
-                checked={allVisibleSelected}
-                ref={(input) => {
-                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-                }}
-                onChange={toggleVisibleRows}
-                className="rounded border-slate-700 bg-transparent"
-              />
-            ),
-            cell: ({ row }) => (
-              <input
-                type="checkbox"
-                aria-label={`Select ${row.original.recipient}`}
-                checked={selectedRowIds.includes(row.original.id)}
-                onChange={() => toggleRowSelection(row.original.id)}
-                onClick={(event) => event.stopPropagation()}
-                className="rounded border-slate-700 bg-transparent"
-              />
-            ),
-            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-          },
-          {
-            accessorKey: 'payoutId',
-            header: 'Payout ID',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.payoutId}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'recipient',
-            header: 'Recipient',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.recipient}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'type',
-            header: 'Type',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.type}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'amount',
-            header: 'Amount',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.amount}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'method',
-            header: 'Method',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.method}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'initiatedDate',
-            header: 'Initiated Date',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.initiatedDate}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'description',
-            header: 'Description',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.description}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
-          },
-          {
-            id: 'actions',
-            header: 'Actions',
-            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => renderActions(row.original),
-          },
-        ],
-        SORT_FIELD_MAP,
+  const columns = useMemo<ColumnDef<PayoutRow>[]>(() => {
+    const selectColumn: ColumnDef<PayoutRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all payouts"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="ui-table-checkbox"
+        />
       ),
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.recipient}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="ui-table-checkbox"
+        />
+      ),
+      meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<PayoutRow>> = {
+      'payout-id': {
+        id: 'payout-id',
+        accessorKey: 'payoutId',
+        header: 'Payout ID',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.payoutId}</FinanceTableCellText>,
+      },
+      recipient: {
+        id: 'recipient',
+        accessorKey: 'recipient',
+        header: 'Recipient',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.recipient}</FinanceTableCellText>,
+      },
+      type: {
+        id: 'type',
+        accessorKey: 'type',
+        header: 'Type',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.type}</FinanceTableCellText>,
+      },
+      amount: {
+        id: 'amount',
+        accessorKey: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.amount}</FinanceTableCellText>,
+      },
+      method: {
+        id: 'method',
+        accessorKey: 'method',
+        header: 'Method',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.method}</FinanceTableCellText>,
+      },
+      'initiated-date': {
+        id: 'initiated-date',
+        accessorKey: 'initiatedDate',
+        header: 'Initiated Date',
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.initiatedDate}</FinanceTableCellText>
+        ),
+      },
+      description: {
+        id: 'description',
+        accessorKey: 'description',
+        header: 'Description',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.description}</FinanceTableCellText>,
+      },
+      status: {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
+      },
+    }
+
+    return withServerSortMeta(
+      assembleFinanceTableColumns(selectColumn, dataColumnsById, {
+        catalogIds: catalogColumnIds,
+        visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+        defaultColumnIds: DEFAULT_FINANCE_PAYOUTS_VISIBLE_COLUMN_IDS,
+        legacyColumnIdMap: PAYOUT_COLUMN_LEGACY_ID_MAP,
+        renderActions,
+      }),
+      SORT_FIELD_MAP,
+    )
+  }, [
+    allVisibleSelected,
+    catalogColumnIds,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data?.visibleColumnIds,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Payout Management</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track revenue, payouts, and financial performance
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
@@ -338,7 +396,7 @@ export function PayoutManagementPage() {
           </p>
         </div>
         <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-payouts')}>
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
@@ -350,7 +408,7 @@ export function PayoutManagementPage() {
           ? Array.from({ length: 4 }).map((_, idx) => (
               <StatCardSkeleton key={`payout-skel-${idx}`} />
             ))
-          : summaryCards.map((metric) => <SummaryCard key={metric.label} {...metric} />)}
+          : summaryCards.map(({ id, ...metric }) => <SummaryCard key={id} {...metric} />)}
       </div>
 
       <DataTable

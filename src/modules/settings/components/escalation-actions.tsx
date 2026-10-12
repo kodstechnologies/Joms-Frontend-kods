@@ -25,6 +25,7 @@ export function EscalationActions({ escalation }: EscalationActionsProps) {
       venueId: escalation.venueId,
       serviceType: escalation.serviceType,
       applicationUrl: escalation.applicationUrl,
+      escalationTarget: escalation.escalationTarget,
     })
   }
 

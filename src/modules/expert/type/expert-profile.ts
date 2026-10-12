@@ -47,6 +47,12 @@ export type ExpertProfileDetail = {
   gallery?: { images?: string[] }
   finalReview?: {
     internalNotes?: string
+    adminNotesLog?: Array<{
+      id?: string
+      text?: string
+      createdAt?: string | null
+      createdBy?: string | null
+    }>
     isVerified?: boolean
     approvalStatus?: 'pending' | 'approved'
   }
@@ -122,6 +128,8 @@ export type ExpertConsultation = {
   status?: string
   serviceStatus?: string
   isSuspend?: boolean
+  isPaused?: boolean
+  isDeleted?: boolean
   createdAt?: string
   updatedAt?: string
 }

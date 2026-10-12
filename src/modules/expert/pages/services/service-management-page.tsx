@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
@@ -14,13 +14,23 @@ import {
   Mail,
   Package,
   PauseCircle,
+  PlayCircle,
+  BarChart3,
+  ShoppingBag,
   Tag,
   Trash2,
   Upload,
+  User,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
@@ -38,8 +48,14 @@ import {
   useBulkHideServices,
   useBulkDisableServices,
 } from '../../hooks/use-services'
+import { useUnpauseServiceListing } from '../../hooks/use-service-drilldown'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-import { getServiceManagementViewPath } from '../../lib/service-navigation'
+import {
+  getServiceManagementViewPath,
+  getServiceViewDetailsPath,
+  servicePerformancePath,
+  consultationPerformancePath,
+} from '../../lib/service-navigation'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
 import {
@@ -68,14 +84,15 @@ import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   buildServiceListQueryParams,
   createServiceFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 import { SERVICE_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -88,9 +105,6 @@ import {
 } from '@/modules/my-tasks/api/escalation-api'
 
 export const ServiceManagementPage = () => {
-  const [searchParams] = useSearchParams()
-  const categoryFromUrl = searchParams.get('category') || ''
-  const categoryIdFromUrl = searchParams.get('categoryId') || ''
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
@@ -114,8 +128,10 @@ export const ServiceManagementPage = () => {
   const [bulkDeleteConfirmed, setBulkDeleteConfirmed] = useState(false)
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
+  const [pauseListingTarget, setPauseListingTarget] = useState<Service | null>(null)
 
   const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
+  const [escalateTarget, setEscalateTarget] = useState<Service | null>(null)
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [isEscalating, setIsEscalating] = useState(false)
@@ -124,6 +140,7 @@ export const ServiceManagementPage = () => {
   const deleteServiceMutation = useDeleteService()
   const bulkDeleteMutation = useBulkDeleteServices()
   const bulkPauseMutation = useBulkPauseServices()
+  const unpauseListingMutation = useUnpauseServiceListing()
   const bulkHideMutation = useBulkHideServices()
   const bulkDisableMutation = useBulkDisableServices()
 
@@ -177,7 +194,7 @@ export const ServiceManagementPage = () => {
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to delete services')
+          toast.error(getApiErrorMessage(error, 'Failed to delete services'))
         },
       },
     )
@@ -192,7 +209,8 @@ export const ServiceManagementPage = () => {
 
   const confirmBulkPause = useCallback(
     (payload: { reasons: string[]; adminNotes: string }) => {
-      if (selectedServiceIds.length === 0) return
+      const serviceIds = pauseListingTarget ? [pauseListingTarget._id] : selectedServiceIds
+      if (serviceIds.length === 0) return
       const reasonPayload = buildPauseReasonPayload(payload.reasons)
       if (pauseReasonOptions.length > 0 && reasonPayload.selectedReasons.length === 0) {
         toast.error('Please select at least one reason for pausing.')
@@ -205,7 +223,7 @@ export const ServiceManagementPage = () => {
 
       bulkPauseMutation.mutate(
         {
-          serviceIds: selectedServiceIds,
+          serviceIds,
           selectedReasons: reasonPayload.selectedReasons,
           adminNotes: payload.adminNotes.trim(),
           indefinite: true,
@@ -215,18 +233,24 @@ export const ServiceManagementPage = () => {
             if (reasonPayload.reasonIds.length > 0) {
               recordReasonUsage.mutate(reasonPayload.reasonIds)
             }
-            toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
+            toast.success(
+              pauseListingTarget
+                ? `Paused ${pauseListingTarget.title || 'listing'}`
+                : `Paused ${serviceIds.length} selected service(s)`,
+            )
             setSelectedServiceIds([])
+            setPauseListingTarget(null)
             setIsBulkPauseModalOpen(false)
           },
           onError: (err: unknown) => {
             const error = err as { response?: { data?: { message?: string } } }
-            toast.error(error?.response?.data?.message || 'Failed to pause services')
+            toast.error(getApiErrorMessage(error, 'Failed to pause services'))
           },
         },
       )
     },
     [
+      pauseListingTarget,
       selectedServiceIds,
       pauseReasonOptions.length,
       buildPauseReasonPayload,
@@ -244,7 +268,7 @@ export const ServiceManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to hide services')
+        toast.error(getApiErrorMessage(error, 'Failed to hide services'))
       },
     })
   }, [selectedServiceIds, bulkHideMutation])
@@ -258,7 +282,7 @@ export const ServiceManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to disable services')
+        toast.error(getApiErrorMessage(error, 'Failed to disable services'))
       },
     })
   }, [selectedServiceIds, bulkDisableMutation])
@@ -273,14 +297,31 @@ export const ServiceManagementPage = () => {
     defaultColumnIds: DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
   })
+  const { fileFormat } = useDefaultExportFormat()
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const categoryIdFromUrl = searchParams.get('categoryId')?.trim() || ''
+  const categoryFromUrl = searchParams.get('category')?.trim() || ''
+  const subCategoryFromUrl = searchParams.get('subCategory')?.trim() || ''
+
   const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useServiceStore()
   const serverSort = useServerTableSort({
     sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
     onPageReset: () => setCurrentPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+
+  useEffect(() => {
+    if (!categoryIdFromUrl && !categoryFromUrl && !subCategoryFromUrl) return
+
+    setAppliedAdvancedFilters({
+      ...(categoryIdFromUrl ? { 'services.categoryId': categoryIdFromUrl } : {}),
+      ...(categoryFromUrl ? { 'services.category': categoryFromUrl } : {}),
+      ...(subCategoryFromUrl ? { 'services.subCategory': subCategoryFromUrl } : {}),
+    })
+    setCurrentPage(1)
+  }, [categoryIdFromUrl, categoryFromUrl, subCategoryFromUrl, setCurrentPage])
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -300,10 +341,11 @@ export const ServiceManagementPage = () => {
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
           ...enhancedSearch.buildSearchParams(),
+          categoryId: categoryIdFromUrl || undefined,
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
+    [activeStatus, catalogColumnIds, categoryIdFromUrl, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -324,17 +366,15 @@ export const ServiceManagementPage = () => {
         ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
-        category: categoryFromUrl || undefined,
         categoryId: categoryIdFromUrl || undefined,
       }),
     [
       appliedAdvancedFilters,
       activeStatus,
+      categoryIdFromUrl,
       currentPage,
       enhancedSearch,
       serverSort.sortParams,
-      categoryFromUrl,
-      categoryIdFromUrl,
     ],
   )
 
@@ -364,9 +404,84 @@ export const ServiceManagementPage = () => {
 
   const closeEscalateModal = useCallback(() => {
     setIsEscalateModalOpen(false)
+    setEscalateTarget(null)
     setEscalateAdminNotes('')
     setSelectedEscalationOption('')
   }, [])
+
+  const openPauseListing = useCallback((service: Service) => {
+    setPauseListingTarget(service)
+    setIsBulkPauseModalOpen(true)
+  }, [])
+
+  const handleResumeListing = useCallback(
+    async (service: Service) => {
+      try {
+        await unpauseListingMutation.mutateAsync({
+          serviceId: service._id,
+          payload: undefined as never,
+        })
+        toast.success(`Resumed ${service.title || 'listing'}`)
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, 'Failed to resume listing'))
+      }
+    },
+    [unpauseListingMutation],
+  )
+
+  const openEscalateListing = useCallback((service: Service) => {
+    setEscalateTarget(service)
+    setIsEscalateModalOpen(true)
+  }, [])
+
+  const openViewExpert = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}`)
+    },
+    [navigate],
+  )
+
+  const openListingPerformance = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing for this listing.')
+        return
+      }
+      const isConsultation = String(service.serviceType || '')
+        .toLowerCase()
+        .includes('consultation')
+      navigate(
+        isConsultation
+          ? consultationPerformancePath(partnerId, service._id)
+          : servicePerformancePath(partnerId, service._id),
+      )
+    },
+    [navigate],
+  )
+
+  const handleExportServiceRow = useCallback(
+    async (service: Service) => {
+      try {
+        await exportMappedItemsToFile(
+          SERVICE_EXPORT_COLUMN_MAP,
+          [service],
+          fileFormat,
+          `service_${service.serviceid || service._id}`,
+          { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+        )
+        toast.success('Service exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export service'))
+      }
+    },
+    [catalogColumnIds, exportColumnIds, fileFormat],
+  )
 
   const handleBulkExport = useCallback(() => {
     if (selectedServiceCount === 0) {
@@ -381,34 +496,21 @@ export const ServiceManagementPage = () => {
     }
 
     try {
-      const headers = [
-        'Service ID',
-        'Title',
-        'Expert',
-        'Partner ID',
-        'Category',
-        'Service Type',
-        'Status',
-        'Pricing',
-        'Created At',
-      ]
-      const rows = selectedServices.map((service) => [
-        service.serviceid || service._id,
-        service.title || 'N/A',
-        service.expertName || service.partnerName || 'N/A',
-        service.partnerId || 'N/A',
-        service.categoryName || 'N/A',
-        service.serviceType || 'N/A',
-        service.status || 'N/A',
-        String(service.pricing ?? 'N/A'),
-        service.createdAt ? new Date(service.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, 'excel', 'selected_services_export')
-      toast.success(`Exported ${selectedServices.length} selected service(s)`)
-    } catch {
-      toast.error('Failed to export selected services.')
+      void exportMappedItemsToFile(
+        SERVICE_EXPORT_COLUMN_MAP,
+        selectedServices,
+        fileFormat,
+        'selected_services_export',
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      )
+        .then(() => toast.success(`Exported ${selectedServices.length} selected service(s)`))
+        .catch((error) => {
+          toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
+        })
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
     }
-  }, [selectedServiceCount, selectedServices])
+  }, [catalogColumnIds, exportColumnIds, fileFormat, selectedServiceCount, selectedServices])
 
   const handleBulkNotify = useCallback(() => {
     if (selectedPartnerIds.length === 0) {
@@ -437,7 +539,8 @@ export const ServiceManagementPage = () => {
   }, [navigate, selectedPartnerIds])
 
   const handleEscalateSubmit = useCallback(async () => {
-    if (selectedServices.length === 0) {
+    const servicesToEscalate = escalateTarget ? [escalateTarget] : selectedServices
+    if (servicesToEscalate.length === 0) {
       toast.error('Please select at least one service.')
       return
     }
@@ -458,7 +561,7 @@ export const ServiceManagementPage = () => {
 
     try {
       const results = await Promise.allSettled(
-        selectedServices.map((service) => {
+        servicesToEscalate.map((service) => {
           const isConsultation = String(service.serviceType || '')
             .toLowerCase()
             .includes('consultation')
@@ -481,19 +584,21 @@ export const ServiceManagementPage = () => {
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
           PromiseRejectedResult | undefined
-        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
 
       toast.success(
         failedCount > 0
           ? `Escalated ${successCount} service(s); ${failedCount} failed.`
-          : `Successfully escalated ${successCount} service(s)`,
+          : escalateTarget
+            ? 'Listing escalated'
+            : `Successfully escalated ${successCount} service(s)`,
       )
-      setSelectedServiceIds([])
+      if (!escalateTarget) setSelectedServiceIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getApiErrorMessage(err) || 'Failed to escalate services.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate services.'))
     } finally {
       setIsEscalating(false)
     }
@@ -501,6 +606,7 @@ export const ServiceManagementPage = () => {
     assigneesData?.data,
     closeEscalateModal,
     escalateAdminNotes,
+    escalateTarget,
     selectedEscalationOption,
     selectedServices,
   ])
@@ -605,7 +711,7 @@ export const ServiceManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to delete service.')
+          toast.error(getApiErrorMessage(err, 'Failed to delete service.'))
         },
       },
     )
@@ -636,6 +742,16 @@ export const ServiceManagementPage = () => {
 
     if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
       toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 
@@ -675,9 +791,7 @@ export const ServiceManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(
-            err?.response?.data?.message || 'Failed to suspend service. Please try again.',
-          )
+          toast.error(getApiErrorMessage(err, 'Failed to suspend service. Please try again.'))
         },
       },
     )
@@ -707,7 +821,7 @@ export const ServiceManagementPage = () => {
               input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
           }}
           onChange={toggleVisibleServices}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -717,7 +831,7 @@ export const ServiceManagementPage = () => {
           checked={selectedServiceIds.includes(row.original._id)}
           onChange={() => toggleServiceSelection(row.original._id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -750,49 +864,125 @@ export const ServiceManagementPage = () => {
       cell: ({ row }) => {
         const service = row.original
         const isOpen = activeDropdownId === service._id
+        const isSuspended = Boolean(service.isSuspend) || service.status === 'suspended'
+        const isDeleted = Boolean(service.isDeleted) || service.status === 'deleted'
+        const isPaused = Boolean(service.isPaused) || service.status === 'paused'
 
         return (
           <TableActionsDropdown
             label={`Open actions for ${service.title}`}
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-            menuWidth={192}
+            menuWidth={240}
+            maxVisibleItems={8}
           >
             <TableActionsItem
               icon={<Eye className="size-3.5" aria-hidden="true" />}
               onClick={() => {
                 setActiveDropdownId(null)
-                navigate(getServiceManagementViewPath(service))
+                navigate(getServiceViewDetailsPath(service))
               }}
             >
               View Details
             </TableActionsItem>
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={<Tag className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openTagModal(service._id)
+                }}
+              >
+                Add Tags
+              </TableActionsItem>
+            ) : null}
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openSuspendModal(service)
+                }}
+              >
+                Suspend Service
+              </TableActionsItem>
+            ) : null}
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openDeleteModal(service)
+                }}
+              >
+                Delete Service
+              </TableActionsItem>
+            ) : null}
+            {!isSuspended && !isDeleted ? (
+              <TableActionsItem
+                icon={
+                  isPaused ? (
+                    <PlayCircle className="size-3.5" aria-hidden="true" />
+                  ) : (
+                    <PauseCircle className="size-3.5" aria-hidden="true" />
+                  )
+                }
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  if (isPaused) {
+                    void handleResumeListing(service)
+                    return
+                  }
+                  openPauseListing(service)
+                }}
+              >
+                {isPaused ? 'Resume Listing' : 'Pause Listing'}
+              </TableActionsItem>
+            ) : null}
             <TableActionsItem
-              icon={<Tag className="size-3.5" aria-hidden="true" />}
+              icon={<ShoppingBag className="size-3.5" aria-hidden="true" />}
               onClick={() => {
                 setActiveDropdownId(null)
-                openTagModal(service._id)
+                openListingPerformance(service)
               }}
             >
-              Add Tags
+              View Orders & Bookings
             </TableActionsItem>
             <TableActionsItem
-              icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+              icon={<User className="size-3.5" aria-hidden="true" />}
               onClick={() => {
                 setActiveDropdownId(null)
-                openSuspendModal(service)
+                openViewExpert(service)
               }}
             >
-              Suspend Service
+              View Expert
             </TableActionsItem>
             <TableActionsItem
-              icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+              icon={<BarChart3 className="size-3.5" aria-hidden="true" />}
               onClick={() => {
                 setActiveDropdownId(null)
-                openDeleteModal(service)
+                openListingPerformance(service)
               }}
             >
-              Delete Service
+              View Analytics
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<AlertCircle className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openEscalateListing(service)
+              }}
+            >
+              Escalate Listing
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<ExportDataIcon className="size-3.5" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                void handleExportServiceRow(service)
+              }}
+            >
+              Export Record
             </TableActionsItem>
           </TableActionsDropdown>
         )
@@ -806,8 +996,14 @@ export const ServiceManagementPage = () => {
   }, [
     activeDropdownId,
     allVisibleServicesSelected,
+    handleExportServiceRow,
     navigate,
     openDeleteModal,
+    openEscalateListing,
+    openListingPerformance,
+    openViewExpert,
+    handleResumeListing,
+    openPauseListing,
     openSuspendModal,
     openTagModal,
     selectedServiceIds,
@@ -938,7 +1134,7 @@ export const ServiceManagementPage = () => {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold text-white md:text-3xl">Service Management</h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Comprehensive service data and admin controls
           </p>
         </div>
@@ -949,7 +1145,7 @@ export const ServiceManagementPage = () => {
               navigate('/metrics/service-management?returnTo=/services/management&section=table')
             }
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
         </div>
@@ -1143,19 +1339,26 @@ export const ServiceManagementPage = () => {
       <PauseCategoryModal
         open={isBulkPauseModalOpen}
         title={
-          selectedServiceIds.length > 1
-            ? `Pause ${selectedServiceIds.length} Services`
-            : 'Pause Service'
+          pauseListingTarget
+            ? 'Pause Listing'
+            : selectedServiceIds.length > 1
+              ? `Pause ${selectedServiceIds.length} Services`
+              : 'Pause Service'
         }
         heading={
-          selectedServiceIds.length > 1
-            ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
-            : 'Are you sure you want  Pause this Service.'
+          pauseListingTarget
+            ? undefined
+            : selectedServiceIds.length > 1
+              ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
+              : undefined
         }
-        description="This will result in hiding this service from users."
+        description="Pausing this service will temporarily stop all new requests."
         submitLabel="Pause Service"
         reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
-        onClose={() => setIsBulkPauseModalOpen(false)}
+        onClose={() => {
+          setIsBulkPauseModalOpen(false)
+          setPauseListingTarget(null)
+        }}
         onConfirm={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
       />
@@ -1164,14 +1367,18 @@ export const ServiceManagementPage = () => {
         open={isEscalateModalOpen}
         variant="escalate"
         title={
-          selectedServiceCount > 1
-            ? `Escalate ${selectedServiceCount} Services`
-            : 'Escalate Application'
+          escalateTarget
+            ? 'Escalate Listing'
+            : selectedServiceCount > 1
+              ? `Escalate ${selectedServiceCount} Services`
+              : 'Escalate Application'
         }
         description={
-          selectedServiceCount > 1
-            ? `Are you sure you want to escalate ${selectedServiceCount} selected services? These will be reviewed by the selected sub-admin.`
-            : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
+          escalateTarget
+            ? 'Are you sure you want to escalate this listing? It will be reviewed by the selected sub-admin.'
+            : selectedServiceCount > 1
+              ? `Are you sure you want to escalate ${selectedServiceCount} selected services? These will be reviewed by the selected sub-admin.`
+              : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
         }
         submitLabel="Escalate"
         escalationOptions={escalationOptions}

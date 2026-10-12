@@ -50,14 +50,16 @@ export function CategoryManagementPageHeader({
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
       <div>
         <h1 className="text-h2 md:text-h1 text-brand-text">{title}</h1>
-        <p className="text-body-sm text-muted md:text-body-md mt-1">{subtitle}</p>
+        <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+          {subtitle}
+        </p>
       </div>
       <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
         <Button
           className="ui-manage-metrics h-9 w-full md:w-auto"
           onClick={() => navigate(metricsPath)}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
 

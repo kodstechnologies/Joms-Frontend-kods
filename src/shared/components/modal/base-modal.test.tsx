@@ -2,7 +2,6 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-//test for base-modal
 import { BaseModal } from './base-modal'
 
 describe('BaseModal A11Y-06', () => {

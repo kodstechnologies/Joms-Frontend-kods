@@ -1,18 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
-import {
-  ArrowLeft,
-  Banknote,
-  CircleUserRound,
-  FileText,
-  History,
-  ShieldCheck,
-  User,
-} from 'lucide-react'
+import { ArrowLeft, Banknote, CircleUserRound, FileText, History, ShieldCheck } from 'lucide-react'
 import digilockerVerifiedIcon from '@/assets/digilocker-verified.png'
+import applicantIcon from '@/assets/JOMS_ICONS-2/icons8-test-account-24.svg'
 
 import {
   useEscalateExpertApplication,
@@ -32,8 +26,8 @@ import {
   getDisplayKycStatus,
   getExpertCurrentRole,
   getExpertServiceType,
-  isAdminKycApproved,
   isKycSubmittedForApplication,
+  isSubmittedKycStatus,
   resolveExpertServiceCategoryDisplay,
 } from '../../utils/expert-application-helpers'
 import type { ApplicationStatus, DocumentStatusPayload } from '../../type/expert-application-view'
@@ -56,6 +50,7 @@ import {
   type DocumentDecisionVariant,
   type DocumentReviewStatus,
 } from '../../components/document-review-viewer'
+import { areUploadedDocumentsApproved } from '../../utils/document-review'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
@@ -152,10 +147,19 @@ function InfoField({ label, value }: { label: string; value?: string | number | 
 export function ExpertApplicationViewPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
 
-  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const tabFromQuery = searchParams.get('tab')
+  const focusFromQuery = searchParams.get('focus')
+  const initialTab: TabKey =
+    tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview'
+      ? tabFromQuery
+      : 'overview'
+
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
+  const [syncedQueryTab, setSyncedQueryTab] = useState(`${id}:${tabFromQuery}`)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalVariant, setModalVariant] = useState<DecisionVariant>('approve')
   const [modalTarget, setModalTarget] = useState<DecisionTarget>('kyc')
@@ -165,6 +169,14 @@ export function ExpertApplicationViewPage() {
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
+
+  const queryTabKey = `${id}:${tabFromQuery}`
+  if (queryTabKey !== syncedQueryTab) {
+    setSyncedQueryTab(queryTabKey)
+    if (tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview') {
+      setActiveTab(tabFromQuery)
+    }
+  }
 
   const { data, isLoading, isError, error } = useExpertApplicationView(id)
   const { data: assigneesData } = useEscalationAssignees()
@@ -208,9 +220,20 @@ export function ExpertApplicationViewPage() {
   const decisionTargetForTab: DecisionTarget = activeTab === 'banking' ? 'banking' : 'kyc'
 
   const isKycSubmitted = isKycSubmittedForApplication(application?.expert, application?.kyc)
-  const isBankingSubmitted = Boolean(application?.banking?._id)
+  const isBankingSubmitted = isSubmittedKycStatus(application?.banking?.status)
   const displayKycStatus = getDisplayKycStatus(application?.expert, application?.kyc)
-  const showKycDetails = Boolean(application?.kyc) || isAdminKycApproved(application?.expert)
+  const showKycDetails = isKycSubmitted
+
+  useEffect(() => {
+    if (focusFromQuery !== 'gst' || activeTab !== 'kyc' || isLoading || !showKycDetails) return
+    const timer = window.setTimeout(() => {
+      document.getElementById('gst-information')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }, 120)
+    return () => window.clearTimeout(timer)
+  }, [activeTab, focusFromQuery, isLoading, showKycDetails])
 
   const activeSectionSubmitted =
     decisionTargetForTab === 'banking' ? isBankingSubmitted : isKycSubmitted
@@ -259,6 +282,7 @@ export function ExpertApplicationViewPage() {
           assigneeName: selectedAssignee?.fullname || '',
           adminNote: adminNotes.trim(),
           escalationTarget: modalTarget,
+          applicationUrl: `/experts/management/application/${id}`,
         },
         {
           onSuccess: () => {
@@ -583,6 +607,23 @@ export function ExpertApplicationViewPage() {
     return entry?.status || null
   }
 
+  const kycDocsApproved = areUploadedDocumentsApproved([
+    { uploaded: kycPanUrl, status: getKycReviewStatus('panCardUrl') },
+    { uploaded: kycGstUrl, status: getKycReviewStatus('gstCertificateUrl') },
+    { uploaded: kycCertificateUrl, status: getKycReviewStatus('licenceOrCertificateUrl') },
+    {
+      uploaded: kyc?.documents?.sampleWorkFileUrl,
+      status: getKycReviewStatus('sampleWorkFileUrl'),
+    },
+  ])
+
+  const bankingDocsApproved = areUploadedDocumentsApproved([
+    { uploaded: cancelledChequeUrl, status: getBankingReviewStatus('cancelledChequeUrl') },
+  ])
+
+  const sectionDocsApproved =
+    decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
+
   const openDocumentViewer = (document: ViewerDocument) => {
     setViewerDocument(document)
   }
@@ -598,16 +639,14 @@ export function ExpertApplicationViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Application View</span>
         </button>
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="hover:text-brand-text transition-colors"
-          >
-            Expert management
-          </button>
-          <span className="text-muted">/</span>
-          <span className="font-bold text-white">{displayValue(application.expert?.fullname)}</span>
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={[
+              { label: 'Expert Management', to: '/experts/management' },
+              { label: 'Manage Experts', to: '/experts/management' },
+              { label: displayValue(application.expert?.fullname), isActive: true },
+            ]}
+          />
         </div>
       </header>
 
@@ -682,7 +721,14 @@ export function ExpertApplicationViewPage() {
       {activeTab === 'overview' && (
         <SectionCard
           title="Applicant Information"
-          icon={<User className="text-brand-accent size-4" />}
+          icon={
+            <img
+              src={applicantIcon}
+              alt=""
+              className="size-4 shrink-0 brightness-0 invert"
+              aria-hidden="true"
+            />
+          }
         >
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
             <InfoField label="Full Name" value={application.expert?.fullname} />
@@ -690,7 +736,10 @@ export function ExpertApplicationViewPage() {
             <InfoField label="Work Email" value={application.expert?.email} />
             <InfoField label="Service Type" value={applicantServiceType} />
             <InfoField label="Current role" value={applicantCurrentRole} />
-            <InfoField label="Service Category" value={applicantServiceCategory} />
+            <InfoField
+              label={normalizedServiceType === 'venue' ? 'Service Category' : 'Expert Category'}
+              value={applicantServiceCategory}
+            />
           </div>
         </SectionCard>
       )}
@@ -726,7 +775,7 @@ export function ExpertApplicationViewPage() {
                   label="Sample Work Link"
                   value={kyc?.sampleWorkLink || profile?.sampleWorkLink}
                 />
-                <div>
+                <div id="gst-information" className="scroll-mt-24">
                   <p className="text-muted text-[11px] font-medium tracking-wider uppercase">
                     GST Information
                   </p>
@@ -889,7 +938,13 @@ export function ExpertApplicationViewPage() {
         </div>
       )}
 
-      {activeTab === 'banking' && (
+      {activeTab === 'banking' && !isBankingSubmitted && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          Banking is not submitted by partner
+        </div>
+      )}
+
+      {activeTab === 'banking' && isBankingSubmitted && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <SectionCard
             title="Account Information"
@@ -959,13 +1014,18 @@ export function ExpertApplicationViewPage() {
               {String(activeDecisionStatus).toLowerCase()}.
             </p>
           )}
+          {activeSectionSubmitted && activeDecisionStatus === 'PENDING' && !sectionDocsApproved && (
+            <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
+              Approve each uploaded document before approving this section.
+            </p>
+          )}
           <DecisionControlButtons
             onApprove={() => openDecisionModal(decisionTargetForTab, 'approve')}
             onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
             showEscalate
-            approveDisabled={decisionDisabled}
+            approveDisabled={decisionDisabled || !sectionDocsApproved}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}

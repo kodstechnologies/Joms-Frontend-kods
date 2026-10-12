@@ -6,10 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotificationPanel } from './notification-dropdown'
 
 vi.mock('@/modules/notifications', () => ({
-  useMyNotifications: () => ({
-    data: { data: [], meta: { total: 0 } },
+  NOTIFICATION_PAGE_SIZE: 20,
+  useInfiniteMyNotifications: () => ({
+    notifications: [],
+    totalCount: 0,
     isLoading: false,
+    isFetchingNextPage: false,
+    hasNextPage: false,
+    fetchNextPage: vi.fn(),
   }),
+  useInboxInfiniteScroll: () => ({ current: null }),
   useMarkNotificationRead: () => ({ mutate: vi.fn() }),
   useUnreadNotificationCount: () => ({ data: 0 }),
 }))

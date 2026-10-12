@@ -14,7 +14,6 @@ export const usePushNotifications = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      // Best-effort cleanup if session ended without going through logout mutation
       const token = getRegisteredPushToken() || registeredTokenRef.current
       if (token) {
         void unregisterDeviceToken(token).catch(() => {})

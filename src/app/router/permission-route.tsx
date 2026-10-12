@@ -14,6 +14,7 @@ type PermissionRouteProps = {
   minLevel?: PermissionLevel
 }
 
+// A screen they are not allowed to open sends them to their own home.
 export function PermissionRoute({
   module,
   permission,

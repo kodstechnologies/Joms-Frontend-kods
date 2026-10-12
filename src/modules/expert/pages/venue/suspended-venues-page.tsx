@@ -1,14 +1,15 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { PlayCircle, Plus } from 'lucide-react'
+import { AlertTriangle, Eye, MessageSquare, PlayCircle, Plus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useActivateVenue } from '../../hooks/use-venues'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
-import { getVenueApiId } from '../../utils/venue-list'
+import { getVenueApiId, getVenuePartnerId } from '../../utils/venue-list'
 import {
   buildVenueDataColumnsById,
   createVenueSelectColumn,
@@ -25,8 +26,15 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalatePartnerApplication } from '@/modules/my-tasks/api/escalation-api'
+import {
   VENUE_SUSPENDED_MODULE_KEY,
   DEFAULT_VENUE_SUSPENDED_VISIBLE_COLUMN_IDS,
+  VENUE_SUSPENDED_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { ExpertListHeader } from '../experts/expert-list-shared'
 
@@ -35,6 +43,21 @@ export function VenueSuspendedPage() {
   const { allowAddVenues } = useVenueManagementControls()
   const activateVenueMutation = useActivateVenue()
 
+  const [escalateTarget, setEscalateTarget] = useState<Venue | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
+
   const list = useVenueStatusList({
     preferencesKey: VENUE_SUSPENDED_MODULE_KEY,
     filterModuleKey: 'venue-management',
@@ -42,6 +65,8 @@ export function VenueSuspendedPage() {
     sortFieldMap: VENUE_SUSPENDED_SORT_FIELDS,
     exportFileName: 'suspended_venues_export',
     exportColumnMap: VENUE_SUSPENDED_EXPORT_COLUMN_MAP,
+    defaultVisibleColumnIds: DEFAULT_VENUE_SUSPENDED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: VENUE_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
 
   const handleActivate = useCallback(
@@ -50,12 +75,90 @@ export function VenueSuspendedPage() {
         onSuccess: () => toast.success('Venue activated successfully'),
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to activate venue. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to activate venue. Please try again.'))
         },
       })
     },
     [activateVenueMutation],
   )
+
+  const openCommunicateWithHost = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+
+    const partnerId = getVenuePartnerId(escalateTarget)
+    const venueId = getVenueApiId(escalateTarget)
+    if (!partnerId) {
+      toast.error('Venue partner ID is missing.')
+      return
+    }
+    if (!venueId) {
+      toast.error('Venue ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const venueName = String(escalateTarget.venueName || venueId).trim()
+
+    setIsEscalating(true)
+    try {
+      await escalatePartnerApplication(partnerId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        venueId,
+        partnerId,
+        entityTitle: `${venueName} — Suspended Venue`,
+        applicationUrl: `/venues/management/profile/${encodeURIComponent(venueId)}`,
+        escalationTarget: 'application',
+        metadata: { source: 'suspended_venues', venueId },
+      })
+      toast.success('Escalated — assigned admin will see this in My Tasks')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate venue.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
 
   const columns = useMemo<ColumnDef<Venue>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
@@ -90,8 +193,18 @@ export function VenueSuspendedPage() {
                 label={`Open actions for ${venue.venueName}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? venue._id : null)}
-                menuWidth={160}
+                menuWidth={200}
+                maxVisibleItems={8}
               >
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
+                  }}
+                >
+                  View Profile
+                </TableActionsItem>
                 <TableActionsItem
                   icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
@@ -101,6 +214,24 @@ export function VenueSuspendedPage() {
                 >
                   Active Venue
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithHost(venue)
+                  }}
+                >
+                  Communicate with Host
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    setEscalateTarget(venue)
+                  }}
+                >
+                  Escalate
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -108,7 +239,7 @@ export function VenueSuspendedPage() {
       ],
       VENUE_SUSPENDED_SORT_FIELDS,
     )
-  }, [handleActivate, list])
+  }, [handleActivate, list, navigate, openCommunicateWithHost])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -116,26 +247,24 @@ export function VenueSuspendedPage() {
         <div className="min-w-0 flex-1">
           <ExpertListHeader
             title="Suspended Venues"
-            breadcrumb="Venue Management / Suspended Venues"
+            breadcrumbItems={[
+              { label: 'Venue Management', to: '/venues/management' },
+              { label: 'Suspended Venues', isActive: true },
+            ]}
             backTo="/venues/management"
             metricsPath="/metrics/venue-suspended?returnTo=/venues/management/suspended"
           />
         </div>
-        <Button
-          type="button"
-          className="h-9 w-full md:w-auto"
-          disabled={!allowAddVenues}
-          onClick={() => {
-            if (!allowAddVenues) {
-              toast.error('Creating venues is turned off in Venue Management settings')
-              return
-            }
-            navigate('/venues/management/onboarding')
-          }}
-        >
-          <Plus className="size-4" />
-          Create Account
-        </Button>
+        {allowAddVenues ? (
+          <Button
+            type="button"
+            className="h-9 w-full md:w-auto"
+            onClick={() => navigate('/venues/management/onboarding')}
+          >
+            <Plus className="size-4" />
+            Create Account
+          </Button>
+        ) : null}
       </div>
 
       <DataTable
@@ -165,6 +294,25 @@ export function VenueSuspendedPage() {
         emptyMessage="No suspended venues found."
       />
       {list.exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate"
+        headerDescription="Are you sure you want to escalate this venue? It will be reviewed by the selected sub-admin."
+        description=""
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

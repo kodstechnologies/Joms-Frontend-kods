@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpDown, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, X } from 'lucide-react'
+import { SortOutlineIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -7,6 +8,7 @@ import { useLockedAccounts, useUnlockAccount } from '../hooks/use-security'
 import type { LockedAccountRow } from '../types/settings'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { cn } from '@/shared/lib/cn'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
@@ -155,12 +157,12 @@ export function LockedAccountsPage() {
   const renderSortIcon = (columnId: string) => {
     const active = serverSort.sorting[0]
     if (!active || active.id !== columnId) {
-      return <ArrowUpDown className="text-muted/50 size-[14px]" aria-hidden="true" />
+      return <SortOutlineIcon className="text-white" />
     }
     return active.desc ? (
-      <ArrowDown className="text-brand-primary size-[14px]" aria-hidden="true" />
+      <ArrowDown className="text-brand-primary size-4" aria-hidden="true" />
     ) : (
-      <ArrowUp className="text-brand-primary size-[14px]" aria-hidden="true" />
+      <ArrowUp className="text-brand-primary size-4" aria-hidden="true" />
     )
   }
 
@@ -198,7 +200,19 @@ export function LockedAccountsPage() {
 
       <div className="locked-accounts-heading">
         <h1 className="locked-accounts-title">Locked Accounts</h1>
-        <p className="locked-accounts-breadcrumb">Settings / Platform Controls / Locked Account</p>
+        <div className="locked-accounts-breadcrumb">
+          <PageBreadcrumb
+            items={[
+              { label: 'Settings', to: '/settings/main' },
+              {
+                label: 'Platform Controls',
+                to: '/settings/main',
+                state: { settingsTab: 'platform' },
+              },
+              { label: 'Locked Account', isActive: true },
+            ]}
+          />
+        </div>
       </div>
 
       <section className="locked-accounts-card">

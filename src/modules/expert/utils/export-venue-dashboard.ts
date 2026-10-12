@@ -1,4 +1,4 @@
-import { exportSheetsToExcel } from '@/shared/utils/export-utils'
+import { exportSheetsToFile } from '@/shared/utils/export-utils'
 
 type DashboardMetric = {
   id: string
@@ -33,11 +33,14 @@ export type VenueDashboardExportData = {
   topVenues: TopVenueRow[]
 }
 
-export async function exportVenueDashboardToExcel(data: VenueDashboardExportData) {
+export async function exportVenueDashboardToExcel(
+  data: VenueDashboardExportData,
+  format = 'excel',
+) {
   const date = new Date().toISOString().slice(0, 10)
   const filePrefix = `venue_dashboard_${date}`
 
-  await exportSheetsToExcel(
+  await exportSheetsToFile(
     [
       {
         name: 'Metrics',
@@ -86,5 +89,6 @@ export async function exportVenueDashboardToExcel(data: VenueDashboardExportData
       },
     ].filter((sheet) => sheet.rows.length > 0),
     filePrefix,
+    format,
   )
 }

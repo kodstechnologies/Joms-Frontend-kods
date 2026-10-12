@@ -31,6 +31,7 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
   const selectedMap = useMemo(() => grantsToMap(selected), [selected])
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({})
 
+  // Clearing the level removes that permission from the role.
   const setPermissionLevel = (key: string, level?: PermissionLevel) => {
     const next = { ...selectedMap }
     if (!level) {
@@ -41,6 +42,7 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
     onChange(mapToGrants(next))
   }
 
+  // Switching a permission on starts it at full access.
   const togglePermission = (key: string) => {
     if (selectedMap[key]) {
       setPermissionLevel(key, undefined)
@@ -49,6 +51,7 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
     setPermissionLevel(key, PERMISSION_LEVELS.FULL)
   }
 
+  // Switching a module on gives each permission full access, and leaves a level that was already chosen. Switching it off removes all of them.
   const toggleModule = (moduleKey: string, enabled: boolean) => {
     const keys = catalog[moduleKey]?.permissions.map((p) => p.key) ?? []
     const next = { ...selectedMap }

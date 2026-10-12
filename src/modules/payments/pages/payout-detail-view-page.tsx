@@ -3,6 +3,7 @@ import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -71,7 +72,6 @@ export function PayoutDetailViewPage() {
     enabled: needsPartnerLookup,
   })
 
-  // Deep-link: /finance/payouts/:id?action=release opens the release note modal once.
   useEffect(() => {
     if (searchParams.get('action') !== 'release' || !payout || !canRelease) return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot deep link open
@@ -122,7 +122,7 @@ export function PayoutDetailViewPage() {
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
+            Payment &amp; Finance
           </Link>
           <span> / </span>
           <Link to="/finance/payouts" className="hover:text-brand-text transition-colors">
@@ -155,7 +155,9 @@ export function PayoutDetailViewPage() {
                     payout.payoutId,
                   )
                     .then(() => toast.success('Invoice downloaded'))
-                    .catch(() => toast.error('Failed to download invoice'))
+                    .catch((error) =>
+                      toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+                    )
                 }}
               >
                 <Download className="size-4" />
@@ -266,7 +268,7 @@ export function PayoutDetailViewPage() {
                 toast.success('Note saved')
                 setNoteModal(null)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

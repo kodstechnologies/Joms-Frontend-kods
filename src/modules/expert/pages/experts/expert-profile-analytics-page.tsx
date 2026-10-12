@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import {
   Area,
   AreaChart,
@@ -29,6 +31,7 @@ import {
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildExpertProfileAnalyticsMetricCards } from '../../utils/expert-profile-analytics-metrics'
 import { exportExpertProfileAnalyticsToExcel } from '../../utils/export-expert-profile-analytics'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import {
   AnalyticsCard,
@@ -59,6 +62,7 @@ function formatCompactCount(value: number) {
 
 export function ExpertProfileAnalyticsPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { id } = useParams<{ id: string }>()
   const { data } = useExpertProfile(id ?? '')
   const expert = data?.data
@@ -285,7 +289,9 @@ export function ExpertProfileAnalyticsPage() {
 
   const conversionFunnel = useMemo(() => {
     const funnel = analyticsData?.charts?.conversionFunnel
-    const profileViews = Number(funnel?.profileViews || 0)
+    const profileViews = Number(
+      funnel?.profileViews ?? analyticsData?.visibilityMetrics?.profileViews?.count ?? 0,
+    )
     const listingViews = Number(funnel?.listingViews || 0)
     const ordersCount = Number(
       funnel?.ordersCount ?? analyticsData?.listingOverview?.ordersCompleted ?? 0,
@@ -334,40 +340,43 @@ export function ExpertProfileAnalyticsPage() {
     }
 
     try {
-      await exportExpertProfileAnalyticsToExcel({
-        expertName: profile.name,
-        expertId: id,
-        visibilityPeriod,
-        revenuePeriod,
-        profileSummary: [
-          { label: 'Profession', value: profile.profession },
-          { label: 'Role', value: profile.role },
-          { label: 'Rating', value: profile.rating },
-          { label: 'Badge', value: profile.badge },
-          { label: 'Account Status', value: profile.accountStatus },
-          { label: 'Last Active', value: profile.lastActive },
-          { label: 'Services Listed', value: profile.servicesListed },
-          { label: 'Consultations Listed', value: profile.consultationsListed },
-          { label: 'Orders Completed', value: profile.ordersCompleted },
-          { label: 'Revenue', value: profile.revenue },
-        ],
-        serviceAnalytics: serviceAnalyticsCards,
-        visibilityMetrics,
-        expertListings: expertListingsMetrics,
-        ticketingInsights,
-        mostActiveTime: hasMostActiveTime ? mostActiveTime : [],
-        topViewsByLocation,
-        topViewsByRole,
-        conversionFunnel: hasConversionFunnel ? conversionFunnel : [],
-        revenueTrend: hasRevenueTrend ? revenueTrend : [],
-      })
-      toast.success('Export downloaded')
+      await exportExpertProfileAnalyticsToExcel(
+        {
+          expertName: profile.name,
+          expertId: id,
+          visibilityPeriod,
+          revenuePeriod,
+          profileSummary: [
+            { label: 'Profession', value: profile.profession },
+            { label: 'Role', value: profile.role },
+            { label: 'Rating', value: profile.rating },
+            { label: 'Badge', value: profile.badge },
+            { label: 'Account Status', value: profile.accountStatus },
+            { label: 'Last Active', value: profile.lastActive },
+            { label: 'Services Listed', value: profile.servicesListed },
+            { label: 'Consultations Listed', value: profile.consultationsListed },
+            { label: 'Orders Completed', value: profile.ordersCompleted },
+            { label: 'Revenue', value: profile.revenue },
+          ],
+          serviceAnalytics: serviceAnalyticsCards,
+          visibilityMetrics,
+          expertListings: expertListingsMetrics,
+          ticketingInsights,
+          mostActiveTime: hasMostActiveTime ? mostActiveTime : [],
+          topViewsByLocation,
+          topViewsByRole,
+          conversionFunnel: hasConversionFunnel ? conversionFunnel : [],
+          revenueTrend: hasRevenueTrend ? revenueTrend : [],
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
     } catch (error) {
       if (error instanceof Error && error.message === 'NO_RECORDS') {
         toast.error('No analytics data available to export')
         return
       }
-      toast.error('Failed to export analytics data')
+      toast.error(getApiErrorMessage(error, 'Failed to export analytics data'))
     }
   }, [
     analyticsData,
@@ -387,6 +396,8 @@ export function ExpertProfileAnalyticsPage() {
     topViewsByRole,
     visibilityMetrics,
     visibilityPeriod,
+    exportFormat,
+    fileFormat,
   ])
 
   return (
@@ -401,24 +412,14 @@ export function ExpertProfileAnalyticsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile Analytics</span>
           </button>
-          <div className="text-body-sm text-muted mt-2 flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-              className="transition-colors hover:text-white"
-            >
-              Back
-            </button>
-            <span className="text-muted/40">/</span>
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, `/experts/management/profile/${id}`)}
-              className="transition-colors hover:text-white"
-            >
-              {profile.name}
-            </button>
-            <span className="text-muted/40">/</span>
-            <span className="font-bold text-white">Profile Analytics</span>
+          <div className="mt-2 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Expert Management', to: '/experts/management' },
+                { label: profile.name, to: `/experts/management/profile/${id}` },
+                { label: 'Profile Analytics', isActive: true },
+              ]}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -426,7 +427,7 @@ export function ExpertProfileAnalyticsPage() {
             className="ui-manage-metrics ui-cta ui-cta-primary h-9"
             onClick={() => navigate(manageMetricsPath)}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button className="ui-export-data h-9" onClick={handleExport}>

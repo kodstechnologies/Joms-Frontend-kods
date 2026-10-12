@@ -15,7 +15,6 @@ export type ExecutiveOverviewMetricCatalogItem = {
 }
 
 const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
-  // —— Core (defaults) ——
   [
     'total-platform-revenue',
     'Total Platform Revenue',
@@ -50,6 +49,12 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'Currency',
     'Sum of platform take / commission fees across paid modules',
   ],
+  [
+    'net-profit',
+    'Net Profit',
+    'Currency',
+    'Platform take after refunds and chargebacks (OpEx not instrumented)',
+  ],
   ['active-members', 'Active Members', 'Count', 'Active, unexpired membership subscriptions', true],
   [
     'total-events-mtd',
@@ -79,7 +84,16 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'All-time GMV divided by unique paying users',
   ],
 
-  // —— Services ——
+  ['pending-payouts', 'Pending Payouts', 'Currency', 'Payout amount awaiting release to partners'],
+  [
+    'avg-payout-cycle-time',
+    'Avg. Payout Cycle Time',
+    'Duration',
+    'Average time from payout scheduling to paid status',
+  ],
+  ['refund-rate', 'Refund Rate (%)', 'Percentage', 'Refunded amount ÷ paid GMV'],
+  ['chargeback-rate', 'Chargeback Rate (%)', 'Percentage', 'Chargeback amount ÷ paid GMV'],
+
   [
     'total-listed-services',
     'Total Listed Services',
@@ -119,7 +133,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'Clients with more than one service order ÷ unique service clients',
   ],
 
-  // —— Consultations ——
   [
     'total-listed-consultations',
     'Total Listed Consultations',
@@ -164,7 +177,6 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
     'Clients with more than one consultation ÷ unique consultation clients',
   ],
 
-  // —— Venues ——
   ['total-venues', 'Total Venues', 'Count', 'Total venue listings including inactive'],
   ['active-venues', 'Active Venues', 'Count', 'Venues currently available'],
   [
@@ -188,13 +200,43 @@ const EXECUTIVE_KPI_DEFS: MetricRowTuple[] = [
   ],
   ['avg-venue-rating', 'Avg. Venue Rating', 'Rating', 'Average approved venue/event rating (0–5)'],
 
-  // —— Platform & ops ——
   ['admin-actions-mtd', 'Admin Actions (MTD)', 'Count', 'Admin audit log entries this month'],
   [
     'critical-actions-logged',
     'Critical Actions Logged',
     'Count',
     'High-risk admin actions this month (delete, refund, suspend, etc.)',
+  ],
+  [
+    'avg-approval-time',
+    'Avg. Approval Time',
+    'Duration',
+    'Average turnaround for completed approval / escalation requests',
+  ],
+  [
+    'active-impersonation-sessions',
+    'Active Impersonation Sessions',
+    'Count',
+    'Impersonation sessions logged this month',
+  ],
+
+  [
+    'system-uptime',
+    'System Uptime (%)',
+    'Percentage',
+    'Share of executive data sources reachable on last refresh',
+  ],
+  [
+    'failed-transactions',
+    'Failed Transactions',
+    'Count',
+    'Payment transactions with failed status (MTD)',
+  ],
+  [
+    'compliance-flags',
+    'Compliance Flags',
+    'Count',
+    'Flagged audit logs and open compliance-related issues',
   ],
   [
     'open-support-tickets',

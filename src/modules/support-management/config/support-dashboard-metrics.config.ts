@@ -15,32 +15,80 @@ export type SupportDashboardMetricCatalogItem = {
 }
 
 const SUPPORT_DASHBOARD_METRIC_DEFS: MetricRowTuple[] = [
-  ['total-tickets', 'Total Tickets', 'Count', 'Total tickets in the system', true],
   [
-    'open-tickets',
-    'Open Tickets',
+    'total-open-tickets',
+    'Total Open Tickets',
     'Count',
-    'Currently open tickets (Open, Assigned, In Progress, Pending Customer)',
+    'Tickets currently awaiting resolution (Open, Pending, In Progress)',
     true,
   ],
-  ['tickets-in-progress', 'Tickets In Progress', 'Count', 'Active tickets being worked on', true],
-  ['assigned-to-me', 'Assigned to Me', 'Count', 'Tickets assigned to the logged-in admin', true],
-  ['escalated-by-me', 'Escalated by Me', 'Count', 'Tickets escalated by the logged-in admin', true],
+  ['new-tickets-today', 'New Tickets Today', 'Count', 'Tickets created today', true],
+  [
+    'tickets-in-progress',
+    'Tickets In Progress',
+    'Count',
+    'Tickets actively assigned / in progress',
+    true,
+  ],
+  [
+    'escalated-tickets',
+    'Escalated Tickets',
+    'Count',
+    'Tickets escalated to higher support levels',
+    true,
+  ],
+  ['tickets-resolved-today', 'Tickets Resolved Today', 'Count', 'Tickets resolved today', true],
+  [
+    'total-tickets-resolved',
+    'Total Tickets Resolved',
+    'Count',
+    'Total resolved tickets (lifetime)',
+    true,
+  ],
+  ['priority-tickets', 'Priority Tickets', 'Count', 'High/Critical priority tickets', true],
+  [
+    'sla-breached-tickets',
+    'SLA Breached Tickets',
+    'Count',
+    'Tickets that exceeded SLA and are not resolved',
+    true,
+  ],
   [
     'average-first-response-time',
     'Average First Response Time',
     'Duration',
-    'Average time to first response',
-    true,
+    'Average time taken for first response',
+    false,
   ],
   [
     'average-resolution-time',
     'Average Resolution Time',
     'Duration',
     'Average resolution duration',
-    true,
+    false,
   ],
-  ['tickets-resolved-today', 'Tickets Resolved Today', 'Count', 'Tickets resolved today', true],
+  [
+    'average-tickets-per-agent',
+    'Average Tickets per Agent',
+    'Decimal',
+    'Average workload per support agent',
+    false,
+  ],
+  [
+    'first-contact-resolution',
+    'First Contact Resolution (FCR)',
+    'Percentage',
+    'Tickets resolved without reopening or escalation',
+    false,
+  ],
+  [
+    'customer-satisfaction',
+    'Customer Satisfaction (CSAT)',
+    'Percentage',
+    'Positive support ratings (ratings ≥ 4)',
+    false,
+  ],
+  ['active-support-agents', 'Active Support Agents', 'Count', 'Currently available agents', false],
 ]
 
 export const SUPPORT_DASHBOARD_METRICS_CATALOG = catalogFromMetricRows(
@@ -48,11 +96,13 @@ export const SUPPORT_DASHBOARD_METRICS_CATALOG = catalogFromMetricRows(
 ) as SupportDashboardMetricCatalogItem[]
 
 export const SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
-  'total-open-tickets': 'open-tickets',
-  'escalated-tickets': 'escalated-by-me',
+  'total-tickets': 'total-open-tickets',
+  'open-tickets': 'total-open-tickets',
+  'escalated-by-me': 'escalated-tickets',
   'resolved-today': 'tickets-resolved-today',
   'avg-response-time': 'average-first-response-time',
   'avg-resolution-time': 'average-resolution-time',
+  'assigned-to-me': 'tickets-in-progress',
 }
 
 const derived = deriveMetricExports(SUPPORT_DASHBOARD_METRICS_CATALOG)

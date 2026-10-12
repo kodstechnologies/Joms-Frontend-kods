@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, FileText, X } from 'lucide-react'
+import { CheckCircle2, X } from 'lucide-react'
 import digilockerIcon from '@/assets/JOMS_ICONS-2/icons8-document_FAQ_digilocker.svg'
 
 import {
@@ -102,7 +102,6 @@ const DocumentCard = ({
 }) => {
   const blobUrl = useMemo(() => {
     if (!file) return null
-    // Ensure Blob has proper PDF MIME type if it's a PDF to avoid Chrome viewer errors
     const isPdf = fileName.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf'
     if (isPdf && file.type !== 'application/pdf') {
       return URL.createObjectURL(new Blob([file], { type: 'application/pdf' }))
@@ -260,6 +259,8 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
         url={previewItem?.url || ''}
         filename={previewItem?.fileName || previewItem?.title || ''}
         mimeType={previewItem?.mimeType}
+        partnerId={previewItem?.partnerId}
+        documentType={previewItem?.documentType}
         actionsDisabled={true}
         reasonOptions={[]}
         onClose={() => setPreviewItem(null)}
@@ -318,7 +319,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
               }
             />
             <InfoRow
-              label="Service Category"
+              label="Expert Category"
               value={
                 formData.serviceCategory.length > 0 ? formData.serviceCategory.join(', ') : 'N/A'
               }
@@ -356,6 +357,10 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
                   'N/A'
                 )
               }
+            />
+            <InfoRow
+              label="Sample Work File"
+              value={formData.sampleWorkFileName || formData.sampleWorkFileUrl || 'N/A'}
             />
 
             <SectionTitle>Primary Verification</SectionTitle>
@@ -400,6 +405,13 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
                   onView={setPreviewItem}
                 />
               )}
+              <DocumentCard
+                label="Sample Work File"
+                file={formData.sampleWorkFile}
+                fileName={formData.sampleWorkFileName}
+                fileUrl={formData.sampleWorkFileUrl}
+                onView={setPreviewItem}
+              />
             </div>
 
             <SectionTitle>Work History ({workHistoryEntries.length})</SectionTitle>
@@ -422,38 +434,30 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
               <p className="text-muted text-xs">No work history added.</p>
             )}
 
-            <SectionTitle>Gallery ({formData.galleryPreviews.length})</SectionTitle>
+            <h3 className="mt-6 mb-4 text-[20px] leading-5 font-semibold tracking-normal text-white">
+              Gallery ({formData.galleryPreviews.length})
+            </h3>
             {formData.galleryPreviews.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <div className="flex max-w-[592px] flex-wrap gap-[23px]">
                 {formData.galleryPreviews.map((preview, index) => (
-                  <div
+                  <button
                     key={`${preview}-${index}`}
-                    className="rounded-lg border border-white/5 bg-black p-4"
+                    type="button"
+                    onClick={() =>
+                      setPreviewItem({
+                        url: preview,
+                        title: `Gallery image ${index + 1}`,
+                        kind: 'gallery',
+                      })
+                    }
+                    className="size-[100px] overflow-hidden rounded-[10px]"
                   >
-                    <div className="flex items-start gap-2">
-                      <span className="mt-0.5 size-4 shrink-0 rounded-full border border-white/10" />
-                      <div className="min-w-0">
-                        <p className="text-body-sm-semibold truncate text-white">
-                          Gallery image {index + 1}
-                        </p>
-                        <p className="text-muted text-[10px]">IMAGE</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPreviewItem({
-                          url: preview,
-                          title: `Gallery image ${index + 1}`,
-                          kind: 'gallery',
-                        })
-                      }
-                      className="text-body-sm bg-brand-surface mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-2 font-semibold text-white transition-colors hover:bg-white/7"
-                    >
-                      <FileText className="size-3.5" />
-                      View Image
-                    </button>
-                  </div>
+                    <img
+                      src={preview}
+                      alt={`Gallery ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
                 ))}
               </div>
             ) : (
@@ -476,7 +480,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props
               type="checkbox"
               checked={formData.isVerified}
               onChange={(e) => setFormData((prev) => ({ ...prev, isVerified: e.target.checked }))}
-              className="rounded border-slate-700 bg-transparent"
+              className="ui-table-checkbox"
             />
             I confirm that the details in this platform are being verified thoroughly
           </label>

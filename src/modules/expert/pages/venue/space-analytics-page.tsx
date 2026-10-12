@@ -10,10 +10,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, RefreshCw, Star } from 'lucide-react'
+import { ArrowLeft, RotateCw, Star } from 'lucide-react'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { Button } from '@/shared/components/ui/button'
 import { useSpaceAnalytics } from '../../hooks/use-venue-analytics'
 import {
@@ -24,8 +25,13 @@ import {
 } from '../../config/venue-view-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildVenueViewAnalyticsMetricCards } from '../../utils/venue-view-analytics-metrics'
+import { exportSpaceAnalytics } from '../../utils/export-space-analytics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { cn } from '@/shared/lib/cn'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { getExportFormatLabel } from '@/modules/settings/utils/export-format'
+import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -46,6 +52,7 @@ export function SpaceAnalyticsPage() {
   const navigate = useNavigate()
   const { venueId, spaceId } = useParams<{ venueId: string; spaceId: string }>()
   const { data, isLoading, isError, isFetching, refetch } = useSpaceAnalytics(spaceId)
+  const { fileFormat } = useDefaultExportFormat()
 
   const activeMetricIds = useActiveMetricIds(VENUE_VIEW_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_VIEW_ANALYTICS_METRIC_IDS,
@@ -89,32 +96,46 @@ export function SpaceAnalyticsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>View Analytics</span>
           </button>
-          <div className="text-body-sm text-muted mt-2 flex items-center gap-1.5 pl-7 font-medium">
-            <span>Venue Management</span>
-            <span className="text-muted/40">/</span>
-            <span>Venue Details</span>
-            <span className="text-muted/40">/</span>
-            <span className="font-bold text-white">View Analytics</span>
+          <div className="mt-2 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                {
+                  label: 'Venue Details',
+                  to: venueId ? `/venues/management/profile/${venueId}` : undefined,
+                },
+                { label: 'View Analytics', isActive: true },
+              ]}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button className="ui-manage-metrics h-9" onClick={() => navigate(manageMetricsPath)}>
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button
             className="ui-export-data h-9"
             onClick={() => {
               if (!data) return
-              const blob = new Blob([JSON.stringify(data, null, 2)], {
-                type: 'application/json',
-              })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = `space-analytics-${spaceId || 'export'}.json`
-              a.click()
-              URL.revokeObjectURL(url)
+              void exportSpaceAnalytics(
+                {
+                  spaceId,
+                  overviewCards,
+                  cashFlow,
+                  timeSlots,
+                  ratings,
+                  cancellations,
+                  timeSlotInsight: data.timeSlotInsight,
+                },
+                fileFormat,
+              )
+                .then(() =>
+                  toast.success(`Exported space analytics as ${getExportFormatLabel(fileFormat)}`),
+                )
+                .catch((error) => {
+                  toast.error(getApiErrorMessage(error, 'Failed to export space analytics'))
+                })
             }}
           >
             <ExportDataIcon className="size-5 shrink-0" />
@@ -158,10 +179,10 @@ export function SpaceAnalyticsPage() {
           <button
             type="button"
             onClick={() => void refetch()}
-            className="text-white/80 hover:text-white"
+            className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
             aria-label="Refresh cash flow"
           >
-            <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+            <RotateCw className={cn('size-4', isFetching && 'animate-spin')} />
           </button>
         </div>
         <div className="h-72">
@@ -272,10 +293,10 @@ export function SpaceAnalyticsPage() {
             <button
               type="button"
               onClick={() => void refetch()}
-              className="text-white/80 hover:text-white"
+              className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
               aria-label="Refresh ratings"
             >
-              <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+              <RotateCw className={cn('size-4', isFetching && 'animate-spin')} />
             </button>
           </div>
           <div className="space-y-4">

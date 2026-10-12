@@ -115,7 +115,6 @@ export const FINANCE_INVOICES_TABLE_COLUMNS_CATALOG: FinanceInvoicesTableColumnC
     description: 'Invoice generator',
     defaultVisible: false,
   },
-  // Legacy
   {
     id: 'issue-date',
     label: 'Issue Date',

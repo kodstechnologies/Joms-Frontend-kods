@@ -1,17 +1,23 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, Mail, Trash2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, ClipboardList, Trash2, User } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import createAccountIcon from '@/assets/JOMS_ICONS-2/create-account-icon.png'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import {
   MODERATION_CATEGORY_SLUGS,
   recordModerationReasonUsage,
 } from '@/modules/settings/api/templates-api'
 import { useModerationReasonOptions } from '@/modules/settings/hooks/use-templates'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateReferralApplication } from '@/modules/my-tasks/api/escalation-api'
 import { InviteExpertReferralModal } from '../components/invite-expert-referral-modal'
 import { ReferralDetailsModal } from '../components/referral-details-modal'
 import { ReferralStatsBar } from '../components/referral-stats-bar'
@@ -49,6 +55,7 @@ import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   buildReferralListQueryParams,
   createReferralFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -62,6 +69,9 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { fetchExperts } from '@/modules/expert/api/expert-api'
+import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 
 const REFERRAL_SORT_FIELD_MAP = buildCatalogSortFieldMap(REFERRALS_TABLE_COLUMNS_CATALOG, {
   'referred-at': 'referredAt',
@@ -84,6 +94,47 @@ const DEFAULT_METRIC_IDS =
   DEFAULT_REFERRALS_ACTIVE_METRIC_IDS.length > 0
     ? DEFAULT_REFERRALS_ACTIVE_METRIC_IDS
     : REFERRAL_METRIC_DEFINITIONS.map((metric) => metric.id)
+
+function ResendInvitationIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M4 7.5C4 6.119 5.119 5 6.5 5H17.5C18.881 5 20 6.119 20 7.5V14.5C20 15.881 18.881 17 17.5 17H6.5C5.119 17 4 15.881 4 14.5V7.5Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.5 7L12 12L18.5 7"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17.5 19.5C19.433 19.5 21 17.933 21 16"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <path
+        d="M19.25 14.75L21 16L19.25 17.25"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 
 const dash = (value: unknown) => {
   if (value === null || value === undefined || value === '') return '—'
@@ -396,6 +447,7 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
 
 export function ReferralManagementPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { currentPage, setCurrentPage } = useReferralStore()
 
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
@@ -413,6 +465,21 @@ export function ReferralManagementPage() {
   const [deleteSelectedReasons, setDeleteSelectedReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [escalateTarget, setEscalateTarget] = useState<ExpertInvite | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+  const { fileFormat } = useDefaultExportFormat()
+
+  const { data: assigneesData } = useEscalationAssignees('referrals.*')
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const {
     options: deleteReasonOptions,
@@ -454,6 +521,39 @@ export function ReferralManagementPage() {
 
   const expertInvites = useMemo(() => expertData?.data?.invites ?? [], [expertData?.data?.invites])
   const meta = expertData?.data?.meta
+
+  useEffect(() => {
+    const referralId = String(searchParams.get('referralId') || '').trim()
+    if (!referralId) return
+
+    let cancelled = false
+    const openFromQuery = async () => {
+      const fromList = expertInvites.find(
+        (invite) =>
+          String(invite.referralId || '').trim() === referralId ||
+          String(invite._id || '').trim() === referralId,
+      )
+      if (fromList) {
+        if (!cancelled) setDetailsExpert(fromList)
+        return
+      }
+      try {
+        const result = await fetchExpertInvites({ referralId, limit: 1, page: 1 })
+        const match = result.data?.invites?.[0]
+        if (!cancelled && match) setDetailsExpert(match)
+        else if (!cancelled) toast.error('Referral invite not found.')
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(error, 'Failed to open referral details.'))
+        }
+      }
+    }
+
+    void openFromQuery()
+    return () => {
+      cancelled = true
+    }
+  }, [expertInvites, searchParams])
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -562,6 +662,116 @@ export function ReferralManagementPage() {
     deleteSelectedReasons,
   ])
 
+  const openReferredUserProfile = useCallback(
+    async (record: ExpertInvite) => {
+      const referredId = String(record.referredUserId || '').trim()
+      const entityType = String(record.referredEntityType || '').toLowerCase()
+      if (referredId) {
+        await openPartnerProfile(
+          {
+            id: referredId,
+            partnerId: referredId,
+            serviceType: entityType.includes('venue') ? 'venue' : undefined,
+          },
+          navigate,
+        )
+        return
+      }
+
+      const email = String(record.referredExpertEmail || '')
+        .trim()
+        .toLowerCase()
+      if (!email) {
+        toast.error('This referred user has not created a profile yet.')
+        return
+      }
+
+      try {
+        const response = await fetchExperts({ search: email, limit: 20 })
+        const match = (response.data || []).find(
+          (expert) =>
+            String(expert.email || '')
+              .trim()
+              .toLowerCase() === email,
+        )
+        if (!match) {
+          toast.error('This referred user has not created a profile yet.')
+          return
+        }
+        await openPartnerProfile(match, navigate)
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to open the referred user profile'))
+      }
+    },
+    [navigate],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    const referralId = String(escalateTarget.referralId || escalateTarget._id || '').trim()
+    if (!referralId) {
+      toast.error('Referral ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const titleName = escalateTarget.referredExpertName || escalateTarget.referrerName || referralId
+
+    setIsEscalating(true)
+    try {
+      await escalateReferralApplication(referralId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        entityTitle: `${titleName} — Referral`,
+        applicationUrl: `/referrals/management?referralId=${encodeURIComponent(referralId)}`,
+        escalationTarget: 'application',
+        metadata: {
+          source: 'referral_management',
+          referralId,
+          sourceType: escalateTarget.sourceType,
+        },
+      })
+      toast.success('Escalated — assigned admin will see this in My Tasks')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate referral.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
+
+  const closeDetailsModal = useCallback(() => {
+    setDetailsExpert(null)
+    if (searchParams.has('referralId')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('referralId')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   const renderActions = useCallback(
     (record: ExpertInvite) => {
       const id = record.referralId
@@ -572,10 +782,11 @@ export function ReferralManagementPage() {
           label="Open expert referral actions"
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? id : null)}
-          menuWidth={210}
+          menuWidth={200}
+          maxVisibleItems={8}
         >
           <TableActionsItem
-            icon={<Eye className="size-3.5" />}
+            icon={<ClipboardList className="size-3.5" strokeWidth={1.75} />}
             onClick={() => {
               setActiveDropdownId(null)
               setDetailsExpert(record)
@@ -583,19 +794,119 @@ export function ReferralManagementPage() {
           >
             View Details
           </TableActionsItem>
-          <TableActionsItem icon={<Mail className="size-3.5" />} onClick={() => handleResend(id)}>
+          <TableActionsItem
+            icon={<ResendInvitationIcon className="size-3.5" />}
+            onClick={() => handleResend(id)}
+          >
             Resend Invitation
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="size-3.5 text-rose-300" />}
+            className="ui-table-actions-item-danger"
+            icon={<Trash2 className="size-3.5" strokeWidth={1.75} />}
             onClick={() => openDeleteModal(record)}
           >
-            <span className="text-rose-300">Delete Referral</span>
+            Delete Referral
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-3.5" strokeWidth={1.75} />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              const referrerId = String(record.referrerUserId || record.referrerId || '').trim()
+              const sourceType = String(record.sourceType || '').toLowerCase()
+              const referrerName = String(record.referrerName || '')
+                .trim()
+                .toLowerCase()
+              const referrerType = String(record.referrerType || '').toLowerCase()
+              const isPlatformReferrer =
+                referrerType === 'admin' ||
+                sourceType.includes('platform') ||
+                referrerName === 'admin' ||
+                (!referrerId && !sourceType.includes('expert'))
+
+              if (isPlatformReferrer) {
+                const authUser = useAuthStore.getState().user
+                const isCurrentAdmin =
+                  !referrerId ||
+                  Boolean(
+                    authUser &&
+                    (String(authUser.id) === referrerId ||
+                      String(authUser.subAdminId || '') === referrerId),
+                  )
+                navigate(
+                  isCurrentAdmin
+                    ? '/settings/access/my-profile'
+                    : `/settings/access/users/${referrerId}`,
+                )
+                return
+              }
+
+              if (!referrerId) {
+                toast.error('Referrer profile ID is missing.')
+                return
+              }
+
+              void openPartnerProfile(
+                {
+                  id: referrerId,
+                  partnerId: referrerId,
+                  serviceType: referrerType.includes('venue') ? 'venue' : undefined,
+                },
+                navigate,
+              )
+            }}
+          >
+            View Referrer Profile
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-3.5" strokeWidth={1.75} />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void openReferredUserProfile(record)
+            }}
+          >
+            View Referred User Profile
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<ExportDataIcon className="size-3.5" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void exportMappedItemsToFile(
+                EXPORT_COLUMN_MAP,
+                [record],
+                fileFormat,
+                `referral_${record.referralId}`,
+                { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+              )
+                .then(() => toast.success('Referral details exported'))
+                .catch((error) =>
+                  toast.error(getApiErrorMessage(error, 'Failed to export referral details')),
+                )
+            }}
+          >
+            Export Referral Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<AlertTriangle className="size-3.5 text-slate-700" strokeWidth={1.75} />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setEscalateTarget(record)
+            }}
+          >
+            Escalate
           </TableActionsItem>
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, handleResend, openDeleteModal],
+    [
+      activeDropdownId,
+      catalogColumnIds,
+      exportColumnIds,
+      fileFormat,
+      handleResend,
+      navigate,
+      openDeleteModal,
+      openReferredUserProfile,
+    ],
   )
 
   const expertColumns = useMemo<ColumnDef<ExpertInvite>[]>(() => {
@@ -621,7 +932,7 @@ export function ReferralManagementPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="referral-page-title">Referral Management</h1>
-          <p className="referral-page-subtitle mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track and manage user-driven and platform-driven referrals
           </p>
         </div>
@@ -632,12 +943,12 @@ export function ReferralManagementPage() {
               navigate('/metrics/referrals?returnTo=/referrals/management&section=dashboard')
             }
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 
           <Button type="button" className="w-full md:w-auto" onClick={() => setInviteOpen(true)}>
-            <img src={createIcon} alt="create" className="size-4" />
+            <img src={createAccountIcon} alt="" className="size-4 shrink-0" aria-hidden="true" />
             Invite New Expert
           </Button>
         </div>
@@ -719,8 +1030,26 @@ export function ReferralManagementPage() {
 
       <ReferralDetailsModal
         open={Boolean(detailsExpert)}
-        onClose={() => setDetailsExpert(null)}
+        onClose={closeDetailsModal}
         expertInvite={detailsExpert}
+      />
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate"
+        description="Are you sure you want to escalate this referral? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
       />
 
       <DecisionActionModal

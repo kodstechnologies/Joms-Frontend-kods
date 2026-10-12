@@ -1,12 +1,23 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye } from 'lucide-react'
+import { CircleArrowDown, CircleArrowUp, CircleX, Eye, Waypoints } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
-import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
+import {
+  useCancelSubscription,
+  useExpertSubscriptions,
+} from '@/modules/memberships/hooks/use-membership-subscriptions'
+import { MembershipActionModals } from '@/modules/memberships/components/membership-action-modals'
+import {
+  submitMembershipExtendForApproval,
+  submitMembershipPlanChangeForApproval,
+} from '@/modules/memberships/utils/submit-membership-plan-change-approval'
+import type { MembershipSubscription } from '@/modules/memberships/types/membership-subscription'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import type { SubscriptionStatus } from '@/modules/memberships/types/membership-subscription'
 import {
@@ -19,6 +30,11 @@ import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { FINANCE_MEMBERSHIP_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import {
+  DEFAULT_FINANCE_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+  FINANCE_MEMBERSHIPS_MODULE_KEY,
+  FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-memberships-table-columns.config'
 import { FINANCE_MEMBERSHIP_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -35,6 +51,9 @@ import {
 import { FinanceTableStatusBadge } from '@/modules/payments/components/finance-table-status-badge'
 import { FINANCE_DATA_TABLE_CLASS } from '@/modules/payments/constants/finance-table-styles'
 import { FinanceTableCellText } from '@/modules/payments/components/finance-table-cell-text'
+import { assembleFinanceTableColumns } from '@/modules/payments/utils/finance-table-column-utils'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 
 const PAGE_SIZE = 10
 
@@ -44,20 +63,32 @@ const EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: FinanceMembershipRow) => string }
 > = {
-  subscriptionId: {
+  'subscription-id': {
     header: 'Subscription ID',
     accessor: (row) => exportDisplayValue(row.subscriptionId),
   },
   name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
-  planName: { header: 'Plan Name', accessor: (row) => exportDisplayValue(row.planName) },
+  'plan-name': { header: 'Plan Name', accessor: (row) => exportDisplayValue(row.planName) },
   amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
-  billingCycle: {
+  'billing-cycle': {
     header: 'Billing Cycle',
     accessor: (row) => exportDisplayValue(row.billingCycle),
   },
-  startDate: { header: 'Start Date', accessor: (row) => exportDisplayValue(row.startDate) },
-  nextBilling: { header: 'Next Billing', accessor: (row) => exportDisplayValue(row.nextBilling) },
+  'start-date': { header: 'Start Date', accessor: (row) => exportDisplayValue(row.startDate) },
+  'next-billing': {
+    header: 'Next Billing',
+    accessor: (row) => exportDisplayValue(row.nextBilling),
+  },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
+
+const MEMBERSHIP_COLUMN_LEGACY_ID_MAP: Record<string, string> = {
+  'membership-id': 'subscription-id',
+  'member-name': 'name',
+  'membership-tier': 'plan-name',
+  'amount-paid': 'amount',
+  'plan-duration': 'billing-cycle',
+  'next-billing-date': 'next-billing',
 }
 
 const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }> = [
@@ -70,6 +101,7 @@ const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }
 
 export function MembershipManagementPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
   const serverSort = useServerTableSort({
     sortFieldMap: SORT_FIELD_MAP,
@@ -79,6 +111,25 @@ export function MembershipManagementPage() {
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
+    null,
+  )
+  const [actionType, setActionType] = useState<
+    'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
+  >(null)
+  const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
+  const cancelMutation = useCancelSubscription()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_MEMBERSHIPS_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: MEMBERSHIP_COLUMN_LEGACY_ID_MAP,
+  })
 
   const listQueryParams = useMemo(() => {
     const params = buildFinanceMembershipsListQueryParams(appliedFilters, {
@@ -93,10 +144,16 @@ export function MembershipManagementPage() {
 
   const { data, isLoading, isFetching } = useExpertSubscriptions(listQueryParams)
 
-  const rows = useMemo(
-    () => (data?.data?.subscriptions ?? []).map(mapSubscriptionToFinanceRow),
-    [data],
-  )
+  const subscriptions = data?.data?.subscriptions ?? []
+  const subscriptionById = useMemo(() => {
+    const map = new Map<string, MembershipSubscription>()
+    for (const subscription of subscriptions) {
+      map.set(subscription._id, subscription)
+    }
+    return map
+  }, [subscriptions])
+
+  const rows = useMemo(() => subscriptions.map(mapSubscriptionToFinanceRow), [subscriptions])
   const meta = data?.data?.meta
   const counts = meta?.counts
 
@@ -107,6 +164,87 @@ export function MembershipManagementPage() {
     toggleVisibleRows,
     toggleRowSelection,
   } = useFinanceRowSelection(rows)
+
+  const closeAction = useCallback(() => {
+    setSelectedSubscription(null)
+    setActionType(null)
+  }, [])
+
+  const openUpgradeMembership = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled' || status === 'expired') {
+        toast.error(`Cannot upgrade a ${status} membership`)
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('upgrade')
+    },
+    [subscriptionById],
+  )
+
+  const openDowngradeMembership = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled' || status === 'expired') {
+        toast.error(`Cannot downgrade a ${status} membership`)
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('downgrade')
+    },
+    [subscriptionById],
+  )
+
+  const openExtendSubscription = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled' || status === 'expired') {
+        toast.error(`Cannot extend a ${status} membership`)
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('extend')
+    },
+    [subscriptionById],
+  )
+
+  const openCancelSubscription = useCallback(
+    (record: FinanceMembershipRow) => {
+      const subscription = subscriptionById.get(record.id)
+      if (!subscription) {
+        toast.error('Membership subscription not found.')
+        return
+      }
+      const status = String(subscription.status || '').toLowerCase()
+      if (status === 'cancelled') {
+        toast.error('Membership is already cancelled')
+        return
+      }
+      if (status === 'expired') {
+        toast.error('Cannot cancel an expired membership')
+        return
+      }
+      setSelectedSubscription(subscription)
+      setActionType('cancel')
+    },
+    [subscriptionById],
+  )
 
   function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
@@ -127,8 +265,9 @@ export function MembershipManagementPage() {
         search: enhancedSearch.globalSearch || undefined,
         status: statusFilter === 'all' ? undefined : statusFilter,
       },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch, statusFilter])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds, statusFilter])
 
   const {
     onAdvancedFilter,
@@ -146,7 +285,8 @@ export function MembershipManagementPage() {
         label="Open subscription actions"
         isOpen={activeDropdownId === record.id}
         onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
-        menuWidth={200}
+        menuWidth={220}
+        maxVisibleItems={8}
       >
         <TableActionsItem
           icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -158,125 +298,177 @@ export function MembershipManagementPage() {
         >
           View Details
         </TableActionsItem>
+        <TableActionsItem
+          icon={<CircleArrowUp className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openUpgradeMembership(record)
+          }}
+        >
+          Upgrade Membership
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<CircleArrowDown className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openDowngradeMembership(record)
+          }}
+        >
+          Downgrade Membership
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<Waypoints className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openExtendSubscription(record)
+          }}
+        >
+          Extend Subscription
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<CircleX className="size-3.5 text-red-600" aria-hidden="true" />}
+          className="ui-table-actions-item-danger text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={() => {
+            setActiveDropdownId(null)
+            openCancelSubscription(record)
+          }}
+        >
+          Cancel Subscription
+        </TableActionsItem>
       </TableActionsDropdown>
     ),
-    [activeDropdownId, navigate],
-  )
-
-  const columns = useMemo<ColumnDef<FinanceMembershipRow>[]>(
-    () =>
-      withServerSortMeta(
-        [
-          {
-            id: 'select',
-            header: () => (
-              <input
-                type="checkbox"
-                aria-label="Select all subscriptions"
-                checked={allVisibleSelected}
-                ref={(input) => {
-                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-                }}
-                onChange={toggleVisibleRows}
-                className="rounded border-slate-700 bg-transparent"
-              />
-            ),
-            cell: ({ row }) => (
-              <input
-                type="checkbox"
-                aria-label={`Select ${row.original.name}`}
-                checked={selectedRowIds.includes(row.original.id)}
-                onChange={() => toggleRowSelection(row.original.id)}
-                onClick={(event) => event.stopPropagation()}
-                className="rounded border-slate-700 bg-transparent"
-              />
-            ),
-            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-          },
-          {
-            accessorKey: 'subscriptionId',
-            header: 'Subscription ID',
-            cell: ({ row }) => (
-              <FinanceTableCellText className="font-mono uppercase">
-                {row.original.subscriptionId}
-              </FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'name',
-            header: 'Name',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.name}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'planName',
-            header: 'Plan Name',
-            cell: ({ row }) => <FinanceTableCellText>{row.original.planName}</FinanceTableCellText>,
-          },
-          {
-            accessorKey: 'amount',
-            header: 'Amount',
-            cell: ({ row }) => (
-              <FinanceTableCellText className="font-semibold">
-                {row.original.amount}
-              </FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'billingCycle',
-            header: 'Billing Cycle',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.billingCycle}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'startDate',
-            header: 'Start Date',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.startDate}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'nextBilling',
-            header: 'Next Billing',
-            cell: ({ row }) => (
-              <FinanceTableCellText>{row.original.nextBilling}</FinanceTableCellText>
-            ),
-          },
-          {
-            accessorKey: 'status',
-            header: 'Status',
-            cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
-          },
-          {
-            id: 'actions',
-            header: 'Actions',
-            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-            cell: ({ row }) => renderActions(row.original),
-          },
-        ],
-        SORT_FIELD_MAP,
-      ),
     [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
+      activeDropdownId,
+      navigate,
+      openUpgradeMembership,
+      openDowngradeMembership,
+      openExtendSubscription,
+      openCancelSubscription,
     ],
   )
+
+  const columns = useMemo<ColumnDef<FinanceMembershipRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceMembershipRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all subscriptions"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="ui-table-checkbox"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.name}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="ui-table-checkbox"
+        />
+      ),
+      meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceMembershipRow>> = {
+      'subscription-id': {
+        id: 'subscription-id',
+        accessorKey: 'subscriptionId',
+        header: 'Subscription ID',
+        cell: ({ row }) => (
+          <FinanceTableCellText className="font-mono uppercase">
+            {row.original.subscriptionId}
+          </FinanceTableCellText>
+        ),
+      },
+      name: {
+        id: 'name',
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.name}</FinanceTableCellText>,
+      },
+      'plan-name': {
+        id: 'plan-name',
+        accessorKey: 'planName',
+        header: 'Plan Name',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.planName}</FinanceTableCellText>,
+      },
+      amount: {
+        id: 'amount',
+        accessorKey: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => (
+          <FinanceTableCellText className="font-semibold">
+            {row.original.amount}
+          </FinanceTableCellText>
+        ),
+      },
+      'billing-cycle': {
+        id: 'billing-cycle',
+        accessorKey: 'billingCycle',
+        header: 'Billing Cycle',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.billingCycle}</FinanceTableCellText>,
+      },
+      'start-date': {
+        id: 'start-date',
+        accessorKey: 'startDate',
+        header: 'Start Date',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.startDate}</FinanceTableCellText>,
+      },
+      'next-billing': {
+        id: 'next-billing',
+        accessorKey: 'nextBilling',
+        header: 'Next Billing',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.nextBilling}</FinanceTableCellText>,
+      },
+      status: {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <FinanceTableStatusBadge status={row.original.status} />,
+      },
+    }
+
+    return withServerSortMeta(
+      assembleFinanceTableColumns(selectColumn, dataColumnsById, {
+        catalogIds: catalogColumnIds,
+        visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+        defaultColumnIds: DEFAULT_FINANCE_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+        legacyColumnIdMap: MEMBERSHIP_COLUMN_LEGACY_ID_MAP,
+        renderActions,
+      }),
+      SORT_FIELD_MAP,
+    )
+  }, [
+    allVisibleSelected,
+    catalogColumnIds,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data?.visibleColumnIds,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="membership-page-title">Membership Management</h1>
-          <p className="membership-page-subtitle mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track revenue, payouts, and financial performance
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-              Finance Management
+              Payment &amp; Finance
             </Link>
             <span> / </span>
             <span className="text-brand-text font-semibold">Memberships</span>
@@ -286,7 +478,7 @@ export function MembershipManagementPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-memberships?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
@@ -348,6 +540,76 @@ export function MembershipManagementPage() {
       />
 
       {exportFilterModals}
+
+      <MembershipActionModals
+        subscription={selectedSubscription}
+        action={actionType}
+        onClose={closeAction}
+        isSubmitting={isPlanChangeSubmitting || cancelMutation.isPending}
+        onUpgrade={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'upgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            toast.success('Upgrade sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send upgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
+        onDowngrade={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'downgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            toast.success('Downgrade sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send downgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
+        onExtend={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipExtendForApproval(selectedSubscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            toast.success('Extend sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send extend for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
+        onCancel={async (payload) => {
+          if (!selectedSubscription) return
+          try {
+            await cancelMutation.mutateAsync({
+              id: selectedSubscription._id,
+              payload: { ...payload, updatedBy: 'Admin' },
+            })
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            void queryClient.invalidateQueries({ queryKey: ['subscription'] })
+            toast.success('Cancellation request submitted')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to cancel membership'))
+          }
+        }}
+      />
     </div>
   )
 }

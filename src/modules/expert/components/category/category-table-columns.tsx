@@ -64,7 +64,7 @@ export const categoryColumns: ColumnDef<Category>[] = [
   {
     id: 'active-listings',
     accessorKey: 'services',
-    header: 'Active Listings',
+    header: 'Total Listings',
     meta: { cellClassName: 'text-white' },
   },
   {

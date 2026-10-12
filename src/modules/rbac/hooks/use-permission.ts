@@ -6,6 +6,7 @@ import {
   type PermissionLevel,
 } from '@/shared/lib/permissions'
 
+// can asks for full access unless a lower level is passed. canRead accepts any level except restricted.
 export function usePermission() {
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = user?.isSuperAdmin ?? false

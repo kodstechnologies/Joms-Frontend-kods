@@ -18,7 +18,7 @@ import type {
 
 type ListParams = Record<string, unknown>
 
-export const fetchRbacMe = async () => {
+export const fetchRbacMe = async (): Promise<{ success: boolean; data: AdminProfile }> => {
   const response = await adminApiClient.get<{ success: boolean; data: AdminProfile }>(
     '/admin/rbac/me',
   )
@@ -49,13 +49,28 @@ export const checkSubAdminPhone = async (phone: string) => {
   return response.data
 }
 
-export const verifySubAdminMfa = async (code: string) => {
-  const response = await adminApiClient.post<{ success: boolean; message: string }>(
-    '/admin/rbac/me/verify-mfa',
-    { code },
-  )
+export const startAuthenticatorSetup = async () => {
+  const response = await adminApiClient.post<{
+    success: boolean
+    data: {
+      enrolled: boolean
+      mfaEnabled: boolean
+      secret: string
+      otpauthUrl: string
+    }
+  }>('/admin/rbac/me/authenticator/setup')
   return response.data
 }
+
+export const verifyAuthenticatorSetup = async (code: string) => {
+  const response = await adminApiClient.post<{
+    success: boolean
+    data: { verified: boolean; mfaEnabled: boolean }
+  }>('/admin/rbac/me/authenticator/verify', { code })
+  return response.data
+}
+
+export const verifySubAdminMfa = verifyAuthenticatorSetup
 
 export const fetchPermissionCatalog = async () => {
   const response = await adminApiClient.get<{ success: boolean; data: PermissionCatalog }>(
@@ -167,6 +182,14 @@ export const updateSubAdminPassword = async (
   return response.data
 }
 
+export const updateMyPassword = async (payload: UpdateSubAdminPasswordPayload) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: { id: string; updated: boolean }
+  }>('/admin/rbac/me/password', payload)
+  return response.data
+}
+
 export const fetchSubAdminLogs = async (id: string, params?: ListParams) => {
   const response = await adminApiClient.get<{
     success: boolean
@@ -255,5 +278,35 @@ export const revokeSubAdminInvite = async (inviteId: string, payload: InviteActi
     `/admin/rbac/invites/${inviteId}/revoke`,
     payload,
   )
+  return response.data
+}
+
+export const revokeRole = async (roleId: string) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: { role: Role; revokedCount: number }
+    message?: string
+  }>(`/admin/rbac/roles/${roleId}/revoke`)
+  return response.data
+}
+
+export const revokeSubAdminRole = async (subAdminId: string, roleId?: string) => {
+  const url = roleId
+    ? `/admin/rbac/sub-admins/${subAdminId}/roles/${roleId}/revoke`
+    : `/admin/rbac/sub-admins/${subAdminId}/revoke-role`
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: SubAdmin
+    message?: string
+  }>(url, roleId ? { roleId } : {})
+  return response.data
+}
+
+export const resetSubAdminMfa = async (subAdminId: string) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: SubAdmin
+    message?: string
+  }>(`/admin/rbac/sub-admins/${subAdminId}/reset-mfa`)
   return response.data
 }

@@ -16,7 +16,8 @@
     "test:coverage": "vitest run --coverage --pool=forks --maxWorkers=1",
     "env:local": "node scripts/flip-env.js local",
     "env:production": "node scripts/flip-env.js production",
-    "env:flip": "node scripts/flip-env.js toggle"
+    "env:flip": "node scripts/flip-env.js toggle",
+    "icons:store": "node scripts/generate-icon-store.mjs"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",

@@ -74,12 +74,14 @@ export const getModulePlaceholder = <M extends SettingsModule>(
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+// A missing incoming value keeps the default. Keys that are not in the defaults are not added.
 export const mergeWithDefaults = <T>(defaults: T, incoming: unknown): T => {
   if (incoming == null) return defaults
   if (!isRecord(defaults) || !isRecord(incoming)) return (incoming as T) ?? defaults
 
   const merged: Record<string, unknown> = { ...defaults }
-  for (const [key, value] of Object.entries(incoming)) {
+  for (const key of Object.keys(defaults)) {
+    const value = incoming[key]
     if (value == null) continue
     const defaultValue = merged[key]
     merged[key] =
@@ -88,8 +90,21 @@ export const mergeWithDefaults = <T>(defaults: T, incoming: unknown): T => {
   return merged as T
 }
 
+export type BrandingConfigSource = {
+  applicationSettings?: {
+    applicationName?: string
+    logoUrl?: string
+    faviconUrl?: string
+  } | null
+  displayPreferences?: {
+    timezone?: string
+    dateTimeFormat?: string
+  } | null
+}
+
+// A blank name or favicon falls back to the default. The logo is allowed to stay empty.
 export const resolveBranding = (
-  config?: PlatformSettings | null,
+  config?: BrandingConfigSource | PlatformSettings | null,
   options?: { preferDefaultsOnEmpty?: boolean },
 ): BrandingState => {
   const preferDefaults = options?.preferDefaultsOnEmpty !== false

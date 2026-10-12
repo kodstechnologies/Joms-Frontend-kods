@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { cn } from '@/shared/lib/cn'
 
@@ -55,8 +56,8 @@ function ChooseErrorTemplateModalContent({
       setShowAdd(false)
       setDraftText('')
       setEditingIndex(null)
-    } catch {
-      toast.error('Failed to save template')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to save template'))
     } finally {
       setIsSaving(false)
     }
@@ -152,8 +153,8 @@ function ChooseErrorTemplateModalContent({
                               if (selected === template) {
                                 setSelected(updated[0] || '')
                               }
-                            } catch {
-                              toast.error('Failed to delete template')
+                            } catch (error) {
+                              toast.error(getApiErrorMessage(error, 'Failed to delete template'))
                             } finally {
                               setIsSaving(false)
                             }

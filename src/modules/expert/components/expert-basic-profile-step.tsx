@@ -2,13 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, ImageIcon, Plus, Search, Upload, X, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { STANDARD_INDUSTRIES, STANDARD_OFFERINGS } from '../config/expert-profile-options.config'
+import { checkPartnerAvailability } from '@/modules/auth/api/auth-api'
+import { STANDARD_INDUSTRIES } from '../config/expert-profile-options.config'
 import { useOfferingsList, useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
+import { LOOKS_LIKE_CATEGORY_ID } from '../utils/expert-application-helpers'
 import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { cn } from '@/shared/lib/cn'
 import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
+import { apiErrorMessage } from '@/shared/lib/api-error'
 
 const fieldClass = 'ui-input'
 
@@ -21,9 +25,17 @@ type Props = {
   formData: ExpertOnboardingFormData
   setFormData: React.Dispatch<React.SetStateAction<ExpertOnboardingFormData>>
   lockedServiceType?: 'concierge' | 'venue'
+  excludePartnerId?: string | null
+  requireSampleWorkFile?: boolean
 }
 
-export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceType }: Props) => {
+export const ExpertBasicProfileStep = ({
+  formData,
+  setFormData,
+  lockedServiceType,
+  excludePartnerId,
+  requireSampleWorkFile = false,
+}: Props) => {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const profileInputRef = useRef<HTMLInputElement>(null)
   const sampleFileInputRef = useRef<HTMLInputElement>(null)
@@ -35,6 +47,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
   const [offeringInput, setOfferingInput] = useState('')
   const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false)
   const [offeringDropdownOpen, setOfferingDropdownOpen] = useState(false)
+  const [sampleWorkViewerOpen, setSampleWorkViewerOpen] = useState(false)
 
   const [verifyModal, setVerifyModal] = useState<{
     open: boolean
@@ -46,7 +59,6 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     targetValue: '',
   })
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (
@@ -66,12 +78,33 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [])
 
-  const handleOpenPhoneVerify = () => {
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+
+  const isPhoneVerifyBusy = isCheckingPhone || (verifyModal.open && verifyModal.type === 'phone')
+  const isEmailVerifyBusy = isCheckingEmail || (verifyModal.open && verifyModal.type === 'email')
+
+  const handleOpenPhoneVerify = async () => {
+    if (formData.isPhoneVerified || isPhoneVerifyBusy) return
     const error = validateMobileNumber(formData.phoneNumber)
     if (error) {
       toast.error(error)
       return
     }
+
+    try {
+      setIsCheckingPhone(true)
+      await checkPartnerAvailability({
+        phone: formData.phoneNumber.trim(),
+        excludePartnerId: excludePartnerId || undefined,
+      })
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Phone number is already using'))
+      return
+    } finally {
+      setIsCheckingPhone(false)
+    }
+
     setVerifyModal({
       open: true,
       type: 'phone',
@@ -79,7 +112,8 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     })
   }
 
-  const handleOpenEmailVerify = () => {
+  const handleOpenEmailVerify = async () => {
+    if (formData.isEmailVerified || isEmailVerifyBusy) return
     if (!formData.email.trim()) {
       toast.error('Please enter an email ID before verifying.')
       return
@@ -89,6 +123,20 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
       toast.error('Please enter a valid email address.')
       return
     }
+
+    try {
+      setIsCheckingEmail(true)
+      await checkPartnerAvailability({
+        email: formData.email.trim(),
+        excludePartnerId: excludePartnerId || undefined,
+      })
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Email is already using'))
+      return
+    } finally {
+      setIsCheckingEmail(false)
+    }
+
     setVerifyModal({
       open: true,
       type: 'email',
@@ -113,8 +161,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
   const { data: dynamicOfferings = [] } = useOfferingsList()
 
   const allAvailableOfferings = useMemo(() => {
-    const merged = Array.from(new Set([...(dynamicOfferings || []), ...STANDARD_OFFERINGS]))
-    return merged
+    return Array.from(new Set(dynamicOfferings || []))
   }, [dynamicOfferings])
 
   const filteredOfferings = useMemo(() => {
@@ -143,6 +190,27 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     }
     return map
   }, [categoryGroups])
+  const categoryIdToName = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const items of Object.values(categoryGroups)) {
+      for (const item of items) {
+        if (item?.id && item?.name) map.set(String(item.id), item.name)
+      }
+    }
+    return map
+  }, [categoryGroups])
+
+  useEffect(() => {
+    if (categoryIdToName.size === 0) return
+    setFormData((prev) => {
+      const next = prev.serviceCategory.map((value) =>
+        LOOKS_LIKE_CATEGORY_ID.test(value) ? categoryIdToName.get(value) || value : value,
+      )
+      const changed = next.some((value, index) => value !== prev.serviceCategory[index])
+      if (!changed) return prev
+      return { ...prev, serviceCategory: [...new Set(next.filter(Boolean))] }
+    })
+  }, [categoryIdToName, setFormData])
 
   const isVenueService = serviceType === 'venue'
 
@@ -176,24 +244,41 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
   const toggleCategory = (categoryName: string, groupName?: string) => {
     setFormData((prev) => {
-      if (prev.serviceCategory.includes(categoryName)) {
+      const aliases = new Set<string>([categoryName])
+      for (const items of Object.values(categoryGroups)) {
+        for (const item of items) {
+          if (item.name === categoryName || item.id === categoryName) {
+            aliases.add(item.name)
+            aliases.add(item.id)
+          }
+        }
+      }
+      const displayName = categoryIdToName.get(categoryName) || categoryName
+      const isSelected = prev.serviceCategory.some((item) => aliases.has(item))
+
+      if (isSelected) {
         return {
           ...prev,
-          serviceCategory: prev.serviceCategory.filter((item) => item !== categoryName),
+          serviceCategory: prev.serviceCategory.filter((item) => !aliases.has(item)),
         }
       }
 
       if (isVenueService) {
-        const targetGroup = groupName ?? categoryNameToGroup.get(categoryName)
-        const next = prev.serviceCategory.filter(
-          (item) => categoryNameToGroup.get(item) === targetGroup,
-        )
-        return { ...prev, serviceCategory: [...next, categoryName] }
+        const targetGroup = groupName ?? categoryNameToGroup.get(displayName)
+        const next = prev.serviceCategory
+          .map((item) => categoryIdToName.get(item) || item)
+          .filter((item) => categoryNameToGroup.get(item) === targetGroup)
+        return { ...prev, serviceCategory: [...new Set([...next, displayName])] }
       }
 
       return {
         ...prev,
-        serviceCategory: [...prev.serviceCategory, categoryName],
+        serviceCategory: [
+          ...new Set([
+            ...prev.serviceCategory.map((item) => categoryIdToName.get(item) || item),
+            displayName,
+          ]),
+        ],
       }
     })
   }
@@ -201,6 +286,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
   const addOffering = (value: string, reset?: () => void) => {
     const trimmed = value.trim()
     if (!trimmed) return
+    if (!allAvailableOfferings.includes(trimmed)) return
     setFormData((prev) =>
       prev.offerings.includes(trimmed)
         ? prev
@@ -225,22 +311,38 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Left Column: Media & Identity Details */}
           <div className="space-y-6">
             <div className="relative">
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
-                className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black transition-colors"
+                className="relative flex h-[133px] w-full max-w-[437px] items-center justify-center overflow-hidden rounded-[10px] bg-[#050505] transition-colors"
               >
+                <svg
+                  className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="0.5"
+                    y="0.5"
+                    width="99.7%"
+                    height="99%"
+                    rx="10"
+                    ry="10"
+                    fill="none"
+                    stroke="#FFFFFF80"
+                    strokeWidth="1"
+                    strokeDasharray="10 10"
+                  />
+                </svg>
                 {formData.coverImageUrl ? (
                   <img
                     src={formData.coverImageUrl}
                     alt="Cover"
-                    className="h-full w-full rounded-md object-cover"
+                    className="relative h-full w-full rounded-[10px] object-cover"
                   />
                 ) : (
-                  <div className="text-center">
+                  <div className="relative text-center">
                     <p className="text-muted mb-2 text-xs">Upload Cover Image</p>
                     <ImageIcon className="text-muted mx-auto size-5" />
                   </div>
@@ -257,7 +359,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               <button
                 type="button"
                 onClick={() => profileInputRef.current?.click()}
-                className="border-brand-surface absolute -bottom-8 left-6 size-16 overflow-hidden rounded-full border-4 bg-slate-600"
+                className="absolute -bottom-[50px] left-[17px] size-[100px] overflow-hidden rounded-full bg-[#050505]"
               >
                 {formData.profileImageUrl ? (
                   <img
@@ -280,7 +382,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               />
             </div>
 
-            <div className="pt-8">
+            <div className="pt-[50px]">
               <h3 className="mb-4 text-sm font-bold text-white">Identity Details</h3>
 
               <div className="space-y-4">
@@ -292,7 +394,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     value={formData.fullname}
                     onChange={(e) => setFormData((prev) => ({ ...prev, fullname: e.target.value }))}
                     placeholder="Enter full name"
-                    className={fieldClass}
+                    className="box-border h-[42px] w-full max-w-[437px] rounded-[10px] bg-[#050505] px-3.5 text-[14px] text-white outline-none placeholder:text-white/40"
                   />
                 </div>
 
@@ -304,26 +406,25 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     value={formData.location}
                     onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
                     placeholder="Enter location"
-                    className={fieldClass}
+                    className="box-border h-[42px] w-full max-w-[437px] rounded-[10px] bg-[#050505] px-3.5 text-[14px] text-white outline-none placeholder:text-white/40"
                   />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
-                    Profile Bio <RequiredMark />
+                    Bio <RequiredMark />
                   </label>
                   <textarea
                     value={formData.bio}
                     onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                     placeholder="Write a brief bio..."
-                    rows={4}
-                    className={fieldClass}
+                    className="box-border h-[173px] w-full max-w-[439px] resize-none rounded-[10px] bg-[#050505] px-3.5 py-3 text-[14px] leading-5 text-white outline-none placeholder:text-white/40"
                   />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
-                    Sample Work Link
+                    Sample Work Link <RequiredMark />
                   </label>
                   <input
                     value={formData.sampleWorkLink}
@@ -337,15 +438,26 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
-                    Upload Sample Work File
+                    Upload Sample Work File {requireSampleWorkFile ? <RequiredMark /> : null}
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => sampleFileInputRef.current?.click()}
-                    className="hover:border-brand-accent/50 text-muted rounded-md border border-dashed border-white/20 px-8 py-3 text-xs transition-colors"
-                  >
-                    {formData.sampleWorkFileName || 'Upload here'}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => sampleFileInputRef.current?.click()}
+                      className="hover:border-brand-accent/50 text-muted rounded-md border border-dashed border-white/20 px-8 py-3 text-xs transition-colors"
+                    >
+                      {formData.sampleWorkFileName || 'Upload here'}
+                    </button>
+                    {formData.sampleWorkFileUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setSampleWorkViewerOpen(true)}
+                        className="text-brand-accent text-xs underline"
+                      >
+                        View file
+                      </button>
+                    ) : null}
+                  </div>
                   <input
                     ref={sampleFileInputRef}
                     type="file"
@@ -355,7 +467,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                       setFormData((prev) => ({
                         ...prev,
                         sampleWorkFile: file,
-                        sampleWorkFileName: file?.name ?? '',
+                        sampleWorkFileName: file?.name ?? prev.sampleWorkFileName,
                       }))
                     }}
                   />
@@ -364,11 +476,9 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
             </div>
           </div>
 
-          {/* Right Column: Professional Information & Services */}
           <div className="space-y-6">
             <h3 className="text-sm font-bold text-white">Professional Information</h3>
 
-            {/* Industry Dropdown */}
             <div ref={industryContainerRef} className="relative">
               <label className="mb-2 block text-xs font-medium text-white">Industry</label>
               <div className="relative">
@@ -489,7 +599,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Service Category <RequiredMark />
+                {isVenueService ? 'Service Category' : 'Expert Category'} <RequiredMark />
               </label>
               {!serviceType ? (
                 <p className="text-muted rounded-md bg-black px-3 py-2.5 text-xs">
@@ -521,7 +631,9 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {items.map((category) => {
-                                const isSelected = formData.serviceCategory.includes(category.name)
+                                const isSelected =
+                                  formData.serviceCategory.includes(category.name) ||
+                                  formData.serviceCategory.includes(category.id)
 
                                 return (
                                   <button
@@ -550,29 +662,29 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
               {formData.serviceCategory.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {formData.serviceCategory.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center justify-between rounded-md bg-black px-3 py-2.5 text-xs text-white"
-                    >
-                      {item}
-                      <XCircle
-                        className="text-muted size-4 cursor-pointer hover:text-white"
-                        onClick={() => toggleCategory(item)}
-                      />
-                    </div>
-                  ))}
+                  {formData.serviceCategory.map((item) => {
+                    const label = categoryIdToName.get(item) || item
+                    return (
+                      <div
+                        key={item}
+                        className="flex items-center justify-between rounded-md bg-black px-3 py-2.5 text-xs text-white"
+                      >
+                        {label}
+                        <XCircle
+                          className="text-muted size-4 cursor-pointer hover:text-white"
+                          onClick={() => toggleCategory(item)}
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
 
-            {/* Offerings Dropdown & Multi-Select */}
             <div ref={offeringContainerRef} className="relative">
               <div className="mb-2 flex items-center justify-between">
                 <label className="block text-xs font-medium text-white">Offerings</label>
-                <span className="text-[11px] text-white/40">
-                  Select from dropdown or add custom
-                </span>
+                <span className="text-[11px] text-white/40">Select from catalog</span>
               </div>
 
               <div className="relative mb-3">
@@ -587,13 +699,18 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
-                      addOffering(offeringInput, () => {
-                        setOfferingInput('')
-                        setOfferingDropdownOpen(false)
-                      })
+                      const match = filteredOfferings.find(
+                        (item) => item.toLowerCase() === offeringInput.trim().toLowerCase(),
+                      )
+                      if (match) {
+                        addOffering(match, () => {
+                          setOfferingInput('')
+                          setOfferingDropdownOpen(false)
+                        })
+                      }
                     }
                   }}
-                  placeholder="Select from dropdown or search offerings..."
+                  placeholder="Search and select offerings..."
                   className={`${fieldClass} ui-input-icon-left pr-9`}
                 />
                 <button
@@ -610,28 +727,15 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                 </button>
               </div>
 
-              {/* Offerings Suggestions Dropdown */}
               {offeringDropdownOpen && (
                 <div className="absolute z-50 mb-2 max-h-56 w-full overflow-y-auto rounded-lg border border-white/10 bg-[#161616] p-2 shadow-2xl backdrop-blur-md">
                   {filteredOfferings.length === 0 ? (
                     <div className="p-3 text-center text-xs text-white/50">
-                      {offeringInput.trim() ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            addOffering(offeringInput, () => {
-                              setOfferingInput('')
-                              setOfferingDropdownOpen(false)
-                            })
-                          }}
-                          className="text-brand-accent inline-flex items-center gap-1 font-semibold hover:underline"
-                        >
-                          <Plus className="size-3.5" />
-                          Add &quot;{offeringInput}&quot; as custom offering
-                        </button>
-                      ) : (
-                        'All standard offerings selected'
-                      )}
+                      {offeringInput.trim()
+                        ? 'No matching offerings'
+                        : allAvailableOfferings.length === 0
+                          ? 'No offerings available'
+                          : 'All offerings selected'}
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -650,28 +754,11 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                           <Plus className="size-3.5 text-white/40" />
                         </button>
                       ))}
-                      {offeringInput.trim() &&
-                        !filteredOfferings.includes(offeringInput.trim()) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              addOffering(offeringInput, () => {
-                                setOfferingInput('')
-                                setOfferingDropdownOpen(false)
-                              })
-                            }}
-                            className="text-brand-accent flex w-full items-center gap-1.5 border-t border-white/10 px-3 pt-2 pb-1 text-xs font-semibold hover:underline"
-                          >
-                            <Plus className="size-3.5" />
-                            Add custom &quot;{offeringInput}&quot;
-                          </button>
-                        )}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Selected Offerings Chips */}
               {formData.offerings.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">
@@ -725,15 +812,20 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     />
                     <button
                       type="button"
-                      onClick={handleOpenPhoneVerify}
+                      onClick={() => void handleOpenPhoneVerify()}
+                      disabled={formData.isPhoneVerified || isPhoneVerifyBusy}
                       className={cn(
-                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                         formData.isPhoneVerified
                           ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
                           : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
                       )}
                     >
-                      {formData.isPhoneVerified ? 'Verified ✓' : 'Verify'}
+                      {formData.isPhoneVerified
+                        ? 'Verified ✓'
+                        : isPhoneVerifyBusy
+                          ? 'Checking…'
+                          : 'Verify'}
                     </button>
                   </div>
                 </div>
@@ -759,15 +851,20 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     />
                     <button
                       type="button"
-                      onClick={handleOpenEmailVerify}
+                      onClick={() => void handleOpenEmailVerify()}
+                      disabled={formData.isEmailVerified || isEmailVerifyBusy}
                       className={cn(
-                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-70',
                         formData.isEmailVerified
                           ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
                           : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
                       )}
                     >
-                      {formData.isEmailVerified ? 'Verified ✓' : 'Verify'}
+                      {formData.isEmailVerified
+                        ? 'Verified ✓'
+                        : isEmailVerifyBusy
+                          ? 'Checking…'
+                          : 'Verify'}
                     </button>
                   </div>
                 </div>
@@ -783,6 +880,22 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
         targetValue={verifyModal.targetValue}
         onClose={() => setVerifyModal((prev) => ({ ...prev, open: false }))}
         onVerified={handleVerified}
+      />
+
+      <InPageMediaViewer
+        open={sampleWorkViewerOpen && Boolean(formData.sampleWorkFileUrl)}
+        items={
+          formData.sampleWorkFileUrl
+            ? [
+                {
+                  url: formData.sampleWorkFileUrl,
+                  title: formData.sampleWorkFileName || 'Sample work file',
+                },
+              ]
+            : []
+        }
+        index={0}
+        onClose={() => setSampleWorkViewerOpen(false)}
       />
     </div>
   )

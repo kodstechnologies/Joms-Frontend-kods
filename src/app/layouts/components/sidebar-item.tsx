@@ -37,12 +37,10 @@ export function SidebarItem({
   onNavigate,
   compact = false,
 }: SidebarItemProps) {
-  // Nested items: modest indent under parent label — no ghost icon column
   const paddingLeft = compact ? 'px-0' : depth === 0 ? 'pl-3' : depth === 1 ? 'pl-6' : 'pl-8'
 
   const renderContent = (isActive?: boolean) => {
     const resolvedActive = isActive ?? active
-    // Collapsed: no white pill — active icon is brighter, others stay evenly visible
     const showCompactActive = compact && depth === 0 && (moduleActive || resolvedActive)
 
     return (
@@ -74,11 +72,7 @@ export function SidebarItem({
         ) : null}
         {!compact ? (
           <span
-            className={cn(
-              'min-w-0 truncate',
-              // Grow only when chevron/badge need to stay on the right edge
-              (depth === 0 || badge || expandable) && 'flex-1',
-            )}
+            className={cn('min-w-0 truncate', (depth === 0 || badge || expandable) && 'flex-1')}
           >
             <span className={cn(resolvedActive && depth > 0 && 'border-b border-white pb-px')}>
               {label}

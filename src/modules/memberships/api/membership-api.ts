@@ -23,9 +23,9 @@ export const fetchMemberships = async (params?: {
   return response.data
 }
 
-export const fetchMembershipStats = async (type?: MembershipType) => {
+export const fetchMembershipStats = async (type: MembershipType = 'expert') => {
   const response = await membershipApiClient.get<MembershipStatsResponse>('/memberships/stats', {
-    params: type ? { type } : undefined,
+    params: { type },
   })
   return response.data
 }

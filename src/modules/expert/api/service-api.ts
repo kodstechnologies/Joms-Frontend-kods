@@ -15,9 +15,12 @@ import type {
   ServiceStatusUpdateResponse,
   ServiceSuspendActivateResponse,
   SuspendServicePayload,
+  UpdateServiceSuspensionPayload,
   UpdateConsultationAdditionalInfoPayload,
   UpdateConsultationPricingPayload,
   UpdateConsultationStatusPayload,
+  UpdateServiceBasicPayload,
+  UpdateServiceBasicResponse,
   UpdateServicePricingPayload,
   UpdateServiceStatusPayload,
 } from '../type/service'
@@ -32,6 +35,17 @@ export const fetchServices = async (params?: Record<string, unknown>) => {
 export const suspendService = async (id: string, payload: SuspendServicePayload) => {
   const response = await expertApiClient.patch<ServiceSuspendActivateResponse>(
     `/services/internal/admin/services/${id}/suspend`,
+    payload,
+  )
+  return response.data
+}
+
+export const updateServiceSuspension = async (
+  id: string,
+  payload: UpdateServiceSuspensionPayload,
+) => {
+  const response = await expertApiClient.patch<ServiceSuspendActivateResponse>(
+    `/services/internal/admin/services/${id}/suspension`,
     payload,
   )
   return response.data
@@ -56,6 +70,13 @@ export const restoreService = async (id: string) => {
   return response.data
 }
 
+export const purgeService = async (id: string, payload: { adminNotes: string }) => {
+  const response = await expertApiClient.delete(`/services/internal/admin/services/${id}/purge`, {
+    data: payload,
+  })
+  return response.data
+}
+
 export const activateService = async (id: string) => {
   const response = await expertApiClient.patch<ServiceSuspendActivateResponse>(
     `/services/internal/admin/services/${id}/activate`,
@@ -73,6 +94,14 @@ export const createService = async (payload: CreateServicePayload) => {
   return response.data
 }
 
+export const updateServiceBasic = async (id: string, payload: UpdateServiceBasicPayload) => {
+  const response = await expertApiClient.patch<UpdateServiceBasicResponse>(
+    `/api/admin/services/${id}/basic`,
+    payload,
+  )
+  return response.data
+}
+
 export const updateServicePricing = async (id: string, payload: UpdateServicePricingPayload) => {
   const response = await expertApiClient.patch<ServiceDetailResponse>(
     `/api/admin/services/${id}/pricing`,
@@ -81,14 +110,20 @@ export const updateServicePricing = async (id: string, payload: UpdateServicePri
   return response.data
 }
 
-export const updateServiceGallery = async (id: string, images: File[]) => {
+export const updateServiceGallery = async (
+  id: string,
+  images: File[],
+  existingImageUrls: string[] = [],
+) => {
   const formData = new FormData()
   images.forEach((file) => formData.append('images', file))
+  if (existingImageUrls.length > 0) {
+    formData.append('existingImages', JSON.stringify(existingImageUrls))
+  }
 
   const response = await expertApiClient.patch<ServiceDetailResponse>(
     `/api/admin/services/${id}/gallery`,
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
   )
   return response.data
 }
@@ -389,6 +424,22 @@ export const updateServiceReport = async (id: string, payload: Record<string, un
     `/services/internal/admin/reports/services/${id}`,
     payload,
   )
+  return response.data
+}
+
+export type SubmitServiceReportPayload = {
+  serviceId: string
+  partnerId?: string
+  issueType: string
+  reason: string
+  reporterId: string
+  reporterName: string
+  reporterType?: string
+  supportingDocuments?: string[]
+}
+
+export const submitServiceReport = async (payload: SubmitServiceReportPayload) => {
+  const response = await expertApiClient.post('/services/internal/reports/services', payload)
   return response.data
 }
 

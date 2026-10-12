@@ -6,6 +6,7 @@ import { ContactSetupRoute } from '@/app/router/contact-setup-route'
 import { PermissionRoute } from '@/app/router/permission-route'
 import { HomeRedirect } from '@/app/router/home-redirect'
 import { SuperAdminRoute } from '@/app/router/super-admin-route'
+import { ExpertCategoryScopeLayout } from '@/modules/expert/components/category/category-management-scope'
 const LoginPage = lazy(() =>
   import('@/modules/auth/pages/login-page').then((m) => ({ default: m.LoginPage })),
 )
@@ -157,11 +158,6 @@ const ExpertReportedExpertsPage = lazy(() =>
     default: m.ExpertReportedExpertsPage,
   })),
 )
-const ServiceReportedServicesPage = lazy(() =>
-  import('@/modules/expert').then((m) => ({
-    default: m.ServiceReportedServicesPage,
-  })),
-)
 const VenueReportedVenuesPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueReportedVenuesPage,
@@ -209,11 +205,6 @@ const VenuePendingApprovalsPage = lazy(() =>
 const VenueSuspendedPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueSuspendedPage,
-  })),
-)
-const VenueReportedPage = lazy(() =>
-  import('@/modules/expert').then((m) => ({
-    default: m.VenueReportedVenuesPage,
   })),
 )
 const VenueRejectedPage = lazy(() =>
@@ -439,6 +430,16 @@ const MyTasksPage = lazy(() =>
 const SpaceDetailsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.SpaceDetailsPage,
+  })),
+)
+const SpaceBookingsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.SpaceBookingsPage,
+  })),
+)
+const SpaceRevenuePayoutsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.SpaceRevenuePayoutsPage,
   })),
 )
 const CategoryManagementPage = lazy(() =>
@@ -684,6 +685,12 @@ const RenameVenueCategoryPage = lazy(() =>
   })),
 )
 
+const RenameVenueSubCategoryPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.RenameVenueSubCategoryPage,
+  })),
+)
+
 const VenueCategoryViewPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueCategoryViewPage,
@@ -760,21 +767,22 @@ export function AppRouter() {
         />
 
         <Route element={<ProtectedRoute />}>
-          <Route
-            path="/auth/contact-information"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <UpdateContactInformationPage />
-              </Suspense>
-            }
-          />
-
           <Route element={<ContactSetupRoute />}>
+            <Route
+              path="/auth/contact-information"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <UpdateContactInformationPage />
+                </Suspense>
+              }
+            />
+
             <Route element={<DashboardLayout />}>
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/dashboard" element={<HomeRedirect />} />
               <Route path="/metrics/:moduleKey" element={<SharedModuleMetricsPage />} />
               <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
+              <Route path="/settings/access/my-profile/logs" element={<AdminLogsPage />} />
               <Route path="/my-tasks" element={<MyTasksPage />} />
 
               <Route element={<SuperAdminRoute />}>
@@ -785,7 +793,7 @@ export function AppRouter() {
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
               </Route>
 
-              <Route element={<SuperAdminRoute />}>
+              <Route element={<PermissionRoute module="support" />}>
                 <Route path="/support/dashboard" element={<SupportDashboardPage />} />
                 <Route path="/support/tickets" element={<TicketManagementPage />} />
                 <Route path="/support/tickets/:id" element={<TicketDetailPage />} />
@@ -796,6 +804,7 @@ export function AppRouter() {
               <Route element={<PermissionRoute module="memberships" />}>
                 <Route path="/memberships/plans" element={<MembershipPlansPage />} />
                 <Route path="/memberships/plans/create" element={<MembershipPlanFormPage />} />
+                <Route path="/memberships/plans/:id/view" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/:id/edit" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/paused" element={<MembershipPausedPlansPage />} />
                 <Route
@@ -831,6 +840,7 @@ export function AppRouter() {
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
+                <Route path="/settings/escalations" element={<EscalationPage />} />
               </Route>
 
               <Route element={<PermissionRoute permission="settings.rbac_management" />}>
@@ -977,6 +987,48 @@ export function AppRouter() {
                 <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
                 <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
                 <Route path="/experts/leaderboard" element={<LeaderboardPage />} />
+                <Route element={<ExpertCategoryScopeLayout />}>
+                  <Route
+                    path="/experts/categories/management"
+                    element={<CategoryManagementPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/metrics"
+                    element={<CategoryManagementMetricsPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/create"
+                    element={<CreateCategoryPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/create-subcategory/:id"
+                    element={<CreateSubCategoryPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/paused"
+                    element={<PausedCategoriesPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/deleted"
+                    element={<DeletedCategoriesPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/rename/:id"
+                    element={<RenameCategoryPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/filter"
+                    element={<ServiceCategoryFilterPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/view/:id"
+                    element={<CategoryViewPage />}
+                  />
+                  <Route
+                    path="/experts/categories/management/:id/subcategory/:subCategoryId"
+                    element={<SubCategoryViewPage />}
+                  />
+                </Route>
               </Route>
 
               <Route element={<PermissionRoute module="services" />}>
@@ -991,10 +1043,6 @@ export function AppRouter() {
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
                 <Route path="/services/management/reported" element={<ReportedServicesPage />} />
                 <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
-                <Route
-                  path="/services/management/reported"
-                  element={<ServiceReportedServicesPage />}
-                />
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
                 <Route
                   path="/services/management/view/:id"
@@ -1052,15 +1100,20 @@ export function AppRouter() {
                   element={<SpaceDetailsPage />}
                 />
                 <Route
+                  path="/venues/management/profile/:venueId/space/:spaceId/bookings"
+                  element={<SpaceBookingsPage />}
+                />
+                <Route
+                  path="/venues/management/profile/:venueId/space/:spaceId/revenue"
+                  element={<SpaceRevenuePayoutsPage />}
+                />
+                <Route
                   path="/venues/management/profile/:venueId/space/:spaceId/analytics"
                   element={<SpaceAnalyticsPage />}
                 />
 
-                <Route path="/settings/escalations" element={<EscalationPage />} />
-
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
-                <Route path="/venues/management/reported" element={<VenueReportedPage />} />
                 <Route path="/venues/management/rejected" element={<VenueRejectedPage />} />
                 <Route path="/venues/management/deleted" element={<VenueDeletedPage />} />
                 <Route
@@ -1095,6 +1148,10 @@ export function AppRouter() {
                 <Route
                   path="/venues/categories/management/rename/:id"
                   element={<RenameVenueCategoryPage />}
+                />
+                <Route
+                  path="/venues/categories/management/rename-subcategory/:id/:subCategoryId"
+                  element={<RenameVenueSubCategoryPage />}
                 />
                 <Route
                   path="/venues/categories/management/filter"

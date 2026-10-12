@@ -14,6 +14,14 @@ export const languageOptions = ['English']
 
 export const refreshIntervalOptions = ['15 Seconds', '30 Seconds', '60 Seconds', '5 Minutes']
 
-export const exportFormatOptions = ['CSV', 'PDF'] as const
+export const exportFormatOptions = ['CSV', 'Excel', 'PDF'] as const
 
 export type ExportFormatOption = (typeof exportFormatOptions)[number]
+
+export type ExportFileFormat = 'csv' | 'excel' | 'pdf'
+
+export const exportFormatOptionLabels: Record<ExportFormatOption, string> = {
+  CSV: 'CSV Document (.csv)',
+  Excel: 'Excel Document (.xlsx)',
+  PDF: 'PDF Document (.pdf)',
+}

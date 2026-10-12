@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 
-import { SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
   DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS,
   SERVICE_CATEGORY_LEGACY_METRIC_ID_MAP,
@@ -26,7 +25,6 @@ import {
   createCategoryFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchCategories } from '../../api/category-api'
-import { StatCard } from '../../components/stat-card'
 import { type Category, categoryColumns } from '../../components/category/category-table-columns'
 import {
   categoryPath,
@@ -36,6 +34,7 @@ import {
   CategoryManagementPageHeader,
   CategoryQuickLinks,
 } from '../../components/category/category-list-shared'
+import { CategoryStatsBar } from '../../components/category/category-stats-bar'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import {
   useServiceCategories,
@@ -66,7 +65,7 @@ export function CategoryManagementPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const scope = useCategoryManagementScope()
-  const preferencesQuery = useTableColumnPreferences(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY)
+  const preferencesQuery = useTableColumnPreferences(scope.moduleKey)
 
   const catalogColumnIds = useMemo(
     () => SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((c) => c.id),
@@ -97,7 +96,7 @@ export function CategoryManagementPage() {
   )
 
   const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
-  const { data: metrics } = useServiceCategoryMetrics()
+  const { data: metrics, isLoading: isMetricsLoading } = useServiceCategoryMetrics()
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
 
@@ -105,15 +104,15 @@ export function CategoryManagementPage() {
     () =>
       createCategoryFilteredExportHandler(
         async (params) => {
-          const response = await fetchCategories(params)
+          const response = await fetchCategories({ ...params, categoryType: scope.categoryType })
           return { data: (response.data ?? []).map(mapServiceCategoryToUi) }
         },
         SERVICE_CATEGORY_EXPORT_COLUMN_MAP,
-        'service_categories_export',
+        `${scope.exportFilePrefix}_export`,
         { status: 'ACTIVE' },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [catalogColumnIds, exportColumnIds],
+    [catalogColumnIds, exportColumnIds, scope.categoryType, scope.exportFilePrefix],
   )
 
   const {
@@ -121,7 +120,7 @@ export function CategoryManagementPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'service-category-management',
+    moduleKey: scope.moduleKey,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
@@ -149,7 +148,7 @@ export function CategoryManagementPage() {
   const pausedCount = metrics?.pausedCategories ?? pausedData?.pagination?.total ?? 0
   const deletedCount = metrics?.deletedCategories ?? deletedData?.pagination?.total ?? 0
 
-  const savedMetricIdsRaw = useActiveMetricIds(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY, [
+  const savedMetricIdsRaw = useActiveMetricIds(scope.moduleKey, [
     ...DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS,
   ])
   const savedMetricIds = useMemo(
@@ -255,11 +254,11 @@ export function CategoryManagementPage() {
         createPath={categoryPath(scope, 'create')}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metricCards.map((card) => (
-          <StatCard key={card.id} title={card.title} value={card.value} />
-        ))}
-      </div>
+      <CategoryStatsBar
+        metrics={metricCards}
+        isLoading={isMetricsLoading}
+        skeletonIds={activeMetricIds}
+      />
 
       <CategoryQuickLinks
         pausedCount={pausedCount}

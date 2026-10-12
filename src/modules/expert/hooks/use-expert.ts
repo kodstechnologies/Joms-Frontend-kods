@@ -34,12 +34,14 @@ export const useExperts = (params?: {
   serviceType?: string
   [key: string]: unknown
 }) => {
-  const isDeletedList = params?.status === 'deactivated' || params?.status === 'deleted'
+  const isStatusScopedList = ['deactivated', 'deleted', 'suspended'].includes(
+    String(params?.status || ''),
+  )
 
   return useQuery({
-    queryKey: isDeletedList ? ['experts', 'deleted', params] : ['experts', params],
+    queryKey: isStatusScopedList ? ['experts', params?.status, params] : ['experts', params],
     queryFn: () => fetchExperts(params),
-    refetchOnMount: isDeletedList ? 'always' : true,
+    refetchOnMount: isStatusScopedList ? 'always' : true,
   })
 }
 

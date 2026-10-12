@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, Flag, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -26,8 +27,8 @@ import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
-  downloadKeyValueReport,
   flattenExportPairs,
+  useDownloadKeyValueReport,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
 import { financeVenuePaymentStatusClass } from '@/modules/payments/utils/finance-status-tones'
@@ -38,6 +39,7 @@ const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
 export function VenuePaymentDetailViewPage() {
   const navigate = useNavigate()
+  const downloadKeyValueReport = useDownloadKeyValueReport()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
@@ -114,7 +116,6 @@ export function VenuePaymentDetailViewPage() {
   const ownerId = str(payment.partnerId, snapshot.partnerId) || '—'
   const clientId = str(payment.userId, snapshot.userId) || '—'
   const clientName = str(snapshot.userName, moduleData.userName, moduleData.clientName) || clientId
-  // Older rows wrongly stored payer name as partnerName — never show client as owner.
   const rawOwnerName = str(snapshot.partnerName)
   const lookedUpOwner = ownerId !== '—' ? partnerNameMap?.[ownerId] : null
   const ownerName =
@@ -187,9 +188,7 @@ export function VenuePaymentDetailViewPage() {
       paymentCompletedOn:
         status === 'Paid' ? formatDate(payment.updatedAt || payment.createdAt) : '—',
       eventCompletedOn: endAt ? formatDate(endAt) : '—',
-      // Not modeled on Payment / venue booking today — only escrow holds have expectedReleaseAt.
       depositReleaseDate: str(snapshot.depositReleaseDate) || 'Not applicable',
-      // Payment has settlementStatus only (pending|settled), no calendar settlement date field.
       finalSettlementDate:
         str(snapshot.finalSettlementDate) ||
         (payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Not set'),
@@ -240,7 +239,7 @@ export function VenuePaymentDetailViewPage() {
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
+            Payment &amp; Finance
           </Link>
           <span> / </span>
           <Link to="/finance/venues" className="hover:text-brand-text transition-colors">
@@ -417,7 +416,7 @@ export function VenuePaymentDetailViewPage() {
                 toast.success('Note saved')
                 setIsNoteModalOpen(false)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

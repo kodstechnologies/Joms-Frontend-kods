@@ -12,6 +12,7 @@ type PermissionGateProps = {
   children: ReactNode
 }
 
+// A super admin always sees the content. Anyone else needs the module and the listed permissions, or the fallback is shown.
 export function PermissionGate({
   permission,
   permissions = [],

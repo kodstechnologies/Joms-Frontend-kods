@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RotateCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -16,6 +16,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import {
   PlatformHealthMetricCard,
@@ -33,8 +35,21 @@ import {
   PLATFORM_HEALTH_LEGACY_COLUMN_ID_MAP,
   PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG,
 } from '../config/platform-health-table-columns.config'
-import { usePlatformHealthDashboard } from '../hooks/use-platform-health'
-import type { PlatformHealthDateRange, PlatformHealthInfraRow } from '../types/platform-health'
+import {
+  fetchPlatformHealthDashboard,
+  fetchPlatformHealthInfrastructure,
+  fetchPlatformHealthMetrics,
+  fetchPlatformHealthOperations,
+  fetchPlatformHealthPlatformTrends,
+  fetchPlatformHealthSecurityCompliance,
+  fetchPlatformHealthSystemPerformance,
+} from '../api/platform-health.api'
+import { usePlatformHealthSections } from '../hooks/use-platform-health'
+import type {
+  PlatformHealthDashboard,
+  PlatformHealthDateRange,
+  PlatformHealthInfraRow,
+} from '../types/platform-health'
 import { buildPlatformHealthMetricCards } from '../utils/platform-health-metrics'
 import { exportPlatformHealthToExcel } from '../utils/export-platform-health'
 import {
@@ -90,6 +105,7 @@ const PLATFORM_TREND_UPTIME_TICKS = [99, 99.25, 99.5, 99.75, 100]
 const SYSTEM_PERF_LEFT_TICKS = [0, 25, 50, 75, 100]
 const SYSTEM_PERF_RIGHT_MAX = 3200
 const SYSTEM_PERF_RIGHT_TICKS = [0, 800, 1600, 2400, 3200]
+const SYSTEM_PERF_POINT_WIDTH = 56
 const SECURITY_TICKS = [0, 2, 4, 6, 8]
 
 const PLATFORM_TREND_BAR_SIZE = 70
@@ -424,7 +440,6 @@ function SecurityComplianceChartLegend(props: {
 
 function formatSecurityMonthLabel(value: string | number) {
   const raw = String(value)
-  // Accept YYYY-MM, YYYY-MM-DD, or already-short labels like "Jan"
   const match = raw.match(/^(\d{4})-(\d{2})/)
   if (match) {
     const monthIndex = Number(match[2]) - 1
@@ -478,7 +493,7 @@ function ChartSkeleton() {
 
 function TableRowSkeleton() {
   return (
-    <div className="radius-lg bg-brand-bg grid gap-4 border border-white/10 px-4 py-4 lg:grid-cols-6 lg:items-center">
+    <div className="radius-lg bg-brand-bg box-border grid h-[90px] w-full max-w-[1151px] gap-4 border-0 px-4 lg:grid-cols-6 lg:items-center">
       {Array.from({ length: 6 }).map((_, index) => (
         <div key={`infra-skel-${index}`} className="h-4 animate-pulse rounded bg-white/10" />
       ))}
@@ -487,7 +502,7 @@ function TableRowSkeleton() {
 }
 
 const REFRESH_BUTTON_CLASS =
-  'text-muted hover:text-brand-text grid size-9 place-items-center rounded-full transition-colors'
+  'grid size-8 place-items-center rounded-lg p-2 text-white transition-colors hover:bg-white/5'
 
 function ChartPanel({
   title,
@@ -539,7 +554,7 @@ function ChartPanel({
             className={REFRESH_BUTTON_CLASS}
             aria-label="Refresh chart"
           >
-            <RefreshCw className={cn('size-4', isLoading && 'animate-spin')} />
+            <RotateCw className={cn('size-4', isLoading && 'animate-spin')} />
           </button>
         </div>
       </div>
@@ -563,16 +578,29 @@ function LoadBar({ value }: { value: number }) {
 
 export function PlatformHealthPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [selectedRange, setSelectedRange] = useState<string>('Last 3 Months')
   const [serviceStatus, setServiceStatus] = useState('')
 
   const dateRange = RANGE_MAP[selectedRange] || 'quarter'
-  const dashboardQuery = usePlatformHealthDashboard({
-    dateRange,
-    serviceStatus: serviceStatus || undefined,
-  })
-  const dashboardData = dashboardQuery.data
-  const isLoading = dashboardQuery.isLoading
+  const sharedFilters = useMemo(() => ({ dateRange }), [dateRange])
+  const infrastructureFilters = useMemo(
+    () => ({
+      dateRange,
+      serviceStatus: serviceStatus || undefined,
+    }),
+    [dateRange, serviceStatus],
+  )
+
+  const {
+    metricsQuery,
+    platformTrendsQuery,
+    systemPerformanceQuery,
+    securityComplianceQuery,
+    infrastructureQuery,
+    operationsQuery,
+    refetchAll,
+  } = usePlatformHealthSections(sharedFilters, infrastructureFilters)
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(PLATFORM_HEALTH_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(PLATFORM_HEALTH_MODULE_KEY, [
@@ -591,9 +619,9 @@ export function PlatformHealthPage() {
   )
 
   const visibleMetrics = useMemo(() => {
-    const allMetrics = buildPlatformHealthMetricCards(dashboardData?.metrics)
+    const allMetrics = buildPlatformHealthMetricCards(metricsQuery.data?.metrics)
     return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
-  }, [dashboardData?.metrics, filteredActiveMetricIds])
+  }, [metricsQuery.data?.metrics, filteredActiveMetricIds])
 
   const visibleInfraColumnIds = useMemo(() => {
     const catalogIds = PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG.map((column) => column.id)
@@ -611,68 +639,143 @@ export function PlatformHealthPage() {
 
   const infraColumnVisible = useMemo(() => new Set(visibleInfraColumnIds), [visibleInfraColumnIds])
 
-  const charts = dashboardData?.charts
+  const platformTrendData = platformTrendsQuery.data?.platformTrends || []
+  const systemPerformanceData = systemPerformanceQuery.data?.systemPerformance24h || []
+  const securityComplianceData = securityComplianceQuery.data?.securityCompliance || []
+
   const infrastructure = useMemo(
     () =>
-      (dashboardData?.infrastructure || []).filter((row) => row.id !== 'cache' && row.id !== 'cdn'),
-    [dashboardData?.infrastructure],
+      (infrastructureQuery.data?.infrastructure || []).filter(
+        (row) => row.id !== 'cache' && row.id !== 'cdn',
+      ),
+    [infrastructureQuery.data?.infrastructure],
   )
   const skeletonCount = filteredActiveMetricIds.length || DEFAULT_PLATFORM_HEALTH_METRIC_IDS.length
 
   const platformTrendAxis = useMemo(
-    () => resolvePlatformTrendLeftAxis(charts?.platformTrends || []),
-    [charts?.platformTrends],
+    () => resolvePlatformTrendLeftAxis(platformTrendData),
+    [platformTrendData],
   )
 
   const platformTrendUptimeAxis = useMemo(
-    () => resolvePlatformTrendUptimeAxis(charts?.platformTrends || []),
-    [charts?.platformTrends],
+    () => resolvePlatformTrendUptimeAxis(platformTrendData),
+    [platformTrendData],
   )
 
   const systemPerfRightAxis = useMemo(
-    () => resolveSystemPerfRightAxis(charts?.systemPerformance24h || []),
-    [charts?.systemPerformance24h],
+    () => resolveSystemPerfRightAxis(systemPerformanceData),
+    [systemPerformanceData],
   )
 
   const securityAxis = useMemo(
-    () => resolveSecurityAxis(charts?.securityCompliance || []),
-    [charts?.securityCompliance],
+    () => resolveSecurityAxis(securityComplianceData),
+    [securityComplianceData],
   )
 
-  const platformTrendData = charts?.platformTrends || []
   const platformTrendChartMinWidth = Math.max(
     720,
     platformTrendData.length * PLATFORM_TREND_CATEGORY_WIDTH + 80,
   )
-  const securityComplianceData = charts?.securityCompliance || []
+
+  const systemPerfChartMinWidth = Math.max(
+    720,
+    systemPerformanceData.length * SYSTEM_PERF_POINT_WIDTH + 80,
+  )
 
   const refresh = () => {
-    dashboardQuery.refetch()
+    refetchAll()
   }
 
   const handleExportData = useCallback(async () => {
-    if (isLoading) {
+    const sectionsLoading =
+      metricsQuery.isLoading ||
+      platformTrendsQuery.isLoading ||
+      systemPerformanceQuery.isLoading ||
+      securityComplianceQuery.isLoading ||
+      infrastructureQuery.isLoading ||
+      operationsQuery.isLoading
+
+    if (sectionsLoading) {
       toast.message('Please wait for data to load')
       return
     }
 
-    if (!visibleMetrics.length && !dashboardData) {
-      toast.error('No data available to export')
-      return
-    }
-
     try {
-      await exportPlatformHealthToExcel({
-        rangeLabel: selectedRange,
-        serviceStatusFilter: serviceStatus || 'All statuses',
-        metrics: visibleMetrics,
-        dashboard: dashboardData,
-      })
-      toast.success('Exported as Excel')
-    } catch {
-      toast.error('Failed to export platform health data')
+      let dashboard: PlatformHealthDashboard | null = null
+
+      try {
+        dashboard = await fetchPlatformHealthDashboard(infrastructureFilters)
+      } catch {
+        const [metrics, trends, performance, security, infrastructureSection, operations] =
+          await Promise.all([
+            fetchPlatformHealthMetrics(sharedFilters),
+            fetchPlatformHealthPlatformTrends(sharedFilters),
+            fetchPlatformHealthSystemPerformance(sharedFilters),
+            fetchPlatformHealthSecurityCompliance(sharedFilters),
+            fetchPlatformHealthInfrastructure(infrastructureFilters),
+            fetchPlatformHealthOperations(sharedFilters),
+          ])
+
+        dashboard = {
+          metrics: metrics.metrics,
+          summary: metrics.summary,
+          filters: metrics.filters,
+          infrastructure: infrastructureSection.infrastructure,
+          charts: {
+            platformTrends: trends.platformTrends,
+            systemPerformance24h: performance.systemPerformance24h,
+            healthTrend: trends.healthTrend,
+            performance: performance.performance,
+            apiTraffic: trends.apiTraffic,
+            errorDistribution: operations.errorDistribution,
+            securityCompliance: security.securityCompliance,
+            backupTrend: operations.backupTrend,
+            infrastructureUtilization: operations.infrastructureUtilization,
+            incidentTimeline: operations.incidentTimeline,
+          },
+        }
+      }
+
+      const exportMetrics = visibleMetrics
+
+      if (!exportMetrics.length && !dashboard) {
+        toast.error('No data available to export')
+        return
+      }
+
+      if (!exportMetrics.length) {
+        toast.error('No dashboard metrics selected in Manage Metrics')
+        return
+      }
+
+      await exportPlatformHealthToExcel(
+        {
+          rangeLabel: selectedRange,
+          serviceStatusFilter: serviceStatus || 'All statuses',
+          metrics: exportMetrics,
+          dashboard,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export platform health data'))
     }
-  }, [dashboardData, isLoading, selectedRange, serviceStatus, visibleMetrics])
+  }, [
+    exportFormat,
+    fileFormat,
+    infrastructureFilters,
+    infrastructureQuery.isLoading,
+    metricsQuery.isLoading,
+    operationsQuery.isLoading,
+    platformTrendsQuery.isLoading,
+    securityComplianceQuery.isLoading,
+    selectedRange,
+    serviceStatus,
+    sharedFilters,
+    systemPerformanceQuery.isLoading,
+    visibleMetrics,
+  ])
 
   return (
     <div className="space-y-6">
@@ -681,7 +784,7 @@ export function PlatformHealthPage() {
           <h1 className="text-h1 text-brand-text sm:text-h1 font-semibold tracking-tight">
             Platform Health & Operations
           </h1>
-          <p className="text-body-md text-muted sm:text-body-lg mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             System performance, security metrics, and operational analytics
           </p>
         </div>
@@ -689,24 +792,26 @@ export function PlatformHealthPage() {
           <button
             type="button"
             onClick={handleExportData}
-            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+            className="ui-export-data ui-cta ui-cta-primary"
           >
-            <ExportDataIcon className="size-5 shrink-0" />
+            <ExportDataIcon />
             Export Data
           </button>
           <button
             type="button"
-            onClick={() => navigate('/metrics/platform-health?section=table')}
-            className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+            onClick={() =>
+              navigate('/metrics/platform-health?section=all&returnTo=/settings/health')
+            }
+            className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {isLoading
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] justify-items-start gap-3">
+        {metricsQuery.isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <PlatformHealthMetricCardSkeleton key={`health-metric-skel-${index}`} />
             ))
@@ -720,7 +825,7 @@ export function PlatformHealthPage() {
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
-        isLoading={isLoading}
+        isLoading={platformTrendsQuery.isLoading}
         trendTypography
       >
         <div className="platform-health-trends-chart w-full overflow-x-auto">
@@ -841,133 +946,135 @@ export function PlatformHealthPage() {
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
-        isLoading={isLoading}
+        isLoading={systemPerformanceQuery.isLoading}
         trendTypography
       >
-        <div className="platform-health-trends-chart h-[420px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={charts?.systemPerformance24h || []}
-              margin={{ left: 12, right: 28, top: 8, bottom: 4 }}
-            >
-              <defs>
-                <linearGradient id="sysPerfMemoryFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.memory} stopOpacity={0.4} />
-                  <stop offset="100%" stopColor={CHART_COLORS.memory} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="sysPerfCpuFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.cpu} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={CHART_COLORS.cpu} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="sysPerfRequestsFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={CHART_COLORS.requests} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={CHART_COLORS.requests} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                stroke="rgba(255,255,255,0.08)"
-                strokeDasharray="3 3"
-                horizontal
-                vertical
-              />
-              <XAxis
-                dataKey="time"
-                interval="preserveStartEnd"
-                minTickGap={36}
-                tickLine={false}
-                axisLine={false}
-                tick={renderPlatformTrendAxisTick}
-                height={32}
-              />
-              <YAxis
-                yAxisId="left"
-                domain={[0, 100]}
-                ticks={SYSTEM_PERF_LEFT_TICKS}
-                tickLine={false}
-                axisLine={false}
-                tick={renderPlatformTrendAxisTick}
-                width={40}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                domain={systemPerfRightAxis.domain}
-                ticks={systemPerfRightAxis.ticks}
-                tickLine={false}
-                axisLine={false}
-                tick={renderSystemPerfRightAxisTick}
-                width={52}
-              />
-              <Tooltip
-                contentStyle={{
-                  ...tooltipStyle,
-                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: '20px',
-                }}
-                labelStyle={{
-                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: '20px',
-                }}
-                itemStyle={{
-                  fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: '20px',
-                }}
-              />
-              <Legend content={<SystemPerfChartLegend />} />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="memory"
-                name="Memory usage"
-                stroke={CHART_COLORS.memory}
-                fill="url(#sysPerfMemoryFill)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: CHART_COLORS.memory, stroke: '#ffffff', strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                dataKey="cpu"
-                name="CPU Usage"
-                stroke={CHART_COLORS.cpu}
-                fill="url(#sysPerfCpuFill)"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: CHART_COLORS.cpu, stroke: '#ffffff', strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
-              <Area
-                yAxisId="right"
-                type="monotone"
-                dataKey="requestsPerMin"
-                name="Request/min"
-                stroke={CHART_COLORS.requests}
-                fill="url(#sysPerfRequestsFill)"
-                strokeWidth={2}
-                dot={{
-                  r: 4,
-                  fill: CHART_COLORS.requests,
-                  stroke: '#ffffff',
-                  strokeWidth: 2,
-                }}
-                activeDot={{
-                  r: 5,
-                  fill: CHART_COLORS.requests,
-                  stroke: '#ffffff',
-                  strokeWidth: 2,
-                }}
-                isAnimationActive={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <div className="platform-health-trends-chart w-full overflow-x-auto">
+          <div className="h-[420px]" style={{ minWidth: systemPerfChartMinWidth }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={systemPerformanceData}
+                margin={{ left: 12, right: 28, top: 8, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="sysPerfMemoryFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.memory} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={CHART_COLORS.memory} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="sysPerfCpuFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.cpu} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={CHART_COLORS.cpu} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="sysPerfRequestsFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={CHART_COLORS.requests} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={CHART_COLORS.requests} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeDasharray="3 3"
+                  horizontal
+                  vertical
+                />
+                <XAxis
+                  dataKey="time"
+                  interval="preserveStartEnd"
+                  minTickGap={36}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderPlatformTrendAxisTick}
+                  height={32}
+                />
+                <YAxis
+                  yAxisId="left"
+                  domain={[0, 100]}
+                  ticks={SYSTEM_PERF_LEFT_TICKS}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderPlatformTrendAxisTick}
+                  width={40}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  domain={systemPerfRightAxis.domain}
+                  ticks={systemPerfRightAxis.ticks}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={renderSystemPerfRightAxisTick}
+                  width={52}
+                />
+                <Tooltip
+                  contentStyle={{
+                    ...tooltipStyle,
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                  labelStyle={{
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                  itemStyle={{
+                    fontFamily: 'Figtree, ui-sans-serif, system-ui, sans-serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                  }}
+                />
+                <Legend content={<SystemPerfChartLegend />} />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="memory"
+                  name="Memory usage"
+                  stroke={CHART_COLORS.memory}
+                  fill="url(#sysPerfMemoryFill)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: CHART_COLORS.memory, stroke: '#ffffff', strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="cpu"
+                  name="CPU Usage"
+                  stroke={CHART_COLORS.cpu}
+                  fill="url(#sysPerfCpuFill)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: CHART_COLORS.cpu, stroke: '#ffffff', strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+                <Area
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="requestsPerMin"
+                  name="Request/min"
+                  stroke={CHART_COLORS.requests}
+                  fill="url(#sysPerfRequestsFill)"
+                  strokeWidth={2}
+                  dot={{
+                    r: 4,
+                    fill: CHART_COLORS.requests,
+                    stroke: '#ffffff',
+                    strokeWidth: 2,
+                  }}
+                  activeDot={{
+                    r: 5,
+                    fill: CHART_COLORS.requests,
+                    stroke: '#ffffff',
+                    strokeWidth: 2,
+                  }}
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </ChartPanel>
 
@@ -976,7 +1083,7 @@ export function PlatformHealthPage() {
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
-        isLoading={isLoading}
+        isLoading={securityComplianceQuery.isLoading}
         trendTypography
       >
         <div className="platform-health-trends-chart h-[420px] w-full">
@@ -1086,13 +1193,15 @@ export function PlatformHealthPage() {
               className={REFRESH_BUTTON_CLASS}
               aria-label="Refresh infrastructure"
             >
-              <RefreshCw className={cn('size-4', dashboardQuery.isFetching && 'animate-spin')} />
+              <RotateCw
+                className={cn('size-4', infrastructureQuery.isFetching && 'animate-spin')}
+              />
             </button>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {isLoading
+        <div className="flex flex-col items-center space-y-3">
+          {infrastructureQuery.isLoading
             ? Array.from({ length: 6 }).map((_, index) => (
                 <TableRowSkeleton key={`infra-row-${index}`} />
               ))
@@ -1114,7 +1223,7 @@ export function PlatformHealthPage() {
                 return (
                   <div
                     key={row.id}
-                    className="radius-lg bg-brand-bg grid gap-4 border border-white/10 px-4 py-4 lg:grid-cols-[minmax(0,1.5fr)_repeat(auto-fit,minmax(90px,1fr))] lg:items-center"
+                    className="radius-lg bg-brand-bg box-border grid h-[90px] w-full max-w-[1151px] gap-4 border-0 px-4 lg:grid-cols-[minmax(0,1.5fr)_repeat(auto-fit,minmax(90px,1fr))] lg:items-center"
                   >
                     {(showName || showId || showServiceType || showStatus) && (
                       <div className="flex items-start gap-3">

@@ -75,7 +75,7 @@ function PauseCategoryModalDialog({
   heading,
   description = 'Pausing this service will temporarily stop all new requests.',
   submitLabel = 'Pause Service',
-  notificationNote = 'This reason will be notified to the expert.',
+  notificationNote: _notificationNote = 'This reason will be notified to the expert.',
 }: Omit<PauseCategoryModalProps, 'open'>) {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [confirmed, setConfirmed] = useState(false)
@@ -112,31 +112,39 @@ function PauseCategoryModalDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="pause-category-modal-title"
-        className="ui-modal-shell w-full max-w-[551px]"
+        className="ui-modal-shell w-full max-w-[584px] text-left"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="ui-modal-header !items-start !gap-3">
-          <div className="min-w-0 flex-1">
-            <h2 id="pause-category-modal-title" className="text-h2 text-brand-text">
-              {title}
-            </h2>
-            {description ? <p className="mt-1 text-xs text-white/50">{description}</p> : null}
-          </div>
+        <div className="ui-modal-header">
+          <h2
+            id="pause-category-modal-title"
+            className="text-[24px] leading-8 font-semibold tracking-normal text-white"
+          >
+            {title}
+          </h2>
           <button
             type="button"
             aria-label="Close modal"
             onClick={onClose}
-            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
+            className="text-brand-muted grid size-6 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="icon-lg" aria-hidden="true" />
+            <X className="size-5" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="ui-modal-body space-y-4">
+        <div className="ui-modal-body space-y-5">
+          {description ? (
+            <p className="text-[14px] leading-5 font-normal tracking-normal text-[#FFFFFF80]">
+              {description}
+            </p>
+          ) : null}
+
           {heading ? <p className="text-body-md text-brand-text">{heading}</p> : null}
 
           <div>
-            <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
+            <span className="mb-[10px] block text-[14px] leading-5 font-normal tracking-normal text-[#FFFFFF80]">
+              Reasons
+            </span>
             <div className="flex flex-wrap gap-[10px]">
               {isReasonsLoading ? (
                 <p className="text-body-sm text-muted">Loading reasons…</p>
@@ -155,7 +163,7 @@ function PauseCategoryModalDialog({
                       type="button"
                       onClick={() => toggleReason(option.value)}
                       className={cn(
-                        'ui-modal-reason-chip',
+                        'ui-modal-reason-chip rounded-xl',
                         isSelected ? 'ui-modal-reason-chip-selected' : 'ui-modal-reason-chip-idle',
                       )}
                     >
@@ -167,30 +175,28 @@ function PauseCategoryModalDialog({
             </div>
           </div>
 
-          <label className="text-body-md text-brand-text flex cursor-pointer items-start gap-3">
+          <label className="flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="mt-0.5 size-[15px] shrink-0 accent-white"
+              className="ui-table-checkbox"
             />
-            <span>I confirm the documents are not approved due to above reasons.</span>
+            <span className="text-[12px] leading-5 font-normal tracking-normal text-white">
+              I confirm the documents are not approved due to above reasons.
+            </span>
           </label>
 
           <label className="block">
-            <span className="text-body-sm-medium text-brand-text mb-2 block">
+            <span className="mb-2 block text-[14px] leading-6 font-semibold tracking-normal text-white">
               Admin notes <span className="text-[#D3191C]">*</span>
             </span>
             <textarea
               value={adminNotes}
               onChange={(event) => setAdminNotes(event.target.value)}
-              className="ui-textarea min-h-[119px]"
+              className="ui-textarea min-h-[119px] rounded-[10px] bg-[#050505]"
             />
           </label>
-
-          {notificationNote ? (
-            <p className="text-center text-xs text-white/60">{notificationNote}</p>
-          ) : null}
         </div>
 
         <div className="ui-modal-footer px-6 pb-6">

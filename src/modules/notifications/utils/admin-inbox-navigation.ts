@@ -26,7 +26,12 @@ const inferEventTypeFromBody = (body: string) => {
   if (text.includes('admin account was locked') || text.includes('account was locked after')) {
     return 'ADMIN_ACCOUNT_LOCKED'
   }
-  if (text.includes('razorpay api') || text.includes('payment gateway not responding')) {
+  if (
+    text.includes('razorpay api') ||
+    text.includes('payment gateway not responding') ||
+    text.includes('razorpay was disabled') ||
+    text.includes('disabled in finance settings')
+  ) {
     return 'PAYMENT_GATEWAY_DOWN'
   }
   if (text.includes('breached sla') || text.includes('support sla')) {
@@ -116,7 +121,10 @@ const resolveByEventType = (
   }
 
   if (eventType === 'PAYMENT_GATEWAY_DOWN') {
-    return { path: '/settings/health' }
+    return {
+      path: '/settings/main?tab=finance',
+      state: { settingsTab: 'finance' },
+    }
   }
 
   if (eventType === 'INCIDENT_OPENED') {
@@ -131,6 +139,10 @@ const resolveByEventType = (
 
   if (eventType === 'ADMIN_ACCOUNT_LOCKED') {
     return { path: '/settings/security/locked-accounts' }
+  }
+
+  if (eventType === 'ADMIN_ESCALATION_ASSIGNED' || eventType.includes('ESCALATION')) {
+    return { path: '/my-tasks' }
   }
 
   if (eventType.startsWith('EXPERT_REPORT')) {
@@ -156,8 +168,15 @@ const resolveByEventType = (
     }
   }
 
-  if (eventType === 'SYSTEM_MAINTENANCE_MODE' || eventType === 'PAYMENT_GATEWAY_CONFIG_CHANGED') {
-    return { path: '/settings/main?tab=platform' }
+  if (eventType === 'SYSTEM_MAINTENANCE_MODE') {
+    return { path: '/settings/main?tab=platform', state: { settingsTab: 'platform' } }
+  }
+
+  if (eventType === 'PAYMENT_GATEWAY_CONFIG_CHANGED') {
+    return {
+      path: '/settings/main?tab=finance',
+      state: { settingsTab: 'finance' },
+    }
   }
 
   if (eventType.includes('SUSPEND') || eventType.includes('BLOCK') || eventType.includes('DELET')) {
@@ -174,15 +193,36 @@ export const resolveAdminInboxNavigation = (item: InAppNotification): AdminInbox
   const fromLink = FIRST_PATH(params.path)
   const ids = buildIds(item, params)
 
-  if (fromLink && fromLink !== '/my-tasks') {
-    return { path: fromLink }
-  }
-
   const eventType = pickString(
     item.eventType,
     item.metadata?.eventType,
     inferEventTypeFromBody(item.body),
+    inferEventTypeFromBody(item.title || ''),
   )
+
+  if (eventType === 'PAYMENT_GATEWAY_DOWN' || eventType === 'PAYMENT_GATEWAY_CONFIG_CHANGED') {
+    const resolvedGateway = resolveByEventType(eventType, ids)
+    if (resolvedGateway) return resolvedGateway
+  }
+
+  if (fromLink && fromLink !== '/my-tasks') {
+    if (
+      (fromLink === '/settings/health' || fromLink.startsWith('/settings/health?')) &&
+      (String(item.body || '')
+        .toLowerCase()
+        .includes('razorpay') ||
+        String(item.title || '')
+          .toLowerCase()
+          .includes('payment gateway'))
+    ) {
+      return {
+        path: '/settings/main?tab=finance',
+        state: { settingsTab: 'finance' },
+      }
+    }
+    return { path: fromLink }
+  }
+
   const resolved = eventType ? resolveByEventType(eventType, ids) : null
   if (resolved) return resolved
 

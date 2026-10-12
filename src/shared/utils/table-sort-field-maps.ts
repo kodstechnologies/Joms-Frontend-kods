@@ -1,4 +1,5 @@
 import { SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/service-management-table-columns.config'
+import { SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/service-performance-table-columns.config'
 import {
   VENUE_DELETED_TABLE_COLUMNS_CATALOG,
   VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
@@ -137,6 +138,13 @@ export const SERVICE_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
     'approved-at': 'approvedAt',
     'deleted-at': 'deletedAt',
     'suspended-at': 'suspendedAt',
+  },
+)
+
+export const SERVICE_PERFORMANCE_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
+  SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG,
+  {
+    'listing-type': 'engagementType',
   },
 )
 

@@ -79,7 +79,6 @@ function SecurityQuestionsModalContent({
   }
 
   const cancelEdit = () => {
-    // Drop brand-new empty rows if user cancels edit
     if (editingId) {
       const current = draft.questions.find((q) => q.id === editingId)
       if (current && !current.question.trim() && !editingText.trim()) {

@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Flag, SquarePen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -105,7 +106,7 @@ export function EscrowDetailViewPage() {
       escrow.escrowId,
     )
       .then(() => toast.success('Invoice downloaded'))
-      .catch(() => toast.error('Failed to download invoice'))
+      .catch((error) => toast.error(getApiErrorMessage(error, 'Failed to download invoice')))
   }
 
   return (
@@ -121,7 +122,7 @@ export function EscrowDetailViewPage() {
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
+            Payment &amp; Finance
           </Link>
           <span> / </span>
           <Link to="/finance/services" className="hover:text-brand-text transition-colors">
@@ -288,7 +289,7 @@ export function EscrowDetailViewPage() {
                 toast.success('Note saved')
                 setActiveModal(null)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -16,7 +16,10 @@ import {
   useVenueOnboardingMutations,
   useVenueOnboardingReview,
 } from '@/modules/expert/hooks/use-venue-onboarding'
+import { useVenueDocumentRules } from '@/modules/expert/hooks/use-venue-kyc'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import type { VenueCategory } from '@/modules/expert/type/venue'
 import {
   buildBasicProfileFormData,
@@ -24,9 +27,12 @@ import {
   buildLocationFormData,
   buildVenuePartnerProfileFormData,
   createEmptyVenueOnboardingForm,
+  extractKycDocumentUrls,
+  getVenueOnboardingStepError,
+  parseHostingSince,
   type VenueOnboardingFormData,
 } from '@/modules/expert/utils/venue-onboarding-form'
-import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
+import { sanitizeMobileNumber } from '@/shared/lib/phone'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 
 const ONBOARDING_STEPS = [
@@ -50,6 +56,8 @@ export function CreateVenueOnboardingPage() {
   const partnerIdParam = searchParams.get('partnerId') || ''
   const venueIdParam = searchParams.get('venueId')
   const { allowAddVenues, isLoading: controlsLoading } = useVenueManagementControls()
+  const authUser = useAuthStore((state) => state.user)
+  const profileCreator = authUser ? { name: authUser.fullname, kind: authUser.kind } : null
 
   const [currentStep, setCurrentStep] = useState(1)
   const [createdPartnerId, setCreatedPartnerId] = useState('')
@@ -64,12 +72,15 @@ export function CreateVenueOnboardingPage() {
   const { saveBasicProfile, saveLocation, saveKyc, createAccount } = useVenueOnboardingMutations()
 
   const { data: reviewData, refetch: refetchReview } = useVenueOnboardingReview(venueId)
+  const { data: documentRulesResponse, isFetching: isDocumentRulesLoading } = useVenueDocumentRules(
+    formData.typeOfVenue,
+    formData.hasGST,
+  )
 
   useEffect(() => {
     if (controlsLoading) return
-    // Allow continuing an in-progress onboarding (existing venueId), block brand-new creates only.
     if (!allowAddVenues && !venueIdParam) {
-      toast.error('Creating venues is turned off in Venue Management settings')
+      toast.error(RESTRICTION_MESSAGES.venueCreate)
       navigate('/venues/management', { replace: true })
     }
   }, [allowAddVenues, controlsLoading, navigate, venueIdParam])
@@ -81,6 +92,7 @@ export function CreateVenueOnboardingPage() {
     if (reviewData?.data?.venue) {
       const venue = reviewData.data.venue
       const kyc = reviewData.data.kyc
+      const hostingSince = parseHostingSince(venue.hostingSince)
 
       setFormData((prev) => ({
         ...prev,
@@ -94,16 +106,16 @@ export function CreateVenueOnboardingPage() {
           (typeof venue.venueCategoryId?.[0] === 'object'
             ? (venue.venueCategoryId[0] as VenueCategory).name
             : prev.venueCategoryName) || prev.venueCategoryName,
-        hostingSinceYears: venue.hostingSince?.years
-          ? String(venue.hostingSince.years)
-          : prev.hostingSinceYears,
-        hostingSinceMonths: venue.hostingSince?.months
-          ? String(venue.hostingSince.months)
-          : prev.hostingSinceMonths,
+        hostingSinceYears:
+          hostingSince.years != null ? String(hostingSince.years) : prev.hostingSinceYears,
+        hostingSinceMonths:
+          hostingSince.months != null ? String(hostingSince.months) : prev.hostingSinceMonths,
         pocName: venue.pocName || prev.pocName,
         pocContactNumber: venue.pocContactNumber || prev.pocContactNumber,
         phone: venue.phone ? sanitizeMobileNumber(venue.phone) : prev.phone,
         email: venue.email || prev.email,
+        isPhoneVerified: venue.phone ? true : prev.isPhoneVerified,
+        isEmailVerified: venue.email ? true : prev.isEmailVerified,
         profileImageUrl: venue.profileImageUrl || prev.profileImageUrl,
         coverImageUrl: venue.coverImageUrl || prev.coverImageUrl,
         address: venue.location?.address || prev.address,
@@ -116,17 +128,31 @@ export function CreateVenueOnboardingPage() {
         longitude: venue.location?.longitude ?? prev.longitude,
         parkingAvailable: venue.parkingAvailable ?? prev.parkingAvailable,
         accessibility: venue.accessibility ?? prev.accessibility,
-        venueImageUrls: venue.venueImages || prev.venueImageUrls,
+        venueImageUrls:
+          Array.isArray(venue.venueImages) && venue.venueImages.length > 0
+            ? venue.venueImages
+            : prev.venueImageUrls,
+        venueImages:
+          Array.isArray(venue.venueImages) && venue.venueImages.length > 0 ? [] : prev.venueImages,
         idType: kyc?.governmentId?.idType || prev.idType,
         idNumber: kyc?.governmentId?.idNumber || prev.idNumber,
         hasGST: kyc?.businessKyc?.hasGST ?? prev.hasGST,
         gstNumber: kyc?.businessKyc?.gstNumber || prev.gstNumber,
         kycState: kyc?.businessKyc?.state || prev.kycState,
         panNumber: kyc?.businessKyc?.panNumber || prev.panNumber,
-        typeOfVenue: kyc?.businessKyc?.typeOfVenue || prev.typeOfVenue,
+        typeOfVenue:
+          kyc?.businessKyc?.typeOfVenue ||
+          prev.typeOfVenue ||
+          (typeof venue.venueCategoryId?.[0] === 'object'
+            ? (venue.venueCategoryId[0] as VenueCategory).name
+            : prev.venueCategoryName),
         itReturnsFiledLast2Years:
           kyc?.businessKyc?.itReturnsFiledLast2Years ?? prev.itReturnsFiledLast2Years,
         gstUndertakingEmail: kyc?.businessKyc?.gstUndertakingEmail || prev.gstUndertakingEmail,
+        kycDocumentUrls: {
+          ...prev.kycDocumentUrls,
+          ...extractKycDocumentUrls(kyc?.businessKyc),
+        },
         internalNotes: venue.adminInternalNotes || prev.internalNotes,
       }))
 
@@ -144,37 +170,12 @@ export function CreateVenueOnboardingPage() {
     setSearchParams(params, { replace: true })
   }
 
-  const validateStep = (step: number): string | null => {
-    if (step === 1) {
-      if (!formData.name.trim()) return 'Venue name is required.'
-      const phoneError = validateMobileNumber(formData.phone)
-      if (phoneError) return phoneError
-      if (!formData.email.trim()) return 'Email is required.'
-      if (!formData.venueCategoryId) return 'Category is required.'
-    }
-    if (step === 2) {
-      if (!formData.address.trim()) return 'Address is required.'
-      if (!formData.city.trim()) return 'City is required.'
-      if (!formData.pincode.trim()) return 'Pin code is required.'
-      const imageCount = formData.venueImages.length + formData.venueImageUrls.length
-      if (imageCount === 0) return 'At least one venue image is required.'
-      if (imageCount > 3) return 'A maximum of 3 venue images are allowed.'
-    }
-    if (step === 3) {
-      if (!formData.idType) return 'ID type is required.'
-      if (!formData.idNumber.trim()) return 'ID number is required.'
-      if (!formData.panNumber.trim()) return 'PAN number is required.'
-      if (!formData.typeOfVenue) return 'Type of venue is required.'
-      if (formData.hasGST && !formData.gstNumber.trim()) return 'GST number is required.'
-    }
-    if (step === 4) {
-      if (!formData.isVerified) return 'Please confirm verification before creating account.'
-    }
-    return null
-  }
-
   const handleNextStep = async () => {
-    const validationError = validateStep(currentStep)
+    const validationError = getVenueOnboardingStepError(
+      currentStep,
+      formData,
+      documentRulesResponse?.data,
+    )
     if (validationError) {
       toast.error(validationError)
       return
@@ -182,35 +183,57 @@ export function CreateVenueOnboardingPage() {
 
     try {
       if (currentStep === 1) {
-        if (!venueId) {
-          let activePartnerId = partnerId
+        let activePartnerId = partnerId || reviewData?.data?.venue?.ownerId || ''
 
+        if (!venueId) {
+          if (!allowAddVenues) {
+            toast.error(RESTRICTION_MESSAGES.venueCreate)
+            return
+          }
           if (!activePartnerId) {
             setIsCreatingPartner(true)
             const partnerResponse = await createExpertBasicProfile(
-              buildVenuePartnerProfileFormData(formData),
+              buildVenuePartnerProfileFormData(formData, profileCreator),
             )
             activePartnerId = partnerResponse.data._id
             setCreatedPartnerId(activePartnerId)
             setIsCreatingPartner(false)
           }
 
-          const response = await saveBasicProfile.mutateAsync(
-            buildBasicProfileFormData(activePartnerId, formData),
-          )
-          const newVenueId = response.data._id
-          setCreatedVenueId(newVenueId)
-          updateVenueIdInUrl(newVenueId, activePartnerId)
+          const response = await saveBasicProfile.mutateAsync({
+            payload: buildBasicProfileFormData(activePartnerId, formData),
+          })
+          const savedVenueId = response.data._id
+          setCreatedVenueId(savedVenueId)
+          updateVenueIdInUrl(savedVenueId, activePartnerId)
+        } else {
+          if (!activePartnerId) {
+            toast.error('Missing partner for this venue. Please reload and try again.')
+            return
+          }
+          await saveBasicProfile.mutateAsync({
+            payload: buildBasicProfileFormData(activePartnerId, formData),
+            venueId,
+          })
         }
         setCurrentStep(2)
         return
       }
 
       if (currentStep === 2 && venueId) {
-        await saveLocation.mutateAsync({
+        const response = await saveLocation.mutateAsync({
           venueId,
-          payload: buildLocationFormData(formData),
+          payload: await buildLocationFormData(formData),
         })
+        const savedImages = response?.data?.venueImages
+        setFormData((prev) => ({
+          ...prev,
+          venueImages: [],
+          venueImageUrls:
+            Array.isArray(savedImages) && savedImages.length > 0
+              ? savedImages
+              : prev.venueImageUrls,
+        }))
         setCurrentStep(3)
         return
       }
@@ -220,6 +243,15 @@ export function CreateVenueOnboardingPage() {
           venueId,
           payload: buildKycFormData(formData),
         })
+        if (partnerId || reviewData?.data?.venue?.ownerId) {
+          await saveBasicProfile.mutateAsync({
+            payload: buildBasicProfileFormData(
+              partnerId || reviewData?.data?.venue?.ownerId || '',
+              formData,
+            ),
+            venueId,
+          })
+        }
         await refetchReview()
         setCurrentStep(4)
         return
@@ -258,18 +290,28 @@ export function CreateVenueOnboardingPage() {
     createAccount.isPending ||
     isCreatingPartner
 
+  const isPrimaryDisabled = isLoading || (currentStep === 3 && isDocumentRulesLoading)
+
   const primaryLabel = (() => {
     if (isLoading) return 'Saving…'
     if (currentStep === 4) return 'Create Account'
     return 'Next'
   })()
 
+  if (!venueIdParam && (controlsLoading || !allowAddVenues)) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <CreateListingWizard
       title="Venue Profile Creation"
       breadcrumbs={[
-        { label: 'Venue management' },
-        { label: 'Manage Venues' },
+        { label: 'Venue Management', to: '/venues/management' },
+        { label: 'Manage Venues', to: '/venues/management' },
         { label: 'Create Profile', isActive: true },
       ]}
       steps={ONBOARDING_STEPS}
@@ -278,11 +320,15 @@ export function CreateVenueOnboardingPage() {
       primaryAction={{
         label: primaryLabel,
         onClick: handleNextStep,
-        disabled: isLoading,
+        disabled: isPrimaryDisabled,
       }}
     >
       {currentStep === 1 && (
-        <VenueOnboardingBasicProfileStep formData={formData} setFormData={setFormData} />
+        <VenueOnboardingBasicProfileStep
+          formData={formData}
+          setFormData={setFormData}
+          excludePartnerId={partnerId || reviewData?.data?.venue?.ownerId || null}
+        />
       )}
       {currentStep === 2 && (
         <VenueOnboardingLocationStep formData={formData} setFormData={setFormData} />

@@ -160,8 +160,8 @@ export const securityDefaults: SecuritySettings = {
   },
   mfa: {
     requireForAllSubAdmins: true,
-    authenticatorApp: true,
-    smsOtp: true,
+    authenticatorApp: false,
+    smsOtp: false,
     emailOtp: true,
   },
   passwordReset: {
@@ -203,6 +203,7 @@ export const notificationsDefaults: NotificationSettings = {
     accountSecurity: true,
     paymentsTransaction: true,
     reportsAbuseModeration: true,
+    escalations: true,
     rolePermissionModification: true,
     paymentGatewayConfiguration: true,
   },

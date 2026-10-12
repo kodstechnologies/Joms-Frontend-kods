@@ -1,8 +1,9 @@
-import { useMemo, useState, type FormEvent } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { ArrowLeft, CalendarDays, Check, ChevronDown } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import type { Communication } from '../api/communication-api'
 import {
   COMMUNICATION_AUDIENCE_OPTIONS,
   COMMUNICATION_CHANNEL_OPTIONS,
@@ -14,6 +15,7 @@ import {
   type CommunicationPriority,
   type CommunicationType,
   type CreateCommunicationPayload,
+  parseCommunicationAudiences,
 } from '../api/communication-api'
 import {
   useCommunication,
@@ -37,7 +39,7 @@ type FormValues = {
   title: string
   channel: CommunicationChannel | ''
   type: CommunicationType | ''
-  audience: CommunicationAudience | ''
+  audiences: CommunicationAudience[]
   deliveryType: CommunicationDeliveryType
   priority: CommunicationPriority
   scheduledAt: string
@@ -50,7 +52,7 @@ const emptyForm: FormValues = {
   title: '',
   channel: '',
   type: '',
-  audience: '',
+  audiences: [],
   deliveryType: 'send-now',
   priority: 'medium',
   scheduledAt: '',
@@ -60,8 +62,8 @@ const emptyForm: FormValues = {
 }
 
 const inputClass = 'ui-input'
-const selectClass = 'ui-input appearance-none cursor-pointer'
-const labelClass = 'text-body-sm text-muted mb-1.5 block'
+const selectClass = 'ui-input appearance-none cursor-pointer [color-scheme:dark]'
+const labelClass = 'mb-1.5 block text-[14px] leading-5 font-semibold tracking-normal text-white'
 
 const CHANNEL_VALUES = new Set(['in-app', 'email', 'push'])
 const AUDIENCE_VALUES = new Set([
@@ -77,6 +79,29 @@ const AUDIENCE_VALUES = new Set([
   'all-partners',
 ])
 
+const notifyDeliveryResult = (
+  result: Communication,
+  deliveryType: CommunicationDeliveryType,
+  mode: 'create' | 'update',
+) => {
+  const note = result.deliveryMeta?.note || result.failureReason || ''
+  if (result.status === 'failed') {
+    toast.error(note || 'Message delivery failed')
+    return
+  }
+  if ((result.analytics?.failed ?? 0) > 0) {
+    toast.warning(note || 'Some messages failed to send')
+    return
+  }
+  if (deliveryType === 'schedule') {
+    toast.success(
+      mode === 'update' ? 'Communication updated and scheduled' : 'Communication scheduled',
+    )
+    return
+  }
+  toast.success(mode === 'update' ? 'Communication updated and sent' : 'Communication sent')
+}
+
 const parsePartnerIds = (raw: string | null) =>
   (raw ?? '')
     .split(',')
@@ -88,6 +113,7 @@ export function CommunicationForm() {
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('edit') ?? ''
   const isEditMode = Boolean(editId)
+  const forceSchedule = searchParams.get('delivery') === 'schedule'
 
   const prefillChannelRaw = searchParams.get('channel') ?? ''
   const prefillAudienceRaw = searchParams.get('audience') ?? ''
@@ -96,10 +122,10 @@ export function CommunicationForm() {
     ? (prefillChannelRaw as CommunicationChannel)
     : ''
   const prefillAudience = AUDIENCE_VALUES.has(prefillAudienceRaw)
-    ? (prefillAudienceRaw as CommunicationAudience)
+    ? [prefillAudienceRaw as CommunicationAudience]
     : prefillPartnerIds.length
-      ? 'experts'
-      : ''
+      ? (['experts'] as CommunicationAudience[])
+      : []
 
   const optionsQuery = useCommunicationOptions()
   const existingQuery = useCommunication(editId)
@@ -122,7 +148,7 @@ export function CommunicationForm() {
           Edit Communication
         </button>
         <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {getApiErrorMessage(existingQuery.error) || 'Failed to load communication for editing.'}
+          {getApiErrorMessage(existingQuery.error, 'Failed to load communication for editing.')}
         </div>
       </div>
     )
@@ -135,8 +161,8 @@ export function CommunicationForm() {
           title: item.title ?? '',
           channel: item.channel ?? '',
           type: item.type ?? '',
-          audience: item.audience ?? '',
-          deliveryType: item.deliveryType ?? 'send-now',
+          audiences: parseCommunicationAudiences(item.audience),
+          deliveryType: forceSchedule ? 'schedule' : (item.deliveryType ?? 'send-now'),
           priority: item.priority ?? 'medium',
           scheduledAt: toDateTimeLocalValue(item.scheduledAt),
           subject: item.subject ?? '',
@@ -145,13 +171,18 @@ export function CommunicationForm() {
         }
       : {
           ...emptyForm,
+          deliveryType: forceSchedule ? 'schedule' : emptyForm.deliveryType,
           channel: prefillChannel,
-          audience: prefillAudience,
+          audiences: prefillAudience,
         }
 
-  // Remount when switching create/edit / prefill so form state resets without setState-in-effect
-  const formKey =
-    editId || `create-${prefillChannel}-${prefillAudience}-${prefillPartnerIds.join(',') || 'all'}`
+  const formKey = [
+    editId || 'create',
+    forceSchedule ? 'schedule' : 'now',
+    prefillChannel,
+    prefillAudience.join(',') || 'all',
+    prefillPartnerIds.join(',') || 'all',
+  ].join('-')
 
   return (
     <CommunicationFormFields
@@ -183,12 +214,18 @@ type CommunicationFormFieldsProps = {
   isSubmitting: boolean
   onCreate: (
     payload: CreateCommunicationPayload,
-    handlers: { onSuccess: () => void; onError: (error: unknown) => void },
+    handlers: {
+      onSuccess: (result: Communication) => void
+      onError: (error: unknown) => void
+    },
   ) => void
   onUpdate: (
     id: string,
     payload: CreateCommunicationPayload,
-    handlers: { onSuccess: () => void; onError: (error: unknown) => void },
+    handlers: {
+      onSuccess: (result: Communication) => void
+      onError: (error: unknown) => void
+    },
   ) => void
 }
 
@@ -197,7 +234,7 @@ function CommunicationFormFields({
   isEditMode,
   editId,
   partnerIds = [],
-  audiences,
+  audiences: audienceChoices,
   channels,
   types,
   priorities,
@@ -211,7 +248,9 @@ function CommunicationFormFields({
   const [title, setTitle] = useState(initialValues.title)
   const [channel, setChannel] = useState<CommunicationChannel | ''>(initialValues.channel)
   const [type, setType] = useState<CommunicationType | ''>(initialValues.type)
-  const [audience, setAudience] = useState<CommunicationAudience | ''>(initialValues.audience)
+  const [selectedAudiences, setSelectedAudiences] = useState<CommunicationAudience[]>(
+    initialValues.audiences,
+  )
   const [deliveryType, setDeliveryType] = useState<CommunicationDeliveryType>(
     initialValues.deliveryType,
   )
@@ -220,15 +259,52 @@ function CommunicationFormFields({
   const [subject, setSubject] = useState(initialValues.subject)
   const [messageContent, setMessageContent] = useState(initialValues.messageContent)
   const [additionalNotes, setAdditionalNotes] = useState(initialValues.additionalNotes)
+  const [audienceOpen, setAudienceOpen] = useState(false)
+  const audienceRef = useRef<HTMLDivElement>(null)
+  const minScheduleAt = toDateTimeLocalValue(new Date(Date.now() + 60_000).toISOString())
 
   const audienceOptions = useMemo(() => {
-    const resolved = audiences?.length ? audiences : COMMUNICATION_AUDIENCE_OPTIONS
+    const resolved = audienceChoices?.length ? audienceChoices : COMMUNICATION_AUDIENCE_OPTIONS
     const options = [...resolved]
-    if (audience && !options.some((opt) => opt.value === audience)) {
-      options.push({ value: audience, label: audience })
+    for (const value of selectedAudiences) {
+      if (value && !options.some((opt) => opt.value === value)) {
+        options.push({ value, label: value })
+      }
     }
     return options
-  }, [audience, audiences])
+  }, [audienceChoices, selectedAudiences])
+
+  useEffect(() => {
+    if (!audienceOpen) return
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (!audienceRef.current?.contains(event.target as Node)) {
+        setAudienceOpen(false)
+      }
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAudienceOpen(false)
+    }
+
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [audienceOpen])
+
+  const toggleAudience = (value: CommunicationAudience | '') => {
+    if (!value || hasTargetedRecipients) return
+    setSelectedAudiences((prev) =>
+      prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value],
+    )
+  }
+
+  const removeAudience = (value: CommunicationAudience) => {
+    if (hasTargetedRecipients) return
+    setSelectedAudiences((prev) => prev.filter((item) => item !== value))
+  }
 
   const channelOptions = useMemo(() => channels ?? COMMUNICATION_CHANNEL_OPTIONS, [channels])
   const typeOptions = useMemo(() => types ?? COMMUNICATION_TYPE_OPTIONS, [types])
@@ -237,7 +313,7 @@ function CommunicationFormFields({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!title.trim() || !channel || !type || !audience || !messageContent.trim()) {
+    if (!title.trim() || !channel || !type || !selectedAudiences.length || !messageContent.trim()) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -247,19 +323,27 @@ function CommunicationFormFields({
       return
     }
 
-    if (deliveryType === 'schedule' && !scheduledAt) {
-      toast.error('Please select a date and time for scheduling')
-      return
+    if (deliveryType === 'schedule') {
+      const scheduledDate = scheduledAt ? new Date(scheduledAt) : null
+      if (!scheduledDate || Number.isNaN(scheduledDate.getTime())) {
+        toast.error('Please select a date and time for scheduling')
+        return
+      }
+      if (scheduledDate.getTime() <= Date.now()) {
+        toast.error('Scheduled date and time must be in the future')
+        return
+      }
     }
 
     const payload: CreateCommunicationPayload = {
       title: title.trim(),
       channel,
       type,
-      audience,
+      audience: selectedAudiences.length === 1 ? selectedAudiences[0] : selectedAudiences,
       deliveryType,
       priority,
-      scheduledAt: deliveryType === 'schedule' ? new Date(scheduledAt).toISOString() : null,
+      scheduledAt:
+        deliveryType === 'schedule' && scheduledAt ? new Date(scheduledAt).toISOString() : null,
       subject: subject.trim(),
       messageContent: messageContent.trim(),
       additionalNotes: additionalNotes.trim(),
@@ -268,8 +352,8 @@ function CommunicationFormFields({
 
     if (isEditMode) {
       onUpdate(editId, payload, {
-        onSuccess: () => {
-          toast.success('Communication updated')
+        onSuccess: (updated) => {
+          notifyDeliveryResult(updated, deliveryType, 'update')
           navigate('/communication/management')
         },
         onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -278,10 +362,8 @@ function CommunicationFormFields({
     }
 
     onCreate(payload, {
-      onSuccess: () => {
-        toast.success(
-          deliveryType === 'schedule' ? 'Communication scheduled' : 'Communication saved',
-        )
+      onSuccess: (created) => {
+        notifyDeliveryResult(created, deliveryType, 'create')
         navigate('/communication/management')
       },
       onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -305,7 +387,7 @@ function CommunicationFormFields({
             onClick={() => navigate('/communication/management')}
             className="hover:text-brand-text transition-colors"
           >
-            Communication management
+            Communication
           </button>
           <span> / </span>
           <span className="text-brand-text font-semibold">
@@ -314,7 +396,7 @@ function CommunicationFormFields({
         </p>
       </div>
 
-      <div className="bg-brand-surface w-full rounded-[10px] border border-white/[0.06] p-5 sm:p-6">
+      <div className="bg-brand-surface w-full overflow-visible rounded-[10px] border border-white/[0.06] p-5 sm:p-6">
         <div className="mb-6 border-b border-white/[0.06] pb-5">
           <h2 className="text-h4 text-brand-text">
             {isEditMode ? 'Edit Communication' : 'Create New Communication Template'}
@@ -395,36 +477,104 @@ function CommunicationFormFields({
 
           <div>
             <label className={labelClass}>Audience</label>
-            <div className="relative">
-              <select
-                className={cn(selectClass, audience ? 'text-transparent' : '')}
-                value={audience}
-                onChange={(e) => setAudience(e.target.value as CommunicationAudience)}
-                required
-                disabled={hasTargetedRecipients}
+            <div className="relative" ref={audienceRef}>
+              <div
+                className={cn(
+                  inputClass,
+                  'flex !h-auto min-h-[var(--brand-input-height,42px)] w-full items-center gap-1.5 py-1.5 pr-9 text-left',
+                  hasTargetedRecipients ? 'cursor-not-allowed opacity-80' : 'cursor-pointer',
+                )}
+                onClick={() => {
+                  if (hasTargetedRecipients) return
+                  setAudienceOpen((open) => !open)
+                }}
+                onKeyDown={(event) => {
+                  if (hasTargetedRecipients) return
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setAudienceOpen((open) => !open)
+                  }
+                }}
+                role="combobox"
+                tabIndex={hasTargetedRecipients ? -1 : 0}
+                aria-haspopup="listbox"
+                aria-expanded={audienceOpen}
+                aria-multiselectable="true"
+                aria-label="Select audience"
               >
-                <option value="">Select audience</option>
-                {audienceOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              {audience ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hasTargetedRecipients) return
-                    setAudience('')
-                  }}
-                  className="text-body-sm-semibold absolute top-1/2 left-3 inline-flex h-[26px] -translate-y-1/2 items-center gap-2 rounded-full px-3 text-black"
-                  style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                  {hasTargetedRecipients ? (
+                    <span
+                      className="text-body-sm-semibold inline-flex h-[26px] items-center gap-2 rounded-full px-3 text-black"
+                      style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
+                    >
+                      {`${partnerIds.length} selected expert${partnerIds.length === 1 ? '' : 's'}`}
+                    </span>
+                  ) : selectedAudiences.length ? (
+                    selectedAudiences.map((value) => (
+                      <span
+                        key={value}
+                        className="text-body-sm-semibold inline-flex h-[26px] items-center gap-2 rounded-full px-3 text-black"
+                        style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
+                      >
+                        {audienceOptions.find((opt) => opt.value === value)?.label ?? value}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${value}`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            removeAudience(value)
+                          }}
+                          className="opacity-70 hover:opacity-100"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-muted text-sm">Select audience</span>
+                  )}
+                </div>
+                <ChevronDown
+                  className={cn(
+                    'pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white transition-transform',
+                    audienceOpen && 'rotate-180',
+                  )}
+                />
+              </div>
+
+              {audienceOpen && !hasTargetedRecipients ? (
+                <div
+                  role="listbox"
+                  aria-multiselectable="true"
+                  className="absolute top-[calc(100%+6px)] right-0 left-0 z-50 max-h-60 overflow-y-auto rounded-[8px] border border-white/10 bg-[#050505] py-1 shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
                 >
-                  {hasTargetedRecipients
-                    ? `${partnerIds.length} selected expert${partnerIds.length === 1 ? '' : 's'}`
-                    : (audienceOptions.find((o) => o.value === audience)?.label ?? audience)}
-                  {!hasTargetedRecipients ? <span className="opacity-70">✕</span> : null}
-                </button>
+                  {audienceOptions.map((opt) => {
+                    const value = opt.value as CommunicationAudience
+                    const selected = selectedAudiences.includes(value)
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        className={cn(
+                          'flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm',
+                          selected
+                            ? 'text-brand-accent bg-white/5'
+                            : 'text-brand-text hover:text-brand-accent hover:bg-white/10',
+                        )}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          toggleAudience(value)
+                        }}
+                      >
+                        {opt.label}
+                        {selected ? <Check className="size-4 shrink-0" /> : null}
+                      </button>
+                    )
+                  })}
+                </div>
               ) : null}
             </div>
           </div>
@@ -441,8 +591,13 @@ function CommunicationFormFields({
                 <label className="text-body-sm text-brand-text flex cursor-pointer items-center gap-2">
                   <input
                     type="radio"
+                    name="deliveryType"
+                    value="send-now"
                     checked={deliveryType === 'send-now'}
-                    onChange={() => setDeliveryType('send-now')}
+                    onChange={() => {
+                      setDeliveryType('send-now')
+                      setScheduledAt('')
+                    }}
                     className="accent-white"
                   />
                   Send Now
@@ -450,6 +605,8 @@ function CommunicationFormFields({
                 <label className="text-body-sm text-brand-text flex cursor-pointer items-center gap-2">
                   <input
                     type="radio"
+                    name="deliveryType"
+                    value="schedule"
                     checked={deliveryType === 'schedule'}
                     onChange={() => setDeliveryType('schedule')}
                     className="accent-white"
@@ -464,30 +621,21 @@ function CommunicationFormFields({
                     Add Date & Time
                     <span className="text-muted text-xs opacity-60">(dd-mm-yyyy, --:--)</span>
                   </label>
-                  <input
-                    type="datetime-local"
-                    className={cn(
-                      inputClass,
-                      'cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
-                    )}
-                    value={scheduledAt}
-                    onClick={(e) => {
-                      try {
-                        e.currentTarget.showPicker?.()
-                      } catch {
-                        // fallback if not supported
-                      }
-                    }}
-                    onFocus={(e) => {
-                      try {
-                        e.currentTarget.showPicker?.()
-                      } catch {
-                        // fallback
-                      }
-                    }}
-                    onChange={(e) => setScheduledAt(e.target.value)}
-                    required={deliveryType === 'schedule'}
-                  />
+                  <div className="relative">
+                    <input
+                      type="datetime-local"
+                      className={cn(
+                        inputClass,
+                        'relative cursor-pointer pr-10 [color-scheme:dark]',
+                        '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+                      )}
+                      value={scheduledAt}
+                      min={minScheduleAt}
+                      onChange={(e) => setScheduledAt(e.target.value)}
+                      required={deliveryType === 'schedule'}
+                    />
+                    <CalendarDays className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white" />
+                  </div>
                 </div>
               )}
             </div>

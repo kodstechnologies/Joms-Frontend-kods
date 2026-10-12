@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ExternalLink, Siren, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ExternalLink, Siren, X } from 'lucide-react'
 
 import {
+  NOTIFICATION_PAGE_SIZE,
   useMarkNotificationRead,
   useMyNotifications,
   useUnreadNotificationCount,
@@ -80,11 +81,19 @@ type AlertsPanelProps = {
 
 export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
   const navigate = useNavigate()
-  const alertsQuery = useMyNotifications(open, 'alert')
+  const [page, setPage] = useState(1)
+  const alertsQuery = useMyNotifications(open, 'alert', { page, limit: NOTIFICATION_PAGE_SIZE })
   const markReadMutation = useMarkNotificationRead()
   const alerts = useMemo(() => alertsQuery.data?.data ?? [], [alertsQuery.data?.data])
   const totalCount = alertsQuery.data?.meta?.total ?? alerts.length
+  const totalPages =
+    alertsQuery.data?.meta?.totalPages ??
+    Math.max(1, Math.ceil(totalCount / NOTIFICATION_PAGE_SIZE) || 1)
   const { todayItems, olderItems } = useMemo(() => splitInboxByDay(alerts), [alerts])
+
+  useEffect(() => {
+    if (open) setPage(1)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -144,7 +153,7 @@ export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {alertsQuery.isLoading ? (
+          {alertsQuery.isLoading && alerts.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
               <div className="border-brand-accent size-8 animate-spin rounded-full border-2 border-t-transparent" />
               <p className="text-brand-muted text-xs">Loading alerts...</p>
@@ -188,6 +197,38 @@ export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
             </>
           )}
         </div>
+
+        {totalCount > 0 ? (
+          <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
+            <p className="text-brand-muted text-xs">
+              {(page - 1) * NOTIFICATION_PAGE_SIZE + 1}–
+              {Math.min(page * NOTIFICATION_PAGE_SIZE, totalCount)} of {totalCount}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={alertsQuery.isFetching || page <= 1}
+                className="text-brand-muted hover:text-brand-text focus-visible:ring-brand-accent/30 grid size-8 place-items-center rounded-md transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+                aria-label="Previous alerts page"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <span className="text-brand-text min-w-[4.5rem] text-center text-xs font-medium">
+                {String(page).padStart(2, '0')} / {String(Math.max(1, totalPages)).padStart(2, '0')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                disabled={alertsQuery.isFetching || page >= totalPages}
+                className="text-brand-muted hover:text-brand-text focus-visible:ring-brand-accent/30 grid size-8 place-items-center rounded-md transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+                aria-label="Next alerts page"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          </div>
+        ) : null}
       </aside>
     </>
   )

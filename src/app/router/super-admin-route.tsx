@@ -3,6 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { getDefaultHomeRoute } from '@/app/layouts/navigation/navigation.filter'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 
+// A sub-admin is sent to their own home.
 export function SuperAdminRoute() {
   const user = useAuthStore((state) => state.user)
 

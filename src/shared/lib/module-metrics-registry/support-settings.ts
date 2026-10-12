@@ -64,7 +64,6 @@ import {
 } from '@/modules/settings/config/backup-metrics.config'
 import { mapColumnsCatalog, mapMetricsCatalog, type ModuleMetricsDefinition } from './types'
 
-/** Support / settings / ops entries — written as explicit objects (avoid stamp helpers). */
 export const SUPPORT_SETTINGS_MODULE_METRICS: Record<string, ModuleMetricsDefinition> = {
   'support-dashboard': {
     moduleKey: SUPPORT_DASHBOARD_MODULE_KEY,

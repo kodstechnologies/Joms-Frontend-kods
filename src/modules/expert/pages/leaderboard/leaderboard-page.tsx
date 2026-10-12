@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowDown,
   ArrowUp,
-  ArrowUpDown,
+  AlertTriangle,
+  BarChart3,
   CalendarDays,
   ExternalLink,
   Search,
@@ -17,20 +18,26 @@ import {
   AdvanceFilterIcon,
   ExportDataIcon,
   ManageMetricsIcon,
+  SortOutlineIcon,
 } from '@/shared/components/icons/action-button-icons'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { exportDataToFile } from '@/shared/utils/export-utils'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { getExportFormatLabel } from '@/modules/settings/utils/export-format'
 
 import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-2-medal.png'
 import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-3-medal.png'
 import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/rank-1-trophy.png'
+import totalRevenueIcon from '@/assets/JOMS_ICONS-2/icons8-money-bag-rupee-24.svg'
 
 import { fetchExpertLeaderboard } from '../../api/leaderboard-api'
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
+import { openPartnerProfile } from '../../utils/expert-application-navigation'
 import {
   DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS,
   EXPERT_LEADERBOARD_LEGACY_COLUMN_ID_MAP,
@@ -52,6 +59,10 @@ import type {
   LeaderboardRow,
 } from '../../type/leaderboard'
 import { toast } from 'sonner'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 
 const RANK_BADGE_STYLES: Record<number, string> = {
   1: 'bg-brand-accent text-brand-text-dark',
@@ -87,27 +98,21 @@ function ShimmerBlock({ className }: { className?: string }) {
 
 function PodiumShimmer() {
   return (
-    <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
+    <div className="mx-auto flex max-w-[980px] items-end justify-center gap-6">
       {[0, 1, 2].map((index) => {
         const isFirst = index === 1
         return (
           <div
             key={`podium-shimmer-${index}`}
-            className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}
+            className={cn('flex w-[298px] flex-col items-center', isFirst ? 'pb-8' : 'pt-10')}
           >
-            <ShimmerBlock
-              className={cn(isFirst ? 'h-24 w-24 rounded-full' : 'h-16 w-16 rounded-full')}
-            />
-            <ShimmerBlock className="mt-3 h-4 w-28" />
-            <ShimmerBlock className="mt-2 h-3 w-24 bg-white/5" />
-            <div
-              className={cn(
-                'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border border-white/[0.06] px-4 py-5',
-              )}
-            >
-              <ShimmerBlock className="size-12 rounded-full" />
-              <ShimmerBlock className="h-2 w-12 bg-white/5" />
-              <ShimmerBlock className="h-7 w-16" />
+            <ShimmerBlock className="size-[50px] rounded-full" />
+            <ShimmerBlock className="mt-3 h-4 w-32" />
+            <ShimmerBlock className="mt-2 h-3 w-28 bg-white/5" />
+            <div className="mt-6 flex h-[231px] w-full flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-[#141414] px-4">
+              <ShimmerBlock className={cn(isFirst ? 'size-[100px]' : 'size-20', 'rounded-full')} />
+              <ShimmerBlock className="h-3 w-12 bg-white/5" />
+              <ShimmerBlock className="h-8 w-16" />
             </div>
           </div>
         )
@@ -337,7 +342,17 @@ function RankBadge({ rank }: { rank: number }) {
   )
 }
 
-function SafeAvatar({ src, name }: { src?: string | null; name: string }) {
+function SafeAvatar({
+  src,
+  name,
+  sizeClassName = 'size-12',
+  iconClassName = 'size-6',
+}: {
+  src?: string | null
+  name: string
+  sizeClassName?: string
+  iconClassName?: string
+}) {
   const [failed, setFailed] = useState(false)
   const showImage = Boolean(src) && !failed
 
@@ -346,16 +361,31 @@ function SafeAvatar({ src, name }: { src?: string | null; name: string }) {
       <img
         src={src as string}
         alt={name}
-        className="size-12 rounded-full object-cover ring-2 ring-white/10"
+        className={cn(sizeClassName, 'rounded-full object-cover ring-2 ring-white/10')}
         onError={() => setFailed(true)}
       />
     )
   }
   return (
-    <div className="grid size-12 place-items-center rounded-full bg-black/40 ring-2 ring-white/10">
-      <UserRound className="text-brand-accent size-6" />
+    <div
+      className={cn(
+        sizeClassName,
+        'grid place-items-center rounded-full bg-black/40 ring-2 ring-white/10',
+      )}
+    >
+      <UserRound className={cn('text-brand-accent', iconClassName)} />
     </div>
   )
+}
+
+function podiumSubtitle(expert: {
+  category?: string | null
+  city?: string | null
+  profession?: string | null
+}) {
+  const parts = [expert.category, expert.city].map((value) => value?.trim()).filter(Boolean)
+  if (parts.length) return parts.join(' • ')
+  return expert.profession?.trim() || '—'
 }
 
 function Stars({ rating }: { rating: number | null | undefined }) {
@@ -449,9 +479,14 @@ function ExpertProfileModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-brand-surface w-full max-w-4xl rounded-2xl border border-white/10 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h2 className="text-lg font-bold text-white">Expert Profile</h2>
+      <div
+        className="flex flex-col overflow-hidden px-9 py-6"
+        style={{ width: 774, height: 464, borderRadius: 16, background: '#141414' }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-[24px] leading-7 font-semibold tracking-normal text-white">
+            {query.serviceType === 'venue' ? 'Venue Profile' : 'Expert Profile'}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -461,44 +496,58 @@ function ExpertProfileModal({
             <X className="size-5" />
           </button>
         </div>
+        <div className="mt-3 h-px bg-white/10" />
 
-        <div className="space-y-5 p-5">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
           {isLoading && <p className="text-muted text-sm">Loading profile…</p>}
-          {isError && <p className="text-sm text-red-400">Failed to load expert profile.</p>}
+          {isError && (
+            <p className="text-sm text-red-400">
+              {query.serviceType === 'venue'
+                ? 'Failed to load venue profile.'
+                : 'Failed to load expert profile.'}
+            </p>
+          )}
           {profile && (
             <>
-              <div className="relative flex items-start gap-4 rounded-xl border border-white/10 bg-black/20 p-4">
-                <SafeAvatar src={profile.profileImage} name={profile.name} />
+              <div className="relative flex items-start gap-4">
+                <SafeAvatar
+                  src={profile.profileImage}
+                  name={profile.name}
+                  sizeClassName="size-16"
+                />
                 <div className="min-w-0 flex-1">
                   <button
                     type="button"
-                    className="hover:text-brand-accent inline-flex items-center gap-2 text-left text-base font-bold text-white"
-                    onClick={() => navigate(`/experts/management/profile/${profile.partnerId}`)}
+                    className="hover:text-brand-accent inline-flex items-center gap-2 text-left text-base font-semibold text-white"
+                    onClick={() =>
+                      void openPartnerProfile(
+                        { id: profile.partnerId, serviceType: query.serviceType },
+                        navigate,
+                      )
+                    }
                   >
                     {profile.name.replace(/\s+/g, '')}
                     <ExternalLink className="size-3.5" />
                   </button>
-                  <p className="text-muted mt-0.5 text-xs">{profile.expertId}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-white">
+                  <p className="mt-0.5 text-xs text-white/50">{profile.expertId}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="rounded-md bg-[#050505] px-2 py-1 text-xs font-semibold text-white">
                       {profile.category}
                     </span>
                     {profile.city && (
-                      <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-white">
-                        {profile.city}
-                      </span>
+                      <span className="text-xs font-medium text-white/80">{profile.city}</span>
                     )}
                   </div>
                   <div className="mt-2">
                     <Stars rating={profile.averageRating} />
                   </div>
                 </div>
-                <span className="bg-brand-accent absolute top-4 right-4 rounded-md px-2.5 py-1 text-xs font-bold text-black">
+                <span className="absolute top-0 right-0 rounded-lg bg-[#E0A263] px-3 py-1 text-xs font-semibold text-[#050505]">
                   Rank #{profile.rank}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
                 {[
                   {
                     label: 'Total Events',
@@ -518,7 +567,7 @@ function ExpertProfileModal({
                   {
                     label: 'Total Revenue',
                     value: profile.totalRevenueLabel || '₹0',
-                    icon: Trophy,
+                    iconSrc: totalRevenueIcon,
                   },
                   {
                     label: 'Performance Score',
@@ -526,22 +575,39 @@ function ExpertProfileModal({
                     icon: Trophy,
                   },
                 ].map((card) => (
-                  <div
-                    key={card.label}
-                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-4"
-                  >
-                    <card.icon className="text-brand-accent mb-2 size-4" />
-                    <p className="text-muted text-[10px] tracking-wide uppercase">{card.label}</p>
-                    <p className="mt-1 text-xl font-bold text-white">{card.value}</p>
+                  <div key={card.label} className="rounded-[10px] bg-[#050505] px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      {'iconSrc' in card && card.iconSrc ? (
+                        <img
+                          src={card.iconSrc}
+                          alt=""
+                          className="size-4 shrink-0 opacity-70 brightness-0 invert"
+                          aria-hidden="true"
+                        />
+                      ) : 'icon' in card && card.icon ? (
+                        <card.icon className="size-4 text-white/70" />
+                      ) : null}
+                      <p className="text-[12px] leading-4 font-medium text-white/70">
+                        {card.label}
+                      </p>
+                    </div>
+                    <p className="mt-2 text-[20px] leading-6 font-semibold text-white">
+                      {card.value}
+                    </p>
                   </div>
                 ))}
               </div>
 
-              <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                <span className="mt-0.5 text-amber-400">⚠</span>
-                <p>
+              <div className="mt-auto flex h-[67px] w-[699px] max-w-full shrink-0 items-center gap-3 self-center rounded-[10px] border border-[#E0A263] bg-[#F6CB8633] px-4">
+                <AlertTriangle
+                  className="size-5 shrink-0 text-[#E0A263]"
+                  fill="#E0A263"
+                  stroke="#141414"
+                  aria-hidden="true"
+                />
+                <p className="text-[16px] leading-6 font-normal tracking-normal text-white">
                   {profile.notice ||
-                    "This is a read-only profile view. Rankings are calculated automatically based on expert's performance."}
+                    'This is a read-only profile view. Rankings are calculated automatically based on expert’s performance.'}
                 </p>
               </div>
             </>
@@ -573,7 +639,7 @@ function FiltersPanel({
   onExport?: (format: string) => void
   isExporting?: boolean
 }) {
-  const [selectedFormat, setSelectedFormat] = useState('csv')
+  const { fileFormat } = useDefaultExportFormat()
 
   if (!open) return null
 
@@ -588,21 +654,6 @@ function FiltersPanel({
             <X className="size-5" />
           </button>
         </div>
-
-        {isExport && (
-          <div className="mb-4">
-            <label className="mb-1.5 block text-sm font-medium text-white">Export Format</label>
-            <select
-              value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="csv">CSV Document (.csv)</option>
-              <option value="excel">Excel Document (.xlsx)</option>
-              <option value="pdf">PDF Document (.pdf)</option>
-            </select>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-xs text-white/70">
@@ -726,7 +777,7 @@ function FiltersPanel({
               <Button
                 className="ui-export-data"
                 disabled={isExporting}
-                onClick={() => onExport?.(selectedFormat)}
+                onClick={() => onExport?.(fileFormat)}
               >
                 <ExportDataIcon className="size-5 shrink-0" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
@@ -797,6 +848,7 @@ export const LeaderboardPage = () => {
   const [isExporting, setIsExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [profilePartnerId, setProfilePartnerId] = useState<string | null>(null)
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const serverSort = useServerTableSort({
     sortFieldMap: LEADERBOARD_SORT_FIELD_MAP,
@@ -839,8 +891,6 @@ export const LeaderboardPage = () => {
       : defaultVisibleColumnIds
     let mappedIds = rawIds.map((id) => legacyColumnIdMap[id] ?? id)
 
-    // Venue: ensure CSAT + revenue stay visible even with older saved prefs,
-    // and drop listing columns that no longer exist for venues.
     if (isVenueLeaderboard) {
       mappedIds = mappedIds.filter(
         (id) => id !== 'services-listed' && id !== 'consultations-listed',
@@ -904,12 +954,12 @@ export const LeaderboardPage = () => {
     (columnId: string) => {
       const active = serverSort.sorting[0]
       if (!active || active.id !== columnId) {
-        return <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
+        return <SortOutlineIcon className="text-white" />
       }
       return active.desc ? (
-        <ArrowDown className="text-brand-primary size-[18px]" aria-hidden="true" />
+        <ArrowDown className="text-brand-primary size-4" aria-hidden="true" />
       ) : (
-        <ArrowUp className="text-brand-primary size-[18px]" aria-hidden="true" />
+        <ArrowUp className="text-brand-primary size-4" aria-hidden="true" />
       )
     },
     [serverSort.sorting],
@@ -959,10 +1009,10 @@ export const LeaderboardPage = () => {
           format,
           isVenueLeaderboard ? 'venue-leaderboard' : 'expert-leaderboard',
         )
-        toast.success(`Exported as ${format.toUpperCase()}`)
+        toast.success(`Exported as ${getExportFormatLabel(format)}`)
         setExportOpen(false)
-      } catch {
-        toast.error('Failed to export leaderboard')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export leaderboard'))
       } finally {
         setIsExporting(false)
       }
@@ -982,6 +1032,22 @@ export const LeaderboardPage = () => {
     setProfilePartnerId(row.partnerId)
   }
 
+  const openViewAnalytics = useCallback(
+    (row: LeaderboardRow) => {
+      const partnerId = String(row.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Partner ID is missing.')
+        return
+      }
+      if (isVenueLeaderboard) {
+        navigate(`/venues/management/profile/${partnerId}/analytics`)
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}/analytics`)
+    },
+    [isVenueLeaderboard, navigate],
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -989,28 +1055,22 @@ export const LeaderboardPage = () => {
           <h1 className="text-2xl font-bold tracking-tight text-white">
             {isVenueLeaderboard ? 'Venue Leaderboard' : 'Expert Leaderboard'}
           </h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             {isVenueLeaderboard
               ? 'Top ranked venues based on platform performance'
               : 'Top ranked experts based on platform performance'}
           </p>
-          {leaderboard?.meta?.lastRefreshedAt && (
-            <p className="text-muted mt-1 text-[11px]">
-              Last refreshed: {new Date(leaderboard.meta.lastRefreshedAt).toLocaleString('en-IN')}
-              {isFetching ? ' · Updating…' : ''}
-            </p>
-          )}
         </div>
         <Button
           className="ui-manage-metrics ui-cta ui-cta-primary"
           onClick={() => navigate(metricsPath)}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
 
-      <div className="bg-brand-bg rounded-2xl border border-white/[0.06] px-6 py-8">
+      <div className="rounded-2xl bg-[#050505] px-6 py-10">
         {showShimmer ? (
           <PodiumShimmer />
         ) : podiumOrdered.length === 0 ? (
@@ -1018,7 +1078,7 @@ export const LeaderboardPage = () => {
             {isVenueLeaderboard ? 'No ranked venues yet.' : 'No ranked experts yet.'}
           </p>
         ) : (
-          <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
+          <div className="mx-auto flex max-w-[980px] items-end justify-center gap-6">
             {podiumOrdered.map((expert, index) => {
               const isFirst = index === 1
               const calculatedRank = expert.rank
@@ -1032,31 +1092,34 @@ export const LeaderboardPage = () => {
                   type="button"
                   onClick={() => openProfile(expert)}
                   className={cn(
-                    'flex flex-col items-center text-center transition hover:opacity-95',
-                    isFirst ? 'pt-0' : 'pt-10',
+                    'flex w-[298px] flex-col items-center text-center transition hover:opacity-95',
+                    isFirst ? 'pb-8' : 'pt-10',
                   )}
                 >
-                  <div className="relative grid place-items-center">
+                  <SafeAvatar
+                    src={expert.profileImage}
+                    name={expert.name}
+                    sizeClassName="size-[50px]"
+                    iconClassName="size-6"
+                  />
+                  <p className="mt-3 text-base font-semibold text-white">{expert.name}</p>
+                  <p className="mt-1 text-xs text-white/50">{podiumSubtitle(expert)}</p>
+
+                  <div className="mt-6 flex h-[231px] w-full flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#141414] px-4">
                     <img
                       src={iconSrc}
                       alt={`Rank ${calculatedRank}`}
-                      className={cn('object-contain drop-shadow-xl', isFirst ? 'h-24' : 'h-16')}
+                      className={cn(
+                        'object-contain drop-shadow-xl',
+                        isFirst ? 'size-[100px]' : 'size-20',
+                      )}
                     />
-                  </div>
-                  <p className="text-body-md mt-3 font-bold text-white">{expert.name}</p>
-                  <p className="text-body-sm text-muted">{expert.profession}</p>
-
-                  <div
-                    className={cn(
-                      'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border px-4 py-5',
-                      isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
-                    )}
-                  >
-                    <SafeAvatar src={expert.profileImage} name={expert.name} />
-                    <span className="text-muted text-[10px] font-medium tracking-wide uppercase">
+                    <span className="mt-4 text-xs font-medium tracking-wide text-white/45">
                       Score
                     </span>
-                    <span className="text-h3 font-bold text-white">{expert.score}</span>
+                    <span className="mt-1 text-3xl font-bold tracking-tight text-white">
+                      {expert.score}
+                    </span>
                   </div>
                 </button>
               )
@@ -1141,7 +1204,7 @@ export const LeaderboardPage = () => {
                         setSelectedIds([])
                       }
                     }}
-                    className="rounded border-slate-700 bg-transparent"
+                    className="ui-table-checkbox"
                   />
                 </th>
                 {visibleColumns.map((column) => {
@@ -1176,11 +1239,14 @@ export const LeaderboardPage = () => {
                     </th>
                   )
                 })}
+                <th scope="col" className="px-3 py-3 pr-5 text-right whitespace-nowrap">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {showShimmer ? (
-                <TableRowsShimmer columnCount={visibleColumns.length} />
+                <TableRowsShimmer columnCount={visibleColumns.length + 1} />
               ) : (
                 <>
                   {rows.map((row) => (
@@ -1200,7 +1266,7 @@ export const LeaderboardPage = () => {
                                 : current.filter((id) => id !== row.partnerId),
                             )
                           }}
-                          className="rounded border-slate-700 bg-transparent"
+                          className="ui-table-checkbox"
                         />
                       </td>
                       {visibleColumns.map((column) => (
@@ -1211,12 +1277,31 @@ export const LeaderboardPage = () => {
                           {renderLeaderboardCell(column.id, row, openProfile)}
                         </td>
                       ))}
+                      <td className="relative px-3 py-3 pr-5 text-right align-middle">
+                        <TableActionsDropdown
+                          label={`Open actions for ${row.name}`}
+                          isOpen={activeDropdownId === row.partnerId}
+                          onOpenChange={(open) => setActiveDropdownId(open ? row.partnerId : null)}
+                          menuWidth={220}
+                          maxVisibleItems={8}
+                        >
+                          <TableActionsItem
+                            icon={<BarChart3 className="size-3.5" aria-hidden="true" />}
+                            onClick={() => {
+                              setActiveDropdownId(null)
+                              openViewAnalytics(row)
+                            }}
+                          >
+                            View Analytics
+                          </TableActionsItem>
+                        </TableActionsDropdown>
+                      </td>
                     </tr>
                   ))}
                   {rows.length === 0 && (
                     <tr>
                       <td
-                        colSpan={visibleColumns.length + 1}
+                        colSpan={visibleColumns.length + 2}
                         className="text-muted px-3 py-8 text-center text-sm"
                       >
                         {isVenueLeaderboard

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
   Area,
   Bar,
@@ -14,8 +14,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RotateCcw, TrendingUp } from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { RotateCcw } from 'lucide-react'
+import { toast } from 'sonner'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  ensureTrendChangeSign,
+  TrendBadge as MetricTrendBadge,
+} from '@/shared/components/dashboard/trend-badge'
 import { useNavigate } from 'react-router-dom'
 import type { ComponentType, PropsWithChildren, ReactNode } from 'react'
 
@@ -50,6 +56,8 @@ import {
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { exportFinanceDashboardToFile } from '@/modules/payments/utils/export-finance-dashboard'
 import { StatCardSkeleton, ChartSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 
@@ -103,14 +111,19 @@ function SectionTitle({ children }: { children: ReactNode }) {
   return <h2 className="text-body-md-semibold text-brand-text mb-3">{children}</h2>
 }
 
-function TrendBadge({ change, changeNote }: Pick<TrendMetric, 'change' | 'changeNote'>) {
+function TrendBadge({
+  change,
+  changeNote,
+  changeType,
+}: Pick<TrendMetric, 'change' | 'changeNote' | 'changeType'>) {
   if (!change) return null
+  const isDown = changeType === 'down' || change.trim().startsWith('-')
+  const direction = isDown ? 'down' : 'up'
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2">
-      <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
-        <TrendingUp className="size-3" />
-        {change}
-      </span>
+      <MetricTrendBadge direction={direction}>
+        {ensureTrendChangeSign(change, direction)}
+      </MetricTrendBadge>
       {changeNote ? <span className="text-body-sm text-muted">{changeNote}</span> : null}
     </div>
   )
@@ -121,7 +134,11 @@ function SummaryCard({ metric }: { metric: TrendMetric }) {
     <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-center border border-white/[0.06] p-5">
       <p className="text-body-sm-medium text-muted">{metric.label}</p>
       <p className="text-h2 text-brand-text mt-2 tracking-tight">{metric.value}</p>
-      <TrendBadge change={metric.change} changeNote={metric.changeNote} />
+      <TrendBadge
+        change={metric.change}
+        changeNote={metric.changeNote}
+        changeType={metric.changeType}
+      />
     </div>
   )
 }
@@ -131,7 +148,11 @@ function MetricCard({ metric }: { metric: TrendMetric }) {
     <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-center border border-white/[0.06] p-4">
       <p className="text-body-sm-medium text-muted">{metric.label}</p>
       <p className="text-h3 text-brand-text mt-2 tracking-tight">{metric.value}</p>
-      <TrendBadge change={metric.change} changeNote={metric.changeNote} />
+      <TrendBadge
+        change={metric.change}
+        changeNote={metric.changeNote}
+        changeType={metric.changeType}
+      />
     </div>
   )
 }
@@ -202,10 +223,16 @@ function KeyMetricCard({ metric }: { metric: KeyMetric }) {
         {metric.subtext ? (
           <p className="text-xs font-medium text-neutral-400">{metric.subtext}</p>
         ) : metric.change ? (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#00D062]">
-            <span>↑</span>
-            <span>{metric.change}</span>
-          </span>
+          <MetricTrendBadge
+            direction={
+              metric.changeType === 'down' || metric.change.trim().startsWith('-') ? 'down' : 'up'
+            }
+          >
+            {ensureTrendChangeSign(
+              metric.change,
+              metric.changeType === 'down' || metric.change.trim().startsWith('-') ? 'down' : 'up',
+            )}
+          </MetricTrendBadge>
         ) : null}
       </div>
     </div>
@@ -384,6 +411,7 @@ function formatCurrency(value: number) {
 
 export function FinanceDashboardPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { data, isLoading, isError, refetch, isRefetching } = useFinanceDashboard()
   const summary = data?.data
   const totalEscrowAmount = summary?.totalInEscrow ?? 0
@@ -438,22 +466,56 @@ export function FinanceDashboardPage() {
 
   const chartSeries = useMemo(() => buildChartSeries(summary?.charts), [summary])
 
+  const handleExportData = useCallback(async () => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (visibleMetricCards.length === 0 && keyFinancialMetrics.length === 0) {
+      toast.error('No data available to export')
+      return
+    }
+
+    try {
+      await exportFinanceDashboardToFile(
+        {
+          metrics: visibleMetricCards,
+          keyFinancialMetrics,
+          revenueTrend: chartSeries.revenueTrend,
+          revenueByCategory: chartSeries.revenueByCategory,
+          monthlyRevenue: chartSeries.monthlyRevenue,
+          escrowStatus: chartSeries.escrowBreakdown,
+          weeklyPayouts: chartSeries.weeklyPayouts,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export finance dashboard'))
+    }
+  }, [chartSeries, exportFormat, fileFormat, isLoading, keyFinancialMetrics, visibleMetricCards])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h1 text-brand-text tracking-tight">Finance Dashboard</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track revenue, payouts, and financial performance
           </p>
         </div>
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             className="ui-manage-metrics"
             onClick={() => navigate('/metrics/finance-dashboard')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
+          </Button>
+          <Button className="ui-export-data" onClick={() => void handleExportData()}>
+            <ExportDataIcon className="size-5 shrink-0" />
+            Export Data
           </Button>
         </div>
       </div>

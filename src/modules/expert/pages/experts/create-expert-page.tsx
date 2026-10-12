@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -21,11 +21,14 @@ import {
   buildSubmitPayload,
   buildWorkExperiencePayload,
   createEmptyExpertOnboardingForm,
+  getExpertOnboardingStepError,
   mapExpertProfileToOnboardingForm,
   type ExpertOnboardingFormData,
 } from '../../utils/expert-onboarding-form'
-import { validateMobileNumber } from '@/shared/lib/phone'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { useExpertAccountControls } from '@/modules/settings/hooks/use-expert-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 const STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -35,65 +38,14 @@ const STEPS = [
   { id: '05', title: 'Final Review', description: 'Preview' },
 ]
 
-const validateStep = (
-  step: number,
-  form: ExpertOnboardingFormData,
-  isEdit: boolean,
-): string | null => {
-  if (step === 1) {
-    if (!form.fullname.trim()) return 'Full name is required.'
-    const phoneError = validateMobileNumber(form.phoneNumber)
-    if (phoneError) return phoneError
-    if (!form.email.trim()) return 'Email is required.'
-    if (!form.serviceType) return 'Service type is required.'
-    if (form.serviceCategory.length === 0) return 'At least one service category is required.'
-  }
-  if (step === 2) {
-    if (!form.idType) return 'ID type is required.'
-    if (!form.idNumber.trim()) return 'ID number is required.'
-    if (!form.panNumber.trim()) return 'PAN number is required.'
-    if (form.gstAvailable && !form.gstNumber.trim()) return 'GST number is required.'
-    if (!form.panCardFile && !form.panCardFileName) {
-      return 'PAN card document is required.'
-    }
-    if (!form.certificateFile && !form.certificateFileName) {
-      return 'Certificate / license document is required.'
-    }
-    if (form.gstAvailable && !form.gstCertificateFile && !form.gstCertificateFileName) {
-      return 'GST certificate is required.'
-    }
-  }
-  if (step === 3) {
-    const validEntries = form.workExperience.filter(
-      (entry) => entry.jobTitle.trim() || entry.companyName.trim(),
-    )
-    if (validEntries.length === 0) return 'At least one work experience entry is required.'
-    for (let i = 0; i < validEntries.length; i++) {
-      if (!validEntries[i].jobTitle.trim()) {
-        return `Job title is required for work experience entry #${i + 1}.`
-      }
-      if (!validEntries[i].companyName.trim()) {
-        return `Company name is required for work experience entry #${i + 1}.`
-      }
-    }
-  }
-  if (step === 4) {
-    if (form.galleryPreviews.length > 5) return 'A maximum of 5 images are allowed.'
-    if (!isEdit && form.galleryImages.length === 0 && form.galleryPreviews.length === 0) {
-      return null
-    }
-  }
-  if (step === 5) {
-    if (!form.isVerified) return 'Please verify the profile before submission.'
-  }
-  return null
-}
-
 export const CreateExpertPage = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const expertIdParam = searchParams.get('expertId')
   const isEditMode = searchParams.get('mode') === 'edit' && Boolean(expertIdParam)
+  const { allowNewAccounts, isLoading: controlsLoading } = useExpertAccountControls()
+  const authUser = useAuthStore((state) => state.user)
+  const profileCreator = authUser ? { name: authUser.fullname, kind: authUser.kind } : null
 
   const [currentStep, setCurrentStep] = useState(1)
   const [expertId, setExpertId] = useState<string | null>(expertIdParam)
@@ -118,6 +70,14 @@ export const CreateExpertPage = () => {
     submitApplication,
   } = useExpertOnboardingMutations()
 
+  useEffect(() => {
+    if (controlsLoading || isEditMode) return
+    if (!allowNewAccounts) {
+      toast.error(RESTRICTION_MESSAGES.expertCreate)
+      navigate('/experts/management', { replace: true })
+    }
+  }, [allowNewAccounts, controlsLoading, isEditMode, navigate])
+
   if (isEditMode && profileResponse?.data && profileResponse.data._id !== lastSyncedProfileId) {
     setLastSyncedProfileId(profileResponse.data._id)
     setFormData(mapExpertProfileToOnboardingForm(profileResponse.data))
@@ -132,7 +92,7 @@ export const CreateExpertPage = () => {
   }
 
   const handleNextStep = async () => {
-    const validationError = validateStep(currentStep, formData, isEditMode)
+    const validationError = getExpertOnboardingStepError(currentStep, formData, isEditMode)
     if (validationError) {
       toast.error(validationError)
       return
@@ -143,10 +103,16 @@ export const CreateExpertPage = () => {
         if (expertId) {
           await updateBasicProfile.mutateAsync({
             id: expertId,
-            payload: buildBasicProfileFormData(formData),
+            payload: buildBasicProfileFormData(formData, profileCreator),
           })
         } else {
-          const response = await saveBasicProfile.mutateAsync(buildBasicProfileFormData(formData))
+          if (!allowNewAccounts) {
+            toast.error(RESTRICTION_MESSAGES.expertCreate)
+            return
+          }
+          const response = await saveBasicProfile.mutateAsync(
+            buildBasicProfileFormData(formData, profileCreator),
+          )
           const newId = response.data._id
           setExpertId(newId)
           updateExpertIdInUrl(newId)
@@ -195,7 +161,6 @@ export const CreateExpertPage = () => {
           payload: buildSubmitPayload(formData),
         })
 
-        // Partner was submitted. Check if KYC auto-approval had a warning.
         const kycWarning = (result as { kycWarning?: string } | undefined)?.kycWarning
 
         if (isEditMode) {
@@ -249,6 +214,14 @@ export const CreateExpertPage = () => {
     return 'Save & Continue'
   })()
 
+  if (!isEditMode && (controlsLoading || !allowNewAccounts)) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
+
   if (isEditMode && isProfileLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -276,8 +249,8 @@ export const CreateExpertPage = () => {
     <CreateListingWizard
       title={isEditMode ? 'Edit Expert Profile' : 'Expert Profile Creation'}
       breadcrumbs={[
-        { label: 'Expert management' },
-        { label: 'Manage Experts' },
+        { label: 'Expert Management', to: '/experts/management' },
+        { label: 'Manage Experts', to: '/experts/management' },
         { label: isEditMode ? 'Edit Profile' : 'Create Account', isActive: true },
       ]}
       steps={STEPS}
@@ -294,6 +267,8 @@ export const CreateExpertPage = () => {
           formData={formData}
           setFormData={setFormData}
           lockedServiceType="concierge"
+          excludePartnerId={expertId}
+          requireSampleWorkFile={!isEditMode}
         />
       )}
       {currentStep === 2 && (

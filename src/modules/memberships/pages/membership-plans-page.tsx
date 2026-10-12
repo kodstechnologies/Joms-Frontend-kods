@@ -1,8 +1,18 @@
-import { AlertCircle, Ban, Hourglass, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowLeft,
+  Ban,
+  Hourglass,
+  PauseCircle,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { LucideIcon } from 'lucide-react'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { CreateMembershipModal } from '../components/create-membership-modal'
@@ -25,17 +35,19 @@ import {
   useSetMembershipValidity,
 } from '../hooks/use-memberships'
 import { useMembershipStore } from '../store/membership-store'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import type { MembershipPlan, MembershipStatus } from '../types/membership'
 import {
   exportMembershipPlansToExcel,
   fetchAllMembershipPlansForExport,
 } from '../utils/export-membership-plans'
-import { getFeatureLines } from '../utils/membership-format'
+import { getFeatureLines, formatMembershipDateTime } from '../utils/membership-format'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const STATUS_ROUTE_MAP = {
   active: '/memberships/plans',
@@ -57,6 +69,7 @@ export function MembershipPlansPage({
   subtitle = 'Centralized membership system supporting User App and Expert App with analytics, plan configuration, and lifecycle controls',
 }: MembershipPlansPageProps) {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [createOpen, setCreateOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null)
@@ -83,6 +96,7 @@ export function MembershipPlansPage({
   const statusFilter = fixedStatus ?? activeStatus
 
   const { data, isLoading } = useMemberships({
+    type: 'expert',
     search: searchQuery || undefined,
     status: statusFilter,
     limit: 50,
@@ -124,6 +138,13 @@ export function MembershipPlansPage({
       status: 'active',
     },
     {
+      label: 'Paused Plans',
+      count: counts.paused,
+      tone: 'danger',
+      icon: PauseCircle,
+      status: 'paused',
+    },
+    {
       label: 'Inactive Plans',
       count: counts.inactive,
       tone: 'danger',
@@ -161,10 +182,7 @@ export function MembershipPlansPage({
   const limit = meta?.limit ?? 50
   const rangeStart = totalItems === 0 ? 0 : (page - 1) * limit + 1
   const rangeEnd = Math.min(page * limit, totalItems)
-  const expertPlans = useMemo(
-    () => memberships.filter((plan) => plan.type === 'expert'),
-    [memberships],
-  )
+  const expertPlans = memberships
 
   const openModal = (plan: MembershipPlan, type: NonNullable<typeof modalType>) => {
     setSelectedPlan(plan)
@@ -188,6 +206,11 @@ export function MembershipPlansPage({
       return
     }
 
+    if (endDate < startDate) {
+      toast.error('End date must be on or after the start date.')
+      return
+    }
+
     try {
       await pauseMutation.mutateAsync({
         id: selectedPlan._id,
@@ -201,8 +224,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan paused')
       closeModal()
-    } catch {
-      toast.error('Failed to pause plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to pause plan'))
     }
   }
 
@@ -216,8 +239,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan resumed')
       closeModal()
-    } catch {
-      toast.error('Failed to resume plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to resume plan'))
     }
   }
 
@@ -234,8 +257,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan deleted')
       closeModal()
-    } catch {
-      toast.error('Failed to delete plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to delete plan'))
     }
   }
 
@@ -249,8 +272,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan deactivated')
       closeModal()
-    } catch {
-      toast.error('Failed to deactivate plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to deactivate plan'))
     }
   }
 
@@ -264,8 +287,8 @@ export function MembershipPlansPage({
       })
       toast.success('Plan activated')
       closeModal()
-    } catch {
-      toast.error('Failed to activate plan')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to activate plan'))
     }
   }
 
@@ -283,18 +306,23 @@ export function MembershipPlansPage({
         return
       }
 
-      await exportMembershipPlansToExcel(plans)
-      toast.success('Membership plans exported to Excel')
-    } catch {
-      toast.error('Failed to export membership plans')
+      await exportMembershipPlansToExcel(plans, fileFormat)
+      toast.success(`Membership plans exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export membership plans'))
     } finally {
       setIsExporting(false)
     }
-  }, [isExporting, searchQuery, statusFilter])
+  }, [exportFormat, fileFormat, isExporting, searchQuery, statusFilter])
 
   const handleSetValidity = async () => {
     if (!selectedPlan || !validityStart || !validityEnd) {
       toast.error('Select validity dates')
+      return
+    }
+
+    if (validityEnd < validityStart) {
+      toast.error('End date must be on or after the start date.')
       return
     }
 
@@ -309,106 +337,141 @@ export function MembershipPlansPage({
       })
       toast.success('Plan validity updated')
       closeModal()
-    } catch {
-      toast.error('Failed to update validity')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to update validity'))
     }
   }
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div className="max-w-3xl">
-          <h1 className="text-h1 text-brand-text tracking-tight">{title}</h1>
-          <p className="text-body-md text-muted mt-2 leading-relaxed">{subtitle}</p>
-        </div>
-        <Button
-          className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
-          onClick={() =>
-            navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
-          }
-        >
-          <ManageMetricsIcon className="size-4 shrink-0" />
-          Manage Metrics
-        </Button>
-      </div>
-
-      <MembershipStatsBar />
-
-      <div className="flex justify-center">
-        <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
-          <TabButton active>Membership Plans</TabButton>
-          <TabButton onClick={() => navigate('/memberships/experts')}>
-            Expert Memberships Management
-          </TabButton>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative max-w-md flex-1">
-          <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-          <Input
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search by membership"
-            className="ui-input-icon-left bg-brand-bg text-body-md placeholder:text-muted h-11 rounded-full border-white/10 text-white"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2.5">
+      {fixedStatus ? (
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+          <div>
+            <button
+              type="button"
+              onClick={() => navigateBackOrFallback(navigate, '/memberships/plans')}
+              className="group flex w-fit items-center gap-2 text-[24px] leading-8 font-bold tracking-tight text-white transition-colors hover:text-[#E0A263]"
+            >
+              <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+              <span>{title}</span>
+            </button>
+            <p className="mt-1 pl-7 text-[14px] leading-5 font-medium text-[#FFFFFF80]">
+              Membership Management / <span className="text-white">{title}</span>
+            </p>
+          </div>
           <Button
-            className="ui-export-data"
-            onClick={() => void handleExportData()}
-            disabled={isExporting}
+            className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
+            onClick={() =>
+              navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
+            }
           >
-            <ExportDataIcon className="size-5 shrink-0" />
-            {isExporting ? 'Exporting...' : 'Export Data'}
-          </Button>
-          <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4" />
-            Add New Plan
+            <ManageMetricsIcon />
+            Manage Metrics
           </Button>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <p className="text-body-md text-muted">
-          Showing{' '}
-          <span className="font-semibold text-white">
-            {rangeStart}-{rangeEnd}
-          </span>{' '}
-          of <span className="font-semibold text-white">{totalItems}</span> users
-        </p>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {statusCards.map((card) => {
-            const isSelected = selectedStatus === card.status
-            const isGold = card.tone === 'gold'
-
-            return (
-              <button
-                key={card.label}
-                type="button"
-                onClick={() => handleStatusCardClick(card.status)}
-                className={cn(
-                  'flex items-center justify-between rounded-[10px] border px-4 py-3.5 text-white transition-all',
-                  isGold
-                    ? `${statusCardTones.warning.background} ${statusCardTones.warning.border}`
-                    : `${statusCardTones.danger.background} ${statusCardTones.danger.border}`,
-                  isSelected &&
-                    (isGold ? 'ring-brand-accent/50 ring-2' : 'ring-brand-danger/50 ring-2'),
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <card.icon className="size-5 shrink-0" strokeWidth={1.75} />
-                  <span className="text-body-md-medium">{card.label}</span>
-                </div>
-                <span className="text-body-lg font-bold tabular-nums">
-                  {String(card.count).padStart(2, '0')}
-                </span>
-              </button>
-            )
-          })}
+      ) : (
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+          <div className="max-w-3xl">
+            <h1 className="text-h1 text-brand-text tracking-tight">{title}</h1>
+            <p className="ui-page-subtitle mt-2 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
+              {subtitle}
+            </p>
+          </div>
+          <Button
+            className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
+            onClick={() =>
+              navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
+            }
+          >
+            <ManageMetricsIcon />
+            Manage Metrics
+          </Button>
         </div>
-      </div>
+      )}
+
+      {!fixedStatus ? <MembershipStatsBar type="expert" /> : null}
+
+      {!fixedStatus ? (
+        <div className="flex justify-center">
+          <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
+            <TabButton active>Membership Plans</TabButton>
+            <TabButton onClick={() => navigate('/memberships/experts')}>
+              Expert Memberships Management
+            </TabButton>
+          </div>
+        </div>
+      ) : null}
+
+      {!fixedStatus ? (
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative max-w-md flex-1">
+            <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search by membership"
+              className="ui-input-icon-left bg-brand-bg text-body-md placeholder:text-muted h-11 rounded-full border-white/10 text-white"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Button
+              className="ui-export-data"
+              onClick={() => void handleExportData()}
+              disabled={isExporting}
+            >
+              <ExportDataIcon className="size-5 shrink-0" />
+              {isExporting ? 'Exporting...' : 'Export Data'}
+            </Button>
+            <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Add New Plan
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {!fixedStatus ? (
+        <div className="flex flex-col gap-4">
+          <p className="text-body-md text-muted">
+            Showing{' '}
+            <span className="font-semibold text-white">
+              {rangeStart}-{rangeEnd}
+            </span>{' '}
+            of <span className="font-semibold text-white">{totalItems}</span> users
+          </p>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {statusCards.map((card) => {
+              const isSelected = selectedStatus === card.status
+              const isGold = card.tone === 'gold'
+
+              return (
+                <button
+                  key={card.label}
+                  type="button"
+                  onClick={() => handleStatusCardClick(card.status)}
+                  className={cn(
+                    'flex items-center justify-between rounded-[10px] border px-4 py-3.5 text-white transition-all',
+                    isGold
+                      ? `${statusCardTones.warning.background} ${statusCardTones.warning.border}`
+                      : `${statusCardTones.danger.background} ${statusCardTones.danger.border}`,
+                    isSelected &&
+                      (isGold ? 'ring-brand-accent/50 ring-2' : 'ring-brand-danger/50 ring-2'),
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <card.icon className="size-5 shrink-0" strokeWidth={1.75} />
+                    <span className="text-body-md-medium">{card.label}</span>
+                  </div>
+                  <span className="text-body-lg font-bold tabular-nums">
+                    {String(card.count).padStart(2, '0')}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <p className="text-body-md text-muted">Loading membership plans...</p>
@@ -416,17 +479,28 @@ export function MembershipPlansPage({
         <div className="bg-brand-bg rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center">
           <p className="text-body-lg font-medium text-white">No membership plans found</p>
           <p className="text-body-md text-muted mt-2">
-            Create your first plan to start managing memberships.
+            {fixedStatus
+              ? `No ${title.toLowerCase()} to show right now.`
+              : 'Create your first plan to start managing memberships.'}
           </p>
-          <Button className="ui-cta ui-cta-primary mt-5" onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4" />
-            Add New Plan
-          </Button>
+          {!fixedStatus ? (
+            <Button className="ui-cta ui-cta-primary mt-5" onClick={() => setCreateOpen(true)}>
+              <Plus className="size-4" />
+              Add New Plan
+            </Button>
+          ) : null}
         </div>
       ) : (
         <PlanSection
-          title="Expert Membership Plans"
+          title={fixedStatus ? undefined : 'Expert Membership Plans'}
           plans={expertPlans}
+          onViewSubscribers={(plan, billingCycleName) => {
+            const params = new URLSearchParams()
+            params.set('planName', plan.planName)
+            if (billingCycleName) params.set('billingCycleName', billingCycleName)
+            navigate(`/memberships/experts?${params.toString()}`)
+          }}
+          onViewDetails={(plan) => navigate(`/memberships/plans/${plan._id}/view`)}
           onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
           onPause={(plan) => openModal(plan, 'pause')}
           onResume={(plan) => openModal(plan, 'resume')}
@@ -531,11 +605,17 @@ export function MembershipPlansPage({
                 <Input
                   type="date"
                   value={validityStart}
-                  onChange={(e) => setValidityStart(e.target.value)}
+                  max={validityEnd || undefined}
+                  onChange={(e) => {
+                    const next = e.target.value
+                    setValidityStart(next)
+                    if (validityEnd && next && validityEnd < next) setValidityEnd('')
+                  }}
                 />
                 <Input
                   type="date"
                   value={validityEnd}
+                  min={validityStart || undefined}
                   onChange={(e) => setValidityEnd(e.target.value)}
                 />
               </div>
@@ -588,7 +668,7 @@ export function MembershipPlansPage({
                     className="text-body-md text-brand-text/80 rounded-lg border border-white/10 bg-black/30 p-3"
                   >
                     Version {entry.version} · {entry.updatedBy ?? 'Admin'} ·{' '}
-                    {entry.updatedAt ?? '—'}
+                    {formatMembershipDateTime(entry.updatedAt)}
                   </div>
                 ),
               )
@@ -607,15 +687,15 @@ function PlanSection({
   plans,
   ...handlers
 }: {
-  title: string
+  title?: string
   plans: MembershipPlan[]
 } & Omit<ComponentProps<typeof MembershipPlanCard>, 'plan'>) {
   if (!plans.length) return null
 
   return (
     <section className="space-y-4">
-      <h2 className="text-h4 text-white">{title}</h2>
-      <div className="grid grid-cols-1 justify-items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {title ? <h2 className="text-h4 text-white">{title}</h2> : null}
+      <div className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 sm:justify-items-stretch @min-[1100px]/main:grid-cols-3">
         {plans.map((plan) => (
           <MembershipPlanCard key={plan._id} plan={plan} {...handlers} />
         ))}

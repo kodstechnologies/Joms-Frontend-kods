@@ -12,7 +12,7 @@ export const fetchApplicationDetails = async (id: string) => {
 export const fetchVenueKycByPartnerId = async (partnerId: string) => {
   const response = await kycApiClient.get<{
     success?: boolean
-    data?: { _id?: string }
+    data?: { _id?: string; status?: string }
   }>(`/venue-kyc/admin/partner/${partnerId}`)
   return response.data
 }
@@ -56,5 +56,32 @@ export const updateVenueBankingDocumentStatus = async (
     `/venue-kyc/banking/${id}/documents/${documentKey}/status`,
     payload,
   )
+  return response.data
+}
+
+export type VenueKycDocumentRule = {
+  key: string
+  label: string
+  required?: boolean
+  requiredIfGstEnabled?: boolean
+}
+
+export type VenueDocumentRules = {
+  categoryName?: string
+  mandatoryDocuments?: VenueKycDocumentRule[]
+  conditionalDocuments?: VenueKycDocumentRule[]
+}
+
+export const fetchVenueDocumentRules = async (typeOfVenue?: string, hasGST?: boolean) => {
+  const response = await kycApiClient.get<{
+    success: boolean
+    message: string
+    data: VenueDocumentRules
+  }>('/venue-kyc/document-rules', {
+    params: {
+      ...(typeOfVenue ? { typeOfVenue } : {}),
+      hasGST: hasGST ? 'true' : 'false',
+    },
+  })
   return response.data
 }

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FilterValues, ModuleFilterKey } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
@@ -26,12 +27,13 @@ type UseReportedListArgs<T> = {
   exportFileName: string
   exportColumnMap: ExportColumnMap<T>
   fetchReports: (params: Record<string, unknown>) => Promise<unknown>
-  /** Normalize API payload → items + pagination. */
   parseResponse: (response: unknown) => {
     items: T[]
     total: number
     totalPages: number
   }
+  defaultVisibleColumnIds?: string[]
+  catalogColumnIds?: string[]
 }
 
 function defaultParseResponse<T = unknown>(
@@ -64,6 +66,8 @@ export function useReportedList<T>({
   exportColumnMap,
   fetchReports,
   parseResponse,
+  defaultVisibleColumnIds,
+  catalogColumnIds,
 }: UseReportedListArgs<T>) {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -73,27 +77,45 @@ export function useReportedList<T>({
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
 
+  const fetchReportsRef = useRef(fetchReports)
+  const parseResponseRef = useRef(parseResponse)
+  fetchReportsRef.current = fetchReports
+  parseResponseRef.current = parseResponse
+
+  const resetPage = useCallback(() => setCurrentPage(1), [])
   const serverSort = useServerTableSort({
     sortFieldMap,
-    onPageReset: () => setCurrentPage(1),
+    onPageReset: resetPage,
   })
-  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: resetPage })
   const tableColumnPreferencesQuery = useTableColumnPreferences(preferencesKey ?? moduleKey)
+  const catalogIds = catalogColumnIds ?? Object.keys(exportColumnMap)
+  const defaultColumnIds = defaultVisibleColumnIds ?? catalogIds
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds,
+    catalogColumnIds: catalogIds,
+  })
 
   const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
-  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
+  const searchParams = useMemo(
+    () => enhancedSearch.buildSearchParams(),
+    [enhancedSearch.buildSearchParams],
+  )
+  const sortParams = serverSort.sortParams
 
   const loadReports = useCallback(() => {
     setLoading(true)
-    fetchReports({
-      page: currentPage,
-      limit: 10,
-      ...serverSort.sortParams,
-      ...searchParams,
-      ...apiFilterParams,
-    })
+    fetchReportsRef
+      .current({
+        page: currentPage,
+        limit: 10,
+        ...sortParams,
+        ...searchParams,
+        ...apiFilterParams,
+      })
       .then((res) => {
-        const parsed = parseResponse(res)
+        const parsed = parseResponseRef.current(res)
         setItems(parsed.items)
         setTotalItems(parsed.total)
         setTotalPages(parsed.totalPages)
@@ -104,14 +126,7 @@ export function useReportedList<T>({
         setTotalPages(1)
       })
       .finally(() => setLoading(false))
-  }, [
-    apiFilterParams,
-    currentPage,
-    fetchReports,
-    parseResponse,
-    searchParams,
-    serverSort.sortParams,
-  ])
+  }, [apiFilterParams, currentPage, searchParams, sortParams])
 
   useEffect(() => {
     loadReports()
@@ -126,8 +141,8 @@ export function useReportedList<T>({
     () =>
       createFilteredExportHandler(
         async (params: Record<string, unknown>) => {
-          const response = await fetchReports(params)
-          const parsed = parseResponse(response)
+          const response = await fetchReportsRef.current(params)
+          const parsed = parseResponseRef.current(response)
           return {
             data: parsed.items,
             meta: {
@@ -144,8 +159,9 @@ export function useReportedList<T>({
         {
           search: enhancedSearch.globalSearch.trim() || undefined,
         },
+        { columnIds: exportColumnIds, catalogOrder: catalogIds },
       ),
-    [enhancedSearch.globalSearch, exportColumnMap, exportFileName, fetchReports, parseResponse],
+    [catalogIds, enhancedSearch.globalSearch, exportColumnIds, exportColumnMap, exportFileName],
   )
 
   const {

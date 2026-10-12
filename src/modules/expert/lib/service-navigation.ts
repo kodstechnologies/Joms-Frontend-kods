@@ -2,9 +2,24 @@ type ServiceViewTarget = {
   _id: string
   serviceType?: string
   partnerId?: string
+  status?: string
 }
 
-export const getServiceManagementViewPath = (service: ServiceViewTarget) => {
+export const isPendingListingReview = (status?: string, isConsultation = false) => {
+  const normalized = (status || '').toLowerCase()
+  if (isConsultation) return normalized === 'submitted'
+  return normalized === 'in_review' || normalized === 'pending' || normalized === 'submitted'
+}
+
+export const isApprovedListingStatus = (status?: string) => {
+  const normalized = (status || '').toLowerCase()
+  return normalized === 'live' || normalized === 'approved'
+}
+
+export const getServiceManagementViewPath = (
+  service: ServiceViewTarget,
+  options?: { section?: 'documents' | 'media' },
+) => {
   const params = new URLSearchParams()
   params.set('type', service.serviceType || 'Service')
 
@@ -12,7 +27,26 @@ export const getServiceManagementViewPath = (service: ServiceViewTarget) => {
     params.set('partnerId', service.partnerId)
   }
 
+  if (options?.section === 'documents' || options?.section === 'media') {
+    params.set('section', 'documents')
+  }
+
   return `/services/management/view/${service._id}?${params.toString()}`
+}
+
+export const getServiceViewDetailsPath = (service: ServiceViewTarget) => {
+  const isConsultation = (service.serviceType || '').toLowerCase().includes('consultation')
+  const partnerId = String(service.partnerId || '').trim()
+
+  if (isPendingListingReview(service.status, isConsultation) || !partnerId) {
+    return getServiceManagementViewPath(service)
+  }
+
+  if (isConsultation) {
+    return consultationDetailPath(partnerId, service._id)
+  }
+
+  return serviceDetailPath(partnerId, service._id)
 }
 
 const expertServiceBase = (expertId: string, serviceId: string) =>

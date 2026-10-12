@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
@@ -14,8 +15,8 @@ import {
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
 import {
-  downloadKeyValueReport,
   flattenExportPairs,
+  useDownloadKeyValueReport,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
@@ -36,6 +37,7 @@ const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 
 export function ServicePaymentDetailViewPage() {
   const navigate = useNavigate()
+  const downloadKeyValueReport = useDownloadKeyValueReport()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
@@ -123,7 +125,7 @@ export function ServicePaymentDetailViewPage() {
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
+            Payment &amp; Finance
           </Link>
           <span> / </span>
           <Link to="/finance/services" className="hover:text-brand-text transition-colors">
@@ -299,7 +301,7 @@ export function ServicePaymentDetailViewPage() {
                 toast.success('Note saved')
                 setIsNoteModalOpen(false)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

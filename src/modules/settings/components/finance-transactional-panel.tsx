@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { ExtendSuspensionModal } from './extend-suspension-modal'
 import { SettingsToggle } from './settings-toggle-row'
@@ -40,7 +41,6 @@ function FinanceToggleRow({
   description?: string
   checked: boolean
   onChange: (checked: boolean) => void
-  /** Escrow: description sits under the label+toggle row */
   descriptionBelow?: boolean
 }) {
   return (
@@ -307,7 +307,7 @@ export function FinanceTransactionalPanel({ value, onChange }: FinanceTransactio
             setExtendSuspensionOpen(false)
             toast.success('Membership suspension extended')
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to extend suspension'
+            const message = getApiErrorMessage(error, 'Failed to extend suspension')
             toast.error(message)
             throw error instanceof Error ? error : new Error(message)
           } finally {

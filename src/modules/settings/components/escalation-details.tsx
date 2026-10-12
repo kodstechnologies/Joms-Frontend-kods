@@ -49,9 +49,11 @@ import { escalationColumns } from './escalation-table-columns'
 
 const ESCALATION_SORT_FIELD_MAP = buildCatalogSortFieldMap(ESCALATIONS_TABLE_COLUMNS_CATALOG, {
   'escalation-id': 'escalationId',
+  'entity-title': 'entityTitle',
   'roles-id': 'roleId',
   'role-name': 'roleName',
   'escalation-type': 'escalationType',
+  status: 'status',
   'created-on': 'createdOn',
 })
 
@@ -63,8 +65,12 @@ const ESCALATION_EXPORT_COLUMN_MAP: Record<
     header: 'Escalation ID',
     accessor: (row) => exportDisplayValue(row.escalationId),
   },
+  'entity-title': {
+    header: 'Expert / Entity',
+    accessor: (row) => exportDisplayValue(row.entityTitle),
+  },
   'roles-id': { header: 'Roles ID', accessor: (row) => exportDisplayValue(row.roleId) },
-  'role-name': { header: 'Role Name', accessor: (row) => exportDisplayValue(row.roleName) },
+  'role-name': { header: 'Assigned To', accessor: (row) => exportDisplayValue(row.roleName) },
   'escalation-type': {
     header: 'Escalation Type',
     accessor: (row) => exportDisplayValue(row.escalationType),
@@ -201,8 +207,12 @@ export function EscalationDetails() {
   })
 
   const columns = useMemo(() => {
-    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-      ? tableColumnPreferencesQuery.data.visibleColumnIds
+    const savedVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
+    const rawVisibleIds = savedVisibleIds.length
+      ? [
+          ...savedVisibleIds,
+          ...DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS.filter((id) => !savedVisibleIds.includes(id)),
+        ]
       : DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS
 
     const selectColumn: ColumnDef<EscalationListItem> = {
@@ -251,7 +261,7 @@ export function EscalationDetails() {
       <div className="escalation-header">
         <div>
           <h1 className="referral-page-title">All Escalation</h1>
-          <p className="referral-page-subtitle mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Track revenue, payouts, and financial performance
           </p>
         </div>
@@ -261,7 +271,7 @@ export function EscalationDetails() {
           className="ui-manage-metrics inline-flex items-center gap-2"
           onClick={() => navigate('/metrics/escalations?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

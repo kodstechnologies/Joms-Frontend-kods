@@ -24,7 +24,6 @@ export function useDialogFocusTrap(
         (el) => !el.hasAttribute('disabled') && el.tabIndex !== -1,
       )
 
-    // Only set initial focus if focus is not already inside the dialog
     if (dialog && !dialog.contains(document.activeElement)) {
       focusables()[0]?.focus()
     }

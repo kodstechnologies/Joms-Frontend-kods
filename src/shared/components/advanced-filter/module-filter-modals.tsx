@@ -1,6 +1,6 @@
-import React from 'react'
 import { Filter, RotateCcw } from 'lucide-react'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import type { FilterValues, ModuleFilterConfig } from '@/shared/types/data-filter'
 
@@ -92,7 +92,7 @@ export function ExportDataModal({
   isExporting = false,
 }: ExportDataModalProps) {
   const exportSections = config.exportSections ?? config.sections
-  const [selectedFormat, setSelectedFormat] = React.useState('csv')
+  const { fileFormat } = useDefaultExportFormat()
 
   return (
     <FilterPanelShell
@@ -112,7 +112,7 @@ export function ExportDataModal({
 
           <button
             type="button"
-            onClick={() => onExport(selectedFormat)}
+            onClick={() => onExport(fileFormat)}
             disabled={isExporting}
             className="ui-export-data ui-cta ui-cta-primary w-full sm:w-auto"
           >
@@ -127,19 +127,6 @@ export function ExportDataModal({
           Select the data dimensions to include in your export. Expand each section to configure
           filters.
         </p>
-
-        <div className="mb-4">
-          <label className="mb-1.5 block text-sm font-medium text-white">Export Format</label>
-          <select
-            value={selectedFormat}
-            onChange={(e) => setSelectedFormat(e.target.value)}
-            className="w-full rounded-md border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="csv">CSV Document (.csv)</option>
-            <option value="excel">Excel Document (.xlsx)</option>
-            <option value="pdf">PDF Document (.pdf)</option>
-          </select>
-        </div>
 
         {exportSections.map((section) => (
           <FilterSectionAccordion

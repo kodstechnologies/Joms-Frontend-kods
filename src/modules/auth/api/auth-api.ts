@@ -20,12 +20,14 @@ export type AdminSessionUser = {
   mfaEnabled?: boolean
   status?: string
   subAdminId?: string | null
+  contactSetupCompleted?: boolean
+  requiresContactSetup?: boolean
 }
 
 export type LoginResponse = {
   email: string
   mfaRequired: boolean
-  mfaMethod?: 'emailOtp' | 'authenticator'
+  mfaMethod?: 'emailOtp' | 'authenticator' | 'smsOtp'
   token?: string
   admin?: AdminSessionUser
 }
@@ -53,6 +55,22 @@ export async function sendPartnerPhoneOtp(phone: string) {
     phone,
     type: 'register',
   })
+  return response.data
+}
+
+export async function checkPartnerAvailability(payload: {
+  phone?: string
+  email?: string
+  excludePartnerId?: string
+}) {
+  const response = await authApiClient.post<{
+    success: boolean
+    message: string
+    data?: {
+      phone?: { value: string; available: boolean; message: string | null } | null
+      email?: { value: string; available: boolean; message: string | null } | null
+    }
+  }>('/auth/partners/check-availability', payload)
   return response.data
 }
 

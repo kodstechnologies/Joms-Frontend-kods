@@ -1,6 +1,6 @@
 import type { VenueProfileAnalyticsMetricCard } from '@/modules/expert/utils/venue-profile-analytics-metrics'
 import type { VenueProfileAnalyticsResponse } from '@/modules/expert/type/venue-analytics.types'
-import { exportSheetsToExcel } from '@/shared/utils/export-utils'
+import { exportSheetsToFile } from '@/shared/utils/export-utils'
 
 export type VenueProfileAnalyticsExportData = {
   venueName: string
@@ -12,13 +12,16 @@ export type VenueProfileAnalyticsExportData = {
 const metricItemsToRows = (items?: Array<{ label: string; value: string }>) =>
   (items || []).map((item) => [item.label, item.value])
 
-export async function exportVenueProfileAnalyticsToExcel(data: VenueProfileAnalyticsExportData) {
+export async function exportVenueProfileAnalyticsToExcel(
+  data: VenueProfileAnalyticsExportData,
+  format = 'excel',
+) {
   const date = new Date().toISOString().slice(0, 10)
   const safeName = data.venueName.replace(/[^\w-]+/g, '_').slice(0, 40) || 'venue'
   const filePrefix = `venue_profile_analytics_${safeName}_${date}`
   const analytics = data.analytics
 
-  await exportSheetsToExcel(
+  await exportSheetsToFile(
     [
       {
         name: 'Overview',
@@ -83,5 +86,6 @@ export async function exportVenueProfileAnalyticsToExcel(data: VenueProfileAnaly
       },
     ],
     filePrefix,
+    format,
   )
 }

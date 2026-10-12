@@ -9,7 +9,6 @@ export type FinanceServicesTableColumnCatalogItem = {
 }
 
 export const FINANCE_SERVICES_TABLE_COLUMNS_CATALOG: FinanceServicesTableColumnCatalogItem[] = [
-  // Existing service-specific columns (keep visible)
   {
     id: 'service-id',
     label: 'Service ID',
@@ -59,7 +58,6 @@ export const FINANCE_SERVICES_TABLE_COLUMNS_CATALOG: FinanceServicesTableColumnC
     description: 'Revenue amount',
     defaultVisible: true,
   },
-  // Financial Transactions (Excel) — hidden until data exists
   {
     id: 'transaction-id',
     label: 'Transaction ID',

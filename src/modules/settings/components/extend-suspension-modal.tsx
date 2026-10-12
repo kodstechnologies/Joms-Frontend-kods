@@ -120,7 +120,12 @@ export function ExtendSuspensionModal({
               <input
                 type="datetime-local"
                 value={startDate}
-                onChange={(event) => setStartDate(event.target.value)}
+                max={endDate || undefined}
+                onChange={(event) => {
+                  const next = event.target.value
+                  setStartDate(next)
+                  if (endDate && next && endDate < next) setEndDate('')
+                }}
                 className="ui-input"
               />
             </label>
@@ -129,6 +134,7 @@ export function ExtendSuspensionModal({
               <input
                 type="datetime-local"
                 value={endDate}
+                min={startDate || undefined}
                 onChange={(event) => setEndDate(event.target.value)}
                 className="ui-input"
               />

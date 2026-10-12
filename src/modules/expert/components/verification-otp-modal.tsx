@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -7,6 +8,9 @@ import {
   verifyPartnerEmailOtp,
   verifyPartnerPhoneOtp,
 } from '@/modules/auth/api/auth-api'
+import { OtpInput } from '@/shared/components/form/otp-input'
+import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 type VerificationOtpModalProps = {
   open: boolean
@@ -19,7 +23,12 @@ type VerificationOtpModalProps = {
   verifyOtp?: (target: string, code: string) => Promise<void>
 }
 
-const emptyDigits = (length: number) => Array.from({ length }, () => '')
+const inflightOtpSends = new Map<string, Promise<boolean>>()
+const recentOtpSendAt = new Map<string, number>()
+const OTP_CLIENT_DEDUP_MS = 3_000
+
+const buildOtpSendKey = (type: 'phone' | 'email', value: string) =>
+  `${type}:${value.trim().toLowerCase()}`
 
 export function VerificationOtpModal({
   open,
@@ -31,119 +40,154 @@ export function VerificationOtpModal({
   sendOtp,
   verifyOtp,
 }: VerificationOtpModalProps) {
-  const [otp, setOtp] = useState(() => emptyDigits(length))
+  const [otp, setOtp] = useState('')
   const [timer, setTimer] = useState(30)
-  const [prevOpen, setPrevOpen] = useState(open)
   const [isSending, setIsSending] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const lastSlot = Math.max(length - 1, 0)
+  const [otpSent, setOtpSent] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  const sendOtpRef = useRef(sendOtp)
+  const openSendKeyRef = useRef<string | null>(null)
 
-  if (open !== prevOpen) {
-    setPrevOpen(open)
-    if (open) {
-      setOtp(emptyDigits(length))
-      setTimer(30)
-    }
-  }
+  onCloseRef.current = onClose
+  sendOtpRef.current = sendOtp
 
-  const requestOtp = useCallback(async () => {
-    if (!targetValue?.trim()) return
-    try {
-      if (sendOtp) {
-        await sendOtp(targetValue.trim())
-      } else if (type === 'phone') {
-        await sendPartnerPhoneOtp(targetValue.trim())
-      } else {
-        await sendPartnerEmailOtp(targetValue.trim())
+  const isVisible = open && otpSent
+  useDialogFocusTrap(isVisible, onClose, dialogRef)
+
+  const dispatchOtp = useCallback(
+    async (value: string) => {
+      if (sendOtpRef.current) {
+        await sendOtpRef.current(value)
+        return
       }
-      toast.success(`OTP sent to ${targetValue}`)
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      const msg =
-        error?.response?.data?.message || 'Failed to send OTP. Please check the backend service.'
-      toast.error(msg)
-    }
-  }, [sendOtp, targetValue, type])
+      if (type === 'phone') {
+        await sendPartnerPhoneOtp(value)
+        return
+      }
+      await sendPartnerEmailOtp(value)
+    },
+    [type],
+  )
+
+  const requestOtp = useCallback(
+    async (options?: { force?: boolean }) => {
+      const value = targetValue.trim()
+      if (!value) return false
+
+      const sendKey = buildOtpSendKey(type, value)
+      const now = Date.now()
+
+      if (!options?.force) {
+        const lastSentAt = recentOtpSendAt.get(sendKey) || 0
+        if (now - lastSentAt < OTP_CLIENT_DEDUP_MS) {
+          setOtpSent(true)
+          setTimer(30)
+          return true
+        }
+
+        const existing = inflightOtpSends.get(sendKey)
+        if (existing) {
+          setIsSending(true)
+          try {
+            const ok = await existing
+            if (ok) {
+              setOtpSent(true)
+              setTimer(30)
+            }
+            return ok
+          } finally {
+            setIsSending(false)
+          }
+        }
+      }
+
+      setIsSending(true)
+      const sendPromise = (async () => {
+        try {
+          await dispatchOtp(value)
+          recentOtpSendAt.set(sendKey, Date.now())
+          toast.success(`OTP sent to ${value}`)
+          return true
+        } catch (err: unknown) {
+          toast.error(
+            getApiErrorMessage(err, 'Failed to send OTP. Please check the backend service.'),
+          )
+          return false
+        }
+      })()
+
+      inflightOtpSends.set(sendKey, sendPromise)
+      try {
+        const ok = await sendPromise
+        if (ok) {
+          setOtpSent(true)
+          setTimer(30)
+        }
+        return ok
+      } finally {
+        setIsSending(false)
+        window.setTimeout(() => {
+          if (inflightOtpSends.get(sendKey) === sendPromise) {
+            inflightOtpSends.delete(sendKey)
+          }
+        }, 1500)
+      }
+    },
+    [dispatchOtp, targetValue, type],
+  )
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      openSendKeyRef.current = null
+      setOtp('')
+      setTimer(30)
+      setOtpSent(false)
+      setIsSending(false)
+      setIsVerifying(false)
+      return
+    }
 
-    void requestOtp()
+    const value = targetValue.trim()
+    if (!value) return
 
-    const interval = setInterval(() => {
+    const sendKey = buildOtpSendKey(type, value)
+    if (openSendKeyRef.current === sendKey) return
+    openSendKeyRef.current = sendKey
+
+    let cancelled = false
+    void requestOtp().then((ok) => {
+      if (cancelled || ok) return
+      openSendKeyRef.current = null
+      onCloseRef.current()
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, requestOtp, targetValue, type])
+
+  useEffect(() => {
+    if (!isVisible) return
+
+    const interval = window.setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0))
     }, 1000)
 
-    const timerFocus = setTimeout(() => {
-      inputRefs.current[0]?.focus()
-    }, 100)
+    return () => window.clearInterval(interval)
+  }, [isVisible])
 
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      clearInterval(interval)
-      clearTimeout(timerFocus)
-      document.body.style.overflow = previousOverflow
-    }
-  }, [open, requestOtp])
-
-  if (!open) return null
-
-  const handleInputChange = (index: number, value: string) => {
-    const clean = value.replace(/\D/g, '')
-    if (!clean) {
-      const nextOtp = [...otp]
-      nextOtp[index] = ''
-      setOtp(nextOtp)
-      return
-    }
-
-    const nextOtp = [...otp]
-    if (clean.length > 1) {
-      const digits = clean.slice(0, length).split('')
-      digits.forEach((digit, dIdx) => {
-        if (index + dIdx < length) {
-          nextOtp[index + dIdx] = digit
-        }
-      })
-      setOtp(nextOtp)
-      const nextFocusIdx = Math.min(index + digits.length, lastSlot)
-      inputRefs.current[nextFocusIdx]?.focus()
-      return
-    }
-
-    nextOtp[index] = clean.slice(-1)
-    setOtp(nextOtp)
-
-    if (index < lastSlot) {
-      inputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-  }
+  if (typeof document === 'undefined' || !isVisible) return null
 
   const handleResend = async () => {
     if (isSending) return
-    setIsSending(true)
-    try {
-      setTimer(30)
-      setOtp(emptyDigits(length))
-      inputRefs.current[0]?.focus()
-      await requestOtp()
-    } finally {
-      setIsSending(false)
-    }
+    setOtp('')
+    await requestOtp({ force: true })
   }
 
   const handleVerify = async () => {
-    const fullOtp = otp.join('')
-    if (fullOtp.length < length) {
+    if (otp.length < length) {
       toast.error(`Please enter the complete ${length}-digit OTP.`)
       return
     }
@@ -151,11 +195,11 @@ export function VerificationOtpModal({
     try {
       setIsVerifying(true)
       if (verifyOtp) {
-        await verifyOtp(targetValue.trim(), fullOtp)
+        await verifyOtp(targetValue.trim(), otp)
       } else if (type === 'phone') {
-        await verifyPartnerPhoneOtp(targetValue.trim(), fullOtp)
+        await verifyPartnerPhoneOtp(targetValue.trim(), otp)
       } else {
-        await verifyPartnerEmailOtp(targetValue.trim(), fullOtp)
+        await verifyPartnerEmailOtp(targetValue.trim(), otp)
       }
 
       toast.success(
@@ -164,9 +208,7 @@ export function VerificationOtpModal({
       onVerified()
       onClose()
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      const msg = error?.response?.data?.message || 'Invalid or expired OTP. Please try again.'
-      toast.error(msg)
+      toast.error(getApiErrorMessage(err, 'Invalid or expired OTP. Please try again.'))
     } finally {
       setIsVerifying(false)
     }
@@ -175,13 +217,14 @@ export function VerificationOtpModal({
   const title = type === 'email' ? 'Verify Email ID' : 'Verify Phone Number'
   const subtitle = `Enter the ${length}-digit OTP sent to ${targetValue || (type === 'email' ? 'your email' : 'your phone number')}`
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#050505]/80 px-4 py-6"
+      className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-[#050505]/80 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="verification-otp-modal-title"
@@ -206,43 +249,14 @@ export function VerificationOtpModal({
         </div>
 
         <div className="my-8">
-          <div className="flex items-center justify-center gap-3 sm:gap-5">
-            {otp.map((digit, index) => (
-              <div
-                key={index}
-                className="flex cursor-text flex-col items-center"
-                onClick={() => inputRefs.current[index]?.focus()}
-              >
-                <input
-                  ref={(el) => {
-                    inputRefs.current[index] = el
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleInputChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="h-10 w-[42px] bg-transparent text-center text-2xl font-bold text-white caret-white focus:outline-none sm:w-[50px]"
-                />
-                <svg
-                  className={`mt-1 h-[10px] w-[42px] transition-colors sm:w-[50px] ${
-                    digit ? 'text-white' : 'text-white/40'
-                  }`}
-                  viewBox="0 0 50 10"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M 2 1.5 C 2 7, 7 8.5, 12 8.5 L 38 8.5 C 43 8.5, 48 7, 48 1.5"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            ))}
-          </div>
+          <OtpInput
+            length={length}
+            value={otp}
+            onChange={setOtp}
+            autoFocus
+            disabled={isVerifying}
+            className="gap-3 sm:gap-5"
+          />
 
           <div className="mt-6 text-center">
             {timer > 0 ? (
@@ -253,7 +267,7 @@ export function VerificationOtpModal({
               <button
                 type="button"
                 disabled={isSending}
-                onClick={handleResend}
+                onClick={() => void handleResend()}
                 className="text-xs font-semibold text-[#F6CB86] transition-colors hover:underline disabled:opacity-50"
               >
                 {isSending ? 'Sending OTP…' : 'Resend OTP'}
@@ -273,7 +287,7 @@ export function VerificationOtpModal({
           <button
             type="button"
             disabled={isVerifying}
-            onClick={handleVerify}
+            onClick={() => void handleVerify()}
             className="inline-flex h-11 w-[238px] flex-1 items-center justify-center gap-2 rounded-xl bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-xs font-semibold text-[#050505] transition-all hover:brightness-95 disabled:opacity-60"
           >
             <span>{isVerifying ? 'Verifying…' : 'Verify OTP'}</span>
@@ -283,6 +297,7 @@ export function VerificationOtpModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

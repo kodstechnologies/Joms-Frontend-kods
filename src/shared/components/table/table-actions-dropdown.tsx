@@ -1,13 +1,15 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { MoreVertical } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
-
-type MenuPosition = {
-  top: number
-  left: number
-}
 
 type TableActionsDropdownProps = {
   label: string
@@ -15,9 +17,16 @@ type TableActionsDropdownProps = {
   onOpenChange: (open: boolean) => void
   children: ReactNode
   menuClassName?: string
+  buttonClassName?: string
   menuWidth?: number
+  maxVisibleItems?: number
   tone?: 'dark' | 'light'
 }
+
+const MENU_GAP = 8
+const VIEWPORT_PAD = 8
+const ACTION_ITEM_HEIGHT_PX = 40
+const MENU_VERTICAL_PADDING_PX = 12
 
 export function TableActionsDropdown({
   label,
@@ -25,52 +34,133 @@ export function TableActionsDropdown({
   onOpenChange,
   children,
   menuClassName,
+  buttonClassName,
   menuWidth = 192,
+  maxVisibleItems,
   tone = 'light',
 }: TableActionsDropdownProps) {
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const [position, setPosition] = useState<MenuPosition>({ top: 0, left: 0 })
-
-  const updatePosition = useCallback(() => {
-    const trigger = triggerRef.current
-    if (!trigger) return
-
-    const rect = trigger.getBoundingClientRect()
-    const menuHeight = menuRef.current?.offsetHeight ?? 0
-    const width = menuRef.current?.offsetWidth ?? menuWidth
-    const gap = 4
-
-    const spaceBelow = window.innerHeight - rect.bottom
-    const openUpward =
-      menuHeight > 0 && spaceBelow < menuHeight + gap && rect.top > menuHeight + gap
-
-    const top = openUpward ? rect.top - menuHeight - gap : rect.bottom + gap
-    const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8)
-
-    setPosition({ top, left })
-  }, [menuWidth])
+  const [placement, setPlacement] = useState<{
+    style: CSSProperties
+    openUp: boolean
+  } | null>(null)
 
   useLayoutEffect(() => {
     if (!isOpen) return
 
-    updatePosition()
-    const frame = requestAnimationFrame(updatePosition)
+    const update = () => {
+      const button = buttonRef.current
+      const menu = menuRef.current
+      if (!button) return
 
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
+      const icon = button.querySelector('svg')
+      const rect = button.getBoundingClientRect()
+      const alignRect = icon?.getBoundingClientRect() ?? rect
+      const height = menu?.offsetHeight || 0
+      const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP
+      const openUp = height > 0 && spaceBelow < height && rect.top > height + MENU_GAP
+      const top = openUp
+        ? Math.max(VIEWPORT_PAD, rect.top - MENU_GAP - height)
+        : rect.bottom + MENU_GAP
 
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
+      setPlacement({
+        openUp,
+        style: {
+          position: 'fixed',
+          top,
+          right: window.innerWidth - (alignRect.left + alignRect.width / 2),
+          left: 'auto',
+          width: menuWidth,
+          minWidth: menuWidth,
+          maxWidth: menuWidth,
+          zIndex: 2000,
+          margin: 0,
+          transform: 'none',
+        },
+      })
     }
-  }, [isOpen, updatePosition, children])
+
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [isOpen, menuWidth, children, maxVisibleItems])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) return
+      onOpenChange(false)
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onOpenChange(false)
+    }
+
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isOpen, onOpenChange])
+
+  const scrollStyle: CSSProperties | undefined =
+    maxVisibleItems && maxVisibleItems > 0
+      ? {
+          maxHeight: MENU_VERTICAL_PADDING_PX + maxVisibleItems * ACTION_ITEM_HEIGHT_PX,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+        }
+      : undefined
+
+  const menu = isOpen ? (
+    <div
+      ref={menuRef}
+      role="menu"
+      className={cn(
+        'ui-table-actions-menu',
+        placement?.openUp && 'ui-table-actions-menu-up',
+        tone === 'dark' && 'ui-table-actions-menu-dark',
+        maxVisibleItems ? 'ui-table-actions-menu-scroll' : null,
+        menuClassName,
+      )}
+      style={
+        placement?.style
+          ? { ...placement.style, ...scrollStyle }
+          : {
+              position: 'fixed',
+              top: -9999,
+              left: -9999,
+              width: menuWidth,
+              minWidth: menuWidth,
+              maxWidth: menuWidth,
+              zIndex: 2000,
+              margin: 0,
+              visibility: 'hidden',
+              ...scrollStyle,
+            }
+      }
+    >
+      {children}
+    </div>
+  ) : null
 
   return (
-    <>
+    <div
+      ref={rootRef}
+      className="relative inline-flex shrink-0"
+      style={{ position: 'relative', width: 24, height: 24 }}
+    >
       <button
-        ref={triggerRef}
+        ref={buttonRef}
         type="button"
         aria-label={label}
         aria-expanded={isOpen}
@@ -79,38 +169,18 @@ export function TableActionsDropdown({
           onOpenChange(!isOpen)
         }}
         className={cn(
-          'rounded p-1 transition-colors',
+          'flex size-full items-center justify-center rounded transition-colors',
           tone === 'light'
             ? 'text-muted hover:text-brand-text hover:bg-white/10'
             : 'text-brand-muted hover:text-brand-text hover:bg-white/10',
+          buttonClassName,
         )}
       >
         <MoreVertical className="icon-sm" aria-hidden="true" />
       </button>
 
-      {isOpen &&
-        createPortal(
-          <>
-            <div
-              className="fixed inset-0 z-[100]"
-              onClick={() => onOpenChange(false)}
-              aria-hidden="true"
-            />
-            <div
-              ref={menuRef}
-              style={{ top: position.top, left: position.left, minWidth: menuWidth }}
-              className={cn(
-                'ui-table-actions-menu fixed z-[101]',
-                tone === 'dark' && 'ui-table-actions-menu-dark',
-                menuClassName,
-              )}
-            >
-              {children}
-            </div>
-          </>,
-          document.body,
-        )}
-    </>
+      {menu && typeof document !== 'undefined' ? createPortal(menu, document.body) : null}
+    </div>
   )
 }
 

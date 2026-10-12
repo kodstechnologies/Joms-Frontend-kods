@@ -3,11 +3,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
 import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
+import {
   AlertOctagon,
   ArrowLeft,
+  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -16,6 +24,7 @@ import {
   MapPin,
   RotateCcw,
   Star,
+  Wallet,
 } from 'lucide-react'
 
 import {
@@ -42,6 +51,8 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { getListingStatusDisplay } from '../../utils/management-status'
+import { resolveAmenityMediaUrl } from '../../utils/venue-form'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import {
   useAdminEscalation,
@@ -56,12 +67,15 @@ import {
 } from '@/modules/settings/hooks/use-templates'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { SafeImage } from '@/shared/components/media/safe-image'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 
 type AmenitySubCategory = {
   _id: string
   name: string
   image?: string
   icon?: string
+  icon3D?: string
+  vectorIcon?: string
 }
 
 type AmenityCategory = {
@@ -130,12 +144,15 @@ function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
   return (data.overview.amenities?.amenities || []).flatMap((amenity) => {
     const category = categories.get(String(amenity.categoryId))
     if (Array.isArray(amenity.items) && amenity.items.length) {
-      return amenity.items.map((item) => ({
-        id: `${amenity.categoryId}-${item._id}`,
-        categoryName: amenity.category || category?.category || String(amenity.categoryId),
-        name: item.name || String(item._id),
-        image: item.image || item.icon || null,
-      }))
+      return amenity.items.map((item) => {
+        const subCategory = subCategories.get(String(item._id))
+        return {
+          id: `${amenity.categoryId}-${item._id}`,
+          categoryName: amenity.category || category?.category || String(amenity.categoryId),
+          name: item.name || subCategory?.name || String(item._id),
+          image: resolveAmenityMediaUrl(item) || resolveAmenityMediaUrl(subCategory),
+        }
+      })
     }
 
     return (amenity.subCategoryIds || []).map((subCategoryId) => {
@@ -145,7 +162,7 @@ function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
         id: `${amenity.categoryId}-${id}`,
         categoryName: category?.category || String(amenity.categoryId),
         name: subCategory?.name || id,
-        image: subCategory?.image || subCategory?.icon || null,
+        image: resolveAmenityMediaUrl(subCategory),
       }
     })
   })
@@ -171,6 +188,8 @@ export function SpaceDetailsPage() {
   const [endDate, setEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
+  const [viewerKind, setViewerKind] = useState<'carousel' | 'gallery'>('carousel')
 
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
@@ -298,6 +317,20 @@ export function SpaceDetailsPage() {
 
     if (modalAction === 'suspend' && !suspendIndefinitely && (!startDate || !endDate)) {
       toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (modalAction === 'suspend' && !suspendIndefinitely && isStartBeforeToday(startDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (
+      modalAction === 'suspend' &&
+      !suspendIndefinitely &&
+      isEndOnOrBeforeStart(startDate, endDate)
+    ) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 
@@ -535,6 +568,15 @@ export function SpaceDetailsPage() {
     ...(gallery?.spaceCoverImages || []),
     ...(gallery?.galleryImages || []),
   ]
+  const carouselMediaItems = carouselImages.map((url, index) => ({
+    url,
+    title: `${spaceName} ${index + 1}`,
+  }))
+  const galleryMediaItems = galleryImages.map((image, index) => ({
+    url: image.url,
+    title: `Gallery ${index + 1}`,
+  }))
+  const mediaItems = viewerKind === 'carousel' ? carouselMediaItems : galleryMediaItems
   const imageCount = carouselImages.length
   const activeImage =
     imageCount > 0 ? carouselImages[Math.min(activeImageIndex, imageCount - 1)] : null
@@ -557,9 +599,13 @@ export function SpaceDetailsPage() {
   const isHidden = Boolean(detailSpace?.isHidden || summary?.isHidden)
   const isSuspended = Boolean(detailSpace?.isSuspend || summary?.isSuspend)
   const spaceStatus = detailSpace?.status ?? summary?.status ?? 'submitted'
+  const listingStatus = getListingStatusDisplay(spaceStatus, {
+    isSuspend: isSuspended,
+    isDeleted: isHidden,
+  })
   const isDecisionPending = spaceStatus === 'submitted'
   const decisionDisabled = !isDecisionPending || spaceStatusMutation.isPending || !spaceId
-  const escalateDisabled = !isDecisionPending || escalateVenueSpace.isPending || !spaceId
+  const escalateDisabled = spaceStatus === 'approved' || escalateVenueSpace.isPending || !spaceId
   const escalation = escalationData?.data
   const isEscalateFlow = decisionVariant === 'escalate'
   const escalationOptions: DecisionActionModalOption[] =
@@ -580,16 +626,20 @@ export function SpaceDetailsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Space Details</span>
           </button>
-          <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={backToProfile}
-              className="transition-colors hover:text-white"
-            >
-              {venue.name}
-            </button>
-            <span className="text-muted/40">/</span>
-            <span className="font-bold text-white">{spaceName}</span>
+          <span className={cn('ml-7 w-fit', listingStatus.className)}>
+            {isHidden ? 'Hidden' : listingStatus.label}
+          </span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                {
+                  label: venue.name,
+                  to: venueId ? `/venues/management/profile/${venueId}` : undefined,
+                },
+                { label: spaceName, isActive: true },
+              ]}
+            />
           </div>
         </div>
 
@@ -605,11 +655,13 @@ export function SpaceDetailsPage() {
             icon={<img src={editIcon} alt="edit" className="size-3.5" />}
             onClick={() => {
               setActionsOpen(false)
-              if (!venueId) {
+              if (!venueId || !spaceId) {
                 toast.error('Venue ID is missing.')
                 return
               }
-              navigate(`/venues/management/create?venueId=${venueId}&mode=edit`)
+              navigate(
+                `/venues/management/create?venueId=${venueId}&spaceId=${encodeURIComponent(spaceId)}&mode=edit`,
+              )
             }}
           >
             Edit Profile
@@ -641,7 +693,27 @@ export function SpaceDetailsPage() {
           >
             Analytics
           </TableActionsItem>
-          {!isSuspended && (
+          <TableActionsItem
+            tone="light"
+            icon={<CalendarDays className="size-3.5" />}
+            onClick={() => {
+              setActionsOpen(false)
+              navigate(`/venues/management/profile/${venueId}/space/${spaceId}/bookings`)
+            }}
+          >
+            View Bookings
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Wallet className="size-3.5" />}
+            onClick={() => {
+              setActionsOpen(false)
+              navigate(`/venues/management/profile/${venueId}/space/${spaceId}/revenue`)
+            }}
+          >
+            View Revenue & Payouts
+          </TableActionsItem>
+          {!isSuspended && allowDisableVenues ? (
             <TableActionsItem
               tone="light"
               icon={<AlertOctagon className="size-3.5" />}
@@ -649,19 +721,31 @@ export function SpaceDetailsPage() {
             >
               Suspend Space
             </TableActionsItem>
-          )}
+          ) : null}
         </TableActionsDropdown>
       </header>
 
       {(isHidden || isSuspended) && (
         <div className="text-body-sm rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 font-semibold text-amber-200">
-          This space is currently {isSuspended ? 'suspended' : 'hidden'} and is not visible in
+          This space is currently {isSuspended ? 'Suspended' : 'hidden'} and is not visible in
           partner-facing listings.
         </div>
       )}
 
       <div className="rounded-brand-lg bg-brand-surface relative h-64 w-full overflow-hidden border border-white/5">
-        <SafeImage src={activeImage} alt={spaceName} className="size-full object-cover" />
+        {activeImage ? (
+          <button
+            type="button"
+            aria-label="Open image viewer"
+            onClick={() => {
+              setViewerKind('carousel')
+              setMediaIndex(activeImageIndex)
+            }}
+            className="size-full"
+          >
+            <SafeImage src={activeImage} alt={spaceName} className="size-full object-cover" />
+          </button>
+        ) : null}
 
         {imageCount > 1 && (
           <>
@@ -818,11 +902,13 @@ export function SpaceDetailsPage() {
         {galleryImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {galleryImages.slice(0, 6).map((image, index) => (
-              <a
+              <button
                 key={`${image.url}-${index}`}
-                href={image.url}
-                target="_blank"
-                rel="noreferrer"
+                type="button"
+                onClick={() => {
+                  setViewerKind('gallery')
+                  setMediaIndex(index)
+                }}
                 className="block aspect-[4/3] overflow-hidden rounded-md border border-white/5 bg-black"
               >
                 <SafeImage
@@ -830,7 +916,7 @@ export function SpaceDetailsPage() {
                   alt={`Gallery ${index + 1}`}
                   className="size-full object-cover"
                 />
-              </a>
+              </button>
             ))}
           </div>
         ) : (
@@ -896,7 +982,8 @@ export function SpaceDetailsPage() {
             onEscalate={() => openDecisionModal('escalate')}
             onReject={() => openDecisionModal('reject')}
             showEscalate
-            approveDisabled={decisionDisabled || !allowApproveVenues}
+            showApprove={allowApproveVenues}
+            approveDisabled={decisionDisabled}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}
@@ -905,6 +992,14 @@ export function SpaceDetailsPage() {
       </div>
 
       <SpaceBookingsSection spaceId={spaceId} />
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
 
       <DecisionActionModal
         open={decisionModalOpen}

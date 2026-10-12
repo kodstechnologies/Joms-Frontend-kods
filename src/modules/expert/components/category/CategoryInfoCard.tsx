@@ -8,6 +8,7 @@ interface Props {
     name: string
     icon?: string
     image?: string
+    icon3D?: string
     status: string
     services: number
     experts: number
@@ -31,7 +32,7 @@ function getStatusClass(status: string) {
 }
 
 const CategoryInfoCard = ({ category }: Props) => {
-  const mediaSrc = category.image || category.icon
+  const mediaSrc = category.image || category.icon || category.icon3D
   const bannerSrc = mediaSrc || CATEGORY_VIEW_PLACEHOLDER_IMAGE
   const isIconOnly = Boolean(category.icon && !category.image)
 

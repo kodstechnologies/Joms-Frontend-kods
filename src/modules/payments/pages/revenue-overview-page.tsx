@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, SquarePen, Tag, Trash2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { AlertTriangle, Eye, SquarePen, Tag, Trash2, User } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import type { RevenueOverviewRow } from '@/modules/payments/types/finance-table-rows'
 import {
@@ -14,6 +16,7 @@ import {
 } from '@/modules/payments/hooks/use-finance'
 import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
+import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import {
   DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
   FINANCE_REVENUE_LEGACY_COLUMN_ID_MAP,
@@ -22,7 +25,10 @@ import {
 } from '@/modules/payments/config/finance-revenue-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
-import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  mapPaymentToRevenueRow,
+  needsPartnerDisplayName,
+} from '@/modules/payments/utils/finance-mappers'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -149,7 +155,27 @@ export function RevenueOverviewPage() {
 
   const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
 
-  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToRevenueRow), [data])
+  const payments = useMemo(() => (data?.data?.rows ?? []) as FinancePayment[], [data])
+
+  const partnerIdsNeedingLookup = useMemo(() => {
+    const ids = payments
+      .filter((payment) => needsPartnerDisplayName(payment))
+      .map((payment) => String(payment.partnerId || payment.moduleSnapshot?.partnerId || ''))
+      .filter(Boolean)
+    return [...new Set(ids)].sort()
+  }, [payments])
+
+  const { data: partnerNameMap } = useQuery({
+    queryKey: ['finance-revenue-partner-names', partnerIdsNeedingLookup.join(',')],
+    queryFn: () => fetchPartnerDisplayNames(partnerIdsNeedingLookup),
+    enabled: partnerIdsNeedingLookup.length > 0,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const rows = useMemo(
+    () => payments.map((payment) => mapPaymentToRevenueRow(payment, partnerNameMap)),
+    [payments, partnerNameMap],
+  )
   const meta = data?.data?.meta
 
   const {
@@ -170,7 +196,16 @@ export function RevenueOverviewPage() {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchFinanceRevenue(params)
       const payments = (result.data?.rows ?? []) as FinancePayment[]
-      return { data: payments.map(mapPaymentToRevenueRow) }
+      const exportLookupIds = [
+        ...new Set(
+          payments
+            .filter((payment) => needsPartnerDisplayName(payment))
+            .map((payment) => String(payment.partnerId || payment.moduleSnapshot?.partnerId || ''))
+            .filter(Boolean),
+        ),
+      ]
+      const nameMap = exportLookupIds.length ? await fetchPartnerDisplayNames(exportLookupIds) : {}
+      return { data: payments.map((payment) => mapPaymentToRevenueRow(payment, nameMap)) }
     }
     return createRevenueFilteredExportHandler(
       fetchForExport,
@@ -211,6 +246,21 @@ export function RevenueOverviewPage() {
             }}
           >
             View Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+            onClick={() => {
+              setActiveDropdownId(null)
+              const partnerId = String(record.partnerId || '').trim()
+              if (!partnerId) {
+                toast.error('Partner profile is not available for this record')
+                return
+              }
+              navigate(`/experts/management/profile/${encodeURIComponent(partnerId)}`)
+            }}
+          >
+            View Partner
           </TableActionsItem>
           <TableActionsItem
             icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -276,7 +326,7 @@ export function RevenueOverviewPage() {
             if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
           }}
           onChange={toggleVisibleRows}
-          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -286,7 +336,7 @@ export function RevenueOverviewPage() {
           checked={selectedRowIds.includes(row.original.id)}
           onChange={() => toggleRowSelection(row.original.id)}
           onClick={(event) => event.stopPropagation()}
-          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -405,7 +455,7 @@ export function RevenueOverviewPage() {
         header: 'Settlement Status',
         cell: ({ row }) => {
           const status = (row.original as { settlementStatus?: string }).settlementStatus
-          return status ? <FinanceTableStatusBadge status={status} /> : '—'
+          return status && status !== '—' ? <FinanceTableStatusBadge status={status} /> : '—'
         },
       },
       'compliance-status': {
@@ -413,7 +463,7 @@ export function RevenueOverviewPage() {
         header: 'Compliance Status',
         cell: ({ row }) => {
           const status = (row.original as { complianceStatus?: string }).complianceStatus
-          return status ? <FinanceTableStatusBadge status={status} /> : '—'
+          return status && status !== '—' ? <FinanceTableStatusBadge status={status} /> : '—'
         },
       },
       'last-updated': {
@@ -459,12 +509,12 @@ export function RevenueOverviewPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Revenue Overview</h1>
-          <p className="text-body-sm text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Manage and monitor all financial transactions
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-              Finance Management
+              Payment &amp; Finance
             </Link>
             <span> / </span>
             <span className="text-brand-text font-semibold">Revenue Overview</span>
@@ -474,7 +524,7 @@ export function RevenueOverviewPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-revenue?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
@@ -526,7 +576,7 @@ export function RevenueOverviewPage() {
                 toast.success('Note saved')
                 setNoteTarget(null)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

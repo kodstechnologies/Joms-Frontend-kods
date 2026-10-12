@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { Service } from '../type/service'
 import type { ServiceReportItem } from '../components/service-report-detail-modal'
 import { renderTableDateTimeCell as formatDateTime } from '@/shared/components/table/table-datetime-column'
-import { getManagementStatusDisplay } from './management-status'
+import { getListingStatusDisplay } from './management-status'
 
 const dash = (value: unknown): ReactNode => {
   if (value === null || value === undefined || value === '') return '—'
@@ -143,9 +143,11 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
       header: 'Status',
       accessorFn: (row) => row.status ?? '',
       cell: ({ row }) => {
-        const { label, className } = getManagementStatusDisplay(row.original.status, {
-          isSuspend: row.original.isSuspend,
-          isDeleted: row.original.status === 'deleted',
+        const statusForDisplay =
+          row.original.isPaused || row.original.status === 'paused' ? 'paused' : row.original.status
+        const { label, className } = getListingStatusDisplay(statusForDisplay, {
+          isSuspend: row.original.isSuspend || row.original.status === 'suspended',
+          isDeleted: Boolean(row.original.isDeleted) || row.original.status === 'deleted',
         })
         return <span className={className}>{label}</span>
       },

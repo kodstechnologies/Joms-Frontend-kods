@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Eye, EyeOff, Trash2 } from 'lucide-react'
 
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
+import { useVenueDocumentRules } from '../hooks/use-venue-kyc'
 import type { VenueOnboardingKyc, VenueOnboardingReviewVenue } from '../type/venue-onboarding'
 import {
-  formatHostingSince,
+  getVenueKycUploadSections,
   maskSensitiveValue,
+  resolveHostingSinceLabel,
+  type VenueKycDocumentRule,
   type VenueOnboardingFormData,
 } from '../utils/venue-onboarding-form'
-import { RequiredMark } from '@/shared/components/form/required-mark'
 
 type Props = {
   formData: VenueOnboardingFormData
@@ -53,24 +56,33 @@ function DocumentPreview({
   url?: string
   fileName?: string
 }) {
+  const [open, setOpen] = useState(false)
+
   return (
     <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-white/20 bg-black p-2">
       <p className="text-muted mb-1 text-[10px]">{label}</p>
       {url ? (
         <div className="flex w-full items-center justify-between gap-2 px-1">
           <span className="text-muted truncate text-xs">{fileName || 'Uploaded'}</span>
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
             className="text-brand-accent shrink-0 text-[10px] underline"
           >
             View
-          </a>
+          </button>
         </div>
       ) : (
         <span className="text-muted text-xs">Not uploaded</span>
       )}
+      {url ? (
+        <InPageMediaViewer
+          open={open}
+          items={[{ url, title: fileName || label }]}
+          index={0}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }
@@ -110,39 +122,43 @@ export const VenueOnboardingFinalReviewStep = ({
     return '-'
   }, [venue?.venueCategoryId, formData.venueCategoryName, formData.venueCategoryId, categories])
 
-  const hostingSince = venue?.hostingSince
-    ? formatHostingSince(venue.hostingSince.years, venue.hostingSince.months)
-    : formatHostingSince(
-        Number(formData.hostingSinceYears) || undefined,
-        Number(formData.hostingSinceMonths) || undefined,
-      )
+  const hostingSince = resolveHostingSinceLabel(
+    venue?.hostingSince,
+    formData.hostingSinceYears,
+    formData.hostingSinceMonths,
+  )
 
   const coverUrl = venue?.coverImageUrl || formData.coverImageUrl
   const profileUrl = venue?.profileImageUrl || formData.profileImageUrl
   const venueImages = venue?.venueImages?.length ? venue.venueImages : formData.venueImageUrls
 
   const businessKyc = kyc?.businessKyc
+  const { data: documentRulesResponse } = useVenueDocumentRules(
+    businessKyc?.typeOfVenue || formData.typeOfVenue,
+    businessKyc?.hasGST ?? formData.hasGST,
+  )
+  const { mandatory, conditional } = getVenueKycUploadSections(
+    documentRulesResponse?.data,
+    businessKyc?.hasGST ?? formData.hasGST,
+  )
 
-  const panCardPreview = useMemo(
-    () => resolveDocumentPreview(businessKyc?.panCard, formData.panCard),
-    [businessKyc?.panCard, formData.panCard],
-  )
-  const tradeLicensePreview = useMemo(
-    () => resolveDocumentPreview(businessKyc?.tradeLicense, formData.tradeLicense),
-    [businessKyc?.tradeLicense, formData.tradeLicense],
-  )
-  const gstCertificatePreview = useMemo(
-    () => resolveDocumentPreview(businessKyc?.gstCertificate, formData.gstCertificate),
-    [businessKyc?.gstCertificate, formData.gstCertificate],
-  )
-  const gstUndertakingPreview = useMemo(
-    () =>
-      resolveDocumentPreview(
-        businessKyc?.gstUndertakingDocument || businessKyc?.gstUndertaking,
-        formData.gstUndertaking,
-      ),
-    [businessKyc?.gstUndertakingDocument, businessKyc?.gstUndertaking, formData.gstUndertaking],
-  )
+  const resolveDocPreview = (doc: VenueKycDocumentRule) => {
+    const record = (businessKyc || {}) as Record<string, unknown>
+    const fallbackKey =
+      doc.key === 'gstUndertakingDocument'
+        ? 'gstUndertaking'
+        : doc.key === 'gstUndertaking'
+          ? 'gstUndertakingDocument'
+          : ''
+    const url =
+      record[doc.key] ||
+      formData.kycDocumentUrls[doc.key] ||
+      (fallbackKey ? record[fallbackKey] || formData.kycDocumentUrls[fallbackKey] : null)
+    return resolveDocumentPreview(
+      typeof url === 'string' ? url : null,
+      formData.kycDocuments[doc.key] || (fallbackKey ? formData.kycDocuments[fallbackKey] : null),
+    )
+  }
 
   const otherCertificates = businessKyc?.otherCertificates
 
@@ -258,35 +274,38 @@ export const VenueOnboardingFinalReviewStep = ({
           Business identity verification documents
         </h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <DocumentPreview
-            label="PAN Card"
-            url={panCardPreview.url}
-            fileName={panCardPreview.fileName}
-          />
-          <DocumentPreview
-            label="Permits/Certificates"
-            url={tradeLicensePreview.url}
-            fileName={tradeLicensePreview.fileName}
-          />
-          <DocumentPreview
-            label={
-              (businessKyc?.hasGST ?? formData.hasGST)
-                ? 'GST Certificates'
-                : 'GST Undertaking Document'
-            }
-            url={
-              (businessKyc?.hasGST ?? formData.hasGST)
-                ? gstCertificatePreview.url
-                : gstUndertakingPreview.url
-            }
-            fileName={
-              (businessKyc?.hasGST ?? formData.hasGST)
-                ? gstCertificatePreview.fileName
-                : gstUndertakingPreview.fileName
-            }
-          />
+          {mandatory.map((doc) => {
+            const preview = resolveDocPreview(doc)
+            return (
+              <DocumentPreview
+                key={doc.key}
+                label={doc.label}
+                url={preview.url}
+                fileName={preview.fileName}
+              />
+            )
+          })}
         </div>
       </div>
+
+      {conditional.length > 0 && (
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
+          <h3 className="mb-3 text-xs font-bold text-white">Additional / Conditional Documents</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {conditional.map((doc) => {
+              const preview = resolveDocPreview(doc)
+              return (
+                <DocumentPreview
+                  key={doc.key}
+                  label={doc.label}
+                  url={preview.url}
+                  fileName={preview.fileName}
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {otherCertificatePreviews.length > 0 && (
         <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
@@ -305,9 +324,7 @@ export const VenueOnboardingFinalReviewStep = ({
       )}
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <label className="mb-2 block text-xs font-medium text-white">
-          Internal notes <RequiredMark />
-        </label>
+        <label className="mb-2 block text-xs font-medium text-white">Internal notes</label>
         <textarea
           rows={4}
           value={formData.internalNotes}

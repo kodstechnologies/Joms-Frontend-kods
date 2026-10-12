@@ -1,16 +1,18 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye, MessageSquare, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import { useVenueStatusList } from '../../hooks/use-venue-status-list'
 import type { Venue } from '../../type/venue'
-import { getVenueApiId } from '../../utils/venue-list'
+import { getVenueApiId, getVenuePartnerId } from '../../utils/venue-list'
+import { openVenuePartnerProfile } from '../../utils/expert-application-navigation'
 import {
   buildVenueDataColumnsById,
   createVenueSelectColumn,
@@ -29,11 +31,12 @@ import { Button } from '@/shared/components/ui/button'
 import {
   VENUE_PENDING_APPROVALS_MODULE_KEY,
   DEFAULT_VENUE_PENDING_APPROVALS_VISIBLE_COLUMN_IDS,
+  VENUE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 
 export function VenuePendingApprovalsPage() {
   const navigate = useNavigate()
-  const { allowAddVenues } = useVenueManagementControls()
+  const { allowAddVenues, allowApproveVenues } = useVenueManagementControls()
 
   const list = useVenueStatusList({
     preferencesKey: VENUE_PENDING_APPROVALS_MODULE_KEY,
@@ -42,7 +45,38 @@ export function VenuePendingApprovalsPage() {
     sortFieldMap: VENUE_PENDING_SORT_FIELDS,
     exportFileName: 'pending_venues_export',
     exportColumnMap: VENUE_PENDING_EXPORT_COLUMN_MAP,
+    defaultVisibleColumnIds: DEFAULT_VENUE_PENDING_APPROVALS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds: VENUE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
   })
+
+  const openCommunicateWithHost = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openViewHostProfile = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      void openVenuePartnerProfile(partnerId, navigate)
+    },
+    [navigate],
+  )
 
   const columns = useMemo<ColumnDef<Venue>[]>(() => {
     const visibleIds = list.tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
@@ -78,12 +112,13 @@ export function VenuePendingApprovalsPage() {
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? venue._id : null)}
                 menuWidth={190}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
-                    navigate(`/venues/management/create?venueId=${getVenueApiId(venue)}&view=true`)
+                    navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
                   }}
                 >
                   View Details
@@ -97,14 +132,34 @@ export function VenuePendingApprovalsPage() {
                 >
                   View Application
                 </TableActionsItem>
+                {allowApproveVenues ? (
+                  <TableActionsItem
+                    icon={<CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden="true" />}
+                    onClick={() => {
+                      list.setActiveDropdownId(null)
+                      navigate(`/venues/management/application/${getVenueApiId(venue)}`)
+                    }}
+                  >
+                    Approve Application
+                  </TableActionsItem>
+                ) : null}
                 <TableActionsItem
-                  icon={<CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden="true" />}
+                  icon={<User className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
-                    navigate(`/venues/management/application/${getVenueApiId(venue)}`)
+                    openViewHostProfile(venue)
                   }}
                 >
-                  Approve Application
+                  View Host Profile
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openCommunicateWithHost(venue)
+                  }}
+                >
+                  Communicate with Host
                 </TableActionsItem>
               </TableActionsDropdown>
             )
@@ -113,7 +168,7 @@ export function VenuePendingApprovalsPage() {
       ],
       VENUE_PENDING_SORT_FIELDS,
     )
-  }, [list, navigate])
+  }, [allowApproveVenues, list, navigate, openCommunicateWithHost, openViewHostProfile])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -128,16 +183,13 @@ export function VenuePendingApprovalsPage() {
             <span>Pending Approvals</span>
           </button>
 
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-              className="transition-colors hover:text-white"
-            >
-              Venue Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Pending Approvals</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                { label: 'Pending Approvals', isActive: true },
+              ]}
+            />
           </div>
         </header>
 
@@ -151,21 +203,16 @@ export function VenuePendingApprovalsPage() {
             <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            disabled={!allowAddVenues}
-            onClick={() => {
-              if (!allowAddVenues) {
-                toast.error('Creating venues is turned off in Venue Management settings')
-                return
-              }
-              navigate('/venues/management/onboarding')
-            }}
-          >
-            <img src={createIcon} alt="create" className="size-4" />
-            Create Account
-          </Button>
+          {allowAddVenues ? (
+            <Button
+              type="button"
+              className="h-9 w-full md:w-auto"
+              onClick={() => navigate('/venues/management/onboarding')}
+            >
+              <img src={createIcon} alt="create" className="size-4" />
+              Create Account
+            </Button>
+          ) : null}
         </div>
       </div>
 

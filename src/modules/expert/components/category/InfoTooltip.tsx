@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { Info } from 'lucide-react'
 
+import { cn } from '@/shared/lib/cn'
+
 import { categoryFormTheme } from './category-form.theme'
 
 interface InfoTooltipProps {
   text: string
+  width?: number
+  minHeight?: number
 }
 
-const InfoTooltip = ({ text }: InfoTooltipProps) => {
+const InfoTooltip = ({ text, width = 141, minHeight = 44 }: InfoTooltipProps) => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -28,10 +32,14 @@ const InfoTooltip = ({ text }: InfoTooltipProps) => {
       {open ? (
         <div
           role="tooltip"
-          className={`absolute bottom-[calc(100%+6px)] left-1/2 z-20 -translate-x-1/2 ${categoryFormTheme.tooltipClass}`}
+          className={cn(
+            'absolute bottom-[calc(100%+6px)] left-1/2 z-20 -translate-x-1/2',
+            categoryFormTheme.tooltipClass,
+          )}
+          style={{ width, minHeight }}
         >
           {text}
-          <span className="border-t-brand-bg absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" />
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white" />
         </div>
       ) : null}
     </div>

@@ -10,18 +10,20 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
-import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { RotateCw, Star } from 'lucide-react'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 import type {
   MarketplaceMetric,
   ServiceConsultationTrendPoint,
 } from '@/modules/expert/config/service-marketplace.config'
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
+import { formatTrendPercent, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
 import { SERVICE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import {
   DEFAULT_SERVICE_DASHBOARD_METRIC_IDS,
@@ -35,7 +37,7 @@ import type {
   MarketplaceDashboardData,
   MetricTrend,
 } from '@/modules/services/types/marketplace-dashboard.types'
-import { exportServiceMarketplaceExcel } from './service-marketplace-export'
+import { exportServiceMarketplace } from './service-marketplace-export'
 
 const formatCount = (value?: number | null) => (value ?? 0).toLocaleString('en-IN')
 const formatPct = (value?: number | null) => `${value ?? 0}%`
@@ -82,30 +84,18 @@ const ZERO_CONSULTATION_METRICS: MarketplaceMetric[] =
   }))
 
 function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
-  const isFlat = !trend || trend.percentage === 0
   const isUp = trend?.direction === 'up'
 
   return (
-    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+    <div className="flex h-[130px] w-full max-w-[220px] min-w-0 flex-col rounded-[10px] bg-[#050505] p-4">
       <p className="text-body-sm text-muted font-medium">{label}</p>
       <p className="text-h3 mt-2 font-bold tracking-tight text-white">{value}</p>
       <div className="mt-auto flex items-center gap-2 pt-3">
         {trend ? (
           <>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                isFlat
-                  ? 'bg-white/10 text-slate-300'
-                  : isUp
-                    ? 'bg-brand-positive/15 text-brand-positive'
-                    : 'bg-brand-danger/10 text-brand-danger',
-              )}
-            >
-              {!isFlat &&
-                (isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />)}
-              {trend.percentage}%
-            </span>
+            <TrendBadge direction={isUp ? 'up' : 'down'}>
+              {formatTrendPercent(trend.percentage, isUp ? 'up' : 'down')}
+            </TrendBadge>
             <span className="text-muted text-[10px]">{trend.label ?? 'vs last month'}</span>
           </>
         ) : (
@@ -118,7 +108,7 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
+    <div className="flex h-[130px] w-full max-w-[220px] min-w-0 flex-col rounded-[10px] bg-[#050505] p-4">
       <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
       <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
       <div className="mt-auto pt-6">
@@ -140,7 +130,7 @@ function MetricsSection({
   return (
     <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
       <h2 className="text-body-md mb-5 font-bold text-white">{title}</h2>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] justify-items-start gap-3">
         {isLoading
           ? Array.from({ length: Math.max(metrics.length, 8) }).map((_, index) => (
               <MetricCardSkeleton key={`${title}-skeleton-${index}`} />
@@ -154,8 +144,8 @@ function MetricsSection({
 }
 
 const CHART_COLORS = {
-  services: '#2196F3',
-  consultations: '#4CAF50',
+  services: '#155DFC',
+  consultations: '#00A63E',
   revenue: '#FF9800',
 } as const
 
@@ -499,6 +489,7 @@ const buildTrendBucket = (date: string, aggregateByMonth: boolean) => {
 
 export function ServiceMarketplacePage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [selectedRange, setSelectedRange] = useState<string>('last-3-months')
 
   const dateRangePreset: DateRangePreset = RANGE_PRESETS_MAP[selectedRange] || 'last30days'
@@ -618,17 +609,28 @@ export function ServiceMarketplacePage() {
     }
 
     try {
-      exportServiceMarketplaceExcel({
-        serviceMetrics: visibleServiceMetrics,
-        consultationMetrics: visibleConsultationMetrics,
-        trendPoints,
-        rangeLabel: RANGE_LABELS[selectedRange] ?? selectedRange,
-      })
-      toast.success('Exported as Excel')
-    } catch {
-      toast.error('Failed to export data')
+      void exportServiceMarketplace(
+        {
+          serviceMetrics: visibleServiceMetrics,
+          consultationMetrics: visibleConsultationMetrics,
+          trendPoints,
+          rangeLabel: RANGE_LABELS[selectedRange] ?? selectedRange,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export data'))
     }
-  }, [isLoading, visibleServiceMetrics, visibleConsultationMetrics, trendPoints, selectedRange])
+  }, [
+    exportFormat,
+    fileFormat,
+    isLoading,
+    visibleServiceMetrics,
+    visibleConsultationMetrics,
+    trendPoints,
+    selectedRange,
+  ])
 
   return (
     <div className="space-y-6">
@@ -637,22 +639,22 @@ export function ServiceMarketplacePage() {
           <h1 className="text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">
             Service Marketplace
           </h1>
-          <p className="text-sm leading-relaxed text-slate-300 sm:text-base">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Service delivery analytics and marketplace performance metrics
           </p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button
-            className="ui-manage-metrics h-9"
+            className="ui-manage-metrics"
             onClick={() => navigate('/services/dashboard/metrics')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ExportDataIcon className="ui-export-data-icon shrink-0" />
             Manage Metrics
           </Button>
 
-          <Button className="ui-export-data h-9" onClick={handleExportData}>
-            <ExportDataIcon className="size-5 shrink-0" />
+          <Button className="ui-cta ui-cta-primary ui-export-data" onClick={handleExportData}>
+            <ExportDataIcon className="ui-export-data-icon shrink-0" />
             Export Data
           </Button>
         </div>
@@ -671,7 +673,7 @@ export function ServiceMarketplacePage() {
       />
 
       <DashboardCard
-        className="border-white/[0.06] p-5"
+        className="box-border flex h-[635px] w-full max-w-[1201px] flex-col border-0 !p-5"
         title="Service & Consultation Trends"
         rightSlot={
           <div className="flex items-center gap-2">
@@ -689,26 +691,24 @@ export function ServiceMarketplacePage() {
             <button
               type="button"
               aria-label="Refresh trends"
-              className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+              className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
               onClick={() => {
                 dashboardQuery.refetch()
               }}
             >
-              <RefreshCw
-                className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`}
-              />
+              <RotateCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
             </button>
           </div>
         }
       >
         {isLoading ? (
-          <div className="h-[340px] w-full animate-pulse rounded-lg bg-white/5 sm:h-[400px]" />
+          <div className="min-h-0 w-full flex-1 animate-pulse rounded-lg bg-white/5" />
         ) : trendPoints.length === 0 ? (
-          <div className="text-muted flex h-[340px] items-center justify-center text-sm sm:h-[400px]">
+          <div className="text-muted flex min-h-0 flex-1 items-center justify-center text-sm">
             No trend data available.
           </div>
         ) : (
-          <div className="h-[340px] w-full sm:h-[400px]">
+          <div className="min-h-0 w-full flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={trendPoints}
@@ -752,7 +752,8 @@ export function ServiceMarketplacePage() {
                   name="Services Delivered"
                   fill={CHART_COLORS.services}
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={32}
+                  maxBarSize={44}
+                  barSize={44}
                 />
                 <Bar
                   yAxisId="left"
@@ -760,7 +761,8 @@ export function ServiceMarketplacePage() {
                   name="Consultations Completed"
                   fill={CHART_COLORS.consultations}
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={32}
+                  maxBarSize={44}
+                  barSize={44}
                 />
                 <Line
                   yAxisId="right"

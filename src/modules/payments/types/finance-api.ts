@@ -75,6 +75,18 @@ export type FinancePayment = {
   gatewayAmount?: number | null
   platformReceivedAmount?: number | null
   settlementStatus?: string | null
+  complianceStatus?: string | null
+  refundAmount?: number | null
+  discountAmount?: number | null
+  taxAmount?: number | null
+  netRevenue?: number | null
+  platformCommission?: number | null
+  platformCommissionPercent?: number | null
+  gatewayCharges?: number | null
+  partnerPayout?: number | null
+  netProfit?: number | null
+  invoiceNumber?: string | null
+  settlementDate?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -192,6 +204,7 @@ export type FinanceRefund = {
   status: string
   refundType?: string
   paymentId?: string
+  partnerId?: string | null
   beneficiary?: string
   razorpayPaymentId?: string | null
   razorpayRefundId?: string | null
@@ -276,6 +289,13 @@ export type FinanceAdminNote = {
   priority?: string | null
   payload?: Record<string, unknown> | null
   createdAt?: string
+}
+
+export function financeEscalateAssigneeName(note?: FinanceAdminNote | null): string {
+  if (!note) return ''
+  const fromPayload = note.payload?.escalateToAdminName
+  if (typeof fromPayload === 'string' && fromPayload.trim()) return fromPayload.trim()
+  return ''
 }
 
 export type FinanceListParams = {

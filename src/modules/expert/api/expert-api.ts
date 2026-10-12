@@ -16,7 +16,7 @@ export const fetchExperts = async (params?: Record<string, unknown>) => {
   return response.data
 }
 export const fetchExpertById = async (id: string) => {
-  const response = await adminApiClient.get(`/internal/admin/partners/${id}`)
+  const response = await adminApiClient.get(`/admin/internal/admin/partners/${id}`)
 
   return response.data
 }
@@ -265,6 +265,7 @@ export type BulkActionPayload = {
   planId?: string
   newMembershipPlanId?: string
   billingCycleName?: string
+  changeType?: 'upgrade' | 'downgrade' | 'auto'
   isPremium?: boolean
   verificationStatus?: string
   ticketSubject?: string

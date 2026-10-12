@@ -2,9 +2,29 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Banknote,
+  CreditCard,
+  Eye,
+  FileWarning,
+  LayoutList,
+  MessageSquare,
+  User,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { useAdminRefundFlow } from '@/modules/payments/hooks/use-admin-refund-flow'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalateConsultationApplication,
+  escalateServiceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 import { fetchExpertClientele } from '../../api/expert-api'
 import {
@@ -19,6 +39,7 @@ import {
 } from '../../config/expert-clientele-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { buildExpertClienteleMetricCards } from '../../utils/expert-clientele-metrics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
@@ -41,6 +62,7 @@ import {
   buildPrefixedListQueryParams,
   createPrefixedListExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { consultationBookingPath, serviceOrderDetailPath } from '../../lib/service-navigation'
 
 type ClienteleItem = {
   bookingId: string
@@ -73,6 +95,7 @@ type ClienteleItem = {
   refundIssued?: boolean
   refundAmount?: number | null
   refundStatus?: string | null
+  refundId?: string | null
   lastUpdated?: string | null
 }
 
@@ -117,6 +140,7 @@ const EMPTY_METRICS: Metrics = {
 }
 
 const EMPTY_CLIENTELE_ITEMS: ClienteleItem[] = []
+const OPEN_CLIENT_DISPUTE_STATUSES = new Set(['Open', 'Under Review'])
 
 const EXPERT_CLIENTELE_COLUMN_SORT_FIELDS = buildDefaultTableSortFieldMap(
   EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG.map((column) => column.id),
@@ -239,6 +263,20 @@ export function ExpertClientelePage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
+  const [escalateTarget, setEscalateTarget] = useState<ClienteleItem | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+  const { data: assigneesData } = useEscalationAssignees('experts.*')
+
+  const escalationOptions = useMemo<DecisionActionModalOption[]>(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        value: assignee.id,
+        label: assignee.fullname || assignee.email || assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const listQueryParams = useMemo(
     () =>
@@ -257,6 +295,17 @@ export function ExpertClientelePage() {
     setPage(1)
   }, [])
 
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_CLIENTELE_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_EXPERT_CLIENTELE_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
+
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchExpertClientele(expertId, params)
@@ -267,8 +316,9 @@ export function ExpertClientelePage() {
       CLIENTELE_EXPORT_COLUMN_MAP,
       'expert_clientele_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch, expertId])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, expertId, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -280,7 +330,6 @@ export function ExpertClientelePage() {
     onExportData: handleExportData,
   })
 
-  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_CLIENTELE_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(EXPERT_CLIENTELE_MODULE_KEY, [
     ...DEFAULT_EXPERT_CLIENTELE_METRIC_IDS,
   ])
@@ -303,6 +352,7 @@ export function ExpertClientelePage() {
     isLoading: loading,
     isError,
     error,
+    refetch: refetchClientele,
   } = useQuery({
     queryKey: ['expert-clientele', expertId, listQueryParams],
     queryFn: () => fetchExpertClientele(expertId, listQueryParams),
@@ -311,7 +361,7 @@ export function ExpertClientelePage() {
 
   useEffect(() => {
     if (!isError) return
-    toast.error(getApiErrorMessage(error) || 'Failed to load expert clientele')
+    toast.error(getApiErrorMessage(error, 'Failed to load expert clientele'))
   }, [isError, error])
 
   const d = res?.data
@@ -334,6 +384,16 @@ export function ExpertClientelePage() {
     return entries.map(([tier, count]) => `${tier}: ${count}`).join(', ')
   }, [metrics.clientsByMembership])
 
+  const resolvePaymentId = useCallback((item: ClienteleItem) => {
+    return String(item.paymentId || item.transactionId || '').trim()
+  }, [])
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
   const openCommunicate = useCallback(
     (channel: 'email' | 'push') => {
       if (!expertId) {
@@ -348,6 +408,160 @@ export function ExpertClientelePage() {
       navigate(`/communication/create?${params.toString()}`)
     },
     [expertId, navigate],
+  )
+
+  const openViewPaymentDetails = useCallback(
+    (item: ClienteleItem) => {
+      const paymentId = resolvePaymentId(item)
+      if (!paymentId) {
+        toast.error('Payment ID is missing for this booking.')
+        return
+      }
+      navigate(`/finance/revenue/${encodeURIComponent(paymentId)}`)
+    },
+    [navigate, resolvePaymentId],
+  )
+
+  const resolveClienteleOrderUrl = useCallback(
+    (item: ClienteleItem) => {
+      const listingId = String(item.listingId || '').trim()
+      const orderId = String(item.bookingId || '').trim()
+      if (!expertId || !listingId || !orderId) return ''
+
+      const listingType = String(item.listingType || '')
+        .trim()
+        .toLowerCase()
+
+      if (listingType.includes('consultation')) {
+        return consultationBookingPath(expertId, listingId, orderId)
+      }
+
+      if (listingType.includes('custom') || item.bookingSource === 'Custom Order') {
+        return serviceOrderDetailPath(expertId, listingId, orderId, 'proposal')
+      }
+
+      return serviceOrderDetailPath(expertId, listingId, orderId, 'order')
+    },
+    [expertId],
+  )
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!expertId) {
+      toast.error('Expert partner ID is missing.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const orderUrl = resolveClienteleOrderUrl(escalateTarget)
+    if (!orderUrl) {
+      toast.error('Order / listing reference is missing for this booking. Cannot escalate.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const note = escalateAdminNotes.trim()
+    const bookingId = String(escalateTarget.bookingId || '').trim()
+    const paymentId = resolvePaymentId(escalateTarget)
+    const listingId = String(escalateTarget.listingId || '').trim()
+    const isConsultation = String(escalateTarget.listingType || '')
+      .trim()
+      .toLowerCase()
+      .includes('consultation')
+
+    setIsEscalating(true)
+    try {
+      if (isConsultation) {
+        await escalateConsultationApplication(listingId, {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: note,
+          entityTitle: `Clientele booking ${bookingId || '—'} — ${expertName}`,
+          applicationUrl: orderUrl,
+          escalationTarget: 'application',
+          partnerId: expertId,
+          metadata: {
+            source: 'expert_clientele',
+            bookingId,
+            paymentId: paymentId || undefined,
+            listingId,
+            listingType: escalateTarget.listingType,
+            clientId: escalateTarget.clientId,
+            orderUrl,
+          },
+        })
+      } else {
+        await escalateServiceApplication(listingId, {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: note,
+          entityTitle: `Clientele order ${bookingId || '—'} — ${expertName}`,
+          applicationUrl: orderUrl,
+          escalationTarget: 'application',
+          partnerId: expertId,
+          metadata: {
+            source: 'expert_clientele',
+            bookingId,
+            paymentId: paymentId || undefined,
+            listingId,
+            listingType: escalateTarget.listingType,
+            clientId: escalateTarget.clientId,
+            orderUrl,
+          },
+        })
+      }
+      toast.success('Escalated — assigned admin opens order details from My Tasks')
+      closeEscalateModal()
+      navigate(orderUrl)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate booking.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    expertId,
+    expertName,
+    navigate,
+    resolveClienteleOrderUrl,
+    resolvePaymentId,
+    selectedEscalationOption,
+  ])
+
+  const { openRefund, refundModal } = useAdminRefundFlow({
+    onRefunded: () => void refetchClientele(),
+  })
+
+  const openProcessRefund = useCallback(
+    (item: ClienteleItem) => {
+      const existingRefundId = String(item.refundId || '').trim()
+      if (existingRefundId) {
+        navigate(`/finance/refunds/${encodeURIComponent(existingRefundId)}`)
+        return
+      }
+
+      openRefund({
+        paymentId: resolvePaymentId(item),
+        amount: Number(item.orderValue ?? item.price) || 0,
+        reason: `Clientele booking ${item.bookingId}`,
+        refundRequested:
+          Boolean(item.disputeRaised) &&
+          OPEN_CLIENT_DISPUTE_STATUSES.has(String(item.disputeStatus || '')),
+      })
+    },
+    [navigate, openRefund, resolvePaymentId],
   )
 
   const dataColumnsById = useMemo<Record<string, ColumnDef<ClienteleItem>>>(
@@ -501,18 +715,27 @@ export function ExpertClientelePage() {
               label="Booking actions"
               isOpen={activeActionMenu === item.bookingId}
               onOpenChange={(open) => setActiveActionMenu(open ? item.bookingId : null)}
+              menuWidth={240}
+              maxVisibleItems={8}
             >
               <TableActionsItem
                 tone="light"
+                icon={<Eye className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
-                  toast.message(`Booking ${item.bookingId}`)
+                  const orderUrl = resolveClienteleOrderUrl(item)
+                  if (!orderUrl) {
+                    toast.error('Order details are not available for this booking.')
+                    return
+                  }
+                  navigate(orderUrl)
                 }}
               >
                 View Details
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
+                icon={<User className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   if (item.clientId && item.clientId !== '—') {
@@ -526,6 +749,7 @@ export function ExpertClientelePage() {
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
+                icon={<LayoutList className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   if (item.listingType === 'Consultation' && item.listingId) {
@@ -545,6 +769,17 @@ export function ExpertClientelePage() {
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
+                icon={<CreditCard className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openViewPaymentDetails(item)
+                }}
+              >
+                View Payment Details
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   openCommunicate('email')
@@ -552,18 +787,10 @@ export function ExpertClientelePage() {
               >
                 Communicate with Expert
               </TableActionsItem>
-              <TableActionsItem
-                tone="light"
-                onClick={() => {
-                  setActiveActionMenu(null)
-                  openCommunicate('email')
-                }}
-              >
-                Communicate with Client
-              </TableActionsItem>
               {item.disputeRaised ? (
                 <TableActionsItem
                   tone="light"
+                  icon={<FileWarning className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     setActiveActionMenu(null)
                     toast.message(
@@ -578,6 +805,27 @@ export function ExpertClientelePage() {
               ) : null}
               <TableActionsItem
                 tone="light"
+                icon={<AlertTriangle className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  setEscalateTarget(item)
+                }}
+              >
+                Escalate
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<Banknote className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openProcessRefund(item)
+                }}
+              >
+                Process Refund
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<ExportDataIcon className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   onExport()
@@ -602,6 +850,9 @@ export function ExpertClientelePage() {
     navigate,
     onExport,
     openCommunicate,
+    openProcessRefund,
+    openViewPaymentDetails,
+    resolveClienteleOrderUrl,
     tableColumnPreferencesQuery.data,
   ])
 
@@ -637,9 +888,9 @@ export function ExpertClientelePage() {
         <Button
           type="button"
           onClick={() => navigate(manageMetricsPath)}
-          className="ui-manage-metrics h-10 rounded-xl px-5 text-sm font-semibold sm:w-auto"
+          className="ui-manage-metrics"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
@@ -681,6 +932,25 @@ export function ExpertClientelePage() {
         }}
       />
       {exportFilterModals}
+      {refundModal}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate"
+        description="Are you sure you want to escalate this booking? The assigned sub-admin will open the order details page from My Tasks."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

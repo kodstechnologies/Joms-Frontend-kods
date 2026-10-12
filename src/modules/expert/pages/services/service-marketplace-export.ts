@@ -1,3 +1,5 @@
+import { exportSheetsToFile } from '@/shared/utils/export-utils'
+
 type ExportMetric = {
   label: string
   value: string
@@ -448,4 +450,41 @@ export function exportServiceMarketplaceExcel(payload: ExportPayload) {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
+}
+
+export async function exportServiceMarketplace(payload: ExportPayload, format = 'excel') {
+  const normalized = String(format || 'excel')
+    .toLowerCase()
+    .trim()
+  if (normalized === 'excel' || normalized === 'xlsx' || normalized === 'xls') {
+    exportServiceMarketplaceExcel(payload)
+    return
+  }
+
+  await exportSheetsToFile(
+    [
+      {
+        name: 'Service Metrics',
+        headers: ['Metric', 'Value'],
+        rows: payload.serviceMetrics.map((metric) => [metric.label, metric.value]),
+      },
+      {
+        name: 'Consultation Metrics',
+        headers: ['Metric', 'Value'],
+        rows: payload.consultationMetrics.map((metric) => [metric.label, metric.value]),
+      },
+      {
+        name: 'Trends',
+        headers: ['Period', 'Consultations Completed', 'Services Delivered', 'Revenue'],
+        rows: payload.trendPoints.map((point) => [
+          point.month,
+          point.consultationsCompleted,
+          point.servicesDelivered,
+          point.revenue,
+        ]),
+      },
+    ].filter((sheet) => sheet.rows.length > 0),
+    'service_marketplace_dashboard',
+    format,
+  )
 }

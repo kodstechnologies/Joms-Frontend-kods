@@ -4,18 +4,21 @@ import {
   ArrowLeft,
   ArrowLeftRight,
   Clock,
+  KeyRound,
   Trash2,
   Upload,
   UserCheck,
   UserRound,
   X,
 } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AdminNoteModal } from '../components/admin-note-modal'
 import { RbacLoader } from '../components/rbac-loader'
 import { UpdatePasswordModal } from '../components/update-password-modal'
+import { ResetMfaModal } from '../components/reset-mfa-modal'
 import {
   useDeleteSubAdmin,
   useSubAdmin,
@@ -23,6 +26,7 @@ import {
   useSuspendSubAdmin,
   useReactivateSubAdmin,
   useUpdateSubAdminPassword,
+  useResetSubAdminMfa,
 } from '../hooks/use-rbac'
 import { fetchSubAdminLogs } from '../api/rbac-api'
 import type { AuditLog, UpdateSubAdminPasswordPayload } from '../types/rbac'
@@ -30,13 +34,14 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 
 const PAGE_SIZE = 10
 
@@ -61,14 +66,11 @@ const ROLE_HISTORY_EXPORT_COLUMN_MAP: Record<
 }
 
 const HISTORY_SORT_FIELD_MAP = {
-  ...buildDefaultTableSortFieldMap([
-    'previousRole',
-    'changedTo',
-    'changedOn',
-    'changedBy',
-    'adminNote',
-  ]),
+  previousRole: 'previousRole',
+  changedTo: 'changedTo',
   changedOn: 'createdAt',
+  changedBy: 'changedBy',
+  adminNote: 'adminNote',
 }
 
 const formatOverviewDate = (value?: string) => {
@@ -137,9 +139,33 @@ function RolePill({ label }: { label: string }) {
   return <span className="rbac-role-name-pill">{label}</span>
 }
 
+function RolePills({ labels, onSelect }: { labels: string[]; onSelect?: (label: string) => void }) {
+  const names = labels.map((label) => label.trim()).filter(Boolean)
+  if (!names.length) return <span>—</span>
+  return (
+    <span className="inline-flex flex-wrap gap-1.5">
+      {names.map((name) =>
+        onSelect ? (
+          <button
+            key={name}
+            type="button"
+            className="rbac-role-name-pill"
+            onClick={() => onSelect(name)}
+          >
+            {name}
+          </button>
+        ) : (
+          <RolePill key={name} label={name} />
+        ),
+      )}
+    </span>
+  )
+}
+
 export function AdminDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const authUser = useAuthStore((state) => state.user)
 
   const [historyPage, setHistoryPage] = useState(1)
   const serverSort = useServerTableSort({
@@ -151,23 +177,34 @@ export function AdminDetailPage() {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
 
-  const { data: subAdminData, isLoading } = useSubAdmin(id)
-  const { data: logsData, isLoading: logsLoading } = useSubAdminLogs(id, {
-    page: historyPage,
-    limit: PAGE_SIZE,
-    ...enhancedSearch.buildSearchParams(),
-    ...serverSort.sortParams,
-  })
+  const isOwnSuperAdminProfile = Boolean(authUser?.isSuperAdmin && id && id === authUser.id)
+
+  const { data: subAdminData, isLoading } = useSubAdmin(isOwnSuperAdminProfile ? '' : id)
+  const { data: logsData, isLoading: logsLoading } = useSubAdminLogs(
+    isOwnSuperAdminProfile ? '' : id,
+    {
+      page: historyPage,
+      limit: PAGE_SIZE,
+      ...enhancedSearch.buildSearchParams(),
+      ...serverSort.sortParams,
+    },
+  )
 
   const suspendMutation = useSuspendSubAdmin()
   const reactivateMutation = useReactivateSubAdmin()
   const deleteMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
+  const resetMfaMutation = useResetSubAdminMfa()
+
+  const [resetMfaOpen, setResetMfaOpen] = useState(false)
 
   const subAdmin = subAdminData?.data
   const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
   const logsMeta = logsData?.meta
-  const roleLabel = subAdmin?.roles.map((role) => role.name).join(', ') || '—'
+  const roleNames = useMemo(
+    () => subAdmin?.roles.map((role) => role.name).filter(Boolean) ?? [],
+    [subAdmin?.roles],
+  )
 
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
 
@@ -199,6 +236,10 @@ export function AdminDetailPage() {
     onExportData: handleExportData,
   })
 
+  if (isOwnSuperAdminProfile) {
+    return <Navigate to="/settings/access/my-profile" replace />
+  }
+
   const historyColumns = useMemo<ColumnDef<RoleHistoryRow>[]>(
     () =>
       withServerSortMeta(
@@ -213,7 +254,9 @@ export function AdminDetailPage() {
           {
             accessorKey: 'changedTo',
             header: 'Changed To',
-            cell: ({ row }) => <RolePill label={row.original.changedTo} />,
+            cell: ({ row }) => (
+              <RolePills labels={row.original.changedTo.split(',').map((part) => part.trim())} />
+            ),
           },
           {
             accessorKey: 'changedOn',
@@ -252,8 +295,8 @@ export function AdminDetailPage() {
     try {
       await suspendMutation.mutateAsync(id)
       toast.success('Admin suspended')
-    } catch {
-      toast.error('Failed to suspend admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to suspend admin'))
     }
   }, [id, suspendMutation])
 
@@ -261,8 +304,8 @@ export function AdminDetailPage() {
     try {
       await reactivateMutation.mutateAsync(id)
       toast.success('Admin reactivated')
-    } catch {
-      toast.error('Failed to reactivate admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to reactivate admin'))
     }
   }, [id, reactivateMutation])
 
@@ -271,8 +314,8 @@ export function AdminDetailPage() {
       await deleteMutation.mutateAsync(id)
       toast.success('Admin deleted')
       navigate('/settings/access')
-    } catch {
-      toast.error('Failed to delete admin')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to delete admin'))
     }
   }, [deleteMutation, id, navigate])
 
@@ -286,11 +329,24 @@ export function AdminDetailPage() {
         toast.success('Password updated successfully')
         setPasswordModalOpen(false)
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to update password')
+        toast.error(getApiErrorMessage(error, 'Failed to update password'))
       }
     },
     [id, updatePasswordMutation],
   )
+
+  const handleResetMfa = useCallback(async () => {
+    if (!subAdmin) return
+    try {
+      await resetMfaMutation.mutateAsync(id)
+      toast.success(
+        `MFA reset successfully for ${subAdmin.fullname}. They will be prompted to re-configure 2FA.`,
+      )
+      setResetMfaOpen(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to reset MFA'))
+    }
+  }, [id, resetMfaMutation, subAdmin])
 
   if (isLoading || !subAdmin) {
     return <RbacLoader label="Loading admin details..." />
@@ -309,9 +365,14 @@ export function AdminDetailPage() {
           <ArrowLeft className="size-5" aria-hidden="true" />
           <span>Admin Details</span>
         </button>
-        <p className="ad-breadcrumb">
-          Role Based Access / <span>{subAdmin.fullname}</span>
-        </p>
+        <div className="ad-breadcrumb">
+          <PageBreadcrumb
+            items={[
+              { label: 'Role Based Access Control', to: '/settings/access' },
+              { label: subAdmin.fullname, isActive: true },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="ad-toolbar">
@@ -341,20 +402,26 @@ export function AdminDetailPage() {
             <ArrowLeftRight className="size-4" aria-hidden="true" />
             Change Role
           </button>
+          <button
+            type="button"
+            className="ad-btn ad-btn-outline"
+            onClick={() => setResetMfaOpen(true)}
+          >
+            <KeyRound className="size-4" aria-hidden="true" />
+            Reset MFA
+          </button>
           {isActive ? (
-            <button type="button" className="ad-btn ad-btn-danger" onClick={handleSuspend}>
-              <span className="ad-btn-icon-circle">
-                <X className="size-3" aria-hidden="true" />
-              </span>
+            <button type="button" className="ad-btn ad-btn-outline" onClick={handleSuspend}>
+              <X className="size-4" aria-hidden="true" />
               Suspend
             </button>
           ) : (
-            <button type="button" className="ad-btn ad-btn-peach" onClick={handleReactivate}>
+            <button type="button" className="ad-btn ad-btn-outline" onClick={handleReactivate}>
               <UserCheck className="size-4" aria-hidden="true" />
               Reactivate
             </button>
           )}
-          <button type="button" className="ad-btn ad-btn-danger" onClick={handleDelete}>
+          <button type="button" className="ad-btn ad-btn-outline" onClick={handleDelete}>
             <Trash2 className="size-4" aria-hidden="true" />
             Delete User
           </button>
@@ -388,7 +455,16 @@ export function AdminDetailPage() {
               <DetailField label="First Name">{subAdmin.firstName || '—'}</DetailField>
               <DetailField label="Last Name">{subAdmin.lastName || '—'}</DetailField>
               <DetailField label="Role">
-                <RolePill label={roleLabel} />
+                <RolePills
+                  labels={roleNames}
+                  onSelect={(name) => {
+                    const role = subAdmin.roles.find(
+                      (item) => item.name.toLowerCase() === name.toLowerCase(),
+                    )
+                    if (!role?.id) return
+                    navigate(`/settings/access/roles/${role.id}/users`)
+                  }}
+                />
               </DetailField>
               <DetailField label="Last Active">
                 {formatOverviewDate(subAdmin.lastActionAt || subAdmin.updatedAt)}
@@ -398,7 +474,16 @@ export function AdminDetailPage() {
               <DetailField label="Employee ID">{subAdmin.employeeId || '—'}</DetailField>
               <DetailField label="Department">{subAdmin.department || '—'}</DetailField>
               <DetailField label="2FA Status">
-                {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
+                <div className="flex items-center gap-2">
+                  <span>{subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setResetMfaOpen(true)}
+                    className="text-brand-text ml-1 text-xs font-medium underline underline-offset-2 hover:text-white"
+                  >
+                    Reset MFA
+                  </button>
+                </div>
               </DetailField>
               <DetailField label="Workplace">{subAdmin.workplaceFlexibility || '—'}</DetailField>
             </div>
@@ -473,7 +558,7 @@ export function AdminDetailPage() {
             onColumnSearchRemove={enhancedSearch.removeColumnSearch}
             onClearAllSearches={enhancedSearch.clearAll}
             searchPlaceholder="Search by role, note or action"
-            showSearch={false}
+            showSearch
             showAdvancedFilter={false}
             showExport={false}
             showRecordCount={false}
@@ -502,6 +587,14 @@ export function AdminDetailPage() {
         open={Boolean(selectedAdminNote)}
         note={selectedAdminNote ?? undefined}
         onClose={() => setSelectedAdminNote(null)}
+      />
+
+      <ResetMfaModal
+        open={resetMfaOpen}
+        user={subAdmin}
+        isSubmitting={resetMfaMutation.isPending}
+        onClose={() => setResetMfaOpen(false)}
+        onConfirm={handleResetMfa}
       />
 
       {exportFilterModals}

@@ -14,31 +14,37 @@ import {
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
 
-type ActionType = 'upgrade' | 'downgrade' | 'extend' | 'cancel'
+type ActionType = 'upgrade' | 'downgrade' | 'extend' | 'renew' | 'cancel' | 'pause' | 'resume'
+
+type PlanChangePayload = {
+  newMembershipPlanId: string
+  newPlanName?: string
+  billingCycleName?: string
+  reasons: string[]
+  adminNotes?: string
+}
 
 type MembershipActionModalsProps = {
   subscription: MembershipSubscription | null
   action: ActionType | null
   onClose: () => void
-  onUpgrade: (payload: {
-    newMembershipPlanId: string
-    billingCycleName?: string
-    reasons: string[]
-    adminNotes?: string
-  }) => void
-  onDowngrade: (payload: {
-    newMembershipPlanId: string
-    billingCycleName?: string
-    reasons: string[]
-    adminNotes?: string
-  }) => void
+  onUpgrade: (payload: PlanChangePayload) => void
+  onDowngrade: (payload: PlanChangePayload) => void
   onExtend: (payload: { endDate: string; reasons: string[]; adminNotes?: string }) => void
+  onRenew?: (payload: { endDate: string; reasons: string[]; adminNotes?: string }) => void
   onCancel: (payload: {
     reasons: string[]
     adminNotes?: string
     fromDate?: string
     toDate?: string
   }) => void
+  onPause?: (payload: {
+    reasons: string[]
+    adminNotes?: string
+    fromDate?: string
+    toDate?: string
+  }) => void
+  onResume?: (payload?: { reasons?: string[]; adminNotes?: string }) => void
   isSubmitting?: boolean
 }
 
@@ -100,7 +106,6 @@ export function MembershipActionModals({
 }: MembershipActionModalsProps) {
   if (!subscription || !action) return null
 
-  // Remount on action/subscription change so form state resets without setState-in-effect
   return (
     <MembershipActionModalsContent
       key={`${action}-${subscription._id}`}
@@ -126,7 +131,10 @@ function MembershipActionModalsContent({
   onUpgrade,
   onDowngrade,
   onExtend,
+  onRenew,
   onCancel,
+  onPause,
+  onResume,
   isSubmitting = false,
 }: MembershipActionModalsContentProps) {
   const [selectedPlanId, setSelectedPlanId] = useState('')
@@ -206,11 +214,14 @@ function MembershipActionModalsContent({
     setPlanMenuOpen(false)
   }
 
-  if (action === 'extend') {
+  if (action === 'extend' || action === 'renew') {
+    const isRenew = action === 'renew'
     return (
       <MembershipModalShell
-        title="Extend"
-        description="Extend membership plans for the users"
+        title={isRenew ? 'Renew Membership' : 'Extend'}
+        description={
+          isRenew ? 'Renew membership plans for the users' : 'Extend membership plans for the users'
+        }
         onClose={resetAndClose}
         footer={
           <>
@@ -225,13 +236,15 @@ function MembershipActionModalsContent({
               type="button"
               disabled={isSubmitting || !endDate || !selectedReasons.length || !adminNotes.trim()}
               className="ui-cta ui-cta-primary flex-1"
-              onClick={() =>
-                onExtend({
+              onClick={() => {
+                const payload = {
                   endDate,
                   reasons: selectedReasons,
                   adminNotes,
-                })
-              }
+                }
+                if (isRenew && onRenew) onRenew(payload)
+                else onExtend(payload)
+              }}
             >
               Send for approval
             </button>
@@ -265,6 +278,131 @@ function MembershipActionModalsContent({
         <AdminNotesField value={adminNotes} onChange={setAdminNotes} />
 
         <ApprovalNote />
+      </MembershipModalShell>
+    )
+  }
+
+  if (action === 'pause') {
+    return (
+      <MembershipModalShell
+        title="Pause Membership"
+        description="Temporarily pause this user's membership"
+        onClose={resetAndClose}
+        footer={
+          <>
+            <button
+              type="button"
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-white text-[14px] font-semibold text-white hover:bg-white/5"
+              onClick={resetAndClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={
+                isSubmitting ||
+                !fromDate ||
+                !toDate ||
+                toDate < fromDate ||
+                !selectedReasons.length ||
+                !adminNotes.trim()
+              }
+              className="ui-cta ui-cta-primary flex-1"
+              onClick={() => {
+                if (toDate < fromDate) return
+                onPause?.({
+                  reasons: selectedReasons,
+                  adminNotes,
+                  fromDate,
+                  toDate,
+                })
+              }}
+            >
+              Pause Membership
+            </button>
+          </>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 pt-1 text-center">
+          <div className="max-w-[420px] space-y-1">
+            <p className="text-[16px] leading-6 font-semibold text-white">Pause this membership?</p>
+            <p className="text-[14px] leading-[22px] text-white/50">
+              The member will not receive plan benefits while paused.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block space-y-2">
+            <span className="text-[12px] text-white/50">
+              From Date
+              <RequiredMark />
+            </span>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none"
+            />
+          </label>
+          <label className="block space-y-2">
+            <span className="text-[12px] text-white/50">
+              To Date
+              <RequiredMark />
+            </span>
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(e) => setToDate(e.target.value)}
+              className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none"
+            />
+          </label>
+        </div>
+
+        <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+        <AdminNotesField value={adminNotes} onChange={setAdminNotes} />
+      </MembershipModalShell>
+    )
+  }
+
+  if (action === 'resume') {
+    return (
+      <MembershipModalShell
+        title="Resume Membership"
+        description="Resume this paused membership"
+        onClose={resetAndClose}
+        footer={
+          <>
+            <button
+              type="button"
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-white text-[14px] font-semibold text-white hover:bg-white/5"
+              onClick={resetAndClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              className="ui-cta ui-cta-primary flex-1"
+              onClick={() => onResume?.({ adminNotes: adminNotes.trim() || undefined })}
+            >
+              Resume Membership
+            </button>
+          </>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 pt-1 text-center">
+          <div className="max-w-[420px] space-y-1">
+            <p className="text-[16px] leading-6 font-semibold text-white">
+              Resume &quot;{currentPlanLabel}&quot;?
+            </p>
+            <p className="text-[14px] leading-[22px] text-white/50">
+              Benefits will become active again for this member.
+            </p>
+          </div>
+        </div>
+        <AdminNotesField value={adminNotes} onChange={setAdminNotes} required={false} />
       </MembershipModalShell>
     )
   }
@@ -311,6 +449,7 @@ function MembershipActionModalsContent({
               onClick={() => {
                 const payload = {
                   newMembershipPlanId: selectedPlanId,
+                  newPlanName: selectedPlan?.planName,
                   billingCycleName: billingCycleName || undefined,
                   reasons: selectedReasons,
                   adminNotes,
@@ -381,17 +520,23 @@ function MembershipActionModalsContent({
           <button
             type="button"
             disabled={
-              isSubmitting || !fromDate || !toDate || !selectedReasons.length || !adminNotes.trim()
+              isSubmitting ||
+              !fromDate ||
+              !toDate ||
+              toDate < fromDate ||
+              !selectedReasons.length ||
+              !adminNotes.trim()
             }
             className="ui-cta ui-cta-primary flex-1"
-            onClick={() =>
+            onClick={() => {
+              if (toDate < fromDate) return
               onCancel({
                 reasons: selectedReasons,
                 adminNotes,
                 fromDate,
                 toDate,
               })
-            }
+            }}
           >
             Send for approval
           </button>
@@ -413,8 +558,21 @@ function MembershipActionModalsContent({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <ModalDateField label="From" value={fromDate} onChange={setFromDate} />
-        <ModalDateField label="To" value={toDate} onChange={setToDate} />
+        <ModalDateField
+          label="From"
+          value={fromDate}
+          max={toDate || undefined}
+          onChange={(next) => {
+            setFromDate(next)
+            if (toDate && next && toDate < next) setToDate('')
+          }}
+        />
+        <ModalDateField
+          label="To"
+          value={toDate}
+          min={fromDate || undefined}
+          onChange={setToDate}
+        />
       </div>
 
       <ReasonTags
@@ -479,11 +637,15 @@ function ModalDateField({
   value,
   onChange,
   placeholder = 'Custom Date',
+  min,
+  max,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  min?: string
+  max?: string
 }) {
   return (
     <label className="block space-y-2">
@@ -494,6 +656,8 @@ function ModalDateField({
         <input
           type="date"
           value={value}
+          min={min || undefined}
+          max={max || undefined}
           onChange={(e) => onChange(e.target.value)}
           className={cn(
             'box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 pr-10 text-[14px] text-white [color-scheme:dark] outline-none focus:border-white/30',
@@ -521,14 +685,16 @@ function ModalDateField({
 function AdminNotesField({
   value,
   onChange,
+  required = true,
 }: {
   value: string
   onChange: (value: string) => void
+  required?: boolean
 }) {
   return (
     <label className="block space-y-2">
       <span className="text-[14px] text-white">
-        Admin notes <RequiredMark />
+        Admin notes {required ? <RequiredMark /> : null}
       </span>
       <textarea
         value={value}

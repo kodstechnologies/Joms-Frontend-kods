@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import axios from 'axios'
 import {
   ArrowLeft,
@@ -14,13 +15,13 @@ import {
   Languages,
   Loader2,
   Phone,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
   useConsultation,
   useService,
-  useSuspendService,
   useUpdateConsultationStatus,
   useUpdateServiceStatus,
 } from '../../hooks/use-services'
@@ -52,6 +53,8 @@ import type {
 } from '../../type/service'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { isApprovedListingStatus } from '../../lib/service-navigation'
+import { isSubmittedListingStatus } from '../../utils/management-status'
 import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
@@ -63,6 +66,8 @@ type ServiceViewDetail = Partial<ServiceDetail> &
     partnerId: string
     title: string
     status: string
+    isSuspend?: boolean
+    isDeleted?: boolean
     createdAt: string
     updatedAt: string
     serviceType?: string
@@ -117,7 +122,7 @@ const formatCustomTimeline = (custom?: CustomPricing) => {
   return `${durationLabel} (${custom.timelineFrom}-${custom.timelineTo} ${custom.timelineUnit})`
 }
 
-type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend' | 'escalate'
+type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
 const formatAppliedAgo = (value?: string) => {
   if (!value) return 'Applied recently'
@@ -195,34 +200,42 @@ export const ServiceViewPage = () => {
   const [searchParams] = useSearchParams()
   const serviceTypeParam = searchParams.get('type') || ''
   const partnerIdParam = searchParams.get('partnerId') || ''
+  const sectionParam = String(searchParams.get('section') || searchParams.get('focus') || '')
+    .trim()
+    .toLowerCase()
+  const shouldFocusDocuments =
+    sectionParam === 'documents' || sectionParam === 'media' || sectionParam === 'images'
   const shouldFetchConsultation = serviceTypeParam.toLowerCase().includes('consultation')
 
   const {
     data: serviceResponse,
     isLoading: isServiceLoading,
+    isFetched: isServiceFetched,
     error: serviceError,
   } = useService(resolvedServiceId, !shouldFetchConsultation)
+  const serviceLookupFailed =
+    !shouldFetchConsultation && isServiceFetched && Boolean(serviceError || !serviceResponse?.data)
   const {
     data: consultationResponse,
     isLoading: isConsultationLoading,
     error: consultationError,
-  } = useConsultation(resolvedServiceId, shouldFetchConsultation)
+  } = useConsultation(resolvedServiceId, shouldFetchConsultation || serviceLookupFailed)
   const { mutateAsync: updateServiceStatus, isPending: isUpdatingServiceStatus } =
     useUpdateServiceStatus()
   const { mutateAsync: updateConsultationStatus, isPending: isUpdatingConsultationStatus } =
     useUpdateConsultationStatus()
-  const suspendServiceMutation = useSuspendService()
   const recordReasonUsage = useRecordModerationReasonUsage()
-  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+  const serviceRejectReasons = useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+  const consultationRejectReasons = useModerationReasonOptions(
+    MODERATION_CATEGORY_SLUGS.rejectConsultation,
+  )
   const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
-  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendService)
 
   const isUpdatingStatus = isUpdatingServiceStatus || isUpdatingConsultationStatus
 
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [imageViewerOpen, setImageViewerOpen] = useState(false)
   const [activeTierIndex, setActiveTierIndex] = useState(1)
   const [activeDecisionAction, setActiveDecisionAction] = useState<ServiceDecisionAction | null>(
     null,
@@ -230,22 +243,19 @@ export const ServiceViewPage = () => {
   const [decisionAdminNotes, setDecisionAdminNotes] = useState('')
   const [decisionReason, setDecisionReason] = useState('')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
-  const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
-  const [suspendStartDate, setSuspendStartDate] = useState('')
-  const [suspendEndDate, setSuspendEndDate] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
 
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
-  const escalationEntityType = shouldFetchConsultation ? 'consultation' : 'service'
+  const isConsultationListing =
+    shouldFetchConsultation || (serviceLookupFailed && Boolean(consultationResponse?.data))
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    isConsultationListing ? consultationRejectReasons : serviceRejectReasons
+  const escalationEntityType = isConsultationListing ? 'consultation' : 'service'
   const { data: assigneesData } = useEscalationAssignees('services.*')
   const { data: escalationData } = useAdminEscalation(escalationEntityType, resolvedServiceId)
-  const escalateService = useEscalateServiceApplication(
-    shouldFetchConsultation ? undefined : resolvedServiceId,
-  )
-  const escalateConsultation = useEscalateConsultationApplication(
-    shouldFetchConsultation ? resolvedServiceId : undefined,
-  )
+  const escalateService = useEscalateServiceApplication(resolvedServiceId)
+  const escalateConsultation = useEscalateConsultationApplication(resolvedServiceId)
   const startEscalationReview = useStartAdminEscalationReview(
     escalationEntityType,
     resolvedServiceId,
@@ -261,12 +271,58 @@ export const ServiceViewPage = () => {
   if (resolvedServiceId !== imageCarouselServiceId) {
     setImageCarouselServiceId(resolvedServiceId)
     setActiveImageIndex(0)
+    setImageViewerOpen(false)
   }
 
-  const apiResponse = shouldFetchConsultation ? consultationResponse : serviceResponse
-  const isLoading = shouldFetchConsultation ? isConsultationLoading : isServiceLoading
-  const error = shouldFetchConsultation ? consultationError : serviceError
+  const apiResponse = isConsultationListing ? consultationResponse : serviceResponse
+  const isLoading =
+    (shouldFetchConsultation && isConsultationLoading) ||
+    (!shouldFetchConsultation && isServiceLoading) ||
+    (serviceLookupFailed && isConsultationLoading)
+  const error = isConsultationListing ? consultationError : serviceError
   const service = apiResponse?.data as ServiceViewDetail | undefined
+
+  const previewImages = service?.images || []
+  const imageCount = previewImages.length
+
+  const handlePrevImage = useCallback(() => {
+    if (imageCount > 0) {
+      setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
+    }
+  }, [imageCount])
+
+  const handleNextImage = useCallback(() => {
+    if (imageCount > 0) {
+      setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
+    }
+  }, [imageCount])
+
+  const closeImageViewer = useCallback(() => setImageViewerOpen(false), [])
+
+  useEffect(() => {
+    if (!shouldFocusDocuments || isLoading || !service) return
+    const timer = window.setTimeout(() => {
+      document.getElementById('listing-submitted-documents')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+      if ((service.images || []).length > 0) {
+        setImageViewerOpen(true)
+      }
+    }, 150)
+    return () => window.clearTimeout(timer)
+  }, [isLoading, service, shouldFocusDocuments])
+
+  useEffect(() => {
+    if (!imageViewerOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeImageViewer()
+      if (event.key === 'ArrowLeft') handlePrevImage()
+      if (event.key === 'ArrowRight') handleNextImage()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [imageViewerOpen, closeImageViewer, handleNextImage, handlePrevImage])
 
   const resolvedPartnerId = expertId || partnerIdParam || service?.partnerId || ''
   const { data: expertProfileResponse } = useExpertProfile(resolvedPartnerId || undefined)
@@ -306,13 +362,8 @@ export const ServiceViewPage = () => {
     setActiveDecisionAction(action)
     setDecisionAdminNotes('')
     setDecisionReason('')
-    setSelectedReasons(
-      action === 'suspend' ? [] : action === 'approve' ? [] : ['unclear-image', 'content-issue'],
-    )
+    setSelectedReasons(action === 'approve' ? [] : ['unclear-image', 'content-issue'])
     setSelectedEscalationOption('')
-    setSuspendIndefinitely(false)
-    setSuspendStartDate('')
-    setSuspendEndDate('')
   }
 
   const closeDecisionModal = () => {
@@ -356,11 +407,11 @@ export const ServiceViewPage = () => {
         assigneeName: selectedAssignee?.fullname || '',
         adminNote: decisionAdminNotes.trim(),
         entityTitle: service?.title || service?.consultationTitle || '',
-        applicationUrl: shouldFetchConsultation
+        applicationUrl: isConsultationListing
           ? `/services/management/view/${resolvedServiceId}?type=consultation`
           : `/services/management/view/${resolvedServiceId}`,
       }
-      const escalateMutation = shouldFetchConsultation ? escalateConsultation : escalateService
+      const escalateMutation = isConsultationListing ? escalateConsultation : escalateService
 
       try {
         await escalateMutation.mutateAsync(payload)
@@ -368,58 +419,6 @@ export const ServiceViewPage = () => {
         closeDecisionModal()
       } catch (err) {
         toast.error(getApiErrorMessage(err))
-      }
-      return
-    }
-
-    if (activeDecisionAction === 'suspend') {
-      if (selectedReasons.length === 0) {
-        toast.error('Please select at least one reason.')
-        return
-      }
-      if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
-        toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
-        return
-      }
-      if (!decisionAdminNotes.trim()) {
-        toast.error('Admin notes are required.')
-        return
-      }
-
-      const toIso = (value: string) =>
-        value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
-
-      const reasonPayload = buildSuspendReasonPayload(selectedReasons)
-      if (reasonPayload.selectedReasons.length === 0) {
-        toast.error('Selected reasons are no longer available. Please refresh and try again.')
-        return
-      }
-
-      const extraDetails = decisionReason.trim()
-      const reasonDetails = [reasonPayload.reasonDetails, extraDetails].filter(Boolean).join('\n\n')
-
-      try {
-        await suspendServiceMutation.mutateAsync({
-          id: resolvedServiceId,
-          payload: {
-            selectedReasons: reasonPayload.selectedReasons,
-            suspendIndefinitely,
-            startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
-            endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-            reasonDetails,
-            adminNotes: decisionAdminNotes.trim(),
-          },
-        })
-        if (reasonPayload.reasonIds.length > 0) {
-          recordReasonUsage.mutate(reasonPayload.reasonIds)
-        }
-        toast.success('Service suspended successfully')
-        closeDecisionModal()
-      } catch (err) {
-        const message = axios.isAxiosError(err)
-          ? err.response?.data?.message || 'Failed to suspend service.'
-          : 'Failed to suspend service.'
-        toast.error(message)
       }
       return
     }
@@ -464,7 +463,7 @@ export const ServiceViewPage = () => {
         decisionReason.trim() || reasonPayload?.reasonDetails || reasonFor.join(', ')
 
       try {
-        if (shouldFetchConsultation) {
+        if (isConsultationListing) {
           if (activeDecisionAction === 'approve') {
             await updateConsultationStatus({
               id: resolvedServiceId,
@@ -519,10 +518,10 @@ export const ServiceViewPage = () => {
       } catch (err) {
         const message = axios.isAxiosError(err)
           ? err.response?.data?.message ||
-            (shouldFetchConsultation
+            (isConsultationListing
               ? 'Failed to update consultation status.'
               : 'Failed to update service status.')
-          : shouldFetchConsultation
+          : isConsultationListing
             ? 'Failed to update consultation status.'
             : 'Failed to update service status.'
         toast.error(message)
@@ -535,7 +534,7 @@ export const ServiceViewPage = () => {
       <div className="flex h-96 w-full flex-col items-center justify-center gap-4">
         <Loader2 className="text-brand-accent size-10 animate-spin" />
         <p className="text-muted text-sm font-medium">
-          {shouldFetchConsultation
+          {isConsultationListing || serviceLookupFailed
             ? 'Fetching consultation information...'
             : 'Fetching service information...'}
         </p>
@@ -550,7 +549,9 @@ export const ServiceViewPage = () => {
           <Info className="size-10" />
         </div>
         <h3 className="text-lg font-semibold text-white">
-          {shouldFetchConsultation ? 'Consultation Not Found' : 'Service Not Found'}
+          {isConsultationListing || shouldFetchConsultation
+            ? 'Consultation Not Found'
+            : 'Service Not Found'}
         </h3>
         <p className="text-muted max-w-md text-sm">
           {apiResponse?.message ||
@@ -567,10 +568,31 @@ export const ServiceViewPage = () => {
     )
   }
 
+  if (!isSubmittedListingStatus(service.status)) {
+    return (
+      <div className="relative mx-auto flex w-full max-w-[1200px] flex-col gap-5 pb-8 text-white">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
+        >
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>
+            {isConsultationListing || shouldFetchConsultation
+              ? 'Consultation View'
+              : 'Service View'}
+          </span>
+        </button>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          This listing is not submitted by partner
+        </div>
+      </div>
+    )
+  }
+
   const isConsultation =
-    shouldFetchConsultation || (service.serviceType || '').toLowerCase().includes('consultation')
-  const images = service.images || []
-  const imageCount = images.length
+    isConsultationListing || (service.serviceType || '').toLowerCase().includes('consultation')
+  const images = previewImages
   const activeImage =
     imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
   const consultationTopics = service.topics || []
@@ -584,7 +606,7 @@ export const ServiceViewPage = () => {
     : service.category?.name || service.consultationCategory || ''
   const showApprovalControls = isPendingReview(service.status, isConsultation)
   const escalateDisabled =
-    !isPendingReview(service.status, isConsultation) ||
+    isApprovedListingStatus(service.status) ||
     escalateService.isPending ||
     escalateConsultation.isPending
   const escalation = escalationData?.data
@@ -594,7 +616,8 @@ export const ServiceViewPage = () => {
       value: assignee.id,
     })) || []
   const isEscalateFlow = activeDecisionAction === 'escalate'
-  const statusBadge = getReviewStatusBadge(service.status)
+  const isListingSuspended = Boolean(service.isSuspend) || service.status === 'suspended'
+  const statusBadge = getReviewStatusBadge(isListingSuspended ? 'suspended' : service.status)
   const submittedAt = service.submittedAt || service.createdAt
   const profilePartnerId = resolvedPartnerId || service.partnerId
   const pageTitle = isConsultation ? 'Consultation View' : 'Service View'
@@ -613,18 +636,6 @@ export const ServiceViewPage = () => {
       key: `${option.durationMinutes}-${option.price ?? 'free'}`,
       label: `${option.durationMinutes}mins (${formatConsultationPrice(option)})`,
     })) || []
-
-  const handlePrevImage = () => {
-    if (imageCount > 0) {
-      setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
-    }
-  }
-
-  const handleNextImage = () => {
-    if (imageCount > 0) {
-      setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
-    }
-  }
 
   const decisionModalConfig = activeDecisionAction
     ? {
@@ -652,14 +663,6 @@ export const ServiceViewPage = () => {
           submitLabel: 'Request Changes',
           variant: 'requestChanges' as const,
           reasonOptions: requestChangesReasonOptions,
-        },
-        suspend: {
-          title: 'Suspend Service',
-          description:
-            'Are you sure you want to suspend this service? It will be hidden from users until reactivated.',
-          submitLabel: 'Suspend Service',
-          variant: 'suspend' as const,
-          reasonOptions: suspendReasonOptions,
         },
         escalate: {
           title: 'Escalate Application',
@@ -760,7 +763,7 @@ export const ServiceViewPage = () => {
   )
 
   const renderConsultationDetails = () => (
-    <div className="max-w-[1102px] py-2">
+    <div id="listing-submitted-documents" className="max-w-[1102px] scroll-mt-6 py-2">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
         <div className="space-y-6">
           <div className="flex items-stretch gap-3">
@@ -899,17 +902,17 @@ export const ServiceViewPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <div className="space-y-6">
+        <div id="listing-submitted-documents" className="scroll-mt-6 space-y-6">
           <div className="relative h-[230px] w-full overflow-hidden rounded-lg bg-[#050505]">
             {activeImage ? (
-              <a
-                href={activeImage}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                aria-label="Open image viewer"
+                onClick={() => setImageViewerOpen(true)}
                 className="block h-full w-full cursor-zoom-in"
               >
                 <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
-              </a>
+              </button>
             ) : (
               <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                 <ImageIcon className="size-8" aria-hidden="true" />
@@ -922,7 +925,10 @@ export const ServiceViewPage = () => {
                 <button
                   type="button"
                   aria-label="Previous image"
-                  onClick={handlePrevImage}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
                   className="absolute top-1/2 left-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronLeft className="size-4" />
@@ -930,7 +936,10 @@ export const ServiceViewPage = () => {
                 <button
                   type="button"
                   aria-label="Next image"
-                  onClick={handleNextImage}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
                   className="absolute top-1/2 right-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronRight className="size-4" />
@@ -943,6 +952,61 @@ export const ServiceViewPage = () => {
               {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
             </div>
           </div>
+
+          {imageViewerOpen && activeImage ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={closeImageViewer}
+            >
+              <button
+                type="button"
+                aria-label="Close image viewer"
+                onClick={closeImageViewer}
+                className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+              >
+                <X className="size-5" />
+              </button>
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
+                  className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronLeft className="size-6" />
+                </button>
+              ) : null}
+              <div
+                className="flex max-h-[85vh] max-w-[min(900px,90vw)] flex-col items-center"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <img
+                  src={activeImage}
+                  alt={service.title}
+                  className="max-h-[80vh] max-w-full rounded-lg object-contain"
+                />
+                <p className="mt-3 text-[13px] text-white/70">
+                  {activeImageIndex + 1} / {imageCount}
+                </p>
+              </div>
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
+                  className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronRight className="size-6" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           {resolvedPricingType === 'tiered' && renderTieredPricing()}
         </div>
@@ -989,17 +1053,10 @@ export const ServiceViewPage = () => {
               ? setDecisionReason
               : undefined
           }
-          reasonLabel={activeDecisionAction === 'requestChanges' ? 'Request Changes' : 'Reason'}
+          reasonLabel={activeDecisionAction === 'requestChanges' ? 'Request Change' : 'Reason'}
           reasonOptions={decisionModalConfig.reasonOptions}
           selectedReasons={selectedReasons}
           onReasonToggle={toggleDecisionReason}
-          showTimeline={activeDecisionAction === 'suspend'}
-          startDate={suspendStartDate}
-          onStartDateChange={setSuspendStartDate}
-          endDate={suspendEndDate}
-          onEndDateChange={setSuspendEndDate}
-          indefinite={suspendIndefinitely}
-          onIndefiniteChange={setSuspendIndefinitely}
           onClose={closeDecisionModal}
           onSubmit={submitDecisionAction}
           escalationOptions={isEscalateFlow ? escalationOptions : []}
@@ -1008,7 +1065,7 @@ export const ServiceViewPage = () => {
           isSubmitting={
             isEscalateFlow
               ? escalateService.isPending || escalateConsultation.isPending
-              : isUpdatingStatus || suspendServiceMutation.isPending
+              : isUpdatingStatus
           }
         />
       )}
@@ -1023,42 +1080,25 @@ export const ServiceViewPage = () => {
           <span>{pageTitle}</span>
         </button>
 
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          {fromExpert ? (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                All Experts
-              </button>
-              <span className="text-muted">/</span>
-              <button
-                type="button"
-                onClick={() => expertId && navigate(`/experts/management/profile/${expertId}`)}
-                className="hover:text-brand-text transition-colors"
-              >
-                {expertName}
-              </button>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">{pageTitle}</span>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                Service management
-              </button>
-              <span className="text-muted">/</span>
-              <span>{pageTitle}</span>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">{expertName}</span>
-            </>
-          )}
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={
+              fromExpert
+                ? [
+                    { label: 'Expert Management', to: '/experts/management' },
+                    {
+                      label: expertName,
+                      to: expertId ? `/experts/management/profile/${expertId}` : undefined,
+                    },
+                    { label: pageTitle, isActive: true },
+                  ]
+                : [
+                    { label: 'Service Management', to: '/services/management' },
+                    { label: 'Manage Services', to: '/services/management' },
+                    { label: expertName, isActive: true },
+                  ]
+            }
+          />
         </div>
       </header>
 
@@ -1071,14 +1111,16 @@ export const ServiceViewPage = () => {
             <p className="text-body-sm text-muted mt-1">{formatAppliedAgo(submittedAt)}</p>
           </div>
           {profilePartnerId && (
-            <button
-              type="button"
-              onClick={() => navigate(`/experts/management/profile/${profilePartnerId}`)}
-              className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
-            >
-              <Eye className="size-3.5" aria-hidden="true" />
-              View Profile
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(`/experts/management/profile/${profilePartnerId}`)}
+                className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
+              >
+                <Eye className="size-3.5" aria-hidden="true" />
+                View Profile
+              </button>
+            </div>
           )}
         </div>
 
@@ -1106,18 +1148,15 @@ export const ServiceViewPage = () => {
         {isConsultation ? renderConsultationDetails() : renderServiceDetails()}
       </div>
 
-      <div
-        className={cn(
-          'grid grid-cols-1 gap-5',
-          showApprovalControls ? 'lg:grid-cols-2' : 'max-w-2xl',
-        )}
-      >
-        <div className="rounded-xl bg-[#141414] p-5">
-          <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
-            <History className="text-brand-accent size-4" aria-hidden="true" />
-            <h3>Internal Notes</h3>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="box-border flex h-[162px] w-full max-w-[591px] flex-col overflow-hidden rounded-[10px] bg-[#141414] px-[21px] py-5">
+          <div className="mb-4 flex h-6 items-center gap-2">
+            <History className="size-5 shrink-0 text-white" aria-hidden="true" />
+            <h3 className="text-[20px] leading-6 font-semibold tracking-normal text-white">
+              Internal Notes <span className="text-[#D3191C]">*</span>
+            </h3>
           </div>
-          <div className="text-body-sm text-muted min-h-[120px] rounded-lg bg-[#050505] p-4">
+          <div className="text-body-sm text-muted box-border h-[72px] w-full max-w-[549px] overflow-y-auto rounded-[10px] bg-[#050505] p-4">
             {service.adminNote?.trim() || 'No notes yet.'}
             {escalation?.escalatedByName ? (
               <p className="text-body-sm text-muted mt-3">
@@ -1129,20 +1168,37 @@ export const ServiceViewPage = () => {
           </div>
         </div>
 
-        {showApprovalControls && (
-          <div className="rounded-xl bg-[#141414] p-5">
-            <DecisionControlsHeader className="mb-4" />
+        <div className="box-border flex h-[162px] w-full max-w-[588px] flex-col overflow-hidden rounded-[10px] bg-[#141414] px-[21px] py-5">
+          <DecisionControlsHeader className="mb-5 shrink-0" />
+          <div className="mt-auto min-w-0">
             <DecisionControlButtons
               onApprove={() => openDecisionModal('approve')}
               onRequestChanges={() => openDecisionModal('requestChanges')}
               onEscalate={() => openDecisionModal('escalate')}
               onReject={() => openDecisionModal('reject')}
               showEscalate
-              escalateDisabled={escalateDisabled}
+              approveDisabled={isListingSuspended || !showApprovalControls || isUpdatingStatus}
+              requestChangesDisabled={
+                isListingSuspended || !showApprovalControls || isUpdatingStatus
+              }
+              escalateDisabled={isListingSuspended || escalateDisabled}
+              rejectDisabled={isListingSuspended || !showApprovalControls || isUpdatingStatus}
             />
           </div>
-        )}
+        </div>
       </div>
+      {isListingSuspended ? (
+        <p className="text-body-sm text-muted mt-3 rounded-[10px] bg-[#050505] px-3 py-2 font-medium">
+          This listing is currently <span className="font-bold text-white">Suspended</span>.
+          Marketplace and admin actions are disabled until it is reactivated.
+        </p>
+      ) : !showApprovalControls ? (
+        <p className="text-body-sm text-muted mt-3 rounded-[10px] bg-[#050505] px-3 py-2 font-medium">
+          This listing is currently{' '}
+          <span className="font-bold text-white">{service.status || '—'}</span>. Approve and reject
+          are available only while review is pending.
+        </p>
+      ) : null}
     </div>
   )
 }

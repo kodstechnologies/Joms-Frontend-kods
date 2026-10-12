@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { settingsApiClient } from '@/shared/lib/axios'
+import { firstDefinedBoolean, useAppRestrictions } from './use-app-restrictions'
 
 export type VenueManagementControls = {
   allowAddVenues: boolean
@@ -110,9 +111,32 @@ export const useVenuePublicSettings = () => {
 
 export const useVenueManagementControls = () => {
   const query = useVenuePublicSettings()
-  const controls = query.data?.venueControls ?? DEFAULT_VENUE_PUBLIC_SETTINGS.venueControls
+  const restrictions = useAppRestrictions()
+  const isReady = restrictions.isSuccess || query.isSuccess
+  const fallback = query.data?.venueControls ?? DEFAULT_VENUE_PUBLIC_SETTINGS.venueControls
+  const allowAddVenues =
+    firstDefinedBoolean(restrictions.data?.venue?.allowAddVenues, fallback.allowAddVenues) ??
+    fallback.allowAddVenues
+  const allowApproveVenues =
+    firstDefinedBoolean(
+      restrictions.data?.venue?.allowApproveVenues,
+      fallback.allowApproveVenues,
+    ) ?? fallback.allowApproveVenues
+  const allowDisableVenues =
+    firstDefinedBoolean(
+      restrictions.data?.venue?.allowDisableVenues,
+      fallback.allowDisableVenues,
+    ) ?? fallback.allowDisableVenues
+  const controls = {
+    allowAddVenues: isReady ? allowAddVenues : false,
+    allowApproveVenues: isReady ? allowApproveVenues : false,
+    allowDisableVenues: isReady ? allowDisableVenues : false,
+  }
+
   return {
     ...query,
+    isLoading: !isReady && (query.isLoading || restrictions.isLoading),
+    isReady,
     controls,
     allowAddVenues: controls.allowAddVenues,
     allowApproveVenues: controls.allowApproveVenues,

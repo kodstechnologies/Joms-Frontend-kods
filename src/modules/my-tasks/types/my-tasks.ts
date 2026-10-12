@@ -11,7 +11,13 @@ export type MyTask = {
     | 'consultation'
     | 'venue_space'
     | 'refund'
+    | 'finance'
     | 'membership_upgrade'
+    | 'support_ticket'
+    | 'settings_log'
+    | 'incident'
+    | 'category'
+    | 'referral'
   entityId?: string
   venueId?: string
   title: string
@@ -20,7 +26,7 @@ export type MyTask = {
   moduleKey: string
   status: TaskStatus
   reviewStatus: string
-  escalationTarget: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
+  escalationTarget: 'kyc' | 'banking' | 'application' | 'refund' | 'finance' | 'membership_upgrade'
   serviceType: string
   assigneeSubAdminId: string
   assigneeName: string
@@ -30,6 +36,7 @@ export type MyTask = {
   escalatedAt: string
   applicationUrl: string
   direction: string
+  metadata?: Record<string, unknown>
 }
 
 export type MyTasksGrouped = Record<TaskStatus, MyTask[]> & {

@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, PlayCircle } from 'lucide-react'
+import { ArrowLeft, Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
@@ -126,7 +128,7 @@ export function RejectedVenuesPage() {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to activate venue. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to activate venue. Please try again.'))
         },
       })
     },
@@ -149,7 +151,7 @@ export function RejectedVenuesPage() {
                     input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
                 }}
                 onChange={toggleVisibleVenues}
-                className="rounded border-slate-700 bg-transparent"
+                className="ui-table-checkbox"
               />
             ),
             cell: ({ row }) => (
@@ -159,7 +161,7 @@ export function RejectedVenuesPage() {
                 checked={selectedVenueIds.includes(row.original._id)}
                 onChange={() => toggleVenueSelection(row.original._id)}
                 onClick={(event) => event.stopPropagation()}
-                className="rounded border-slate-700 bg-transparent"
+                className="ui-table-checkbox"
               />
             ),
             meta: {
@@ -220,8 +222,17 @@ export function RejectedVenuesPage() {
                   label={`Open actions for ${venue.venueName}`}
                   isOpen={isOpen}
                   onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
-                  menuWidth={160}
+                  menuWidth={176}
                 >
+                  <TableActionsItem
+                    icon={<Eye className="size-3.5" aria-hidden="true" />}
+                    onClick={() => {
+                      setActiveDropdownId(null)
+                      navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
+                    }}
+                  >
+                    View Profile
+                  </TableActionsItem>
                   <TableActionsItem
                     icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
                     onClick={() => {
@@ -242,6 +253,7 @@ export function RejectedVenuesPage() {
       activeDropdownId,
       allVisibleVenuesSelected,
       handleActivate,
+      navigate,
       selectedVenueIds,
       someVisibleVenuesSelected,
       toggleVenueSelection,
@@ -262,16 +274,13 @@ export function RejectedVenuesPage() {
             <span>rejected venues</span>
           </button>
 
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-              className="transition-colors hover:text-white"
-            >
-              Venue Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">rejected venues</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                { label: 'Rejected Venues', isActive: true },
+              ]}
+            />
           </div>
         </header>
 
@@ -280,24 +289,19 @@ export function RejectedVenuesPage() {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/metrics?section=table')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            onClick={() => {
-              if (!allowAddVenues) {
-                toast.error('Creating venues is turned off in Venue Management settings')
-                return
-              }
-              navigate('/venues/management/onboarding')
-            }}
-            disabled={!allowAddVenues}
-          >
-            <img src={createIcon} alt="create" className="size-4" />
-            Create Account
-          </Button>
+          {allowAddVenues ? (
+            <Button
+              type="button"
+              className="h-9 w-full md:w-auto"
+              onClick={() => navigate('/venues/management/onboarding')}
+            >
+              <img src={createIcon} alt="create" className="size-4" />
+              Create Account
+            </Button>
+          ) : null}
         </div>
       </div>
 

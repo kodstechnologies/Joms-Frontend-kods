@@ -80,6 +80,11 @@ export const navigationConfig: NavItem[] = [
             label: 'Leaderboard',
             to: '/experts/leaderboard',
           },
+          {
+            key: 'expert.management.categories',
+            label: 'Category Management',
+            to: '/experts/categories/management',
+          },
         ],
       },
       {
@@ -187,14 +192,13 @@ export const navigationConfig: NavItem[] = [
         label: 'Financial Reconciliation',
         to: '/finance/reconciliation',
       },
-      // Category Management muted — mock-only, no finance category API (route kept, hidden from nav)
     ],
   },
   {
     key: 'support',
     label: 'Support',
     icon: LifeBuoy,
-    superAdminOnly: true,
+    permissionModule: 'support',
     matchPaths: ['/support'],
     children: [
       { key: 'support.dashboard', label: 'Dashboard', to: '/support/dashboard' },
@@ -207,7 +211,6 @@ export const navigationConfig: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     permissionModule: 'settings',
-    superAdminOnly: true,
     matchPaths: ['/settings'],
     children: [
       {

@@ -1,15 +1,31 @@
 import { useRef } from 'react'
 import { Upload, X } from 'lucide-react'
 
+import { useVenueDocumentRules } from '../hooks/use-venue-kyc'
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
-import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import {
+  getVenueKycUploadSections,
+  isVenueKycDocumentRequired,
+  type VenueKycDocumentRule,
+  type VenueOnboardingFormData,
+} from '../utils/venue-onboarding-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import {
+  GOVERNMENT_ID_TYPES,
+  getGovernmentIdMeta,
+  normalizeGovernmentIdType,
+  sanitizeGovernmentIdInput,
+  sanitizeGstInput,
+  sanitizePanInput,
+  validateGovernmentIdNumber,
+  validateGstNumber,
+  validatePanNumber,
+} from '@/shared/lib/partner-field-validation'
 
 const fieldClass = 'ui-input'
 
 const selectClass = `${fieldClass} appearance-none`
 
-const ID_TYPES = ['PAN', 'Aadhaar', 'Passport', 'Driving License']
 const INDIAN_STATES = [
   'Karnataka',
   'Maharashtra',
@@ -26,22 +42,23 @@ type Props = {
   setFormData: React.Dispatch<React.SetStateAction<VenueOnboardingFormData>>
 }
 
-type FileField = 'panCard' | 'gstCertificate' | 'tradeLicense' | 'fssaiLicense' | 'gstUndertaking'
-
 function FileUploadBox({
   label,
   required,
   file,
+  existingUrl,
   onSelect,
   onClear,
 }: {
   label: string
   required?: boolean
   file: File | null
+  existingUrl?: string
   onSelect: (file: File | null) => void
   onClear: () => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const displayName = file?.name || (existingUrl ? 'Uploaded' : '')
 
   return (
     <div>
@@ -60,7 +77,7 @@ function FileUploadBox({
           onClick={() => inputRef.current?.click()}
           className="hover:border-brand-accent/50 text-muted flex h-24 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black text-xs transition-colors"
         >
-          {file ? <span className="truncate px-2">{file.name}</span> : 'Upload here'}
+          {displayName ? <span className="truncate px-2">{displayName}</span> : 'Upload here'}
         </button>
         {file && (
           <button
@@ -83,13 +100,36 @@ function FileUploadBox({
   )
 }
 
+function FieldMessage({ error, hint }: { error?: string | null; hint?: string }) {
+  if (error) {
+    return <p className="text-brand-danger mt-1 text-[10px]">{error}</p>
+  }
+  if (!hint) return null
+  return <p className="text-muted mt-1 text-[10px]">{hint}</p>
+}
+
 export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
   const otherCertsRef = useRef<HTMLInputElement>(null)
+  const panFieldRef = useRef<HTMLDivElement>(null)
+  const selectedIdMeta = getGovernmentIdMeta(formData.idType)
+  const idNumberError = formData.idNumber.trim()
+    ? validateGovernmentIdNumber(formData.idType, formData.idNumber)
+    : null
+  const panError = formData.panNumber.trim() ? validatePanNumber(formData.panNumber) : null
+  const gstError =
+    formData.hasGST && formData.gstNumber.trim() ? validateGstNumber(formData.gstNumber) : null
 
   const { data: categoriesData } = useServiceCategoriesByType('venue')
   const categoryGroups = categoriesData?.data || {}
+  const { data: rulesResponse, isLoading: isRulesLoading } = useVenueDocumentRules(
+    formData.typeOfVenue,
+    formData.hasGST,
+  )
+  const { mandatory, conditional, categoryName } = getVenueKycUploadSections(
+    rulesResponse?.data,
+    formData.hasGST,
+  )
 
-  // Build dynamic venue type options from sub-categories matching the selected category
   let dynamicVenueTypes: string[] = []
 
   if (formData.venueCategoryId || formData.venueCategoryName) {
@@ -104,19 +144,23 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
     }
   }
 
-  // Fallback: show all sub-categories if no match found
   if (dynamicVenueTypes.length === 0) {
     const allSubs = Object.values(categoryGroups).flat()
     dynamicVenueTypes = Array.from(new Set(allSubs.map((sub) => sub.name)))
   }
 
-  // Preserve any existing value that might not be in the list
   if (formData.typeOfVenue && !dynamicVenueTypes.includes(formData.typeOfVenue)) {
     dynamicVenueTypes = [formData.typeOfVenue, ...dynamicVenueTypes]
   }
 
-  const setFile = (field: FileField, file: File | null) => {
-    setFormData((prev) => ({ ...prev, [field]: file }))
+  const setDocument = (key: string, file: File | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      kycDocuments: {
+        ...prev.kycDocuments,
+        [key]: file,
+      },
+    }))
   }
 
   const addOtherCertificates = (files: FileList | null) => {
@@ -129,6 +173,22 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
     }))
   }
 
+  const renderDocumentBox = (doc: VenueKycDocumentRule, required: boolean) => (
+    <FileUploadBox
+      key={doc.key}
+      label={doc.label}
+      required={required}
+      file={formData.kycDocuments[doc.key] || null}
+      existingUrl={
+        formData.kycDocumentUrls[doc.key] ||
+        (doc.key === 'gstUndertakingDocument' ? formData.kycDocumentUrls.gstUndertaking : '') ||
+        (doc.key === 'gstUndertaking' ? formData.kycDocumentUrls.gstUndertakingDocument : '')
+      }
+      onSelect={(file) => setDocument(doc.key, file)}
+      onClear={() => setDocument(doc.key, null)}
+    />
+  )
+
   return (
     <div className="mx-auto w-full max-w-[1140px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
@@ -140,11 +200,29 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </label>
             <select
               value={formData.idType}
-              onChange={(e) => setFormData((prev) => ({ ...prev, idType: e.target.value }))}
+              onChange={(e) => {
+                const nextType = e.target.value
+                const nextNumber = sanitizeGovernmentIdInput(nextType, formData.idNumber)
+                setFormData((prev) => ({
+                  ...prev,
+                  idType: nextType,
+                  idNumber: nextNumber,
+                  panNumber:
+                    normalizeGovernmentIdType(nextType) === 'PAN'
+                      ? nextNumber || prev.panNumber
+                      : prev.panNumber,
+                }))
+                if (normalizeGovernmentIdType(nextType) === 'PAN') {
+                  window.requestAnimationFrame(() => {
+                    panFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    panFieldRef.current?.querySelector('input')?.focus()
+                  })
+                }
+              }}
               className={selectClass}
             >
               <option value="">Choose ID type</option>
-              {ID_TYPES.map((type) => (
+              {GOVERNMENT_ID_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
@@ -157,11 +235,26 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </label>
             <input
               value={formData.idNumber}
-              onChange={(e) => setFormData((prev) => ({ ...prev, idNumber: e.target.value }))}
-              placeholder="ABCDE1234F"
+              onChange={(e) =>
+                setFormData((prev) => {
+                  const idNumber = sanitizeGovernmentIdInput(prev.idType, e.target.value)
+                  return {
+                    ...prev,
+                    idNumber,
+                    panNumber:
+                      normalizeGovernmentIdType(prev.idType) === 'PAN' ? idNumber : prev.panNumber,
+                  }
+                })
+              }
+              placeholder={selectedIdMeta?.placeholder || 'Enter ID number'}
+              maxLength={selectedIdMeta?.maxLength}
+              inputMode={selectedIdMeta?.inputMode}
               className={fieldClass}
             />
-            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
+            <FieldMessage
+              error={idNumberError}
+              hint={selectedIdMeta?.formatHint || 'Select an ID type to see the expected format'}
+            />
           </div>
         </div>
       </div>
@@ -196,11 +289,17 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                 </label>
                 <input
                   value={formData.gstNumber}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))}
-                  placeholder="23AAACC1206D2ZN"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      gstNumber: sanitizeGstInput(e.target.value),
+                    }))
+                  }
+                  placeholder="22AAAAA0000A1Z5"
+                  maxLength={15}
                   className={fieldClass}
                 />
-                <p className="text-muted mt-1 text-[10px]">Format: 29ABCDE1234F1Z5</p>
+                <FieldMessage error={gstError} hint="Format: 22AAAAA0000A1Z5" />
               </div>
               <div>
                 <label className="mb-2 block text-xs font-medium text-white">
@@ -211,6 +310,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                   onChange={(e) => setFormData((prev) => ({ ...prev, kycState: e.target.value }))}
                   className={selectClass}
                 >
+                  <option value="">Select state</option>
                   {INDIAN_STATES.map((state) => (
                     <option key={state} value={state}>
                       {state}
@@ -277,75 +377,53 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </select>
           </div>
 
-          <div>
+          <div ref={panFieldRef}>
             <label className="mb-2 block text-xs font-medium text-white">
               Organization/Individual PAN <RequiredMark />
             </label>
             <input
               value={formData.panNumber}
-              onChange={(e) => setFormData((prev) => ({ ...prev, panNumber: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, panNumber: sanitizePanInput(e.target.value) }))
+              }
               placeholder="ABCDE1234F"
+              maxLength={10}
               className={fieldClass}
             />
-            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
+            <FieldMessage error={panError} hint="Format: ABCDE1234F" />
           </div>
         </div>
-
-        {!formData.hasGST && (
-          <div className="mt-5">
-            <FileUploadBox
-              label="GST Undertaking Document"
-              file={formData.gstUndertaking}
-              onSelect={(file) => setFile('gstUndertaking', file)}
-              onClear={() => setFile('gstUndertaking', null)}
-            />
-          </div>
-        )}
       </div>
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <h3 className="mb-4 text-sm font-bold text-white">
+        <h3 className="mb-1 text-sm font-bold text-white">
           Business Identity verification documents <RequiredMark />
         </h3>
+        <p className="text-muted mb-4 text-[10px]">
+          {formData.typeOfVenue
+            ? isRulesLoading
+              ? 'Loading documents for this venue type...'
+              : `Required documents for ${categoryName || formData.typeOfVenue}`
+            : 'Select a venue type to load the matching documents.'}
+        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <FileUploadBox
-            label="PAN Card"
-            required
-            file={formData.panCard}
-            onSelect={(file) => setFile('panCard', file)}
-            onClear={() => setFile('panCard', null)}
-          />
-          <FileUploadBox
-            label="Certificates or License & Permits"
-            required
-            file={formData.tradeLicense}
-            onSelect={(file) => setFile('tradeLicense', file)}
-            onClear={() => setFile('tradeLicense', null)}
-          />
-          {formData.hasGST ? (
-            <FileUploadBox
-              label="GST Certificate"
-              required
-              file={formData.gstCertificate}
-              onSelect={(file) => setFile('gstCertificate', file)}
-              onClear={() => setFile('gstCertificate', null)}
-            />
-          ) : (
-            <FileUploadBox
-              label="GST Undertaking Document"
-              required
-              file={formData.gstUndertaking}
-              onSelect={(file) => setFile('gstUndertaking', file)}
-              onClear={() => setFile('gstUndertaking', null)}
-            />
+          {mandatory.map((doc) =>
+            renderDocumentBox(doc, isVenueKycDocumentRequired(doc, formData.hasGST)),
           )}
         </div>
       </div>
 
+      {conditional.length > 0 && (
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
+          <h3 className="mb-4 text-sm font-bold text-white">Additional / Conditional Documents</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {conditional.map((doc) => renderDocumentBox(doc, false))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <h3 className="mb-4 text-sm font-bold text-white">
-          Other Documents <RequiredMark />
-        </h3>
+        <h3 className="mb-4 text-sm font-bold text-white">Other Documents</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {formData.otherCertificates.map((file, index) => (
             <div
@@ -374,7 +452,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
               className="hover:border-brand-accent/50 text-muted flex h-24 items-center justify-center rounded-md border border-dashed border-white/20 bg-black text-xs transition-colors"
             >
               <Upload className="mr-1 size-4" />
-              [Venue Based Certificate]
+              Additional certificate
             </button>
           )}
         </div>

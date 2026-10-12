@@ -197,7 +197,6 @@ export const CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG: ConsultationPerform
       description: 'Latest modification',
       defaultVisible: false,
     },
-    // Product extra shown on current UI
     {
       id: 'consultation-name',
       label: 'Consultation Name',

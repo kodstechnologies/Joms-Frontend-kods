@@ -63,6 +63,30 @@ const statusCol = (
   },
 })
 
+const yesNoCol = (
+  id: string,
+  header: string,
+  accessor: (expert: Expert) => string | null | undefined,
+): ColumnDef<Expert> => ({
+  id,
+  header,
+  accessorFn: (row) => accessor(row) ?? '',
+  cell: ({ row }) => {
+    const value = String(accessor(row.original) || '').trim()
+    if (!value) return '—'
+    const verified = value.toLowerCase() === 'yes'
+    return (
+      <span
+        className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
+          verified ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-500/10 text-slate-300'
+        }`}
+      >
+        {value}
+      </span>
+    )
+  },
+})
+
 export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> {
   return {
     'expert-id': textCol('expert-id', 'Expert ID', (e) => e.expertId),
@@ -95,7 +119,7 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
       'Years of Experience',
       (e) => e.yearsOfExperience,
     ),
-    'digilocker-verification': statusCol(
+    'digilocker-verification': yesNoCol(
       'digilocker-verification',
       'DigiLocker Verification',
       (e) => e.digilockerVerification || e.digilockerStatus,
@@ -247,10 +271,10 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
         <ExpertStatusBadge status={row.original.approvalStatus ?? row.original.status} />
       ),
     },
-    'digilocker-status': statusCol(
+    'digilocker-status': yesNoCol(
       'digilocker-status',
       'DigiLocker Status',
-      (e) => e.digilockerStatus,
+      (e) => e.digilockerStatus || e.digilockerVerification,
     ),
     'gst-status': statusCol('gst-status', 'GST Status', (e) => e.gstStatus),
     'undertaking-status': statusCol(

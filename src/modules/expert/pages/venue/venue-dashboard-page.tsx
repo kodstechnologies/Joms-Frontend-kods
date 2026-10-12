@@ -10,10 +10,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { RotateCw, Star } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   VENUE_DASHBOARD_MODULE_KEY,
@@ -22,6 +23,8 @@ import {
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueDashboard } from '../../hooks/use-venue-dashboard'
 import { exportVenueDashboardToExcel } from '../../utils/export-venue-dashboard'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -53,7 +56,7 @@ type VenueRow = {
   utilization: number
   revenue: string
   rating: number
-  status: 'High Performing' | 'Stable' | 'Needs Attention'
+  status: 'High Demand' | 'Good' | 'Available' | 'High Performing' | 'Stable' | 'Needs Attention'
 }
 
 const ZERO_METRICS: Metric[] = [
@@ -89,19 +92,160 @@ const ZERO_METRICS: Metric[] = [
 
 const DEFAULT_METRIC_IDS = DEFAULT_VENUE_DASHBOARD_ACTIVE_METRIC_IDS
 
-const STATUS_STYLES: Record<VenueRow['status'], string> = {
-  'High Performing': 'bg-brand-positive/15 text-brand-positive border-brand-positive/20',
-  Stable: 'bg-brand-action/10 text-brand-action border-brand-action/20',
-  'Needs Attention': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+const STATUS_BADGE_BASE =
+  'inline-flex h-5 w-max max-w-full shrink-0 items-center justify-center rounded-[10px] px-2.5 text-center text-[10px] leading-[14px] font-semibold tracking-normal whitespace-nowrap'
+
+const STATUS_STYLES: Record<string, string> = {
+  'high demand': 'bg-[#00A63E33] text-[#00A63E]',
+  'high performing': 'bg-[#00A63E33] text-[#00A63E]',
+  good: 'bg-[#155DFC33] text-[#155DFC]',
+  stable: 'bg-[#155DFC33] text-[#155DFC]',
+  available: 'bg-[#E0A26333] text-[#E0A263]',
+  'needs attention': 'bg-[#E0A26333] text-[#E0A263]',
 }
 
-const tooltipStyle = {
-  background: 'rgba(2,6,23,0.92)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  borderRadius: 12,
-  padding: '10px 12px',
-  color: 'rgba(226,232,240,0.95)',
-  boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+const STATUS_LABELS: Record<string, string> = {
+  'high demand': 'High Demand',
+  'high performing': 'High Demand',
+  good: 'Good',
+  stable: 'Good',
+  available: 'Available',
+  'needs attention': 'Available',
+}
+
+const normalizeVenueStatus = (status?: string | null) =>
+  (status || '').toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
+
+const getVenueStatusDisplay = (status?: string | null) => {
+  const key = normalizeVenueStatus(status)
+  return {
+    key,
+    label: STATUS_LABELS[key] || status || 'Available',
+    className: cn(STATUS_BADGE_BASE, STATUS_STYLES[key] || STATUS_STYLES.available),
+    barClassName:
+      key === 'high demand' || key === 'high performing'
+        ? 'bg-[#00A63E]'
+        : key === 'good' || key === 'stable'
+          ? 'bg-[#155DFC]'
+          : 'bg-[#E0A263]',
+  }
+}
+
+const VENUE_TREND_COLORS = {
+  avgRevenue: '#E0A263',
+  revenue: '#155DFC',
+  utilization: '#00A63E',
+} as const
+
+const AXIS_TICK = {
+  fill: '#FFFFFF',
+  fontSize: 16,
+  fontWeight: 600,
+  fontFamily: 'Figtree, sans-serif',
+} as const
+
+const formatRevenueAxisTick = (value: number) => {
+  const n = Number(value) || 0
+  const abs = Math.abs(n)
+  if (abs >= 10_000_000) {
+    const cr = n / 10_000_000
+    return `${Number.isInteger(cr) ? cr : Number(cr.toFixed(1))}Cr`
+  }
+  if (abs >= 100_000) {
+    const lakhs = n / 100_000
+    return `${Number.isInteger(lakhs) ? lakhs : Number(lakhs.toFixed(1))}L`
+  }
+  if (abs >= 1000) {
+    const thousands = n / 1000
+    return `${Number.isInteger(thousands) ? thousands : Number(thousands.toFixed(1))}K`
+  }
+  return String(Math.round(n))
+}
+
+const formatUtilizationAxisTick = (value: number) => {
+  const n = Number(value) || 0
+  return Number.isInteger(n) ? String(n) : n.toFixed(1)
+}
+
+type AxisTickProps = {
+  x?: number | string
+  y?: number | string
+  payload?: { value?: number }
+  textAnchor?: 'start' | 'middle' | 'end'
+  formatter: (value: number) => string
+}
+
+function ChartAxisTick({ x = 0, y = 0, payload, textAnchor = 'end', formatter }: AxisTickProps) {
+  const label = formatter(Number(payload?.value ?? 0))
+  return (
+    <text
+      x={Number(x)}
+      y={Number(y)}
+      dy={5}
+      textAnchor={textAnchor}
+      fill={AXIS_TICK.fill}
+      fontSize={AXIS_TICK.fontSize}
+      fontWeight={AXIS_TICK.fontWeight}
+      fontFamily={AXIS_TICK.fontFamily}
+    >
+      {label}
+    </text>
+  )
+}
+
+type VenueTrendsTooltipProps = {
+  active?: boolean
+  label?: string
+  payload?: Array<{ dataKey?: string; value?: number; name?: string }>
+}
+
+function VenueTrendsTooltip({ active, payload, label }: VenueTrendsTooltipProps) {
+  if (!active || !payload?.length) return null
+
+  const values = payload.reduce<Record<string, number>>((acc, entry) => {
+    if (entry.dataKey && typeof entry.value === 'number') {
+      acc[entry.dataKey] = entry.value
+    }
+    return acc
+  }, {})
+
+  const rows = [
+    {
+      key: 'avgRevenue',
+      label: 'Avg Revenue/Venue',
+      color: VENUE_TREND_COLORS.avgRevenue,
+      value: values.avgRevenue,
+    },
+    {
+      key: 'revenue',
+      label: 'Revenue',
+      color: VENUE_TREND_COLORS.revenue,
+      value: values.revenue,
+    },
+    {
+      key: 'utilization',
+      label: 'Utilization %',
+      color: VENUE_TREND_COLORS.utilization,
+      value: values.utilization,
+    },
+  ].filter((row) => row.value != null)
+
+  return (
+    <div className="box-border min-h-[96px] w-[159px] rounded-lg bg-white px-[9px] py-[6px]">
+      <p className="text-[12px] leading-[14px] font-medium tracking-normal text-black">{label}</p>
+      <div className="mt-[5px] space-y-[5px]">
+        {rows.map((row) => (
+          <p
+            key={row.key}
+            className="text-[12px] leading-[14px] font-semibold tracking-normal"
+            style={{ color: row.color }}
+          >
+            {row.label}: {row.value}
+          </p>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function MetricCard({ metric }: { metric: Metric }) {
@@ -112,21 +256,9 @@ function MetricCard({ metric }: { metric: Metric }) {
       <div className="mt-auto flex items-center gap-2 pt-3">
         {metric.change ? (
           <>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                metric.changeType === 'down'
-                  ? 'bg-brand-danger/10 text-brand-danger'
-                  : 'bg-brand-positive/15 text-brand-positive',
-              )}
-            >
-              {metric.changeType === 'down' ? (
-                <TrendingDown className="size-3" />
-              ) : (
-                <TrendingUp className="size-3" />
-              )}
-              {metric.change}
-            </span>
+            <TrendBadge direction={metric.changeType === 'down' ? 'down' : 'up'}>
+              {ensureTrendChangeSign(metric.change, metric.changeType === 'down' ? 'down' : 'up')}
+            </TrendBadge>
             {metric.changeNote && (
               <span className="text-muted text-[10px]">{metric.changeNote}</span>
             )}
@@ -168,6 +300,7 @@ const attachMetricTrends = (
 
 export const VenueDashboardPage = () => {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const [selectedRange, setSelectedRange] = useState<string>('3')
 
   const dashboardQuery = useVenueDashboard({
@@ -361,24 +494,27 @@ export const VenueDashboardPage = () => {
           : 'Last 12 Months'
 
     try {
-      await exportVenueDashboardToExcel({
-        rangeLabel,
-        metrics: visibleMetrics,
-        trendPoints: trendData,
-        topVenues,
-      })
-      toast.success('Exported as Excel')
-    } catch {
-      toast.error('Failed to export venue dashboard')
+      await exportVenueDashboardToExcel(
+        {
+          rangeLabel,
+          metrics: visibleMetrics,
+          trendPoints: trendData,
+          topVenues,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export venue dashboard'))
     }
-  }, [isLoading, selectedRange, topVenues, trendData, visibleMetrics])
+  }, [exportFormat, fileFormat, isLoading, selectedRange, topVenues, trendData, visibleMetrics])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Venues</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Venue performance, utilization analytics, and revenue metrics
           </p>
         </div>
@@ -387,7 +523,7 @@ export const VenueDashboardPage = () => {
             className="ui-manage-metrics h-9"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
 
@@ -398,7 +534,7 @@ export const VenueDashboardPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 @min-[1100px]/main:grid-cols-4">
         {isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
               <MetricCardSkeleton key={`venue-metric-skeleton-${index}`} />
@@ -409,7 +545,7 @@ export const VenueDashboardPage = () => {
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-body-md font-bold text-white">
+            <h2 className="text-[16px] leading-5 font-semibold tracking-normal text-white">
               Venue Utilization &amp; Revenue Trends
             </h2>
             <p className="text-body-sm text-muted mt-0.5">
@@ -431,14 +567,12 @@ export const VenueDashboardPage = () => {
             <button
               type="button"
               aria-label="Refresh"
-              className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+              className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
               onClick={() => {
                 dashboardQuery.refetch()
               }}
             >
-              <RefreshCw
-                className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`}
-              />
+              <RotateCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -450,13 +584,13 @@ export const VenueDashboardPage = () => {
             No trend data available.
           </div>
         ) : (
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full overflow-visible">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={trendData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+              <ComposedChart data={trendData} margin={{ left: 8, right: 8, top: 12, bottom: 8 }}>
                 <defs>
                   <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--brand-action)" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="var(--brand-action)" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={VENUE_TREND_COLORS.revenue} stopOpacity={0.45} />
+                    <stop offset="100%" stopColor={VENUE_TREND_COLORS.revenue} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -464,37 +598,60 @@ export const VenueDashboardPage = () => {
                   dataKey="month"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  tick={AXIS_TICK}
+                  interval="preserveStartEnd"
+                  minTickGap={16}
                 />
                 <YAxis
                   yAxisId="left"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  width={56}
+                  tickCount={5}
+                  allowDecimals={false}
+                  tick={(props) => (
+                    <ChartAxisTick {...props} textAnchor="end" formatter={formatRevenueAxisTick} />
+                  )}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  width={40}
+                  tickCount={5}
+                  domain={[0, 'auto']}
+                  tick={(props) => (
+                    <ChartAxisTick
+                      {...props}
+                      textAnchor="start"
+                      formatter={formatUtilizationAxisTick}
+                    />
+                  )}
                 />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                <Tooltip
+                  content={<VenueTrendsTooltip />}
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                />
                 <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
                 <Bar
                   yAxisId="right"
                   name="Utilization %"
                   dataKey="utilization"
-                  fill="var(--brand-positive)"
+                  fill={VENUE_TREND_COLORS.utilization}
                   radius={[4, 4, 0, 0]}
-                  barSize={28}
+                  barSize={Math.min(
+                    135,
+                    Math.max(28, Math.floor(700 / Math.max(trendData.length, 1))),
+                  )}
+                  maxBarSize={135}
                 />
                 <Area
                   yAxisId="left"
                   type="monotone"
                   name="Revenue"
                   dataKey="revenue"
-                  stroke="var(--brand-action)"
+                  stroke={VENUE_TREND_COLORS.revenue}
                   strokeWidth={2}
                   fill="url(#revenueFill)"
                 />
@@ -503,9 +660,9 @@ export const VenueDashboardPage = () => {
                   type="monotone"
                   name="Avg Revenue/Venue"
                   dataKey="avgRevenue"
-                  stroke="var(--brand-accent)"
+                  stroke={VENUE_TREND_COLORS.avgRevenue}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: 'var(--brand-accent)' }}
+                  dot={{ r: 3, fill: VENUE_TREND_COLORS.avgRevenue }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -524,12 +681,12 @@ export const VenueDashboardPage = () => {
           <button
             type="button"
             aria-label="Refresh"
-            className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+            className="rounded-lg p-2 text-white transition-colors hover:bg-white/5"
             onClick={() => {
               dashboardQuery.refetch()
             }}
           >
-            <RefreshCw className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
+            <RotateCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
@@ -546,17 +703,37 @@ export const VenueDashboardPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <thead>
-                <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
-                  <th className="px-3 py-3">Venue Name</th>
-                  <th className="px-3 py-3">City</th>
-                  <th className="px-3 py-3">Total Visits</th>
-                  <th className="px-3 py-3">Event Attendance</th>
-                  <th className="px-3 py-3">Bookings</th>
-                  <th className="px-3 py-3">Repeat Visitors %</th>
-                  <th className="px-3 py-3">Utilization %</th>
-                  <th className="px-3 py-3">Revenue</th>
-                  <th className="px-3 py-3">Rating</th>
-                  <th className="px-3 py-3">Status</th>
+                <tr>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Venue Name
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    City
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Total Visits
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Event Attendance
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Bookings
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Repeat Visitors %
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Utilization %
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Revenue
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Rating
+                  </th>
+                  <th className="px-3 py-3 text-center text-[16px] leading-5 font-semibold tracking-normal text-white">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -566,40 +743,56 @@ export const VenueDashboardPage = () => {
                       key={venue.name}
                       className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
                     >
-                      <td className="px-3 py-3 font-semibold text-white">{venue.name}</td>
-                      <td className="text-muted px-3 py-3">{venue.city}</td>
-                      <td className="px-3 py-3">{venue.totalVisits || 0}</td>
-                      <td className="px-3 py-3">{venue.eventAttendance || 0}</td>
-                      <td className="px-3 py-3">{venue.bookings || 0}</td>
-                      <td className="px-3 py-3">{venue.repeatVisitors || 0}%</td>
+                      <td className="px-3 py-3 text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.name}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.city}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.totalVisits || 0}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.eventAttendance || 0}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.bookings || 0}
+                      </td>
+                      <td className="px-3 py-3 text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                        {venue.repeatVisitors || 0}%
+                      </td>
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-[5px] w-[100px] overflow-hidden rounded-[10px] bg-[#FFFFFF4D]">
                             <div
-                              className="bg-brand-accent h-full rounded-full"
-                              style={{ width: `${venue.utilization || 0}%` }}
+                              className={cn(
+                                'h-full rounded-[10px]',
+                                getVenueStatusDisplay(venue.status).barClassName,
+                              )}
+                              style={{
+                                width: `${Math.min(100, Math.max(0, venue.utilization || 0))}%`,
+                              }}
                             />
                           </div>
-                          <span className="text-body-sm text-muted">{venue.utilization || 0}%</span>
+                          <span className="text-center text-[14px] leading-5 font-semibold tracking-normal text-white">
+                            {venue.utilization || 0}%
+                          </span>
                         </div>
                       </td>
-                      <td className="px-3 py-3 font-semibold text-white">
+                      <td className="px-3 py-3 text-[14px] leading-5 font-semibold tracking-normal text-white">
                         {venue.revenue || '₹0'}
                       </td>
                       <td className="px-3 py-3">
                         <span className="inline-flex items-center gap-1">
                           <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                          <span className="font-semibold text-white">{venue.rating || 0}</span>
+                          <span className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+                            {venue.rating || 0}
+                          </span>
                         </span>
                       </td>
-                      <td className="px-3 py-3">
-                        <span
-                          className={cn(
-                            'inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold',
-                            STATUS_STYLES[venue.status] || STATUS_STYLES['Needs Attention'],
-                          )}
-                        >
-                          {venue.status}
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span className={getVenueStatusDisplay(venue.status).className}>
+                          {getVenueStatusDisplay(venue.status).label}
                         </span>
                       </td>
                     </tr>

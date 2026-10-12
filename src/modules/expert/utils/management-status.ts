@@ -5,6 +5,7 @@ export type ManagementStatusKey = 'pending' | 'approved' | 'suspended' | 'delete
 const normalizeStatusToken = (status: string | null | undefined) =>
   (status || '').toLowerCase().replace(/_/g, ' ').trim()
 
+// Deleted and suspended flags win over the status text. Draft, preview, and submitted are shown as pending. Live and active are shown as approved.
 export const normalizeManagementStatus = (
   status: string | null | undefined,
   options?: { isSuspend?: boolean; isDeleted?: boolean },
@@ -40,7 +41,7 @@ export const formatManagementStatusLabel = (key: ManagementStatusKey): string =>
     case 'approved':
       return 'Approved'
     case 'suspended':
-      return 'Suspend'
+      return 'Suspended'
     case 'deleted':
       return 'Deleted'
     case 'rejected':
@@ -50,11 +51,11 @@ export const formatManagementStatusLabel = (key: ManagementStatusKey): string =>
 
 export const getManagementStatusClassName = (key: ManagementStatusKey) =>
   cn(
-    'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+    'inline-flex h-5 min-w-[50px] items-center justify-center rounded-[10px] px-2.5 text-center text-[10px] leading-[14px] font-semibold tracking-normal',
     key === 'pending'
       ? 'bg-amber-500/10 text-amber-500'
       : key === 'approved'
-        ? 'bg-green-500/10 text-green-500'
+        ? 'bg-[#00A63E33] text-[#00A63E]'
         : key === 'suspended'
           ? 'bg-purple-500/10 text-purple-400'
           : key === 'deleted' || key === 'rejected'
@@ -71,5 +72,93 @@ export const getManagementStatusDisplay = (
     key,
     label: formatManagementStatusLabel(key),
     className: getManagementStatusClassName(key),
+  }
+}
+
+// Active stays Active. Live, instant, approved, and published are labelled Live. Draft and preview stay Preview.
+const formatListingStatusLabel = (status: string | null | undefined, key: ManagementStatusKey) => {
+  if (key === 'deleted') return 'Deleted'
+  if (key === 'suspended') return 'Suspended'
+  if (key === 'rejected') return 'Rejected'
+
+  const normalized = normalizeStatusToken(status)
+  if (normalized === 'active') {
+    return 'Active'
+  }
+  if (['live', 'instant', 'approved', 'published'].includes(normalized)) {
+    return 'Live'
+  }
+  if (['in review', 'submitted', 'pending'].includes(normalized)) {
+    return 'Review Pending'
+  }
+  if (['preview', 'draft'].includes(normalized)) {
+    return 'Preview'
+  }
+  if (normalized === 'closed') {
+    return 'Closed'
+  }
+  if (normalized === 'paused') {
+    return 'Paused'
+  }
+
+  return formatManagementStatusLabel(key)
+}
+
+const getProfileServiceListingStatusClassName = (
+  status: string | null | undefined,
+  key: ManagementStatusKey,
+) => {
+  const normalized = normalizeStatusToken(status)
+  const base = 'rounded-md px-2 py-0.5 text-[10px] font-bold uppercase'
+
+  if (key === 'deleted' || key === 'rejected') {
+    return cn(base, 'bg-[#FF3B30]/50 text-white')
+  }
+  if (key === 'suspended') {
+    return cn(base, 'bg-[#AF52DE]/50 text-white')
+  }
+  if (['preview', 'draft', 'closed', 'paused'].includes(normalized)) {
+    return cn(base, 'bg-white/50 text-[#050505]')
+  }
+  if (
+    ['live', 'instant', 'approved', 'published', 'active'].includes(normalized) ||
+    key === 'approved'
+  ) {
+    return cn(base, 'bg-[#4CD964]/50 text-white')
+  }
+  if (['in review', 'submitted', 'pending'].includes(normalized) || key === 'pending') {
+    return cn(base, 'bg-[#FFCC00]/50 text-[#050505]')
+  }
+
+  return cn(base, 'bg-white/50 text-[#050505]')
+}
+
+// A preview or a draft has not been submitted. Any other status has.
+export const isSubmittedListingStatus = (status: string | null | undefined) => {
+  const normalized = normalizeStatusToken(status)
+  return Boolean(normalized) && !['preview', 'draft'].includes(normalized)
+}
+
+export const getListingStatusDisplay = (
+  status: string | null | undefined,
+  options?: { isSuspend?: boolean; isDeleted?: boolean },
+) => {
+  const key = normalizeManagementStatus(status, options)
+  return {
+    key,
+    label: formatListingStatusLabel(status, key),
+    className: getManagementStatusClassName(key),
+  }
+}
+
+export const getProfileServiceListingStatusDisplay = (
+  status: string | null | undefined,
+  options?: { isSuspend?: boolean; isDeleted?: boolean },
+) => {
+  const key = normalizeManagementStatus(status, options)
+  return {
+    key,
+    label: formatListingStatusLabel(status, key),
+    className: getProfileServiceListingStatusClassName(status, key),
   }
 }

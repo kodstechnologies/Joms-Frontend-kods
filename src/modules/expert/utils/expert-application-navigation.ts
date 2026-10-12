@@ -5,37 +5,88 @@ import { fetchExpertApplicationView } from '../api/expert-application-api'
 import { fetchVenueFullView, fetchVenues } from '../api/venue-api'
 import { fetchVenueKycByPartnerId } from '../api/venue-kyc-api'
 import { getVenueApiId } from './venue-list'
-import { isKycSubmittedForApplication } from '../utils/expert-application-helpers'
+import {
+  isKycSubmittedForApplication,
+  isSubmittedKycStatus,
+} from '../utils/expert-application-helpers'
 
-const isVenueServiceType = (serviceType?: string | null) => serviceType?.toLowerCase() === 'venue'
+export type PartnerProfileRef = {
+  id?: string | null
+  partnerId?: string | null
+  serviceType?: string | null
+  servicetype?: string | null
+  venueKycId?: string | null
+  venueKycStatus?: string | null
+  basicProfile?: { serviceType?: string | null } | null
+}
 
+export const isVenueServiceType = (serviceType?: string | null) =>
+  String(serviceType || '')
+    .trim()
+    .toLowerCase() === 'venue'
+
+// A partner is a venue partner when their service type is venue, or when a venue KYC record is already attached.
+export const isVenuePartner = (partner?: PartnerProfileRef | null) => {
+  if (!partner) return false
+  if (
+    isVenueServiceType(
+      partner.serviceType || partner.servicetype || partner.basicProfile?.serviceType,
+    )
+  ) {
+    return true
+  }
+  return Boolean(partner.venueKycId || partner.venueKycStatus)
+}
+
+const getPartnerProfileId = (partner: PartnerProfileRef) =>
+  String(partner.id || partner.partnerId || '').trim()
+
+export const getVenueKycApplicationPath = (kycId: string) =>
+  `/experts/management/application/${kycId}?source=venue_kyc`
+
+// A venue application opens only after KYC is submitted. An expert application always opens on the expert id.
 export const getExpertApplicationPath = (expert: {
   id: string
   serviceType?: string | null
   venueKycId?: string | null
+  venueKycStatus?: string | null
 }) => {
   if (isVenueServiceType(expert.serviceType)) {
-    if (!expert.venueKycId) {
+    if (!expert.venueKycId || !isSubmittedKycStatus(expert.venueKycStatus)) {
       return null
     }
 
-    return `/experts/management/application/${expert.venueKycId}?source=venue_kyc`
+    return getVenueKycApplicationPath(expert.venueKycId)
   }
 
   return `/experts/management/application/${expert.id}`
 }
 
+// A venue KYC that exists but is not submitted shows an error and stays put. A missing venue KYC id falls through to the profile lookup.
 export const openExpertApplicationView = async (
   expert: {
     id: string
     serviceType?: string | null
     venueKycId?: string | null
+    venueKycStatus?: string | null
   },
   navigate: NavigateFunction,
+  options?: { tab?: 'overview' | 'kyc' | 'banking'; focus?: string },
 ) => {
+  const query = new URLSearchParams()
+  if (options?.tab) query.set('tab', options.tab)
+  if (options?.focus) query.set('focus', options.focus)
+  const extra = query.toString()
+
   if (isVenueServiceType(expert.serviceType)) {
-    if (expert.venueKycId) {
-      navigate(`/experts/management/application/${expert.venueKycId}?source=venue_kyc`)
+    if (expert.venueKycId && isSubmittedKycStatus(expert.venueKycStatus)) {
+      const base = getVenueKycApplicationPath(expert.venueKycId)
+      navigate(extra ? `${base}&${extra}` : base)
+      return
+    }
+
+    if (expert.venueKycId && !isSubmittedKycStatus(expert.venueKycStatus)) {
+      toast.error('KYC is not submitted by partner')
       return
     }
 
@@ -43,7 +94,7 @@ export const openExpertApplicationView = async (
     return
   }
 
-  navigate(`/experts/management/application/${expert.id}`)
+  navigate(`/experts/management/application/${expert.id}${extra ? `?${extra}` : ''}`)
 }
 
 const readKycId = (payload: unknown): string => {
@@ -52,44 +103,70 @@ const readKycId = (payload: unknown): string => {
   return String(record.data?._id || record._id || '').trim()
 }
 
-export const openVenuePartnerProfile = async (partnerId: string, navigate: NavigateFunction) => {
+// Tries the full venue, then the venue list, then a submitted KYC. An unsubmitted KYC is not opened.
+export const resolveVenuePartnerProfilePath = async (partnerId: string): Promise<string | null> => {
   try {
     const response = await fetchVenueFullView(partnerId)
     const venueId = String(response?.data?.overview?.venue?._id || '').trim()
-    if (venueId) {
-      navigate(`/venues/management/profile/${venueId}`)
-      return
-    }
+    if (venueId) return `/venues/management/profile/${venueId}`
   } catch {
-    // Partner may only have a list record, KYC, or a partner profile.
+    // Partner may only have a list record or KYC.
   }
 
   try {
     const list = await fetchVenues({ ownerId: partnerId, limit: 1 })
     const venue = list?.data?.[0]
     const venueId = venue ? getVenueApiId(venue) : ''
-    if (venueId) {
-      navigate(`/venues/management/profile/${venueId}`)
-      return
-    }
+    if (venueId) return `/venues/management/profile/${venueId}`
   } catch {
-    // Continue to KYC / partner profile.
+    // Continue to KYC.
   }
 
   try {
     const response = await fetchVenueKycByPartnerId(partnerId)
     const kycId = readKycId(response)
-    if (kycId) {
-      navigate(`/experts/management/application/${kycId}?source=venue_kyc`)
-      return
+    const kycStatus =
+      response && typeof response === 'object'
+        ? (response as { data?: { status?: string }; status?: string }).data?.status ||
+          (response as { status?: string }).status
+        : ''
+    if (kycId && isSubmittedKycStatus(kycStatus)) {
+      return getVenueKycApplicationPath(kycId)
     }
   } catch {
-    // Continue to partner profile.
+    // No venue profile available.
+  }
+
+  return null
+}
+
+export const openVenuePartnerProfile = async (partnerId: string, navigate: NavigateFunction) => {
+  const path = await resolveVenuePartnerProfilePath(partnerId)
+  if (path) {
+    navigate(path)
+    return
+  }
+
+  toast.error('Venue profile not found for this partner.')
+}
+
+// A venue partner is opened on the venue profile. Everyone else is opened on the expert profile.
+export const openPartnerProfile = async (
+  partner: PartnerProfileRef,
+  navigate: NavigateFunction,
+) => {
+  const partnerId = getPartnerProfileId(partner)
+  if (!partnerId) return
+
+  if (isVenuePartner(partner)) {
+    await openVenuePartnerProfile(partnerId, navigate)
+    return
   }
 
   navigate(`/experts/management/profile/${partnerId}`)
 }
 
+// KYC that has not been submitted is refused for both venues and experts.
 export const openExpertKycFromProfile = async (
   partnerId: string,
   serviceType: string | null | undefined,
@@ -99,13 +176,14 @@ export const openExpertKycFromProfile = async (
     try {
       const response = await fetchVenueKycByPartnerId(partnerId)
       const kycId = response?.data?._id
+      const kycStatus = response?.data?.status
 
-      if (!kycId) {
-        toast.error('No venue KYC found for this partner.')
+      if (!kycId || !isSubmittedKycStatus(kycStatus)) {
+        toast.error('KYC is not submitted by partner')
         return
       }
 
-      navigate(`/experts/management/application/${kycId}?source=venue_kyc`)
+      navigate(getVenueKycApplicationPath(kycId))
     } catch {
       toast.error('No venue KYC found for this partner.')
     }

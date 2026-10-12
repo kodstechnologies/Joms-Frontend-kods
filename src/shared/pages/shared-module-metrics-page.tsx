@@ -3,6 +3,11 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { ModuleMetricsPage } from '@/modules/expert/pages/shared/module-metrics-page'
 import { getModuleMetricsDefinition } from '@/shared/lib/module-metrics-registry'
 
+function parseSectionParam(value: string | null): 'dashboard' | 'table' | 'all' | undefined {
+  if (value === 'dashboard' || value === 'table' || value === 'all') return value
+  return undefined
+}
+
 export function SharedModuleMetricsPage() {
   const { moduleKey = '' } = useParams<{ moduleKey: string }>()
   const [searchParams] = useSearchParams()
@@ -17,20 +22,18 @@ export function SharedModuleMetricsPage() {
     )
   }
 
+  const hasMetrics = Boolean(definition.metrics?.length)
+  const hasColumns = Boolean(definition.columns?.length)
+  const section =
+    parseSectionParam(searchParams.get('section')) ??
+    (hasMetrics && hasColumns ? 'all' : hasColumns ? 'table' : 'dashboard')
+
   return (
     <ModuleMetricsPage
       moduleKey={definition.moduleKey}
       moduleName={definition.moduleName}
       returnTo={returnTo}
-      section={
-        definition.metrics?.length && definition.columns?.length
-          ? 'all'
-          : definition.columns?.length
-            ? 'table'
-            : 'dashboard'
-      }
-      includeDashboard={Boolean(definition.metrics?.length)}
-      includeTableColumns={Boolean(definition.columns?.length)}
+      section={section}
       maxActiveMetrics={definition.maxActiveMetrics}
     />
   )

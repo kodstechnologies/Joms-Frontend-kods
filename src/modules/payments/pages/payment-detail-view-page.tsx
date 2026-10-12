@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, SquareArrowOutUpRight, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
@@ -28,8 +29,8 @@ import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
-  downloadKeyValueReport,
   flattenExportPairs,
+  useDownloadKeyValueReport,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 
 const cardClass = financeDetailCardClass
@@ -78,6 +79,7 @@ const venueCode = (id?: string | null) => {
 
 export function PaymentDetailViewPage() {
   const navigate = useNavigate()
+  const downloadKeyValueReport = useDownloadKeyValueReport()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
@@ -261,7 +263,7 @@ export function PaymentDetailViewPage() {
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
+            Payment &amp; Finance
           </Link>
           <span> / </span>
           <Link to="/finance/revenue" className="hover:text-brand-text transition-colors">
@@ -452,7 +454,7 @@ export function PaymentDetailViewPage() {
                 toast.success('Note saved')
                 setIsNoteModalOpen(false)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

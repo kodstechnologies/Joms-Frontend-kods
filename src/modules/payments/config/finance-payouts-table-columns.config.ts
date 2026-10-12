@@ -129,7 +129,6 @@ export const FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG: FinancePayoutsTableColumnCat
     description: 'Approving finance admin',
     defaultVisible: false,
   },
-  // Legacy columns kept visible so existing UI does not empty
   {
     id: 'recipient',
     label: 'Recipient',

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
+import { Eye, FolderTree, Layers, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -7,11 +7,14 @@ import { Button } from '@/shared/components/ui/button'
 
 import { DeleteCategoryModal } from './delete-category-modal'
 import { PauseCategoryModal } from './pause-category-modal'
+import { EditCategoryGroupModal } from './edit-category-group-modal'
 import {
   usePauseVenueCategory,
   useSoftDeleteVenueCategory,
+  useVenueCategory,
 } from '../../hooks/use-venue-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { buildVenueManagementCategoryUrl } from '../../utils/venue-management-category-link'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 
 export const VenueCategoryViewHeaderActions = () => {
@@ -19,8 +22,20 @@ export const VenueCategoryViewHeaderActions = () => {
   const { id } = useParams()
   const [pauseModalOpen, setPauseModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const pauseMutation = usePauseVenueCategory()
   const softDeleteMutation = useSoftDeleteVenueCategory()
+  const { data: category } = useVenueCategory(id)
+
+  const venuesPath = buildVenueManagementCategoryUrl({
+    categoryId: id || category?.id,
+    categoryName: category?.name,
+  })
+  const spacesPath = buildVenueManagementCategoryUrl({
+    categoryId: id || category?.id,
+    categoryName: category?.name,
+    view: 'spaces',
+  })
 
   return (
     <>
@@ -33,9 +48,27 @@ export const VenueCategoryViewHeaderActions = () => {
           Add Sub-Category
         </Button>
 
-        <Button variant="secondary" onClick={() => navigate('/venues/management')}>
+        <Button variant="secondary" onClick={() => navigate(venuesPath)}>
           <Eye className="size-4" aria-hidden="true" />
           View Venues
+        </Button>
+
+        <Button variant="secondary" onClick={() => navigate(spacesPath)}>
+          <Layers className="size-4" aria-hidden="true" />
+          View Spaces
+        </Button>
+
+        <Button
+          variant="secondary"
+          onClick={() => {
+            const el = document.getElementById('venue-sub-categories-section')
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+        >
+          <FolderTree className="size-4" aria-hidden="true" />
+          Edit Group
         </Button>
 
         <Button
@@ -96,6 +129,13 @@ export const VenueCategoryViewHeaderActions = () => {
             },
           })
         }}
+      />
+
+      <EditCategoryGroupModal
+        open={editGroupModalOpen}
+        onClose={() => setEditGroupModalOpen(false)}
+        category={category || null}
+        isVenue={true}
       />
     </>
   )

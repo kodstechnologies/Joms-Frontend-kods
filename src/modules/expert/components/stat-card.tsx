@@ -1,16 +1,29 @@
+import { cn } from '@/shared/lib/cn'
+
 type StatCardProps = {
   title: string
   value: string
   className?: string
+  isTextValue?: boolean
 }
 
-export function StatCard({ title, value, className }: StatCardProps) {
+export function StatCard({ title, value, className, isTextValue }: StatCardProps) {
   return (
     <div
-      className={`rounded-brand-lg bg-brand-surface border border-white/10 px-5 py-4 ${className ?? ''}`}
+      className={cn(
+        'rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10',
+        className,
+      )}
     >
-      <p className="text-xs font-medium text-slate-400 md:text-sm">{title}</p>
-      <h2 className="mt-2 text-xl font-semibold text-white md:text-2xl">{value}</h2>
+      <p className="text-body-sm text-muted truncate font-medium">{title}</p>
+      <p
+        className={cn(
+          'mt-2 text-[20px] leading-5 font-semibold tracking-normal text-white',
+          isTextValue ? 'line-clamp-2' : 'truncate',
+        )}
+      >
+        {value}
+      </p>
     </div>
   )
 }

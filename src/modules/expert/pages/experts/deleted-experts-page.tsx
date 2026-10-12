@@ -1,21 +1,25 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, RotateCcw } from 'lucide-react'
+import { Bell, Eye, FileText, Link2, RotateCcw, ShoppingBag, Wallet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS,
   EXPERT_DELETED_MODULE_KEY,
 } from '../../config/expert-management-table-columns.config'
 import { useRestoreExpert } from '../../hooks/use-expert'
+import { useExpertMicrositeActions } from '../../hooks/use-expert-microsite-actions'
 import { useExpertStatusList } from '../../hooks/use-expert-status-list'
 import type { Expert } from '../../type/expert'
+import { isVenuePartner, openPartnerProfile } from '../../utils/expert-application-navigation'
 import {
   buildExpertDataColumnsById,
   pickPreferenceColumns,
 } from '../../utils/expert-preference-columns'
+import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { createExpertSelectColumn } from './expert-list-columns'
 import { ExpertListHeader } from './expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -28,11 +32,15 @@ import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 export function ExpertDeletedExpertsPage() {
   const navigate = useNavigate()
   const restoreExpertMutation = useRestoreExpert()
   const catalogColumnIds = DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS
+  const { fileFormat } = useDefaultExportFormat()
+  const [payoutDrawerTarget, setPayoutDrawerTarget] = useState<Expert | null>(null)
+  const { openReinstateMicrosite, micrositeModal } = useExpertMicrositeActions()
 
   const list = useExpertStatusList({
     moduleKey: EXPERT_DELETED_MODULE_KEY,
@@ -40,7 +48,53 @@ export function ExpertDeletedExpertsPage() {
     defaultVisibleColumnIds: DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
     exportFileName: 'deleted_experts_export',
+    exportColumnMap: EXPERT_EXPORT_COLUMN_MAP,
   })
+
+  const resolvePartnerId = useCallback((expert: Expert) => {
+    return String(expert.id || expert.expertId || '').trim()
+  }, [])
+
+  const openViewOrders = useCallback(
+    (expert: Expert) => {
+      const partnerId = resolvePartnerId(expert)
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}/clientele`)
+    },
+    [navigate, resolvePartnerId],
+  )
+
+  const openViewReports = useCallback(
+    (expert: Expert) => {
+      const partnerId = resolvePartnerId(expert)
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      navigate(`/experts/management/profile/${partnerId}?tab=health`)
+    },
+    [navigate, resolvePartnerId],
+  )
+
+  const openNotifyExpert = useCallback(
+    (expert: Expert) => {
+      const partnerId = resolvePartnerId(expert)
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'push',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate, resolvePartnerId],
+  )
 
   const handleExportExpertRow = useCallback(
     async (expert: Expert) => {
@@ -48,7 +102,7 @@ export function ExpertDeletedExpertsPage() {
         await exportMappedItemsToFile(
           EXPERT_EXPORT_COLUMN_MAP,
           [expert],
-          'excel',
+          fileFormat,
           `deleted_expert_${expert.expertId || expert.id}`,
           {
             columnIds: list.visibleColumnIds,
@@ -56,11 +110,11 @@ export function ExpertDeletedExpertsPage() {
           },
         )
         toast.success('Expert exported')
-      } catch {
-        toast.error('Failed to export expert')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export expert'))
       }
     },
-    [list.visibleColumnIds],
+    [fileFormat, list.visibleColumnIds],
   )
 
   const columns = useMemo<ColumnDef<Expert>[]>(() => {
@@ -90,22 +144,24 @@ export function ExpertDeletedExpertsPage() {
           cell: ({ row }) => {
             const expert = row.original
             const isOpen = list.activeDropdownId === expert.expertId
+            const isVenue = isVenuePartner(expert)
 
             return (
               <TableActionsDropdown
                 label={`Open actions for ${expert.name}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => list.setActiveDropdownId(open ? expert.expertId : null)}
-                menuWidth={192}
+                menuWidth={240}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
                   onClick={() => {
                     list.setActiveDropdownId(null)
-                    navigate(`/experts/management/profile/${expert.id}`)
+                    void openPartnerProfile(expert, navigate)
                   }}
                 >
-                  View Expert
+                  {isVenue ? 'View Profile' : 'View Expert'}
                 </TableActionsItem>
                 <TableActionsItem
                   icon={<RotateCcw className="size-3.5" aria-hidden="true" />}
@@ -116,8 +172,7 @@ export function ExpertDeletedExpertsPage() {
                       onError: (error: unknown) => {
                         const err = error as { response?: { data?: { message?: string } } }
                         toast.error(
-                          err?.response?.data?.message ||
-                            'Failed to restore expert. Please try again.',
+                          getApiErrorMessage(err, 'Failed to restore expert. Please try again.'),
                         )
                       },
                     })
@@ -134,6 +189,51 @@ export function ExpertDeletedExpertsPage() {
                 >
                   Export Data
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<ShoppingBag className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openViewOrders(expert)
+                  }}
+                >
+                  View Orders
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Wallet className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    setPayoutDrawerTarget(expert)
+                  }}
+                >
+                  View Earnings & Payouts
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<FileText className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openViewReports(expert)
+                  }}
+                >
+                  View Reports
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Bell className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openNotifyExpert(expert)
+                  }}
+                >
+                  Notify Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Link2 className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    list.setActiveDropdownId(null)
+                    openReinstateMicrosite(expert.id || expert.expertId, expert.name)
+                  }}
+                >
+                  Reinstate Microsite
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -141,13 +241,25 @@ export function ExpertDeletedExpertsPage() {
       ],
       EXPERT_COLUMN_SORT_FIELDS,
     )
-  }, [handleExportExpertRow, list, navigate, restoreExpertMutation])
+  }, [
+    handleExportExpertRow,
+    list,
+    navigate,
+    openNotifyExpert,
+    openReinstateMicrosite,
+    openViewOrders,
+    openViewReports,
+    restoreExpertMutation,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Deleted Experts"
-        breadcrumb="User Management / Deleted Experts"
+        breadcrumbItems={[
+          { label: 'Expert Management', to: '/experts/management' },
+          { label: 'Deleted Experts', isActive: true },
+        ]}
         metricsPath="/metrics/expert-deleted?returnTo=/experts/deleted"
       />
 
@@ -178,6 +290,14 @@ export function ExpertDeletedExpertsPage() {
         emptyMessage="No deleted experts found."
       />
       {list.exportFilterModals}
+
+      <PayoutHistoryDrawer
+        isOpen={Boolean(payoutDrawerTarget)}
+        onClose={() => setPayoutDrawerTarget(null)}
+        expertId={payoutDrawerTarget?.id || payoutDrawerTarget?.expertId || ''}
+        expertName={payoutDrawerTarget?.name || 'Expert'}
+      />
+      {micrositeModal}
     </div>
   )
 }

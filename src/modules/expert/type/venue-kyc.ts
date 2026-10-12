@@ -64,7 +64,10 @@ export interface ApplicationKycDocuments {
   sportsSafetyCert?: string | null
   publicLiabilityInsurance?: string | null
   fssaiLicense?: string | null
+  gstUndertakingDocument?: string | null
   otherCertificates?: string[]
+  otherDocuments?: string[]
+  [key: string]: unknown
 }
 
 export type VenueDocumentReviewEntry = {

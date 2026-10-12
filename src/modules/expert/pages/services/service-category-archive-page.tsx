@@ -18,7 +18,6 @@ import {
   buildCategoryListQueryParams,
   createCategoryFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
-import { SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { fetchCategories } from '../../api/category-api'
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { type Category } from '../../components/category/category-table-columns'
@@ -50,12 +49,11 @@ export function ServiceCategoryArchivePage({
   status,
   title,
   sourceColumns,
-  exportFileName,
 }: {
   status: ArchiveStatus
   title: string
   sourceColumns: ColumnDef<Category>[]
-  exportFileName: string
+  exportFileName?: string
 }) {
   const navigate = useNavigate()
   const scope = useCategoryManagementScope()
@@ -66,7 +64,7 @@ export function ServiceCategoryArchivePage({
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-  const preferencesQuery = useTableColumnPreferences(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY)
+  const preferencesQuery = useTableColumnPreferences(scope.moduleKey)
   const label = title.toLowerCase()
 
   const catalogColumnIds = useMemo(
@@ -122,15 +120,15 @@ export function ServiceCategoryArchivePage({
     () =>
       createCategoryFilteredExportHandler(
         async (params) => {
-          const response = await fetchCategories(params)
+          const response = await fetchCategories({ ...params, categoryType: scope.categoryType })
           return { data: (response.data ?? []).map(mapServiceCategoryToUi) }
         },
         SERVICE_CATEGORY_EXPORT_COLUMN_MAP,
-        exportFileName,
+        `${scope.exportFilePrefix}_${status.toLowerCase()}_export`,
         { status },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [catalogColumnIds, exportColumnIds, exportFileName, status],
+    [catalogColumnIds, exportColumnIds, scope.categoryType, scope.exportFilePrefix, status],
   )
 
   const {
@@ -138,7 +136,7 @@ export function ServiceCategoryArchivePage({
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'service-category-management',
+    moduleKey: scope.moduleKey,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })

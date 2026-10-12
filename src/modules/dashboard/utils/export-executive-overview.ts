@@ -1,5 +1,5 @@
 import type { AnalyticsMetric } from '@/shared/components/dashboard/analytics-widget'
-import { exportSheetsToExcel } from '@/shared/utils/export-utils'
+import { exportSheetsToFile } from '@/shared/utils/export-utils'
 
 import type {
   ExecutiveKpiStat,
@@ -26,10 +26,13 @@ function formatKpiChange(stat: ExecutiveKpiStat): string {
   return stat.hint ?? ''
 }
 
-export async function exportExecutiveOverviewToExcel(data: ExecutiveOverviewExportData) {
+export async function exportExecutiveOverviewToExcel(
+  data: ExecutiveOverviewExportData,
+  format = 'excel',
+) {
   const date = new Date().toISOString().slice(0, 10)
 
-  await exportSheetsToExcel(
+  await exportSheetsToFile(
     [
       {
         name: 'KPI Stats',
@@ -72,5 +75,6 @@ export async function exportExecutiveOverviewToExcel(data: ExecutiveOverviewExpo
       },
     ],
     `executive_overview_${date}`,
+    format,
   )
 }

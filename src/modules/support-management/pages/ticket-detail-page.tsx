@@ -1,4 +1,5 @@
 import { ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -19,6 +20,10 @@ import {
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
+import {
+  InPageMediaViewer,
+  type InPageMediaItem,
+} from '@/shared/components/media/in-page-media-viewer'
 
 const CONTAINER = 'bg-[#141414]'
 const TITLE_CLASS = 'text-brand-text text-[16px] leading-6 font-semibold'
@@ -38,6 +43,8 @@ export function TicketDetailPage() {
   useLiveSupportUpdates()
   const reopenMutation = useReopenSupportTicket()
   const resolveMutation = useResolveSupportTicket()
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
+  const [mediaItems, setMediaItems] = useState<InPageMediaItem[]>([])
 
   const ticket = data?.data?.ticket
   const messages = data?.data?.messages ?? []
@@ -68,7 +75,7 @@ export function TicketDetailPage() {
         </button>
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Ticket Management</h1>
-          <p className="text-body-md text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight.
           </p>
@@ -183,14 +190,28 @@ export function TicketDetailPage() {
                         ? msg.content
                         : null}
                     </p>
-                    {msg.attachments?.map((file) => {
+                    {msg.attachments?.map((file, fileIndex) => {
                       const isImage =
                         String(file.mimeType || '').startsWith('image/') ||
                         /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif|avif)$/i.test(
                           String(file.name || file.url || ''),
                         )
+                      const openAttachment = () => {
+                        const items = (msg.attachments || []).map((attachment) => ({
+                          url: attachment.url,
+                          title: attachment.name || 'Attachment',
+                          mimeType: attachment.mimeType,
+                        }))
+                        setMediaItems(items)
+                        setMediaIndex(fileIndex)
+                      }
                       return (
-                        <a key={file.url} href={file.url} target="_blank" rel="noreferrer">
+                        <button
+                          key={file.url}
+                          type="button"
+                          onClick={openAttachment}
+                          className="block text-left"
+                        >
                           {isImage ? (
                             <img
                               src={file.url}
@@ -202,7 +223,7 @@ export function TicketDetailPage() {
                               {file.name || 'Download file'}
                             </span>
                           )}
-                        </a>
+                        </button>
                       )
                     })}
                     <p
@@ -271,6 +292,14 @@ export function TicketDetailPage() {
           Reopen
         </button>
       </div>
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
     </div>
   )
 }

@@ -1,13 +1,32 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Check, Star, User, Users, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Banknote,
+  Check,
+  CreditCard,
+  Eye,
+  MessageSquare,
+  Receipt,
+  Star,
+  Users,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useAdminRefundFlow } from '@/modules/payments/hooks/use-admin-refund-flow'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateConsultationApplication } from '@/modules/my-tasks/api/escalation-api'
 
 import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
@@ -95,6 +114,20 @@ export function ConsultationPerformancePage() {
   const [paymentBookingId, setPaymentBookingId] = useState<string | null>(null)
   const [cancelBookingRow, setCancelBookingRow] = useState<ConsultationBookingRow | null>(null)
   const [cancelAdminNotes, setCancelAdminNotes] = useState('')
+  const [escalateTarget, setEscalateTarget] = useState<ConsultationBookingRow | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const performanceQuery = useConsultationPerformance(consultationId)
   const performance = performanceQuery.data?.data
@@ -165,6 +198,132 @@ export function ConsultationPerformancePage() {
     [consultationId, expertId, navigate],
   )
 
+  const resolvePaymentId = useCallback((booking: ConsultationBookingRow) => {
+    return String(booking.paymentId || booking.transactionId || '').trim()
+  }, [])
+
+  const resolveBookingUrl = useCallback(
+    (booking: ConsultationBookingRow) =>
+      consultationBookingPath(expertId, consultationId, booking.id),
+    [consultationId, expertId],
+  )
+
+  const openCommunicateWithExpert = useCallback(
+    (booking?: ConsultationBookingRow) => {
+      const partnerId = String(booking?.partnerId || expertId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [expertId, navigate],
+  )
+
+  const openViewRefundDetails = useCallback(
+    (booking: ConsultationBookingRow) => {
+      const refundId = String(booking.refundId || '').trim()
+      if (!refundId) {
+        toast.error('No refund record found for this booking.')
+        return
+      }
+      navigate(`/finance/refunds/${encodeURIComponent(refundId)}`)
+    },
+    [navigate],
+  )
+
+  const { openRefund, refundModal } = useAdminRefundFlow({
+    onRefunded: () => void bookingsQuery.refetch(),
+  })
+
+  const openProcessRefund = useCallback(
+    (booking: ConsultationBookingRow) => {
+      const existingRefundId = String(booking.refundId || '').trim()
+      if (existingRefundId) {
+        navigate(`/finance/refunds/${encodeURIComponent(existingRefundId)}`)
+        return
+      }
+
+      openRefund({
+        paymentId: resolvePaymentId(booking),
+        amount: Number(booking.price) || 0,
+        currency: booking.currency,
+        reason: `Consultation booking ${booking.bookingId || booking.id}`,
+        refundRequested: Boolean(booking.refundRequested),
+      })
+    },
+    [navigate, openRefund, resolvePaymentId],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const bookingUrl = resolveBookingUrl(escalateTarget)
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const paymentId = resolvePaymentId(escalateTarget)
+
+    setIsEscalating(true)
+    try {
+      await escalateConsultationApplication(consultationId, {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        entityTitle: `Consultation booking ${escalateTarget.bookingId || escalateTarget.id} — ${escalateTarget.title || performance?.title || 'Consultation'}`,
+        applicationUrl: bookingUrl,
+        escalationTarget: 'application',
+        partnerId: String(escalateTarget.partnerId || expertId || ''),
+        metadata: {
+          source: 'consultation_performance',
+          bookingId: escalateTarget.id,
+          paymentId: paymentId || undefined,
+          consultationId,
+          clientId: escalateTarget.clientId,
+          orderUrl: bookingUrl,
+        },
+      })
+      toast.success('Escalated — assigned admin opens booking details from My Tasks')
+      closeEscalateModal()
+      navigate(bookingUrl)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate booking.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    consultationId,
+    escalateAdminNotes,
+    escalateTarget,
+    expertId,
+    navigate,
+    performance?.title,
+    resolveBookingUrl,
+    resolvePaymentId,
+    selectedEscalationOption,
+  ])
+
   const closeCancelModal = () => {
     setCancelBookingRow(null)
     setCancelAdminNotes('')
@@ -176,8 +335,8 @@ export function ConsultationPerformancePage() {
       await cancelBooking.mutateAsync(cancelBookingRow.id)
       toast.success('Consultation cancelled')
       closeCancelModal()
-    } catch {
-      toast.error('Failed to cancel the consultation.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to cancel the consultation.'))
     }
   }
 
@@ -269,18 +428,33 @@ export function ConsultationPerformancePage() {
       },
       'payment-id': {
         id: 'payment-id',
+        accessorKey: 'paymentId',
         header: 'Payment ID',
-        cell: () => <span className="text-muted text-sm">{DASH}</span>,
+        cell: ({ row }) => (
+          <span className="ui-table-id text-muted font-mono text-xs">
+            {row.original.paymentId || DASH}
+          </span>
+        ),
       },
       'payment-method': {
         id: 'payment-method',
+        accessorKey: 'paymentMethod',
         header: 'Payment Method',
-        cell: () => <span className="text-muted text-sm">{DASH}</span>,
+        cell: ({ row }) => (
+          <span className="text-muted text-sm">
+            {row.original.paymentMethod ? titleCase(row.original.paymentMethod) : DASH}
+          </span>
+        ),
       },
       'transaction-id': {
         id: 'transaction-id',
+        accessorKey: 'transactionId',
         header: 'Transaction ID',
-        cell: () => <span className="text-muted text-sm">{DASH}</span>,
+        cell: ({ row }) => (
+          <span className="ui-table-id text-muted font-mono text-xs">
+            {row.original.transactionId || DASH}
+          </span>
+        ),
       },
       rating: {
         id: 'rating',
@@ -319,23 +493,42 @@ export function ConsultationPerformancePage() {
       },
       'refund-issued': {
         id: 'refund-issued',
+        accessorKey: 'refundIssued',
         header: 'Refund Issued',
-        cell: () => <span className="text-muted text-sm">{DASH}</span>,
+        cell: ({ row }) => (
+          <span className="text-muted text-sm">{row.original.refundIssued ? 'Yes' : 'No'}</span>
+        ),
       },
       'refund-amount': {
         id: 'refund-amount',
+        accessorKey: 'refundAmount',
         header: 'Refund Amount',
-        cell: () => <span className="text-muted text-sm">{DASH}</span>,
+        cell: ({ row }) => (
+          <span className="text-muted text-sm">
+            {row.original.refundAmount == null
+              ? DASH
+              : formatCurrency(row.original.refundAmount, row.original.currency)}
+          </span>
+        ),
       },
       'refund-status': {
         id: 'refund-status',
+        accessorKey: 'refundStatus',
         header: 'Refund Status',
-        cell: () => <span className="text-muted text-sm">{DASH}</span>,
+        cell: ({ row }) =>
+          row.original.refundStatus ? (
+            <StatusPill status={row.original.refundStatus} />
+          ) : (
+            <span className="text-muted text-sm">{DASH}</span>
+          ),
       },
       'refunded-at': {
         id: 'refunded-at',
+        accessorKey: 'refundedAt',
         header: 'Refunded At',
-        cell: () => <span className="text-muted text-sm">{DASH}</span>,
+        cell: ({ row }) => (
+          <span className="text-muted text-xs">{formatDateTime(row.original.refundedAt)}</span>
+        ),
       },
       'follow-up-period': {
         id: 'follow-up-period',
@@ -365,6 +558,91 @@ export function ConsultationPerformancePage() {
     [],
   )
 
+  const getVisibleExportColumns = useCallback(() => {
+    const catalogIds = CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_CONSULTATION_PERFORMANCE_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      [
+        ...new Set(
+          rawIds
+            .map((id) => CONSULTATION_PERFORMANCE_LEGACY_COLUMN_ID_MAP[id] ?? id)
+            .filter((id) => catalogIds.includes(id)),
+        ),
+      ],
+      catalogIds,
+    )
+    return CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG.filter((column) =>
+      visibleIds.includes(column.id),
+    )
+  }, [tableColumnPreferencesQuery.data?.visibleColumnIds])
+
+  const buildBookingExportCells = useCallback(
+    (booking: ConsultationBookingRow, exportCols: { id: string; label: string }[]) =>
+      exportCols.map((column) => {
+        switch (column.id) {
+          case 'booking-id':
+            return booking.bookingId || booking.id
+          case 'client-id':
+            return formatClientCode(booking)
+          case 'client-name':
+            return booking.clientName || DASH
+          case 'status':
+            return titleCase(booking.status)
+          case 'client-source':
+            return booking.clientSource || DASH
+          case 'slot-duration':
+            return booking.durationLabel || DASH
+          case 'start-time':
+            return formatDateTime(booking.startDate)
+          case 'end-time':
+            return formatDateTime(booking.endDate)
+          case 'booked-at':
+            return formatDateTime(booking.bookedAt)
+          case 'price':
+            return String(booking.price)
+          case 'payment-id':
+            return booking.paymentId || DASH
+          case 'payment-method':
+            return booking.paymentMethod || DASH
+          case 'transaction-id':
+            return booking.transactionId || DASH
+          case 'refund-issued':
+            return booking.refundIssued ? 'Yes' : 'No'
+          case 'refund-amount':
+            return booking.refundAmount == null ? DASH : String(booking.refundAmount)
+          case 'refund-status':
+            return booking.refundStatus || DASH
+          case 'refunded-at':
+            return formatDateTime(booking.refundedAt)
+          case 'consultation-name':
+            return booking.title
+          case 'last-updated-at':
+            return formatDateTime(booking.lastUpdatedAt)
+          default:
+            return DASH
+        }
+      }),
+    [],
+  )
+
+  const handleExportBookingRow = useCallback(
+    (booking: ConsultationBookingRow, format = 'excel') => {
+      const exportCols = getVisibleExportColumns()
+      const headers = exportCols.map((column) => column.label)
+      const rows = [buildBookingExportCells(booking, exportCols)]
+      exportDataToFile(
+        headers,
+        rows,
+        format,
+        `consultation_booking_${booking.bookingId || booking.id}`,
+      )
+      toast.success('Booking exported')
+    },
+    [buildBookingExportCells, getVisibleExportColumns],
+  )
+
   const handleExport = useCallback(
     (format = 'excel') => {
       if (bookings.length === 0) {
@@ -372,61 +650,13 @@ export function ConsultationPerformancePage() {
         return
       }
 
-      const catalogIds = CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-      const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
-        ? tableColumnPreferencesQuery.data.visibleColumnIds
-        : DEFAULT_CONSULTATION_PERFORMANCE_VISIBLE_COLUMN_IDS
-      const visibleIds = sortIdsByCatalogOrder(
-        [
-          ...new Set(
-            rawIds
-              .map((id) => CONSULTATION_PERFORMANCE_LEGACY_COLUMN_ID_MAP[id] ?? id)
-              .filter((id) => catalogIds.includes(id)),
-          ),
-        ],
-        catalogIds,
-      )
-      const exportCols = CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG.filter((column) =>
-        visibleIds.includes(column.id),
-      )
-
+      const exportCols = getVisibleExportColumns()
       const headers = exportCols.map((column) => column.label)
-      const rows = bookings.map((booking) =>
-        exportCols.map((column) => {
-          switch (column.id) {
-            case 'booking-id':
-              return booking.bookingId || booking.id
-            case 'client-id':
-              return formatClientCode(booking)
-            case 'client-name':
-              return booking.clientName || DASH
-            case 'status':
-              return titleCase(booking.status)
-            case 'client-source':
-              return booking.clientSource || DASH
-            case 'slot-duration':
-              return booking.durationLabel || DASH
-            case 'start-time':
-              return formatDateTime(booking.startDate)
-            case 'end-time':
-              return formatDateTime(booking.endDate)
-            case 'booked-at':
-              return formatDateTime(booking.bookedAt)
-            case 'price':
-              return String(booking.price)
-            case 'consultation-name':
-              return booking.title
-            case 'last-updated-at':
-              return formatDateTime(booking.lastUpdatedAt)
-            default:
-              return DASH
-          }
-        }),
-      )
+      const rows = bookings.map((booking) => buildBookingExportCells(booking, exportCols))
       exportDataToFile(headers, rows, format, 'consultation_bookings_export')
       toast.success(`Exported ${bookings.length} booking(s)`)
     },
-    [bookings, tableColumnPreferencesQuery.data],
+    [bookings, buildBookingExportCells, getVisibleExportColumns],
   )
 
   const columns = useMemo<ColumnDef<ConsultationBookingRow>[]>(() => {
@@ -454,10 +684,12 @@ export function ConsultationPerformancePage() {
               label="Booking actions"
               isOpen={activeActionMenu === booking.id}
               onOpenChange={(open) => setActiveActionMenu(open ? booking.id : null)}
+              menuWidth={240}
+              maxVisibleItems={8}
             >
               <TableActionsItem
                 tone="light"
-                icon={<User className="size-3.5" />}
+                icon={<Eye className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   openBooking(booking)
@@ -467,13 +699,63 @@ export function ConsultationPerformancePage() {
               </TableActionsItem>
               <TableActionsItem
                 tone="light"
-                icon={<User className="size-3.5" />}
+                icon={<CreditCard className="size-3.5" />}
                 onClick={() => {
                   setActiveActionMenu(null)
                   setPaymentBookingId(booking.id)
                 }}
               >
                 View Payment Details
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<Receipt className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openViewRefundDetails(booking)
+                }}
+              >
+                View Refund Details
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<AlertTriangle className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  setEscalateTarget(booking)
+                }}
+              >
+                Escalate Booking
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<MessageSquare className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openCommunicateWithExpert(booking)
+                }}
+              >
+                Communicate with Expert
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<Banknote className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openProcessRefund(booking)
+                }}
+              >
+                Process Refund
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                icon={<ExportDataIcon className="size-3.5" />}
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  handleExportBookingRow(booking)
+                }}
+              >
+                Export Booking
               </TableActionsItem>
               {canCancelBooking(booking.status) ? (
                 <TableActionsItem
@@ -495,7 +777,16 @@ export function ConsultationPerformancePage() {
     }
 
     return withServerSortMeta([...preferenceColumns, actionsColumn], SERVICE_COLUMN_SORT_FIELDS)
-  }, [activeActionMenu, dataColumnsById, openBooking, tableColumnPreferencesQuery.data])
+  }, [
+    activeActionMenu,
+    dataColumnsById,
+    handleExportBookingRow,
+    openBooking,
+    openCommunicateWithExpert,
+    openProcessRefund,
+    openViewRefundDetails,
+    tableColumnPreferencesQuery.data,
+  ])
 
   return (
     <div className="space-y-7 pb-10">
@@ -506,6 +797,25 @@ export function ConsultationPerformancePage() {
       />
 
       {filterModals}
+      {refundModal}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate Booking"
+        description="Are you sure you want to escalate this booking to compliance? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
 
       <DecisionActionModal
         open={Boolean(cancelBookingRow)}
@@ -549,9 +859,9 @@ export function ConsultationPerformancePage() {
         <Button
           type="button"
           onClick={() => navigate(manageMetricsPath)}
-          className="ui-manage-metrics h-10 rounded-xl px-5 text-sm font-semibold sm:w-auto"
+          className="ui-manage-metrics"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

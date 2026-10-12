@@ -10,6 +10,11 @@ import {
   X,
   Sparkles,
   Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Plus,
+  ChevronDown,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -26,11 +31,11 @@ import {
   useUpdateConsultationAdditionalInfo,
   useUpdateConsultationBasic,
   useUpdateConsultationPricing,
+  useUpdateServiceBasic,
   useUpdateServiceGallery,
   useUpdateServicePricing,
 } from '@/modules/expert/hooks/use-create-listing'
 import { useConsultation, useService } from '@/modules/expert/hooks/use-services'
-import { useExpertProfile } from '@/modules/expert/hooks/use-expert-profile'
 import {
   fetchListingPricingConfig,
   fetchPricingRecommendation,
@@ -55,13 +60,14 @@ import { cn } from '@/shared/lib/cn'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { CreateListingWizard } from '@/modules/expert/components'
 import { useServiceListingControls } from '@/modules/settings/hooks/use-service-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
 import { useSettingsModule } from '@/modules/settings/hooks/use-settings'
 
 type UploadedImage = {
   id: string
   url: string
   name: string
-  file: File
+  file?: File
 }
 
 type TierName = 'basic' | 'standard' | 'premium'
@@ -96,6 +102,58 @@ const consultationSteps = [
   { id: '05', title: 'Review', description: 'Check before publish' },
 ]
 
+const MAX_CONSULTATION_PRICING_SLOTS = 3
+
+type ConsultationPricingSlot = {
+  durationMinutes: number | ''
+  pricingType: 'free' | 'paid' | ''
+  price: string
+}
+
+const DEFAULT_CONSULTATION_PRICING_SLOT: ConsultationPricingSlot = {
+  durationMinutes: '',
+  pricingType: '',
+  price: '',
+}
+
+const listingRecordId = (record?: { _id?: string; id?: string } | null) =>
+  String(record?._id || record?.id || '').trim()
+
+const toFormTimelineUnit = (unit?: string) => {
+  const normalized = normalizeTimelineUnit(unit || 'days')
+  if (normalized === 'weeks') return 'Weeks'
+  if (normalized === 'months') return 'Months'
+  return 'Days'
+}
+
+const resolveListingCategoryId = (service: { category?: unknown; categoryId?: unknown }) => {
+  const category = service.category
+  if (category && typeof category === 'object' && !Array.isArray(category)) {
+    return getCategoryApiId(category as { _id?: string; id?: string })
+  }
+  if (typeof category === 'string' && category && category !== '[object Object]') {
+    return category
+  }
+  const categoryId = service.categoryId
+  if (categoryId && typeof categoryId === 'object' && !Array.isArray(categoryId)) {
+    return getCategoryApiId(categoryId as { _id?: string; id?: string })
+  }
+  return typeof categoryId === 'string' ? categoryId : ''
+}
+
+const formatMoneyInput = (value?: number | string | null) => {
+  if (value == null || value === '') return ''
+  const numeric = typeof value === 'number' ? value : parsePrice(String(value))
+  return Number.isFinite(numeric) ? `₹${numeric}` : ''
+}
+
+const formatConsultationFeeLabel = (slot: ConsultationPricingSlot) => {
+  if (slot.pricingType === 'free') return 'Free'
+  const trimmed = slot.price.trim()
+  if (!trimmed) return '—'
+  return trimmed.startsWith('₹') ? trimmed : `₹${trimmed}`
+}
+
 export const CreateServiceListingPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -106,7 +164,6 @@ export const CreateServiceListingPage = () => {
   const isServiceEditMode = searchParams.get('mode') === 'edit' && Boolean(serviceIdParam)
   const isEditMode = isConsultationEditMode || isServiceEditMode
 
-  const { data: expertProfileResponse } = useExpertProfile(partnerId || undefined)
   const { data: consultationEditResponse, isLoading: isConsultationEditLoading } = useConsultation(
     consultationIdParam,
     isConsultationEditMode,
@@ -118,10 +175,6 @@ export const CreateServiceListingPage = () => {
   const isEditLoading =
     (isConsultationEditMode && isConsultationEditLoading) ||
     (isServiceEditMode && isServiceEditLoading)
-  const expertName =
-    expertProfileResponse?.data?.basicProfile?.fullname ||
-    expertProfileResponse?.data?.fullname ||
-    'Expert'
   const [currentStep, setCurrentStep] = useState(isEditMode ? 2 : 1)
   const [selectedType, setSelectedType] = useState<'service' | 'consultation' | null>(
     isConsultationEditMode ? 'consultation' : isServiceEditMode ? 'service' : 'service',
@@ -129,6 +182,8 @@ export const CreateServiceListingPage = () => {
   const [listingId, setListingId] = useState<string | null>(
     isConsultationEditMode ? consultationIdParam : isServiceEditMode ? serviceIdParam : null,
   )
+  const [resolvedPartnerId, setResolvedPartnerId] = useState(partnerId)
+  const [listingStatus, setListingStatus] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasPrefill, setHasPrefill] = useState(false)
 
@@ -149,10 +204,14 @@ export const CreateServiceListingPage = () => {
   const [postSessionMessage, setPostSessionMessage] = useState('')
   const [hasFollowUp, setHasFollowUp] = useState(false)
   const [followUpDays, setFollowUpDays] = useState('7')
-  const [consultationMode, setConsultationMode] = useState<'audio' | 'video' | 'chat'>('video')
-  const [consultationDuration, setConsultationDuration] = useState<number>(30)
-  const [consultationPricingType, setConsultationPricingType] = useState<'free' | 'paid'>('paid')
-  const [consultationPrice, setConsultationPrice] = useState('')
+  const [consultationMode] = useState<'audio'>('audio')
+  const [consultationPricingSlots, setConsultationPricingSlots] = useState<
+    ConsultationPricingSlot[]
+  >([DEFAULT_CONSULTATION_PRICING_SLOT])
+  const [topicQuery, setTopicQuery] = useState('')
+  const [topicMenuOpen, setTopicMenuOpen] = useState(false)
+  const [debouncedTopicQuery, setDebouncedTopicQuery] = useState('')
+  const topicSearchRef = useRef<HTMLDivElement>(null)
 
   const { data: categoriesResponse, isLoading: isCategoriesLoading } = useCategories({
     page: 1,
@@ -179,13 +238,44 @@ export const CreateServiceListingPage = () => {
   }, [subcategoriesResponse?.data, selectedCategory])
 
   const createServiceMutation = useCreateService()
+  const updateServiceBasicMutation = useUpdateServiceBasic()
   const updateServicePricingMutation = useUpdateServicePricing()
   const updateServiceGalleryMutation = useUpdateServiceGallery()
   const publishServiceMutation = usePublishService()
   const createConsultationMutation = useCreateConsultation()
   const updateConsultationBasicMutation = useUpdateConsultationBasic()
-  const { data: topicsResponse, isLoading: isTopicsLoading } = useConsultationTopics({ limit: 100 })
-  const topicOptions = topicsResponse?.data || []
+  const { data: topicsResponse, isLoading: isTopicsLoading } = useConsultationTopics({
+    search: debouncedTopicQuery || undefined,
+    limit: 100,
+  })
+  const topicOptions = useMemo(() => topicsResponse?.data || [], [topicsResponse?.data])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedTopicQuery(topicQuery.trim()), 250)
+    return () => window.clearTimeout(timer)
+  }, [topicQuery])
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (topicSearchRef.current && !topicSearchRef.current.contains(event.target as Node)) {
+        setTopicMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
+
+  const availableTopics = useMemo(() => {
+    const query = topicQuery.trim().toLowerCase()
+    return topicOptions.filter((option) => {
+      const optionId = String(option._id || option.id || '')
+      if (!optionId || topics.some((selected) => selected._id === optionId)) return false
+      if (!query) return true
+      return String(option.name || '')
+        .toLowerCase()
+        .includes(query)
+    })
+  }, [topicOptions, topics, topicQuery])
   const updateConsultationAdditionalInfoMutation = useUpdateConsultationAdditionalInfo()
   const updateConsultationPricingMutation = useUpdateConsultationPricing()
   const publishConsultationMutation = usePublishConsultation()
@@ -198,10 +288,9 @@ export const CreateServiceListingPage = () => {
     displayAiPriceRecommendation: publicDisplayAi,
     maxListingDiscountPercent,
     maxConsultationFollowUpDays,
+    isReady: listingControlsReady,
   } = useServiceListingControls()
 
-  // Admin create flow: prefer live admin module settings (same source as Settings tab).
-  // Ignore placeholderData defaults so AI isn't forced ON before real settings load.
   const adminServiceSettings = useSettingsModule('service')
   const adminAiFlag =
     adminServiceSettings.data?.config?.pricingDetails?.displayAiPriceRecommendation
@@ -211,6 +300,34 @@ export const CreateServiceListingPage = () => {
     typeof adminAiFlag === 'boolean'
       ? adminAiFlag === true
       : publicDisplayAi === true
+
+  useEffect(() => {
+    if (isEditMode || !listingControlsReady) return
+    if (!allowNewServiceListings && !allowNewConsultationListings) {
+      toast.error(RESTRICTION_MESSAGES.listingsCreate)
+      navigate(partnerId ? `/experts/management/profile/${partnerId}` : '/services/management', {
+        replace: true,
+      })
+      return
+    }
+    if (allowNewServiceListings && !allowNewConsultationListings) {
+      setSelectedType('service')
+      if (currentStep === 1) setCurrentStep(2)
+      return
+    }
+    if (!allowNewServiceListings && allowNewConsultationListings) {
+      setSelectedType('consultation')
+      if (currentStep === 1) setCurrentStep(2)
+    }
+  }, [
+    allowNewConsultationListings,
+    allowNewServiceListings,
+    currentStep,
+    isEditMode,
+    listingControlsReady,
+    navigate,
+    partnerId,
+  ])
 
   const [pricingTypePreference, setPricingType] = useState<'fixed' | 'custom' | 'tiered'>('fixed')
   const [selectedDiscountPreference, setSelectedDiscount] = useState<string>('10%')
@@ -381,185 +498,294 @@ export const CreateServiceListingPage = () => {
         timelineUnit: normalizeTimelineUnit(tier.timelineUnit),
       }))
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
+  const [galleryPreviewIndex, setGalleryPreviewIndex] = useState(0)
+  const [galleryViewerOpen, setGalleryViewerOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const MAX_IMAGES = 5
 
-  if (isConsultationEditMode && !hasPrefill && consultationEditResponse?.data) {
-    const consultation = consultationEditResponse.data
-    setListingId(consultation._id)
-    setSelectedType('consultation')
-    setConsultationTitle(consultation.title || '')
+  useEffect(() => {
+    if (hasPrefill) return
 
-    const rawTopics =
-      (consultation as unknown as { topics?: unknown[] }).topics ||
-      (consultation as unknown as { topicIds?: unknown[] }).topicIds ||
-      []
-    const normalizedTopics: ConsultationTopic[] = rawTopics.map((t: unknown) => {
-      if (typeof t === 'string') return { _id: t, name: t }
-      const obj = t as Record<string, unknown>
-      return {
-        _id: String(obj._id || obj.id || obj.name || ''),
-        name: String(obj.name || obj.title || obj._id || ''),
-      }
-    })
-    setTopics(normalizedTopics)
-
-    setSessionOutline(consultation.sessionOutline || '')
-    setWhoItsFor(
-      consultation.whoItsFor ||
-        (consultation as unknown as { whoIsItFor?: string }).whoIsItFor ||
-        '',
-    )
-    const langs = (consultation as unknown as { languages?: string[] | string }).languages
-    setLanguages(Array.isArray(langs) ? langs.join(', ') : typeof langs === 'string' ? langs : '')
-    setHasPreSessionRequirement(Boolean(consultation.hasPreSessionRequirement))
-    setPreSessionRequirement(consultation.preSessionRequirement || '')
-    setHasPostSessionMessage(Boolean(consultation.hasPostSessionMessage))
-    setPostSessionMessage(consultation.postSessionMessage || '')
-    setHasFollowUp(Boolean(consultation.hasFollowUp))
-    setFollowUpDays(consultation.followUpDays != null ? String(consultation.followUpDays) : '7')
-
-    const mode =
-      consultation.mode ||
-      (consultation as unknown as { modeOfConsultation?: 'audio' | 'video' | 'chat' })
-        .modeOfConsultation
-    if (mode === 'audio' || mode === 'video' || mode === 'chat') {
-      setConsultationMode(mode)
-    }
-
-    const primaryPricing =
-      consultation.pricingOptions?.[0] ||
-      (
-        consultation as unknown as {
-          pricing?: Array<{
-            durationMinutes?: number
-            pricingType?: 'free' | 'paid'
-            price?: number
-          }>
-        }
-      ).pricing?.[0]
-    if (primaryPricing) {
-      setConsultationDuration(primaryPricing.durationMinutes || 30)
-      const pType = primaryPricing.pricingType === 'free' ? 'free' : 'paid'
-      setConsultationPricingType(pType)
-      setConsultationPrice(
-        pType === 'paid' && primaryPricing.price != null ? String(primaryPricing.price) : '',
+    if (isConsultationEditMode && consultationEditResponse?.data) {
+      const consultation = consultationEditResponse.data
+      const consultationId = listingRecordId(consultation)
+      setListingId(consultationId || consultationIdParam)
+      setListingStatus(String(consultation.status || '').toLowerCase())
+      const consultationPartnerId = listingRecordId(
+        consultation.partnerId as unknown as { _id?: string; id?: string },
       )
+      if (consultationPartnerId) setResolvedPartnerId(consultationPartnerId)
+      else if (typeof consultation.partnerId === 'string' && consultation.partnerId) {
+        setResolvedPartnerId(consultation.partnerId)
+      }
+      setSelectedType('consultation')
+      setConsultationTitle(consultation.title || '')
+
+      const rawTopics =
+        (consultation as unknown as { topics?: unknown[] }).topics ||
+        (consultation as unknown as { topicIds?: unknown[] }).topicIds ||
+        []
+      const normalizedTopics: ConsultationTopic[] = rawTopics.map((t: unknown) => {
+        if (typeof t === 'string') return { _id: t, name: t }
+        const obj = t as Record<string, unknown>
+        return {
+          _id: String(obj._id || obj.id || obj.name || ''),
+          name: String(obj.name || obj.title || obj._id || ''),
+        }
+      })
+      setTopics(normalizedTopics)
+
+      setSessionOutline(consultation.sessionOutline || '')
+      setWhoItsFor(
+        consultation.whoItsFor ||
+          (consultation as unknown as { whoIsItFor?: string }).whoIsItFor ||
+          '',
+      )
+      const langs = (consultation as unknown as { languages?: string[] | string }).languages
+      setLanguages(Array.isArray(langs) ? langs.join(', ') : typeof langs === 'string' ? langs : '')
+      setHasPreSessionRequirement(Boolean(consultation.hasPreSessionRequirement))
+      setPreSessionRequirement(consultation.preSessionRequirement || '')
+      setHasPostSessionMessage(Boolean(consultation.hasPostSessionMessage))
+      setPostSessionMessage(consultation.postSessionMessage || '')
+      setHasFollowUp(Boolean(consultation.hasFollowUp))
+      setFollowUpDays(consultation.followUpDays != null ? String(consultation.followUpDays) : '7')
+
+      const savedPricing =
+        consultation.pricingOptions ||
+        (
+          consultation as unknown as {
+            pricing?: Array<{
+              durationMinutes?: number
+              pricingType?: 'free' | 'paid'
+              price?: number
+            }>
+          }
+        ).pricing ||
+        []
+      if (savedPricing.length > 0) {
+        setConsultationPricingSlots(
+          savedPricing.slice(0, MAX_CONSULTATION_PRICING_SLOTS).map((option) => {
+            const pricingType = option.pricingType === 'free' ? 'free' : 'paid'
+            return {
+              durationMinutes: option.durationMinutes || '',
+              pricingType,
+              price: pricingType === 'paid' && option.price != null ? String(option.price) : '',
+            }
+          }),
+        )
+      }
+
+      setHasPrefill(true)
+      return
     }
 
-    setHasPrefill(true)
-  } else if (isServiceEditMode && !hasPrefill && serviceEditResponse?.data) {
-    const service = serviceEditResponse.data
-    setListingId(service._id)
-    setSelectedType('service')
-    setServiceTitle(service.title || '')
-    setSelectedCategoryId(
-      typeof (service as unknown as { categoryId?: unknown }).categoryId === 'object'
-        ? String((service as unknown as { categoryId?: { _id?: string } }).categoryId?._id || '')
-        : String(
-            (service as unknown as { categoryId?: string; category?: string }).categoryId ||
-              (service as unknown as { category?: string }).category ||
-              '',
-          ),
-    )
-    const rawSubCategories =
-      (
-        service as unknown as {
-          subCategoryIds?: unknown[]
-          subCategories?: unknown[]
-          subCategory?: unknown[]
-        }
-      ).subCategoryIds ||
-      (service as unknown as { subCategories?: unknown[] }).subCategories ||
-      (service as unknown as { subCategory?: unknown[] }).subCategory ||
-      []
-    setSelectedSubCategoryIds(
-      rawSubCategories
-        .map((s: unknown) =>
-          typeof s === 'object' && s !== null
-            ? String((s as { _id?: string; id?: string })._id || (s as { id?: string }).id || '')
-            : String(s),
-        )
-        .filter(Boolean),
-    )
-    setDescription(service.description || '')
-    setDeliverables(service.deliverables || '')
+    if (isServiceEditMode && serviceEditResponse?.data) {
+      const service = serviceEditResponse.data
+      const serviceId = listingRecordId(service)
+      setListingId(serviceId || serviceIdParam)
+      setListingStatus(String(service.status || '').toLowerCase())
+      const servicePartnerId = listingRecordId(
+        service.partnerId as unknown as { _id?: string; id?: string },
+      )
+      if (servicePartnerId) setResolvedPartnerId(servicePartnerId)
+      else if (typeof service.partnerId === 'string' && service.partnerId) {
+        setResolvedPartnerId(service.partnerId)
+      }
+      setSelectedType('service')
+      setServiceTitle(service.title || '')
+      setSelectedCategoryId(resolveListingCategoryId(service))
+      const rawSubCategories =
+        (
+          service as unknown as {
+            subCategoryIds?: unknown[]
+            subCategories?: unknown[]
+            subCategory?: unknown[]
+          }
+        ).subCategoryIds ||
+        (service as unknown as { subCategories?: unknown[] }).subCategories ||
+        (service as unknown as { subCategory?: unknown[] }).subCategory ||
+        []
+      setSelectedSubCategoryIds(
+        rawSubCategories
+          .map((s: unknown) =>
+            typeof s === 'object' && s !== null
+              ? String((s as { _id?: string; id?: string })._id || (s as { id?: string }).id || '')
+              : String(s),
+          )
+          .filter(Boolean),
+      )
+      setDescription(service.description || '')
+      setDeliverables(service.deliverables || '')
 
-    const sData = service as unknown as {
-      pricingType?: 'fixed' | 'custom' | 'tiered'
-      price?: number
-      timelineValue?: number | string
-      timelineUnit?: string
-      timelineMin?: number | string
-      timelineMax?: number | string
-      tiers?: Array<{
-        name: TierName
-        description?: string
+      const sData = service as unknown as {
+        pricingType?: 'fixed' | 'custom' | 'tiered'
         price?: number
         timelineValue?: number | string
         timelineUnit?: string
-      }>
-    }
-
-    if (sData.pricingType) {
-      setPricingType(sData.pricingType)
-    }
-    if (sData.price != null) {
-      const formatted = `₹${sData.price}`
-      setFixedPrice(formatted)
-      setCustomPrice(formatted)
-    }
-    if (sData.timelineValue != null) {
-      setFixedTimeline(String(sData.timelineValue))
-    }
-    if (sData.timelineUnit) {
-      setFixedTimelineUnit(sData.timelineUnit)
-      setCustomTimelineUnit(sData.timelineUnit)
-    }
-    if (sData.timelineMin != null) {
-      setCustomTimelineMin(String(sData.timelineMin))
-    }
-    if (sData.timelineMax != null) {
-      setCustomTimelineMax(String(sData.timelineMax))
-    }
-
-    if (Array.isArray(sData.tiers) && sData.tiers.length > 0) {
-      const loadedTiers: ServiceTierForm[] = DEFAULT_SERVICE_TIERS.map((defTier) => {
-        const matched = sData.tiers?.find((t) => t.name === defTier.name)
-        if (!matched) return defTier
-        return {
-          name: defTier.name,
-          description: matched.description || '',
-          price: matched.price != null ? `₹${matched.price}` : '',
-          timelineValue: matched.timelineValue != null ? String(matched.timelineValue) : '',
-          timelineUnit: matched.timelineUnit || 'Days',
+        timelineMin?: number | string
+        timelineMax?: number | string
+        discountPercent?: number
+        fixedPricing?: {
+          price?: number
+          discountPercent?: number
+          timelineValue?: number | string
+          timelineUnit?: string
         }
-      })
-      setTiers(loadedTiers)
-    }
+        customPricing?: {
+          minPrice?: number
+          maxPrice?: number
+          durationType?: string
+          timelineFrom?: number | string
+          timelineTo?: number | string
+          timelineUnit?: string
+        }
+        tieredPricing?: {
+          tiers?: Array<{
+            name: TierName
+            description?: string
+            price?: number
+            timelineValue?: number | string
+            timelineUnit?: string
+          }>
+        }
+        tiers?: Array<{
+          name: TierName
+          description?: string
+          price?: number
+          timelineValue?: number | string
+          timelineUnit?: string
+        }>
+      }
 
-    setHasPrefill(true)
-  }
+      const pricingType = sData.pricingType
+      if (pricingType) setPricingType(pricingType)
+
+      const fixed = sData.fixedPricing
+      const custom = sData.customPricing
+      const tieredTiers = sData.tieredPricing?.tiers || sData.tiers || []
+
+      const fixedPriceValue = formatMoneyInput(fixed?.price ?? sData.price)
+      if (fixedPriceValue) {
+        setFixedPrice(fixedPriceValue)
+        setCustomPrice(fixedPriceValue)
+      }
+      const customPriceValue = formatMoneyInput(custom?.minPrice ?? custom?.maxPrice)
+      if (customPriceValue) setCustomPrice(customPriceValue)
+
+      const discountPct = fixed?.discountPercent ?? sData.discountPercent
+      if (discountPct != null) setSelectedDiscount(formatDiscountChip(Number(discountPct) || 0))
+
+      const timelineValue = fixed?.timelineValue ?? sData.timelineValue
+      if (timelineValue != null) setFixedTimeline(String(timelineValue))
+
+      const timelineUnit = fixed?.timelineUnit ?? custom?.timelineUnit ?? sData.timelineUnit
+      if (timelineUnit) {
+        const formUnit = toFormTimelineUnit(String(timelineUnit))
+        setFixedTimelineUnit(formUnit)
+        setCustomTimelineUnit(formUnit)
+      }
+
+      if (custom?.durationType === 'short_term') setTimelineType('short')
+      else if (custom?.durationType === 'long_term') setTimelineType('long')
+
+      const timelineFrom = custom?.timelineFrom ?? sData.timelineMin
+      const timelineTo = custom?.timelineTo ?? sData.timelineMax
+      if (timelineFrom != null) setCustomTimelineMin(String(timelineFrom))
+      if (timelineTo != null) setCustomTimelineMax(String(timelineTo))
+
+      if (Array.isArray(tieredTiers) && tieredTiers.length > 0) {
+        setTiers(
+          DEFAULT_SERVICE_TIERS.map((defTier) => {
+            const matched = tieredTiers.find((t) => t.name === defTier.name)
+            if (!matched) return defTier
+            return {
+              name: defTier.name,
+              description: matched.description || '',
+              price: matched.price != null ? formatMoneyInput(matched.price) : '',
+              timelineValue: matched.timelineValue != null ? String(matched.timelineValue) : '',
+              timelineUnit: toFormTimelineUnit(matched.timelineUnit),
+            }
+          }),
+        )
+      }
+
+      const existingImages = Array.isArray(service.images)
+        ? service.images
+            .map((url) => String(url || '').trim())
+            .filter(Boolean)
+            .slice(0, MAX_IMAGES)
+        : []
+      if (existingImages.length > 0) {
+        setUploadedImages(
+          existingImages.map((url, index) => ({
+            id: `existing-${index}-${url}`,
+            url,
+            name: `Gallery image ${index + 1}`,
+          })),
+        )
+        setGalleryPreviewIndex(0)
+      }
+
+      setHasPrefill(true)
+    }
+  }, [
+    consultationEditResponse?.data,
+    consultationIdParam,
+    hasPrefill,
+    isConsultationEditMode,
+    isServiceEditMode,
+    serviceEditResponse?.data,
+    serviceIdParam,
+  ])
 
   const handleFilesAdded = useCallback(
     (files: FileList | null) => {
-      if (!files) return
+      if (!files?.length) return
       const remaining = MAX_IMAGES - uploadedImages.length
-      const toAdd = guardUploadFiles(Array.from(files).slice(0, remaining))
-      const newImages: UploadedImage[] = toAdd.map((file) => ({
+      if (remaining <= 0) {
+        toast.error(`A maximum of ${MAX_IMAGES} images are allowed`)
+        return
+      }
+
+      const incoming = guardUploadFiles(Array.from(files))
+        .filter((file) => file.type.startsWith('image/'))
+        .slice(0, remaining)
+
+      if (incoming.length === 0) {
+        toast.error('Please upload JPG, PNG, or WebP images only.')
+        return
+      }
+
+      if (files.length > remaining) {
+        toast.error(`A maximum of ${MAX_IMAGES} images are allowed`)
+      }
+
+      const newImages: UploadedImage[] = incoming.map((file) => ({
         id: crypto.randomUUID(),
         url: URL.createObjectURL(file),
         name: file.name,
         file,
       }))
       setUploadedImages((prev) => [...prev, ...newImages])
+      setGalleryPreviewIndex((prev) => (uploadedImages.length === 0 ? 0 : prev))
     },
     [uploadedImages.length],
   )
 
   const handleRemoveImage = (id: string) => {
-    setUploadedImages((prev) => prev.filter((img) => img.id !== id))
+    setUploadedImages((prev) => {
+      const target = prev.find((img) => img.id === id)
+      if (target?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(target.url)
+      }
+      const next = prev.filter((img) => img.id !== id)
+      setGalleryPreviewIndex((current) => {
+        if (next.length === 0) return 0
+        return Math.min(current, next.length - 1)
+      })
+      return next
+    })
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -572,9 +798,22 @@ export const CreateServiceListingPage = () => {
     if (currentStep < 5) setCurrentStep(currentStep + 1)
   }
 
+  const onlyOneListingTypeAllowed =
+    listingControlsReady &&
+    allowNewServiceListings !== allowNewConsultationListings &&
+    (allowNewServiceListings || allowNewConsultationListings)
+
   const handleBack = () => {
     if (isEditMode && currentStep <= 2) {
-      navigate(partnerId ? `/experts/management/profile/${partnerId}` : '/services/management')
+      navigate(
+        resolvedPartnerId
+          ? `/experts/management/profile/${resolvedPartnerId}`
+          : '/services/management',
+      )
+      return
+    }
+    if (currentStep === 2 && !isEditMode && onlyOneListingTypeAllowed) {
+      navigateBackOrFallback(navigate, '/services/management')
       return
     }
     if (currentStep > 1) setCurrentStep(currentStep - 1)
@@ -600,10 +839,41 @@ export const CreateServiceListingPage = () => {
     if (!normalized._id || !normalized.name) return
     if (topics.some((selected) => selected._id === normalized._id)) return
     setTopics((current) => [...current, normalized])
+    setTopicQuery('')
+    setTopicMenuOpen(false)
   }
 
   const removeTopic = (topicId: string) => {
     setTopics((current) => current.filter((topic) => topic._id !== topicId))
+  }
+
+  const updatePricingSlot = (index: number, patch: Partial<ConsultationPricingSlot>) => {
+    setConsultationPricingSlots((current) =>
+      current.map((slot, slotIndex) => (slotIndex === index ? { ...slot, ...patch } : slot)),
+    )
+  }
+
+  const addPricingSlot = () => {
+    if (consultationPricingSlots.length >= MAX_CONSULTATION_PRICING_SLOTS) return
+    const usedDurations = new Set(
+      consultationPricingSlots
+        .map((slot) => slot.durationMinutes)
+        .filter((duration): duration is number => duration !== ''),
+    )
+    if (usedDurations.size >= DURATION_OPTIONS.length) {
+      toast.error('All duration options are already added.')
+      return
+    }
+    setConsultationPricingSlots((current) => [
+      ...current,
+      { durationMinutes: '', pricingType: '', price: '' },
+    ])
+  }
+
+  const removePricingSlot = (index: number) => {
+    setConsultationPricingSlots((current) =>
+      current.length <= 1 ? current : current.filter((_, slotIndex) => slotIndex !== index),
+    )
   }
 
   const buildServicePricingPayload = (): UpdateServicePricingPayload => {
@@ -643,15 +913,43 @@ export const CreateServiceListingPage = () => {
   }
 
   const requirePartnerId = () => {
-    if (!partnerId) {
+    if (!resolvedPartnerId) {
       toast.error('Partner ID is required. Open this page with ?partnerId=<id> in the URL.')
       return false
     }
     return true
   }
 
+  const shouldPublishListing = listingStatus === 'preview' || (!isEditMode && listingStatus === '')
+
+  const finishListing = (kind: 'service' | 'consultation') => {
+    const published = shouldPublishListing
+    toast.success(
+      published
+        ? kind === 'consultation'
+          ? 'Consultation published successfully'
+          : 'Service published successfully'
+        : kind === 'consultation'
+          ? 'Consultation updated successfully'
+          : 'Service updated successfully',
+    )
+    navigate(
+      isEditMode && resolvedPartnerId
+        ? `/experts/management/profile/${resolvedPartnerId}`
+        : '/services/management',
+    )
+  }
+
   const handlePrimaryAction = async () => {
     if (currentStep === 1) {
+      if (selectedType === 'service' && !allowNewServiceListings) {
+        toast.error(RESTRICTION_MESSAGES.serviceCreate)
+        return
+      }
+      if (selectedType === 'consultation' && !allowNewConsultationListings) {
+        toast.error(RESTRICTION_MESSAGES.consultationCreate)
+        return
+      }
       handleNext()
       return
     }
@@ -663,7 +961,7 @@ export const CreateServiceListingPage = () => {
       if (selectedType === 'service') {
         if (currentStep === 2) {
           if (!listingId && !allowNewServiceListings) {
-            toast.error('Creating new service listings is disabled by admin settings.')
+            toast.error(RESTRICTION_MESSAGES.serviceCreate)
             return
           }
           if (!serviceTitle.trim()) {
@@ -674,15 +972,35 @@ export const CreateServiceListingPage = () => {
             toast.error('Service category is required.')
             return
           }
-          if (!description.trim()) {
-            toast.error('Description is required.')
-            return
-          }
-          if (!deliverables.trim()) {
-            toast.error('Deliverables are required.')
-            return
+
+          const basicPayload = {
+            title: serviceTitle.trim(),
+            category: selectedCategoryId,
+            subCategory: selectedSubCategoryIds,
+            description: description.trim() || undefined,
+            deliverables: deliverables.trim() || undefined,
           }
 
+          if (listingId) {
+            await updateServiceBasicMutation.mutateAsync({
+              id: listingId,
+              payload: basicPayload,
+            })
+            toast.success('Service details updated successfully')
+          } else {
+            const response = await createServiceMutation.mutateAsync({
+              partnerId: resolvedPartnerId,
+              ...basicPayload,
+            })
+            const newId = listingRecordId(response.data)
+            if (!newId) {
+              toast.error('Service was created but no ID was returned.')
+              return
+            }
+            setListingId(newId)
+            setListingStatus('preview')
+            toast.success('Service created successfully')
+          }
           handleNext()
           return
         }
@@ -705,34 +1023,16 @@ export const CreateServiceListingPage = () => {
             }
           }
 
-          let serviceId = listingId
-          if (!serviceId) {
-            if (!allowNewServiceListings) {
-              toast.error('Creating new service listings is disabled by admin settings.')
-              return
-            }
-            const response = await createServiceMutation.mutateAsync({
-              partnerId,
-              title: serviceTitle.trim(),
-              category: selectedCategoryId,
-              subCategory: selectedSubCategoryIds,
-              description: description.trim() || undefined,
-              deliverables: deliverables.trim() || undefined,
-            })
-            serviceId = response.data._id
-            setListingId(serviceId)
-          }
-
-          if (!serviceId) {
+          if (!listingId) {
             toast.error('Service ID is missing. Go back and complete service details.')
             return
           }
 
           await updateServicePricingMutation.mutateAsync({
-            id: serviceId,
+            id: listingId,
             payload: buildServicePricingPayload(),
           })
-          toast.success(listingId ? 'Pricing updated successfully' : 'Service created successfully')
+          toast.success('Pricing updated successfully')
           handleNext()
           return
         }
@@ -743,21 +1043,59 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 4) {
-          if (uploadedImages.length > 0) {
-            await updateServiceGalleryMutation.mutateAsync({
-              id: listingId,
-              images: uploadedImages.map((image) => image.file),
-            })
-            toast.success('Gallery updated successfully')
+          if (uploadedImages.length === 0) {
+            toast.error('At least one gallery image is required.')
+            return
           }
+
+          const filesToUpload = uploadedImages
+            .map((image) => image.file)
+            .filter((file): file is File => Boolean(file))
+          const existingImageUrls = uploadedImages
+            .filter((image) => !image.file && /^https?:\/\//i.test(image.url))
+            .map((image) => image.url)
+
+          if (filesToUpload.length === 0 && existingImageUrls.length === 0) {
+            toast.error('Please re-upload your gallery images.')
+            return
+          }
+
+          const response = await updateServiceGalleryMutation.mutateAsync({
+            id: listingId,
+            images: filesToUpload,
+            existingImageUrls,
+          })
+          const savedUrls = (response.data?.images || [])
+            .map((url) => String(url || '').trim())
+            .filter(Boolean)
+
+          if (savedUrls.length > 0) {
+            setUploadedImages((prev) => {
+              prev.forEach((image) => {
+                if (image.url.startsWith('blob:')) URL.revokeObjectURL(image.url)
+              })
+              return savedUrls.map((url, index) => ({
+                id: `saved-${index}-${url}`,
+                url,
+                name: prev[index]?.name || `Gallery image ${index + 1}`,
+              }))
+            })
+            setGalleryPreviewIndex(0)
+          }
+          toast.success('Gallery updated successfully')
           handleNext()
           return
         }
 
         if (currentStep === 5) {
-          await publishServiceMutation.mutateAsync(listingId)
-          toast.success('Service published successfully')
-          navigate('/services/management')
+          if (uploadedImages.length === 0) {
+            toast.error('At least one gallery image is required before publishing.')
+            return
+          }
+          if (shouldPublishListing) {
+            await publishServiceMutation.mutateAsync(listingId)
+          }
+          finishListing('service')
         }
         return
       }
@@ -772,13 +1110,17 @@ export const CreateServiceListingPage = () => {
             toast.error('Add at least one topic.')
             return
           }
-          if (!sessionOutline.trim() || !whoItsFor.trim()) {
-            toast.error('Session outline and audience are required.')
+          if (!sessionOutline.trim()) {
+            toast.error('Session outline is required.')
+            return
+          }
+          if (!whoItsFor.trim()) {
+            toast.error("Audience description (Who it's for) is required.")
             return
           }
 
           if (!listingId && !allowNewConsultationListings) {
-            toast.error('Creating new consultation listings is disabled by admin settings.')
+            toast.error(RESTRICTION_MESSAGES.consultationCreate)
             return
           }
 
@@ -806,7 +1148,7 @@ export const CreateServiceListingPage = () => {
                 },
               })
             : await createConsultationMutation.mutateAsync({
-                partnerId,
+                partnerId: resolvedPartnerId,
                 title: consultationTitle.trim(),
                 topics: topicPayload,
                 sessionOutline: sessionOutline.trim(),
@@ -814,7 +1156,13 @@ export const CreateServiceListingPage = () => {
               })
 
           if (!listingId) {
-            setListingId(response.data?._id || null)
+            const newId = listingRecordId(response.data)
+            if (!newId) {
+              toast.error('Consultation was created but no ID was returned.')
+              return
+            }
+            setListingId(newId)
+            setListingStatus('preview')
           }
           toast.success(
             listingId
@@ -831,13 +1179,38 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 3) {
+          const parsedLanguages = languages
+            .split(',')
+            .map((lang) => lang.trim())
+            .filter(Boolean)
+          if (parsedLanguages.length === 0) {
+            toast.error('At least one language is required.')
+            return
+          }
+          if (hasPreSessionRequirement && !preSessionRequirement.trim()) {
+            toast.error('Pre-session requirement description is required.')
+            return
+          }
+          if (hasPostSessionMessage && !postSessionMessage.trim()) {
+            toast.error('Post-session message is required.')
+            return
+          }
+          if (hasFollowUp) {
+            const days = Number.parseInt(followUpDays, 10) || 0
+            if (days < 1) {
+              toast.error('Follow-up days must be at least 1.')
+              return
+            }
+            if (days > maxConsultationFollowUpDays) {
+              toast.error(`Follow-up period cannot exceed ${maxConsultationFollowUpDays} day(s).`)
+              return
+            }
+          }
+
           await updateConsultationAdditionalInfoMutation.mutateAsync({
             id: listingId,
             payload: {
-              languages: languages
-                .split(',')
-                .map((lang) => lang.trim())
-                .filter(Boolean),
+              languages: parsedLanguages,
               hasPreSessionRequirement,
               preSessionRequirement: hasPreSessionRequirement ? preSessionRequirement.trim() : '',
               hasPostSessionMessage,
@@ -852,23 +1225,48 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 4) {
-          if (consultationPricingType === 'paid' && !consultationPrice.trim()) {
-            toast.error('Consultation fee is required for paid sessions.')
+          if (!consultationMode) {
+            toast.error('Mode is required.')
             return
+          }
+          if (consultationPricingSlots.length === 0) {
+            toast.error('At least one pricing slot is required.')
+            return
+          }
+          const usedDurations = new Set<number>()
+          for (const [index, slot] of consultationPricingSlots.entries()) {
+            const slotLabel = consultationPricingSlots.length > 1 ? ` for slot ${index + 1}` : ''
+            if (slot.durationMinutes === '') {
+              toast.error(`Duration is required${slotLabel}.`)
+              return
+            }
+            if (usedDurations.has(slot.durationMinutes)) {
+              toast.error('Each slot must have a unique duration.')
+              return
+            }
+            usedDurations.add(slot.durationMinutes)
+            if (slot.pricingType !== 'free' && slot.pricingType !== 'paid') {
+              toast.error(`Pricing option is required${slotLabel}.`)
+              return
+            }
+            if (slot.pricingType === 'paid') {
+              const price = parsePrice(slot.price)
+              if (!slot.price.trim() || price < 1) {
+                toast.error('Price must be greater than 0 for paid sessions.')
+                return
+              }
+            }
           }
 
           await updateConsultationPricingMutation.mutateAsync({
             id: listingId,
             payload: {
-              mode: consultationMode,
-              pricingOptions: [
-                {
-                  durationMinutes: consultationDuration,
-                  pricingType: consultationPricingType,
-                  price:
-                    consultationPricingType === 'paid' ? parsePrice(consultationPrice) : undefined,
-                },
-              ],
+              mode: 'audio',
+              pricingOptions: consultationPricingSlots.map((slot) => ({
+                durationMinutes: Number(slot.durationMinutes),
+                pricingType: slot.pricingType as 'free' | 'paid',
+                price: slot.pricingType === 'paid' ? parsePrice(slot.price) : undefined,
+              })),
             },
           })
           toast.success('Pricing & duration updated')
@@ -877,17 +1275,10 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 5) {
-          await publishConsultationMutation.mutateAsync(listingId)
-          toast.success(
-            isEditMode
-              ? 'Consultation updated successfully'
-              : 'Consultation published successfully',
-          )
-          navigate(
-            isEditMode && partnerId
-              ? `/experts/management/profile/${partnerId}`
-              : '/services/management',
-          )
+          if (shouldPublishListing) {
+            await publishConsultationMutation.mutateAsync(listingId)
+          }
+          finishListing('consultation')
         }
       }
     } catch (error) {
@@ -916,7 +1307,7 @@ export const CreateServiceListingPage = () => {
           <div className="space-y-5">
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Consultation Title
+                Consultation Title <RequiredMark />
               </label>
               <input
                 type="text"
@@ -928,35 +1319,85 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold tracking-tight text-white">Add Topics</label>
-              <div className="relative">
-                <select
-                  value=""
-                  onChange={(e) => addTopicById(e.target.value)}
+              <label className="text-body-sm font-bold tracking-tight text-white">
+                Add Topics <RequiredMark />
+              </label>
+              <div ref={topicSearchRef} className="relative">
+                <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={topicQuery}
                   disabled={isTopicsLoading}
-                  className={cn(consultationInputClass, 'appearance-none pr-8 disabled:opacity-50')}
-                >
-                  <option value="" disabled>
-                    {isTopicsLoading
+                  placeholder={
+                    isTopicsLoading
                       ? 'Loading topics...'
                       : topicOptions.length === 0
                         ? 'No topics available'
-                        : 'Select a topic'}
-                  </option>
-                  {topicOptions
-                    .filter((option) => {
-                      const optionId = String(option._id || option.id || '')
-                      return optionId && !topics.some((selected) => selected._id === optionId)
-                    })
-                    .map((option) => {
-                      const optionId = String(option._id || option.id || '')
-                      return (
-                        <option key={optionId} value={optionId}>
-                          {option.name}
-                        </option>
+                        : 'Search topics'
+                  }
+                  onFocus={() => setTopicMenuOpen(true)}
+                  onChange={(e) => {
+                    setTopicQuery(e.target.value)
+                    setTopicMenuOpen(true)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const match = availableTopics.find(
+                        (option) =>
+                          String(option.name || '').toLowerCase() ===
+                          topicQuery.trim().toLowerCase(),
                       )
-                    })}
-                </select>
+                      if (match) addTopicById(String(match._id || match.id || ''))
+                    }
+                    if (e.key === 'Escape') setTopicMenuOpen(false)
+                  }}
+                  className={cn(
+                    consultationInputClass,
+                    'ui-input-icon-left pr-8 disabled:opacity-50',
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setTopicMenuOpen((open) => !open)}
+                  className="text-muted absolute top-1/2 right-2.5 -translate-y-1/2 p-1 hover:text-white"
+                  aria-label="Toggle topic suggestions"
+                >
+                  <ChevronDown
+                    className={cn(
+                      'size-3.5 transition-transform duration-200',
+                      topicMenuOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
+                {topicMenuOpen && (
+                  <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-white/10 bg-[#161616] p-1.5 shadow-2xl">
+                    {availableTopics.length === 0 ? (
+                      <div className="p-3 text-center text-[11px] text-white/50">
+                        {topicQuery.trim()
+                          ? 'No matching topics'
+                          : topicOptions.length === 0
+                            ? 'No topics available'
+                            : 'All topics selected'}
+                      </div>
+                    ) : (
+                      availableTopics.map((option) => {
+                        const optionId = String(option._id || option.id || '')
+                        return (
+                          <button
+                            key={optionId}
+                            type="button"
+                            onClick={() => addTopicById(optionId)}
+                            className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-[12px] text-white/80 hover:bg-white/5 hover:text-white"
+                          >
+                            <span>{option.name}</span>
+                            <Plus className="size-3.5 text-white/40" />
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                )}
               </div>
               {topics.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-1">
@@ -982,7 +1423,7 @@ export const CreateServiceListingPage = () => {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2.5">
                 <label className="text-body-sm font-bold tracking-tight text-white">
-                  Session Outline
+                  Session Outline <RequiredMark />
                 </label>
                 <textarea
                   placeholder="Describe what you will deliver..."
@@ -993,7 +1434,7 @@ export const CreateServiceListingPage = () => {
               </div>
               <div className="space-y-2.5">
                 <label className="text-body-sm font-bold tracking-tight text-white">
-                  Who it is for?
+                  Who it is for? <RequiredMark />
                 </label>
                 <textarea
                   placeholder="Describe your target audience..."
@@ -1020,7 +1461,9 @@ export const CreateServiceListingPage = () => {
 
           <div className="space-y-5">
             <div className="space-y-2.5">
-              <label className="text-body-sm font-bold tracking-tight text-white">Languages</label>
+              <label className="text-body-sm font-bold tracking-tight text-white">
+                Languages <RequiredMark />
+              </label>
               <input
                 type="text"
                 placeholder="English, Hindi"
@@ -1057,12 +1500,17 @@ export const CreateServiceListingPage = () => {
                   </button>
                 </div>
                 {hasPreSessionRequirement && (
-                  <textarea
-                    placeholder="Describe pre-session requirements"
-                    value={preSessionRequirement}
-                    onChange={(e) => setPreSessionRequirement(e.target.value)}
-                    className={consultationTextareaClass}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-body-sm font-bold tracking-tight text-white">
+                      Pre-session requirement <RequiredMark />
+                    </label>
+                    <textarea
+                      placeholder="Describe pre-session requirements"
+                      value={preSessionRequirement}
+                      onChange={(e) => setPreSessionRequirement(e.target.value)}
+                      className={consultationTextareaClass}
+                    />
+                  </div>
                 )}
 
                 <div className="space-y-2.5">
@@ -1088,14 +1536,19 @@ export const CreateServiceListingPage = () => {
                     </button>
                   </div>
                   {hasFollowUp && (
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        value={followUpDays}
-                        onChange={(e) => setFollowUpDays(e.target.value)}
-                        className="text-body-sm h-9 w-20 rounded-md border border-white/5 bg-black px-3 text-white outline-none"
-                      />
-                      <span className="text-body-sm text-muted flex h-9 items-center">Days</span>
+                    <div className="space-y-2">
+                      <label className="text-body-sm font-bold tracking-tight text-white">
+                        Follow-up days <RequiredMark />
+                      </label>
+                      <div className="flex gap-3">
+                        <input
+                          type="text"
+                          value={followUpDays}
+                          onChange={(e) => setFollowUpDays(e.target.value)}
+                          className="text-body-sm h-9 w-20 rounded-md border border-white/5 bg-black px-3 text-white outline-none"
+                        />
+                        <span className="text-body-sm text-muted flex h-9 items-center">Days</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1127,12 +1580,17 @@ export const CreateServiceListingPage = () => {
                   </button>
                 </div>
                 {hasPostSessionMessage && (
-                  <textarea
-                    placeholder="Describe requirement"
-                    value={postSessionMessage}
-                    onChange={(e) => setPostSessionMessage(e.target.value)}
-                    className={consultationTextareaClass}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-body-sm font-bold tracking-tight text-white">
+                      Post-session message <RequiredMark />
+                    </label>
+                    <textarea
+                      placeholder="Describe requirement"
+                      value={postSessionMessage}
+                      onChange={(e) => setPostSessionMessage(e.target.value)}
+                      className={consultationTextareaClass}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -1151,83 +1609,222 @@ export const CreateServiceListingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Mode Of Consultation</label>
-              <div className="relative">
-                <select
-                  value={consultationMode}
-                  onChange={(e) =>
-                    setConsultationMode(e.target.value as 'audio' | 'video' | 'chat')
-                  }
-                  className="text-body-sm h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-white outline-none"
+          <div className="space-y-6">
+            {consultationPricingSlots.map((slot, index) => {
+              const usedDurations = new Set(
+                consultationPricingSlots
+                  .filter((_, slotIndex) => slotIndex !== index)
+                  .map((item) => item.durationMinutes)
+                  .filter((duration): duration is number => duration !== ''),
+              )
+              const selectClass = cn(
+                'text-body-sm h-10 w-full appearance-none rounded-lg border-0 bg-black px-4 pr-9 outline-none',
+              )
+              return (
+                <div
+                  key={`slot-${index}`}
+                  className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2"
                 >
-                  {CONSULTATION_MODES.map((mode) => (
-                    <option key={mode.value} value={mode.value}>
-                      {mode.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                  {index > 0 && (
+                    <>
+                      <div className="flex items-end gap-3">
+                        <div className="min-w-0 flex-1 space-y-2.5">
+                          <label className="text-body-sm font-bold text-white">
+                            Duration <RequiredMark />
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={slot.durationMinutes}
+                              onChange={(e) =>
+                                updatePricingSlot(index, {
+                                  durationMinutes: Number(e.target.value),
+                                })
+                              }
+                              className={cn(
+                                selectClass,
+                                slot.durationMinutes === '' ? 'text-white/40' : 'text-white',
+                              )}
+                            >
+                              <option value="" disabled>
+                                Select here
+                              </option>
+                              {DURATION_OPTIONS.map((duration) => (
+                                <option
+                                  key={duration}
+                                  value={duration}
+                                  disabled={usedDurations.has(duration)}
+                                >
+                                  {duration} mins
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePricingSlot(index)}
+                          className="text-muted mb-2.5 hover:text-white"
+                          aria-label={`Remove slot ${index + 1}`}
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                      <div />
+                    </>
+                  )}
 
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Duration</label>
-              <div className="relative">
-                <select
-                  value={consultationDuration}
-                  onChange={(e) => setConsultationDuration(Number(e.target.value))}
-                  className="text-body-sm h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-white outline-none"
-                >
-                  {DURATION_OPTIONS.map((duration) => (
-                    <option key={duration} value={duration}>
-                      {duration} mins
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                  {index === 0 && (
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Mode Of Consultation <RequiredMark />
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={consultationMode}
+                          onChange={() => undefined}
+                          className={cn(selectClass, 'text-white')}
+                        >
+                          {CONSULTATION_MODES.map((mode) => (
+                            <option key={mode.value} value={mode.value}>
+                              {mode.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                      </div>
+                    </div>
+                  )}
 
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Pricing Option</label>
-              <div className="overflow-hidden rounded-md border border-white/5 bg-black">
-                {(['paid', 'free'] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setConsultationPricingType(option)}
-                    className="text-body-sm flex h-8 w-full items-center justify-between px-3 font-bold text-white capitalize"
-                  >
-                    {option}
-                    <span
-                      className={cn(
-                        'flex size-3.5 items-center justify-center rounded-full border border-white',
-                        consultationPricingType === option && 'bg-white',
+                  {index === 0 && (
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Duration <RequiredMark />
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={slot.durationMinutes}
+                          onChange={(e) =>
+                            updatePricingSlot(index, {
+                              durationMinutes: Number(e.target.value),
+                            })
+                          }
+                          className={cn(
+                            selectClass,
+                            slot.durationMinutes === '' ? 'text-white/40' : 'text-white',
+                          )}
+                        >
+                          <option value="" disabled>
+                            Select here
+                          </option>
+                          {DURATION_OPTIONS.map((duration) => (
+                            <option
+                              key={duration}
+                              value={duration}
+                              disabled={usedDurations.has(duration)}
+                            >
+                              {duration} mins
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Pricing Option <RequiredMark />
+                      </label>
+                      <div className="relative">
+                        <div
+                          className={cn(
+                            selectClass,
+                            'flex items-center',
+                            slot.pricingType === '' ? 'text-white/40' : 'text-white',
+                          )}
+                        >
+                          {slot.pricingType === 'paid'
+                            ? 'Paid'
+                            : slot.pricingType === 'free'
+                              ? 'Free'
+                              : 'Select here'}
+                        </div>
+                        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+                      </div>
+                    </div>
+                    <div className="overflow-hidden rounded-lg bg-black">
+                      {(['paid', 'free'] as const).map((option, optionIndex) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() =>
+                            updatePricingSlot(index, {
+                              pricingType: option,
+                              price: option === 'free' ? '' : slot.price,
+                            })
+                          }
+                          className={cn(
+                            'text-body-sm flex h-10 w-full items-center justify-between px-4 font-medium text-white capitalize',
+                            optionIndex > 0 && 'border-t border-white/10',
+                          )}
+                        >
+                          {option}
+                          <span
+                            className={cn(
+                              'flex size-4 items-center justify-center rounded-full border border-white',
+                              slot.pricingType === option && 'bg-white',
+                            )}
+                          >
+                            {slot.pricingType === option && (
+                              <span className="size-1.5 rounded-full bg-black" />
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <div className="space-y-2.5">
+                      <label className="text-body-sm font-bold text-white">
+                        Consultation Fees
+                        {slot.pricingType === 'paid' ? (
+                          <>
+                            {' '}
+                            <RequiredMark />
+                          </>
+                        ) : null}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="₹0.00"
+                        value={slot.price}
+                        onChange={(e) => updatePricingSlot(index, { price: e.target.value })}
+                        disabled={slot.pricingType === 'free'}
+                        className={cn(
+                          'text-body-sm h-10 w-full rounded-lg border-0 bg-black px-4 text-white outline-none placeholder:text-white/35',
+                          slot.pricingType === 'free' && 'opacity-50',
+                        )}
+                      />
+                    </div>
+                    {index === consultationPricingSlots.length - 1 &&
+                      consultationPricingSlots.length < MAX_CONSULTATION_PRICING_SLOTS && (
+                        <div className="mt-auto flex justify-end pt-10">
+                          <button
+                            type="button"
+                            onClick={addPricingSlot}
+                            className="text-muted text-body-sm underline underline-offset-2 hover:text-white"
+                          >
+                            Add slots
+                          </button>
+                        </div>
                       )}
-                    >
-                      {consultationPricingType === option && (
-                        <span className="size-1.5 rounded-full bg-black" />
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <label className="text-body-sm font-bold text-white">Consultation Fees</label>
-              <input
-                type="text"
-                placeholder="₹0.00"
-                value={consultationPrice}
-                onChange={(e) => setConsultationPrice(e.target.value)}
-                disabled={consultationPricingType === 'free'}
-                className={cn(
-                  consultationInputClass,
-                  consultationPricingType === 'free' && 'opacity-50',
-                )}
-              />
-            </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )
@@ -1237,15 +1834,6 @@ export const CreateServiceListingPage = () => {
       .split(',')
       .map((lang) => lang.trim())
       .filter(Boolean)
-
-    const reviewPriceLabel =
-      consultationPricingType === 'free'
-        ? 'Free'
-        : consultationPrice.trim()
-          ? consultationPrice.trim().startsWith('₹')
-            ? consultationPrice.trim()
-            : `₹${consultationPrice.trim()}`
-          : '—'
 
     return (
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-7 duration-300">
@@ -1340,9 +1928,16 @@ export const CreateServiceListingPage = () => {
 
               <div>
                 <h3 className="text-body-sm mb-3 font-bold text-white">Duration &amp; Pricing</h3>
-                <span className="text-body-sm inline-flex rounded-md border border-white/40 px-4 py-2 font-bold text-white">
-                  {consultationDuration}mins ({reviewPriceLabel})
-                </span>
+                <div className="flex flex-wrap gap-2">
+                  {consultationPricingSlots.map((slot, index) => (
+                    <span
+                      key={`${slot.durationMinutes}-${index}`}
+                      className="text-body-sm inline-flex rounded-md border border-white/40 px-4 py-2 font-bold text-white"
+                    >
+                      {slot.durationMinutes}mins ({formatConsultationFeeLabel(slot)})
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1353,46 +1948,75 @@ export const CreateServiceListingPage = () => {
 
   const breadcrumbs = useMemo(
     () => [
-      { label: 'Expert management' },
-      { label: 'Manage Experts' },
-      { label: expertName },
-      { label: isEditMode ? 'Edit Consultation' : 'Create Listing', isActive: true },
+      { label: 'Service Management', to: '/services/management' },
+      { label: 'Manage Services', to: '/services/management' },
+      {
+        label: isEditMode
+          ? selectedType === 'consultation'
+            ? 'Edit Consultation'
+            : 'Edit Service'
+          : 'Create Listing',
+        isActive: true,
+      },
     ],
-    [expertName, isEditMode],
+    [isEditMode, selectedType],
   )
 
   const primaryActionLabel =
     currentStep === 1 ? (
       'Next'
     ) : currentStep === 5 ? (
-      selectedType === 'consultation' ? (
-        isEditMode ? (
-          'Save Changes'
-        ) : (
+      shouldPublishListing ? (
+        selectedType === 'consultation' ? (
           'Publish Consultation'
+        ) : (
+          <span className="flex items-center gap-2">
+            Publish service
+            <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </span>
         )
       ) : (
-        <span className="flex items-center gap-2">
-          Publish service
-          <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2.5}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </span>
+        'Save Changes'
       )
     ) : (
       'Save & Continue'
     )
 
-  const primaryActionClassName = currentStep === 5 ? 'ui-cta-positive' : 'ui-cta-primary'
+  if (isEditMode && isEditLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (
+    !isEditMode &&
+    (!listingControlsReady || (!allowNewServiceListings && !allowNewConsultationListings))
+  ) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    )
+  }
 
   return (
     <CreateListingWizard
-      title={isEditMode ? 'Edit Consultation' : 'Create Service Listing'}
+      title={
+        isEditMode
+          ? selectedType === 'consultation'
+            ? 'Edit Consultation'
+            : 'Edit Service'
+          : 'Create Service Listing'
+      }
       breadcrumbs={breadcrumbs}
       steps={activeSteps}
       currentStep={currentStep}
@@ -1409,7 +2033,7 @@ export const CreateServiceListingPage = () => {
         onClick: handlePrimaryAction,
         disabled:
           (currentStep === 1 && !selectedType) || isSubmitting || (isEditMode && isEditLoading),
-        className: primaryActionClassName,
+        variant: currentStep === 5 ? 'positive' : 'primary',
       }}
     >
       {currentStep === 1 ? (
@@ -1423,83 +2047,89 @@ export const CreateServiceListingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <button
-              onClick={() => setSelectedType('service')}
-              className={cn(
-                'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
-                selectedType === 'service'
-                  ? 'bg-brand-accent border-brand-accent text-brand-text-dark shadow-lg'
-                  : 'text-muted border-white/5 bg-black hover:border-white/10',
-              )}
-            >
-              <div
+            {allowNewServiceListings ? (
+              <button
+                type="button"
+                onClick={() => setSelectedType('service')}
                 className={cn(
-                  'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                  'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
                   selectedType === 'service'
-                    ? 'bg-black text-white'
-                    : 'bg-brand-surface text-white',
+                    ? 'bg-brand-accent border-brand-accent text-brand-text-dark shadow-lg'
+                    : 'text-muted border-white/5 bg-black hover:border-white/10',
                 )}
               >
-                <Briefcase className="size-5" />
-              </div>
-              <div className="space-y-2">
-                <h3
+                <div
                   className={cn(
-                    'text-[13px] font-bold tracking-tight',
-                    selectedType === 'service' ? 'text-black' : 'text-white',
+                    'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                    selectedType === 'service'
+                      ? 'bg-black text-white'
+                      : 'bg-brand-surface text-white',
                   )}
                 >
-                  Service
-                </h3>
-                <p
-                  className={cn(
-                    'text-body-sm max-w-[260px] leading-relaxed font-semibold',
-                    selectedType === 'service' ? 'text-black/80' : 'text-muted',
-                  )}
-                >
-                  Best for clearly defined offerings with deliverables, pricing, and timelines
-                </p>
-              </div>
-            </button>
+                  <Briefcase className="size-5" />
+                </div>
+                <div className="space-y-2">
+                  <h3
+                    className={cn(
+                      'text-[13px] font-bold tracking-tight',
+                      selectedType === 'service' ? 'text-black' : 'text-white',
+                    )}
+                  >
+                    Service
+                  </h3>
+                  <p
+                    className={cn(
+                      'text-body-sm max-w-[260px] leading-relaxed font-semibold',
+                      selectedType === 'service' ? 'text-black/80' : 'text-muted',
+                    )}
+                  >
+                    Best for clearly defined offerings with deliverables, pricing, and timelines
+                  </p>
+                </div>
+              </button>
+            ) : null}
 
-            <button
-              onClick={() => setSelectedType('consultation')}
-              className={cn(
-                'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
-                selectedType === 'consultation'
-                  ? 'border-white bg-white text-black shadow-lg'
-                  : 'text-muted border-white/5 bg-black hover:border-white/10',
-              )}
-            >
-              <div
+            {allowNewConsultationListings ? (
+              <button
+                type="button"
+                onClick={() => setSelectedType('consultation')}
                 className={cn(
-                  'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                  'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
                   selectedType === 'consultation'
-                    ? 'bg-black text-white'
-                    : 'bg-brand-surface text-white',
+                    ? 'border-white bg-white text-black shadow-lg'
+                    : 'text-muted border-white/5 bg-black hover:border-white/10',
                 )}
               >
-                <MessageCircle className="size-5" />
-              </div>
-              <div className="space-y-2">
-                <h3
+                <div
                   className={cn(
-                    'text-[13px] font-bold tracking-tight',
-                    selectedType === 'consultation' ? 'text-black' : 'text-white',
+                    'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
+                    selectedType === 'consultation'
+                      ? 'bg-black text-white'
+                      : 'bg-brand-surface text-white',
                   )}
                 >
-                  Consultation
-                </h3>
-                <p
-                  className={cn(
-                    'text-body-sm max-w-[260px] leading-relaxed font-medium',
-                    selectedType === 'consultation' ? 'text-black' : 'text-muted',
-                  )}
-                >
-                  Best for time-based or advisory sessions without fixed deliverables
-                </p>
-              </div>
-            </button>
+                  <MessageCircle className="size-5" />
+                </div>
+                <div className="space-y-2">
+                  <h3
+                    className={cn(
+                      'text-[13px] font-bold tracking-tight',
+                      selectedType === 'consultation' ? 'text-black' : 'text-white',
+                    )}
+                  >
+                    Consultation
+                  </h3>
+                  <p
+                    className={cn(
+                      'text-body-sm max-w-[260px] leading-relaxed font-medium',
+                      selectedType === 'consultation' ? 'text-black' : 'text-muted',
+                    )}
+                  >
+                    Best for time-based or advisory sessions without fixed deliverables
+                  </p>
+                </div>
+              </button>
+            ) : null}
           </div>
         </div>
       ) : selectedType === 'consultation' ? (
@@ -1600,7 +2230,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Description <RequiredMark />
+                Description
               </label>
               <textarea
                 placeholder="Describe your service offering..."
@@ -1612,7 +2242,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Describe Deliverables <RequiredMark />
+                Describe Deliverables
               </label>
               <textarea
                 placeholder="Describe what you will deliver to your client. Be specific about outputs, formats, and any revisions included..."
@@ -2104,9 +2734,11 @@ export const CreateServiceListingPage = () => {
       ) : currentStep === 4 ? (
         <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] space-y-5 rounded-lg border border-white/5 p-5 duration-300">
           <div>
-            <h2 className="mb-1 text-[13px] font-bold text-white">Gallery</h2>
+            <h2 className="mb-1 text-[13px] font-bold text-white">
+              Gallery <RequiredMark />
+            </h2>
             <p className="text-body-sm text-muted font-medium">
-              Upload visual assets to support your service (optional)
+              Upload at least one visual asset to support your service
             </p>
           </div>
 
@@ -2153,23 +2785,37 @@ export const CreateServiceListingPage = () => {
               accept="image/jpeg,image/png,image/webp"
               multiple
               className="hidden"
-              onChange={(e) => handleFilesAdded(e.target.files)}
+              onChange={(e) => {
+                handleFilesAdded(e.target.files)
+                e.target.value = ''
+              }}
             />
 
-            {uploadedImages.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-body-sm font-semibold text-white">
-                  Uploaded Images ({uploadedImages.length}/{MAX_IMAGES})
-                </p>
+            <div className="space-y-3">
+              <p className="text-body-sm font-semibold text-white">
+                Uploaded Images ({uploadedImages.length}/{MAX_IMAGES})
+              </p>
+              {uploadedImages.length > 0 ? (
                 <div className="flex flex-wrap gap-3">
-                  {uploadedImages.map((img) => (
+                  {uploadedImages.map((img, index) => (
                     <div key={img.id} className="group relative">
-                      <img
-                        src={img.url}
-                        alt={img.name}
-                        className="h-[90px] w-[90px] rounded-md border border-white/5 object-cover"
-                      />
                       <button
+                        type="button"
+                        aria-label={`Open ${img.name}`}
+                        onClick={() => {
+                          setGalleryPreviewIndex(index)
+                          setGalleryViewerOpen(true)
+                        }}
+                        className="block cursor-zoom-in"
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.name}
+                          className="h-[90px] w-[90px] rounded-md border border-white/5 object-cover"
+                        />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleRemoveImage(img.id)}
                         className="bg-brand-danger hover:bg-brand-danger absolute top-1.5 left-1.5 rounded-full px-2 py-0.5 text-[8px] font-bold text-white shadow-lg transition-colors"
                       >
@@ -2178,8 +2824,12 @@ export const CreateServiceListingPage = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-muted text-xs">
+                  No images uploaded yet. At least one is required.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       ) : currentStep === 5 ? (
@@ -2195,27 +2845,68 @@ export const CreateServiceListingPage = () => {
             <div className="flex w-full shrink-0 flex-col gap-5 md:w-[360px]">
               <div className="relative h-[210px] w-full overflow-hidden rounded-lg border border-white/5 bg-black">
                 {uploadedImages.length > 0 ? (
-                  <img
-                    src={uploadedImages[0].url}
-                    alt="cover"
-                    className="h-full w-full object-cover"
-                  />
+                  <button
+                    type="button"
+                    aria-label="Open image viewer"
+                    onClick={() => setGalleryViewerOpen(true)}
+                    className="block h-full w-full cursor-zoom-in"
+                  >
+                    <img
+                      src={
+                        uploadedImages[Math.min(galleryPreviewIndex, uploadedImages.length - 1)]
+                          ?.url
+                      }
+                      alt={
+                        uploadedImages[Math.min(galleryPreviewIndex, uploadedImages.length - 1)]
+                          ?.name || 'cover'
+                      }
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
                 ) : (
                   <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                     <ImageIcon className="size-8" aria-hidden="true" />
                     <span className="text-[10px]">No images uploaded</span>
                   </div>
                 )}
-                <div className="text-body-sm absolute right-3 bottom-3 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2.5 py-1 font-bold text-white shadow-md backdrop-blur-sm">
-                  <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span>{uploadedImages.length > 0 ? `1/${uploadedImages.length}` : '0/0'}</span>
+
+                {uploadedImages.length > 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Previous image"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setGalleryPreviewIndex(
+                          (current) =>
+                            (current - 1 + uploadedImages.length) % uploadedImages.length,
+                        )
+                      }}
+                      className="absolute top-1/2 left-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Next image"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setGalleryPreviewIndex((current) => (current + 1) % uploadedImages.length)
+                      }}
+                      className="absolute top-1/2 right-2 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </>
+                ) : null}
+
+                <div className="text-body-sm absolute right-3 bottom-3 z-10 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2.5 py-1 font-bold text-white shadow-md backdrop-blur-sm">
+                  <ImageIcon className="size-3.5" aria-hidden="true" />
+                  <span>
+                    {uploadedImages.length > 0
+                      ? `${Math.min(galleryPreviewIndex, uploadedImages.length - 1) + 1}/${uploadedImages.length}`
+                      : '0/0'}
+                  </span>
                 </div>
               </div>
 
@@ -2392,6 +3083,69 @@ export const CreateServiceListingPage = () => {
           Step {currentStep} coming soon...
         </div>
       )}
+
+      {galleryViewerOpen && uploadedImages.length > 0
+        ? (() => {
+            const activeIndex = Math.min(galleryPreviewIndex, uploadedImages.length - 1)
+            const activeImage = uploadedImages[activeIndex]
+            return (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+                onClick={() => setGalleryViewerOpen(false)}
+              >
+                <button
+                  type="button"
+                  aria-label="Close image viewer"
+                  onClick={() => setGalleryViewerOpen(false)}
+                  className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <X className="size-5" />
+                </button>
+                {uploadedImages.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Previous image"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setGalleryPreviewIndex(
+                        (current) => (current - 1 + uploadedImages.length) % uploadedImages.length,
+                      )
+                    }}
+                    className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                  >
+                    <ChevronLeft className="size-6" />
+                  </button>
+                ) : null}
+                <div
+                  className="flex max-h-[85vh] max-w-[min(900px,90vw)] flex-col items-center"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <img
+                    src={activeImage.url}
+                    alt={activeImage.name || 'Gallery image'}
+                    className="max-h-[80vh] max-w-full rounded-lg object-contain"
+                  />
+                  <p className="mt-3 text-[13px] text-white/70">
+                    {activeIndex + 1} / {uploadedImages.length}
+                  </p>
+                </div>
+                {uploadedImages.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="Next image"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setGalleryPreviewIndex((current) => (current + 1) % uploadedImages.length)
+                    }}
+                    className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                  >
+                    <ChevronRight className="size-6" />
+                  </button>
+                ) : null}
+              </div>
+            )
+          })()
+        : null}
     </CreateListingWizard>
   )
 }

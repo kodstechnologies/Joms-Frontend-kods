@@ -47,6 +47,11 @@ export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = 
   'service-deleted': serviceManagementFilterConfig,
   'venue-management': venueManagementFilterConfig,
   'service-category-management': serviceCategoryManagementFilterConfig,
+  'expert-category-management': {
+    ...serviceCategoryManagementFilterConfig,
+    moduleKey: 'expert-category-management',
+    moduleName: 'Expert Category Management',
+  },
   'venue-category-management': venueCategoryManagementFilterConfig,
   'communication-management': communicationManagementFilterConfig,
   'referral-management': referralManagementFilterConfig,

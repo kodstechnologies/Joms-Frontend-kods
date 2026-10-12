@@ -21,13 +21,36 @@ export const WEEK_DAYS = [
   'Sunday',
 ] as const
 
+const toDayKey = (day: string) => day.trim().slice(0, 3).toLowerCase()
+
+// Every day starts at 09:00 to 18:00 and is switched off.
 export const createDefaultWeeklyAvailability = (): WeeklyAvailabilityEntry[] =>
   WEEK_DAYS.map((day) => ({
     day,
     from: '09:00',
     to: '18:00',
-    enabled: day !== 'Saturday' && day !== 'Sunday',
+    enabled: false,
   }))
+
+// A day that was not saved is left off. A saved day with no enabled flag is treated as on.
+export const hydrateWeeklyAvailability = (
+  savedWeekly?: Array<{ day?: string; from?: string; to?: string; enabled?: boolean }> | null,
+): WeeklyAvailabilityEntry[] => {
+  const defaults = createDefaultWeeklyAvailability()
+  const saved = savedWeekly ?? []
+  if (saved.length === 0) return defaults
+
+  return defaults.map((entry) => {
+    const match = saved.find((item) => toDayKey(String(item.day || '')) === toDayKey(entry.day))
+    if (!match) return { ...entry, enabled: false }
+    return {
+      ...entry,
+      from: match.from || entry.from,
+      to: match.to || entry.to,
+      enabled: match.enabled !== false,
+    }
+  })
+}
 
 export type VenueAmenitySelection = {
   categoryId: string
@@ -35,6 +58,20 @@ export type VenueAmenitySelection = {
   name: string
   image: string
 }
+
+export type AmenityMediaFields = {
+  image?: string | null
+  icon?: string | null
+  icon3D?: string | null
+  vectorIcon?: string | null
+  name?: string | null
+  _id?: string
+  id?: string
+}
+
+// The image is used first, then the icon, then the 3D icon, then the vector.
+export const resolveAmenityMediaUrl = (item?: AmenityMediaFields | null) =>
+  item?.image || item?.icon || item?.icon3D || item?.vectorIcon || null
 
 const toAmenityId = (value: unknown) => {
   if (value == null) return ''
@@ -59,7 +96,7 @@ export const mapVenueAmenitySelections = (
           categoryId,
           subCategoryId: toAmenityId(item._id),
           name: String(item.name || ''),
-          image: String(item.image || item.icon || ''),
+          image: String(resolveAmenityMediaUrl(item as AmenityMediaFields) || ''),
         }))
       }
 
@@ -71,7 +108,7 @@ export const mapVenueAmenitySelections = (
             categoryId,
             subCategoryId: toAmenityId(rec._id),
             name: String(rec.name || ''),
-            image: String(rec.image || rec.icon || ''),
+            image: String(resolveAmenityMediaUrl(rec as AmenityMediaFields) || ''),
           }
         }
         return {
@@ -206,6 +243,7 @@ export const createEmptyVenueFormData = (): VenueFormData => ({
   blockedDates: [],
 })
 
+// Contact, submitted, and completed all land on the last step. An unknown step starts again at venue details.
 export const mapCurrentStepToUiStep = (currentStep?: string): number => {
   switch (currentStep) {
     case 'venue_details':
@@ -236,6 +274,7 @@ const cancellationHoursMap: Record<string, number> = {
   '12hrs': 12,
 }
 
+// An unknown cancellation policy is treated as 48 hours.
 export const mapCancellationPolicyToHours = (policy: string) => cancellationHoursMap[policy] ?? 48
 
 const reverseCancellationHoursMap: Record<number, string> = {
@@ -245,9 +284,11 @@ const reverseCancellationHoursMap: Record<number, string> = {
   12: '12hrs',
 }
 
+// A missing hour count, or one the form does not list, is saved as 48 hours.
 export const mapHoursToCancellationPolicy = (hours?: number) =>
   reverseCancellationHoursMap[hours ?? 48] ?? '48hrs'
 
+// Only a restaurant is sent as a restaurant. Every other space type is sent as an auditorium.
 export const mapSpaceTypeToApi = (spaceType: string) => {
   if (spaceType === 'restaurant') return 'restaurant'
   return 'auditorium'
@@ -273,6 +314,8 @@ export const mapDraftToVenueFormData = (
   const spaces = (profile?.spaces || []) as Array<Record<string, unknown>>
   const space = spaces[0]
   const pricing = (space?.pricing as Array<Record<string, unknown>> | undefined)?.[0]
+  const availability = space?.availability as
+    { weeklyAvailability?: WeeklyAvailabilityEntry[] } | undefined
   const terms = profile?.terms as Record<string, unknown> | undefined
   const gallery = space?.galleryContact as Record<string, unknown> | undefined
   const amenitiesDoc =
@@ -351,7 +394,7 @@ export const mapDraftToVenueFormData = (
     venueCoverImageUrl: '',
     venueImageUrl: '',
     galleryImageUrls: [],
-    weeklyAvailability: createDefaultWeeklyAvailability(),
+    weeklyAvailability: hydrateWeeklyAvailability(availability?.weeklyAvailability),
     blockedDates: [],
   }
 }

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
 import { ArrowLeft, CheckCircle2, MapPin } from 'lucide-react'
 
@@ -38,6 +39,9 @@ import {
 } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import { SafeImage } from '@/shared/components/media/safe-image'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
+import { isSubmittedListingStatus } from '../../utils/management-status'
+import { resolveAmenityMediaUrl } from '../../utils/venue-form'
 
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
@@ -46,6 +50,8 @@ type AmenitySubCategory = {
   name: string
   image?: string
   icon?: string
+  icon3D?: string
+  vectorIcon?: string
 }
 
 type AmenityCategory = {
@@ -102,12 +108,15 @@ function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
   return (data.overview.amenities?.amenities || []).flatMap((amenity) => {
     const category = categories.get(String(amenity.categoryId))
     if (Array.isArray(amenity.items) && amenity.items.length) {
-      return amenity.items.map((item) => ({
-        id: `${amenity.categoryId}-${item._id}`,
-        categoryName: amenity.category || category?.category || String(amenity.categoryId),
-        name: item.name || String(item._id),
-        image: item.image || item.icon || null,
-      }))
+      return amenity.items.map((item) => {
+        const subCategory = subCategories.get(String(item._id))
+        return {
+          id: `${amenity.categoryId}-${item._id}`,
+          categoryName: amenity.category || category?.category || String(amenity.categoryId),
+          name: item.name || subCategory?.name || String(item._id),
+          image: resolveAmenityMediaUrl(item) || resolveAmenityMediaUrl(subCategory),
+        }
+      })
     }
 
     return (amenity.subCategoryIds || []).map((subCategoryId) => {
@@ -117,7 +126,7 @@ function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
         id: `${amenity.categoryId}-${id}`,
         categoryName: category?.category || String(amenity.categoryId),
         name: subCategory?.name || id,
-        image: subCategory?.image || subCategory?.icon || null,
+        image: resolveAmenityMediaUrl(subCategory),
       }
     })
   })
@@ -134,6 +143,7 @@ export function ApplicationDetailsPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [decisionConfirmed, setDecisionConfirmed] = useState(false)
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
 
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
@@ -227,12 +237,35 @@ export function ApplicationDetailsPage() {
   }
 
   const { venue, space, gallery, terms } = fullView.overview
+
+  if (space && !isSubmittedListingStatus(space.status)) {
+    return (
+      <div className="relative flex w-full flex-col gap-5 pb-8 text-white">
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
+        >
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>Venue Application View</span>
+        </button>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          This listing is not submitted by partner
+        </div>
+      </div>
+    )
+  }
+
   const summary = fullView.spaces[0]
   const galleryImages: VenueFullViewGalleryImage[] = [
     ...(gallery?.venueCoverImages || []),
     ...(gallery?.spaceCoverImages || []),
     ...(gallery?.galleryImages || []),
   ]
+  const mediaItems = galleryImages.map((image, index) => ({
+    url: image.url,
+    title: `Gallery ${index + 1}`,
+  }))
   const coverImage =
     gallery?.venueCoverImages?.[0]?.url ||
     venue.coverImageUrl ||
@@ -384,16 +417,14 @@ export function ApplicationDetailsPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
         </button>
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-            className="transition-colors hover:text-white"
-          >
-            Event Management
-          </button>
-          <span className="text-muted/40">/</span>
-          <span className="font-bold text-white">{venue.venueType || venue.name}</span>
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={[
+              { label: 'Venue Management', to: '/venues/management' },
+              { label: 'Manage Venues', to: '/venues/management' },
+              { label: venue.venueType || venue.name, isActive: true },
+            ]}
+          />
         </div>
       </header>
 
@@ -504,11 +535,10 @@ export function ApplicationDetailsPage() {
         {galleryImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {galleryImages.slice(0, 6).map((image, index) => (
-              <a
+              <button
                 key={`${image.url}-${index}`}
-                href={image.url}
-                target="_blank"
-                rel="noreferrer"
+                type="button"
+                onClick={() => setMediaIndex(index)}
                 className="block aspect-[4/3] overflow-hidden rounded-md border border-white/5 bg-black"
               >
                 <SafeImage
@@ -516,7 +546,7 @@ export function ApplicationDetailsPage() {
                   alt={`Gallery ${index + 1}`}
                   className="size-full object-cover"
                 />
-              </a>
+              </button>
             ))}
           </div>
         ) : (
@@ -582,7 +612,8 @@ export function ApplicationDetailsPage() {
             onEscalate={() => openModal('escalate')}
             onReject={() => openModal('reject')}
             showEscalate
-            approveDisabled={spaceStatusMutation.isPending || !space?._id || !allowApproveVenues}
+            showApprove={allowApproveVenues}
+            approveDisabled={spaceStatusMutation.isPending || !space?._id}
             requestChangesDisabled={spaceStatusMutation.isPending || !space?._id}
             escalateDisabled={escalateDisabled}
             rejectDisabled={spaceStatusMutation.isPending || !space?._id}
@@ -660,6 +691,14 @@ export function ApplicationDetailsPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmitDecision}
         isSubmitting={isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending}
+      />
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
       />
     </div>
   )

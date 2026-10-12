@@ -2,6 +2,10 @@ import type { ReactNode } from 'react'
 import { ChevronLeft } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
+import {
+  PageBreadcrumb,
+  type PageBreadcrumbItem,
+} from '@/shared/components/navigation/page-breadcrumb'
 import { cn } from '@/shared/lib/cn'
 
 export type CreateListingWizardStep = {
@@ -10,16 +14,14 @@ export type CreateListingWizardStep = {
   description: string
 }
 
-export type CreateListingBreadcrumb = {
-  label: string
-  isActive?: boolean
-}
+export type CreateListingBreadcrumb = PageBreadcrumbItem
 
 type WizardAction = {
   label: ReactNode
   onClick?: () => void
   disabled?: boolean
   className?: string
+  variant?: 'primary' | 'secondary' | 'outline' | 'positive' | 'negative' | 'ghost'
 }
 
 type CreateListingWizardProps = {
@@ -62,15 +64,8 @@ export function CreateListingWizard({
           <h1 className="text-h3 font-bold tracking-tight">{title}</h1>
         </button>
 
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          {breadcrumbs.map((breadcrumb, index) => (
-            <span key={`${breadcrumb.label}-${index}`} className="contents">
-              {index > 0 && <span className="text-[#333333]">/</span>}
-              <span className={cn(breadcrumb.isActive && 'font-bold text-white')}>
-                {breadcrumb.label}
-              </span>
-            </span>
-          ))}
+        <div className="pl-7">
+          <PageBreadcrumb items={breadcrumbs} />
         </div>
       </div>
 
@@ -84,15 +79,15 @@ export function CreateListingWizard({
             return (
               <div key={step.id} className="relative flex flex-1 flex-col items-center gap-3">
                 {index < steps.length - 1 && (
-                  <div className="absolute top-[18px] left-[calc(50%+18px)] z-0 h-px w-[calc(100%-36px)] bg-[#D8D8D8]" />
+                  <div className="absolute top-[25px] left-[calc(50%+25px)] z-0 h-px w-[calc(100%-50px)] bg-[#D8D8D8]" />
                 )}
                 <div
                   className={cn(
-                    'text-body-sm relative z-10 flex size-9 items-center justify-center rounded-full font-bold transition-all duration-300',
+                    'relative z-10 flex size-[50px] items-center justify-center rounded-full text-[16px] leading-5 font-semibold tracking-normal transition-all duration-300',
                     isActive
-                      ? 'bg-brand-accent text-brand-text-dark shadow-[0_0_20px_rgba(255,200,73,0.15)]'
+                      ? 'bg-brand-accent text-black shadow-[0_0_20px_rgba(255,200,73,0.15)]'
                       : isCompleted
-                        ? 'bg-brand-success text-white'
+                        ? 'bg-[#0A5D29] text-[16px] leading-5 font-semibold tracking-normal text-[#FFFFFF]'
                         : 'border border-[#080808] bg-black text-white',
                   )}
                 >
@@ -116,6 +111,7 @@ export function CreateListingWizard({
 
       <div className="bg-brand-surface mx-auto flex w-full max-w-[1140px] items-center justify-between rounded-lg border border-white/5 p-4 shadow-lg">
         <Button
+          type="button"
           variant="secondary"
           onClick={onBack}
           className="ui-cta ui-cta-outline h-8 px-4 py-0"
@@ -125,6 +121,7 @@ export function CreateListingWizard({
         <div className="flex items-center gap-3">
           {secondaryAction && (
             <Button
+              type="button"
               variant="secondary"
               onClick={secondaryAction.onClick}
               disabled={secondaryAction.disabled}
@@ -137,9 +134,11 @@ export function CreateListingWizard({
             </Button>
           )}
           <Button
+            type="button"
+            variant={primaryAction.variant ?? 'primary'}
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
-            className={cn('ui-cta ui-cta-primary h-8 px-5 py-0', primaryAction.className)}
+            className={cn('h-8 px-5 py-0', primaryAction.className)}
           >
             {primaryAction.label}
           </Button>

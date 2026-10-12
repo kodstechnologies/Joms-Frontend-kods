@@ -31,9 +31,9 @@ export const SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG: ServiceCategoryM
     },
     {
       id: 'active-listings',
-      label: 'Active Listings',
+      label: 'Total Listings',
       type: 'Number',
-      description: 'Count(Active Services)',
+      description: 'Count(All Services excl. Preview/Draft)',
       defaultVisible: true,
     },
     {

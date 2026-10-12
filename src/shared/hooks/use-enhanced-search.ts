@@ -79,15 +79,28 @@ export function useEnhancedSearch(options: UseEnhancedSearchOptions = {}) {
     [columnSearches],
   )
 
-  return {
-    globalSearch,
-    setGlobalSearch,
-    columnSearches,
-    setColumnSearch,
-    removeColumnSearch,
-    clearAll,
-    activeColumnSearchCount,
-    buildSearchParams,
-    hasActiveSearch,
-  }
+  return useMemo(
+    () => ({
+      globalSearch,
+      setGlobalSearch,
+      columnSearches,
+      setColumnSearch,
+      removeColumnSearch,
+      clearAll,
+      activeColumnSearchCount,
+      buildSearchParams,
+      hasActiveSearch,
+    }),
+    [
+      activeColumnSearchCount,
+      buildSearchParams,
+      clearAll,
+      columnSearches,
+      globalSearch,
+      hasActiveSearch,
+      removeColumnSearch,
+      setColumnSearch,
+      setGlobalSearch,
+    ],
+  )
 }

@@ -2,10 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import {
   AlertOctagon,
   ArrowLeft,
@@ -19,6 +27,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  Flag,
   ImageOff,
   Mail,
   MapPin,
@@ -40,16 +49,19 @@ import {
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
   useBulkUpdateSpaceVisibility,
-  useDeleteVenue,
   useSetVenueOwnerPassword,
-  useSuspendVenue,
   useUpdateVenueOwnerAdminNotes,
   useUpdateVenueOwnerAdminTags,
   useVenueFullView,
   useVenueInsights,
   useVenueReportsForVenue,
 } from '../../hooks/use-venues'
-import { useBlockExpert, useForceLogoutExpert } from '../../hooks/use-expert'
+import {
+  useBlockExpert,
+  useDeactivateExpert,
+  useForceLogoutExpert,
+  useSuspendExpert,
+} from '../../hooks/use-expert'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
 import {
   DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -80,6 +92,7 @@ import type {
 } from '@/shared/types/data-filter'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
+import { adminNoteTextsNewestFirst } from '@/modules/expert/utils/admin-notes-display'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -92,23 +105,25 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
+import { getListingStatusDisplay } from '../../utils/management-status'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import { isSubmittedKycStatus } from '../../utils/expert-application-helpers'
 import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
-import {
-  apiErrorMessage,
-  getApiErrorMessage as getSharedApiErrorMessage,
-} from '@/shared/lib/api-error'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import type { UpdateVenueSpaceVisibilityPayload } from '../../api/venue-api'
 import { fetchSupportTickets } from '@/modules/support-management/api/support-api'
 import type { SupportTicket } from '@/modules/support-management/types/support'
 import { SafeImage } from '@/shared/components/media/safe-image'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import {
   VenueReportDetailModal,
   type VenueReportItem,
 } from '../../components/venue-report-detail-modal'
+import { VenueReportSubmitModal } from '../../components/venue-report-submit-modal'
 
 type TabKey = 'overview' | 'spaces' | 'analytics' | 'health'
 
@@ -119,8 +134,11 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'health', label: 'Profile Health' },
 ]
 
-const PROFILE_BTN_PRIMARY =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-1.5 text-[12px] font-semibold text-[#050505] transition-[filter] hover:brightness-95'
+const PROFILE_VIEW_BTN =
+  'inline-flex h-[25px] min-w-[48px] items-center justify-center rounded-[8px] bg-[#F6CB86] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-black transition-[filter] hover:brightness-95'
+
+const PROFILE_CHECK_TIMELINES_BTN =
+  'inline-flex h-[30px] min-w-[110px] items-center justify-center gap-2.5 rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-[#050505] transition-[filter] hover:brightness-95'
 
 const PROFILE_HEADER_BTN =
   'inline-flex h-[25px] items-center justify-center gap-1.5 rounded-[12px] bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 text-[11px] leading-none font-semibold whitespace-nowrap text-[#050505] transition-[filter] hover:brightness-95'
@@ -130,9 +148,6 @@ const PROFILE_CARD = 'rounded-xl bg-[#141414]'
 const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505]'
 
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
-
-const getApiErrorMessage = (error: unknown) =>
-  apiErrorMessage(error, 'Unable to load venue profile.')
 
 const formatCurrency = (value?: number | null) => {
   if (value === null || value === undefined) return '—'
@@ -197,12 +212,13 @@ const buildVenueTimelineEvents = (
   const createdAt = venue?.createdAt
   const createdMs = createdAt ? new Date(createdAt).getTime() : NaN
 
-  const kycApproved = ['approved', 'live'].includes(String(venue?.status || '').toLowerCase())
+  const kycStatus = data.profile?.kycStatus
+  const kycApproved = String(kycStatus || '').toUpperCase() === 'APPROVED'
   if (kycApproved) {
     events.push({
       id: 'kyc-verified',
       title: 'KYC verified',
-      detail: formatVenueKycStatusLabel(venue?.status),
+      detail: formatVenueKycStatusLabel(kycStatus),
       at: venue?.updatedAt || createdAt,
     })
   }
@@ -273,8 +289,10 @@ const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <span className="text-body-sm text-muted">{label}</span>
-      <span className="max-w-[58%] text-right text-[13px] font-semibold text-white">
+      <span className="text-[16px] leading-[14px] font-normal tracking-normal text-[#FFFFFF80]">
+        {label}
+      </span>
+      <span className="max-w-[58%] text-right text-[16px] leading-5 font-semibold tracking-normal text-white">
         {children}
       </span>
     </div>
@@ -282,27 +300,39 @@ function SidebarRow({ label, children }: { label: string; children: ReactNode })
 }
 
 const formatVenueKycStatusLabel = (status?: string | null) => {
-  const normalized = (status || '').toLowerCase()
-  if (!normalized) return 'KYC Pending'
-  if (normalized === 'approved') return 'KYC Verified'
-  if (normalized === 'live') return 'Live'
-  if (normalized === 'in_review' || normalized === 'pending') return 'KYC Pending'
-  if (normalized === 'rejected') return 'Rejected'
-  if (normalized === 'suspended') return 'Suspended'
-  if (normalized === 'draft') return 'Draft'
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1).replace(/_/g, ' ')
+  const normalized = (status || '').toUpperCase().replace(/-/g, '_')
+  if (
+    normalized === 'APPROVED' ||
+    normalized === 'LIVE' ||
+    normalized === 'ACTIVE' ||
+    normalized === 'VERIFIED'
+  ) {
+    return 'Verified'
+  }
+  if (normalized === 'REJECTED') return 'Rejected'
+  return 'Review Pending'
 }
 
 const getVenueKycStatusTone = (status?: string | null) => {
-  const normalized = (status || '').toLowerCase()
-  if (normalized === 'approved' || normalized === 'live') {
-    return 'bg-[#143D2B] text-white border border-[#1E563D]/50'
+  const normalized = (status || '').toUpperCase().replace(/-/g, '_')
+  if (
+    normalized === 'APPROVED' ||
+    normalized === 'LIVE' ||
+    normalized === 'ACTIVE' ||
+    normalized === 'VERIFIED'
+  ) {
+    return 'inline-flex h-[25px] min-w-[91px] items-center justify-center rounded-[10px] bg-[#00A63E4D] px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-white'
   }
-  if (normalized === 'rejected' || normalized === 'suspended') {
-    return 'bg-brand-danger/15 text-red-400'
+  if (normalized === 'REJECTED' || normalized === 'SUSPENDED') {
+    return 'inline-flex h-[25px] items-center justify-center rounded-[10px] bg-brand-danger/15 px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-red-400'
   }
-  return 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+  return 'inline-flex h-[25px] items-center justify-center rounded-[10px] border border-amber-500/30 bg-amber-500/15 px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-amber-300'
 }
+
+const SIDEBAR_CARDS_SCROLL =
+  'max-h-[11.5rem] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]'
+
+const SIDEBAR_ITEM_CARD = 'rounded-lg bg-[#050505] p-3'
 
 function ProfileSidebar({
   data,
@@ -329,9 +359,9 @@ function ProfileSidebar({
     kycStatus: null,
   }
   const overview = data.overview
-  const venueStatus = overview?.venue?.status
-  const kycStatusLabel = formatVenueKycStatusLabel(venueStatus)
-  const kycStatusTone = getVenueKycStatusTone(venueStatus)
+  const kycStatus = profile.kycStatus
+  const kycStatusLabel = formatVenueKycStatusLabel(kycStatus)
+  const kycStatusTone = getVenueKycStatusTone(kycStatus)
   const ratingValue = profile.ratings ?? overview?.venue?.ratings ?? null
   const reviewCount = profile.reviewsCount ?? overview?.venue?.reviewsCount ?? null
   const ratingsAvailable =
@@ -341,7 +371,20 @@ function ProfileSidebar({
   const partnerId = overview?.venue?.ownerId
   const venueKycId = profile.kycId || overview?.venue?.kycId
 
+  const adminNoteEntries = useMemo(
+    () =>
+      adminNoteTextsNewestFirst(
+        overview?.venue?.adminNotesLog,
+        overview?.venue?.adminInternalNotes,
+      ),
+    [overview?.venue?.adminInternalNotes, overview?.venue?.adminNotesLog],
+  )
+
   const handleViewKyc = () => {
+    if (!isSubmittedKycStatus(kycStatus)) {
+      toast.error('KYC is not submitted by partner')
+      return
+    }
     if (venueKycId) {
       navigate(`/experts/management/application/${venueKycId}?source=venue_kyc`)
       return
@@ -360,9 +403,7 @@ function ProfileSidebar({
           <h3 className="text-[13px] font-semibold text-white">
             Organisation Profile &amp; Account
           </h3>
-          <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycStatusTone)}>
-            {kycStatusLabel}
-          </span>
+          <span className={kycStatusTone}>{kycStatusLabel}</span>
         </div>
 
         <SidebarRow label="Venue Type">{profile.venueType || '—'}</SidebarRow>
@@ -375,7 +416,7 @@ function ProfileSidebar({
           <span className="inline-flex items-center gap-1">
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
             {ratingsAvailable ? Number(ratingValue).toFixed(1) : '—'}
-            <span className="text-body-sm text-muted font-normal">
+            <span className="text-[16px] leading-[14px] font-normal tracking-normal text-[#FFFFFF80]">
               ({ratingsAvailable && reviewCount != null ? reviewCount : 0})
             </span>
           </span>
@@ -391,12 +432,12 @@ function ProfileSidebar({
         <SidebarRow label="Total Earnings">{formatCurrency(profile.totalEarnings)}</SidebarRow>
         <SidebarRow label="Primary City">{profile.primaryCity || '—'}</SidebarRow>
         <SidebarRow label="KYC">
-          <button type="button" onClick={handleViewKyc} className={PROFILE_BTN_PRIMARY}>
+          <button type="button" onClick={handleViewKyc} className={PROFILE_VIEW_BTN}>
             View
           </button>
         </SidebarRow>
         <SidebarRow label="Timelines">
-          <button type="button" onClick={onCheckTimelines} className={PROFILE_BTN_PRIMARY}>
+          <button type="button" onClick={onCheckTimelines} className={PROFILE_CHECK_TIMELINES_BTN}>
             Check Timelines
           </button>
         </SidebarRow>
@@ -404,33 +445,50 @@ function ProfileSidebar({
 
       <div className={cn(PROFILE_CARD, 'p-5')}>
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
-        <div className="rounded-lg bg-[#050505] p-3">
+
+        <div className="space-y-2">
           <p className="text-muted text-[10px]">Active Tickets</p>
           {ticketsLoading ? (
-            <p className="text-body-sm text-muted mt-1 font-medium">Loading…</p>
+            <div className={SIDEBAR_ITEM_CARD}>
+              <p className="text-body-sm text-muted font-medium">Loading…</p>
+            </div>
           ) : tickets.length === 0 ? (
-            <p className="text-body-sm mt-1 font-medium text-white">None</p>
+            <div className={SIDEBAR_ITEM_CARD}>
+              <p className="text-body-sm font-medium text-white">None</p>
+            </div>
           ) : (
-            <ul className="mt-2 space-y-2">
-              {tickets.slice(0, 3).map((ticket) => (
-                <li key={ticket.id}>
+            <div className={cn(tickets.length > 3 ? SIDEBAR_CARDS_SCROLL : 'space-y-2')}>
+              {tickets.map((ticket) => (
+                <div key={ticket.id} className={SIDEBAR_ITEM_CARD}>
                   <button
                     type="button"
                     onClick={() => navigate(`/support/tickets/${ticket.id}`)}
                     className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
+                    title={`# ${ticket.id} – ${ticket.subject}`}
                   >
                     # {ticket.id} – {ticket.subject}
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
-        <div className="mt-3 rounded-lg bg-[#050505] p-3">
+
+        <div className="mt-4 space-y-2">
           <p className="text-muted text-[10px]">Admin notes</p>
-          <p className="text-body-sm mt-1 font-medium text-white">
-            {overview?.venue?.adminInternalNotes || 'None'}
-          </p>
+          {adminNoteEntries.length === 0 ? (
+            <div className={SIDEBAR_ITEM_CARD}>
+              <p className="text-body-sm font-medium text-white">None</p>
+            </div>
+          ) : (
+            <div className={cn(adminNoteEntries.length > 3 ? SIDEBAR_CARDS_SCROLL : 'space-y-2')}>
+              {adminNoteEntries.map((note, index) => (
+                <div key={`${index}-${note.slice(0, 32)}`} className={SIDEBAR_ITEM_CARD}>
+                  <p className="text-body-sm font-medium whitespace-pre-wrap text-white">{note}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -452,11 +510,16 @@ function OverviewTab({
   const location = venue.location
   const poc = gallery?.contact?.contacts?.[0]
   const [reviewFilter, setReviewFilter] = useState('all')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
   const insightsSort = toInsightsSort(reviewFilter)
   const { data: insightsRes, isLoading: reviewsLoading } = useVenueInsights(venueId, insightsSort)
   const reviews: PartnerInsightReview[] = insightsRes?.data?.reviews ?? []
 
   const galleryImages = gallery?.galleryImages?.map((image) => image.url) ?? venue.venueImages ?? []
+  const mediaItems = galleryImages.map((url, index) => ({
+    url,
+    title: `Gallery ${index + 1}`,
+  }))
 
   const addressLine = [
     location?.address,
@@ -503,11 +566,10 @@ function OverviewTab({
         {galleryImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {galleryImages.slice(0, 8).map((src, index) => (
-              <a
+              <button
                 key={`${src}-${index}`}
-                href={src}
-                target="_blank"
-                rel="noreferrer"
+                type="button"
+                onClick={() => setMediaIndex(index)}
                 className="block aspect-[4/3] overflow-hidden rounded-lg bg-[#050505]"
               >
                 <SafeImage
@@ -520,13 +582,21 @@ function OverviewTab({
                     </div>
                   }
                 />
-              </a>
+              </button>
             ))}
           </div>
         ) : (
           <p className="text-body-sm text-white/50">No gallery images uploaded.</p>
         )}
       </div>
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={mediaItems}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
 
       <div>
         <h3 className="text-body-md mb-4 font-semibold text-white">Reviews &amp; Ratings</h3>
@@ -625,6 +695,7 @@ function OverviewTab({
 
 function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
   const navigate = useNavigate()
+  const { fileFormat } = useDefaultExportFormat()
   const [search, setSearch] = useState('')
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null)
   const [selectedSpaceIds, setSelectedSpaceIds] = useState<string[]>([])
@@ -673,6 +744,9 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
   const spaces = useMemo(() => {
     return data.spaces.filter((space) => {
+      const listingStatus = (space.status || '').toLowerCase()
+      if (listingStatus === 'draft' || listingStatus === 'preview') return false
+
       if (search.trim()) {
         const query = search.toLowerCase().trim()
         const matchName = space.spaceName?.toLowerCase().includes(query)
@@ -802,6 +876,20 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         return
       }
 
+      if (action === 'suspend' && !bulkIndefinitely && isStartBeforeToday(bulkStartDate)) {
+        toast.error(START_BEFORE_TODAY_MESSAGE)
+        return
+      }
+
+      if (
+        action === 'suspend' &&
+        !bulkIndefinitely &&
+        isEndOnOrBeforeStart(bulkStartDate, bulkEndDate)
+      ) {
+        toast.error(END_MUST_AFTER_START_MESSAGE)
+        return
+      }
+
       if (!bulkAdminNotes.trim()) {
         toast.error('Admin notes are required.')
         return
@@ -854,7 +942,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           if (action === 'hide') closeBulkHideModal()
           else closeBulkSuspendModal()
         },
-        onError: (err) => toast.error(getSharedApiErrorMessage(err)),
+        onError: (err) => toast.error(getApiErrorMessage(err)),
       })
     },
     [
@@ -908,12 +996,12 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         space.isHidden ? 'Yes' : 'No',
         space.isSuspend ? 'Yes' : 'No',
       ])
-      exportDataToFile(headers, rows, 'excel', 'venue_selected_spaces_export')
+      exportDataToFile(headers, rows, fileFormat, 'venue_selected_spaces_export')
       toast.success(`Exported ${selectedSpaces.length} selected space(s)`)
-    } catch {
-      toast.error('Failed to export selected spaces.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected spaces.'))
     }
-  }, [partnerId, selectedSpaces, venueId])
+  }, [fileFormat, partnerId, selectedSpaces, venueId])
 
   const handleBulkNotify = useCallback(() => {
     if (!partnerId) {
@@ -981,7 +1069,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
           PromiseRejectedResult | undefined
-        toast.error(getSharedApiErrorMessage(firstError?.reason) || 'Failed to escalate spaces.')
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate spaces.'))
         return
       }
 
@@ -993,7 +1081,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
       setSelectedSpaceIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getSharedApiErrorMessage(err) || 'Failed to escalate spaces.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate spaces.'))
     } finally {
       setIsEscalating(false)
     }
@@ -1038,7 +1126,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           type="checkbox"
           checked={allVisibleSelected}
           onChange={toggleSelectAll}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
         Select All
       </label>
@@ -1073,21 +1161,19 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
             >
               <EyeOff className="size-3.5" aria-hidden="true" />
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!allowDisableVenues) {
-                  toast.error('Disabling venues is turned off in Venue Management settings')
-                  return
-                }
-                resetBulkVisibilityModal()
-                setIsBulkSuspendModalOpen(true)
-              }}
-              title="Suspend selected spaces"
-              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
-            >
-              <PauseCircle className="size-3.5" aria-hidden="true" />
-            </button>
+            {allowDisableVenues ? (
+              <button
+                type="button"
+                onClick={() => {
+                  resetBulkVisibilityModal()
+                  setIsBulkSuspendModalOpen(true)
+                }}
+                title="Suspend selected spaces"
+                className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+              >
+                <PauseCircle className="size-3.5" aria-hidden="true" />
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={handleBulkNotify}
@@ -1123,6 +1209,10 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           spaces.map((space) => {
             const selected = selectedSpaceIds.includes(space.spaceId)
             const availabilityLabel = formatSpaceAvailabilityChip(space.availability)
+            const listingStatus = getListingStatusDisplay(space.status, {
+              isSuspend: space.isSuspend,
+              isDeleted: space.isHidden,
+            })
             return (
               <button
                 key={space.spaceId}
@@ -1141,7 +1231,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
                   checked={selected}
                   onClick={(e) => e.stopPropagation()}
                   onChange={() => toggleSpaceSelection(space.spaceId)}
-                  className="h-6 w-6 rounded border-white/30 accent-white"
+                  className="ui-table-checkbox"
                 />
 
                 <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
@@ -1160,6 +1250,9 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
                 <div className="ml-4 flex flex-1 items-center justify-between">
                   <div>
                     <p className="text-body-md font-semibold text-white">{space.spaceName}</p>
+                    <span className={cn('mt-1 inline-flex', listingStatus.className)}>
+                      {space.isHidden ? 'Hidden' : listingStatus.label}
+                    </span>
 
                     <p className="text-body-sm mt-1 text-white/50">
                       {[space.city, space.state].filter(Boolean).join(', ') || '—'}
@@ -1341,9 +1434,9 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
         <button
           type="button"
           onClick={() => navigate(manageMetricsPath)}
-          className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+          className="ui-manage-metrics ui-cta ui-cta-primary"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </button>
       </div>
@@ -1537,6 +1630,7 @@ function HealthTab({
 export function VenueProfileViewPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { venueId } = useParams<{ venueId: string }>()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -1551,23 +1645,23 @@ export function VenueProfileViewPage() {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
-  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const [notesModalOpen, setNotesModalOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<VenueReportItem | null>(null)
+  const [reportVenueOpen, setReportVenueOpen] = useState(false)
   const scrollToTimelineRef = useRef(false)
   const { tagModalOpen, openTagModal, closeTagModal } = useEntityTags()
+  const authUser = useAuthStore((state) => state.user)
 
-  const suspendVenueMutation = useSuspendVenue()
-  const deleteVenueMutation = useDeleteVenue()
+  const suspendExpertMutation = useSuspendExpert()
+  const deactivateExpertMutation = useDeactivateExpert()
   const setVenueOwnerPasswordMutation = useSetVenueOwnerPassword()
   const blockExpertMutation = useBlockExpert()
   const forceLogoutExpertMutation = useForceLogoutExpert()
   const recordReasonUsage = useRecordModerationReasonUsage()
-  const { allowDisableVenues } = useVenueManagementControls()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendExpert)
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteVenue)
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteExpert)
 
   const { data, isLoading, isError, error } = useVenueFullView(venueId)
   const fullView = data?.data
@@ -1590,8 +1684,10 @@ export function VenueProfileViewPage() {
 
   useEffect(() => {
     if (!fallbackKycId) return
+    const fallbackStatus = String(kycFallbackQuery.data?.data?.status || '')
+    if (!isSubmittedKycStatus(fallbackStatus)) return
     navigate(`/experts/management/application/${fallbackKycId}?source=venue_kyc`, { replace: true })
-  }, [fallbackKycId, navigate])
+  }, [fallbackKycId, kycFallbackQuery.data?.data?.status, navigate])
 
   const ownerPartnerId = String(
     fullView?.overview?.venue?.ownerId || fullView?.overview?.venue?.partnerId || '',
@@ -1644,7 +1740,7 @@ export function VenueProfileViewPage() {
     }
     if (!ownerPartnerExists) {
       toast.error(
-        'Owner partner account was permanently deleted from auth. Block, logout, and password reset are unavailable until the venue is re-linked to a partner.',
+        'Owner partner account was permanently deleted from auth. Suspend, block, logout, delete, and password reset are unavailable until the venue is re-linked to a partner.',
       )
       return null
     }
@@ -1665,7 +1761,6 @@ export function VenueProfileViewPage() {
     setDeleteModalOpen(false)
     setDeleteReasons([])
     setDeleteAdminNotes('')
-    setDeleteConfirmed(false)
   }, [])
 
   const handleCheckTimelines = useCallback(() => {
@@ -1694,7 +1789,7 @@ export function VenueProfileViewPage() {
           setNotesModalOpen(false)
         },
         onError: (err: unknown) => {
-          toast.error(getApiErrorMessage(err) || 'Failed to save admin notes')
+          toast.error(getApiErrorMessage(err, 'Failed to save admin notes'))
         },
       })
     },
@@ -1722,7 +1817,7 @@ export function VenueProfileViewPage() {
     const satisfaction = profile?.clientSatisfaction
     const years =
       profile?.yearsInOperation?.years != null ? `${profile.yearsInOperation.years} Years` : ''
-    const kycLabel = formatVenueKycStatusLabel(venue.status)
+    const kycLabel = formatVenueKycStatusLabel(profile?.kycStatus)
 
     try {
       exportDataToFile(
@@ -1758,18 +1853,18 @@ export function VenueProfileViewPage() {
             exportCell((venue.adminTags || []).join(', ')),
           ],
         ],
-        'excel',
+        fileFormat,
         `venue_${venueCode}_profile`,
       )
-      toast.success('Profile exported')
+      toast.success(`Profile exported as ${exportFormat}`)
     } catch (err: unknown) {
-      const message =
-        err instanceof Error && err.message === 'NO_RECORDS'
-          ? 'Nothing to export'
-          : 'Failed to export profile'
-      toast.error(message)
+      if (err instanceof Error && err.message === 'NO_RECORDS') {
+        toast.error('Nothing to export')
+        return
+      }
+      toast.error(getApiErrorMessage(err, 'Failed to export profile'))
     }
-  }, [fullView, resolvedVenueId])
+  }, [exportFormat, fileFormat, fullView, resolvedVenueId])
 
   const handlePasswordSubmit = useCallback(
     async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
@@ -1798,7 +1893,7 @@ export function VenueProfileViewPage() {
         setPasswordModalOpen(false)
       } catch (error: unknown) {
         const err = error as { response?: { data?: { message?: string } } }
-        toast.error(err?.response?.data?.message || 'Failed to update password')
+        toast.error(getApiErrorMessage(err, 'Failed to update password'))
       }
     },
     [ensureOwnerPartner, setVenueOwnerPasswordMutation],
@@ -1817,7 +1912,8 @@ export function VenueProfileViewPage() {
   }, [])
 
   const handleSuspendSubmit = useCallback(() => {
-    if (!resolvedVenueId) return
+    const ownerId = ensureOwnerPartner()
+    if (!ownerId) return
 
     if (suspendReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -1826,6 +1922,16 @@ export function VenueProfileViewPage() {
 
     if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
       toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 
@@ -1847,9 +1953,9 @@ export function VenueProfileViewPage() {
     const extraDetails = suspendReasonDetails.trim()
     const reasonDetails = [templateDetails, extraDetails].filter(Boolean).join('\n\n')
 
-    suspendVenueMutation.mutate(
+    suspendExpertMutation.mutate(
       {
-        venueId: resolvedVenueId,
+        id: ownerId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
@@ -1864,47 +1970,42 @@ export function VenueProfileViewPage() {
           if (reasonPayload.reasonIds.length > 0) {
             recordReasonUsage.mutate(reasonPayload.reasonIds)
           }
-          toast.success('Venue suspended successfully')
+          toast.success('Owner suspended successfully')
           closeSuspendModal()
           setProfileMenuOpen(false)
           queryClient.invalidateQueries({ queryKey: ['venue-full-view', resolvedVenueId] })
           queryClient.invalidateQueries({ queryKey: ['venues'] })
-          navigate('/venues/management')
+          queryClient.invalidateQueries({ queryKey: ['experts'] })
+          queryClient.invalidateQueries({ queryKey: ['expert-profile', ownerId] })
         },
         onError: (err: unknown) => {
           const apiError = err as { response?: { data?: { message?: string } } }
-          toast.error(
-            apiError?.response?.data?.message || 'Failed to suspend venue. Please try again.',
-          )
+          toast.error(getApiErrorMessage(apiError, 'Failed to suspend user. Please try again.'))
         },
       },
     )
   }, [
     buildSuspendReasonPayload,
     closeSuspendModal,
-    navigate,
+    ensureOwnerPartner,
     queryClient,
     recordReasonUsage,
+    resolvedVenueId,
     suspendAdminNotes,
     suspendEndDate,
+    suspendExpertMutation,
     suspendIndefinitely,
     suspendReasonDetails,
     suspendReasons,
     suspendStartDate,
-    suspendVenueMutation,
-    resolvedVenueId,
   ])
 
   const handleDeleteSubmit = useCallback(() => {
-    if (!resolvedVenueId) return
+    const ownerId = ensureOwnerPartner()
+    if (!ownerId) return
 
     if (deleteReasons.length === 0) {
       toast.error('Please select at least one reason.')
-      return
-    }
-
-    if (!deleteConfirmed) {
-      toast.error('Please confirm the delete reasons before continuing.')
       return
     }
 
@@ -1919,9 +2020,9 @@ export function VenueProfileViewPage() {
       return
     }
 
-    deleteVenueMutation.mutate(
+    deactivateExpertMutation.mutate(
       {
-        venueId: resolvedVenueId,
+        id: ownerId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           reasonDetails: reasonPayload.reasonDetails,
@@ -1933,29 +2034,29 @@ export function VenueProfileViewPage() {
           if (reasonPayload.reasonIds.length > 0) {
             recordReasonUsage.mutate(reasonPayload.reasonIds)
           }
-          toast.success('Venue deleted successfully')
+          toast.success('Owner deleted successfully')
           closeDeleteModal()
           setProfileMenuOpen(false)
           queryClient.invalidateQueries({ queryKey: ['venues'] })
+          queryClient.invalidateQueries({ queryKey: ['experts'] })
           navigate('/venues/management')
         },
         onError: (err: unknown) => {
           const apiError = err as { response?: { data?: { message?: string } } }
-          toast.error(apiError?.response?.data?.message || 'Failed to delete venue.')
+          toast.error(getApiErrorMessage(apiError, 'Failed to delete user.'))
         },
       },
     )
   }, [
     buildDeleteReasonPayload,
     closeDeleteModal,
+    deactivateExpertMutation,
     deleteAdminNotes,
-    deleteConfirmed,
     deleteReasons,
-    deleteVenueMutation,
+    ensureOwnerPartner,
     navigate,
     queryClient,
     recordReasonUsage,
-    resolvedVenueId,
   ])
 
   if (isLoading || kycLookupPending) {
@@ -1978,7 +2079,7 @@ export function VenueProfileViewPage() {
           <span>Venue Profile View</span>
         </button>
         <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
-          {getApiErrorMessage(error)}
+          {getApiErrorMessage(error, 'Unable to load venue profile.')}
         </div>
       </div>
     )
@@ -2002,7 +2103,8 @@ export function VenueProfileViewPage() {
     {
       label: 'Create Space',
       icon: Plus,
-      onClick: () => navigate(`/venues/management/create?venueId=${resolvedVenueId}`),
+      onClick: () =>
+        navigate(`/venues/management/create?venueId=${resolvedVenueId}&mode=add-space`),
     },
     { label: 'Add Notes', icon: FileText, onClick: () => setNotesModalOpen(true) },
     {
@@ -2025,16 +2127,14 @@ export function VenueProfileViewPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Venue Profile View</span>
           </button>
-          <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-              className="hover:text-brand-text transition-colors"
-            >
-              Venue management
-            </button>
-            <span className="text-muted">/</span>
-            <span className="font-bold text-white">{venue.name}</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                { label: 'Manage Venues', to: '/venues/management' },
+                { label: venue.name, isActive: true },
+              ]}
+            />
           </div>
         </div>
         <TableActionsDropdown
@@ -2080,7 +2180,7 @@ export function VenueProfileViewPage() {
                   )
                 },
                 onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to logout user')
+                  toast.error(getApiErrorMessage(err, 'Failed to logout user'))
                 },
               })
             }}
@@ -2092,10 +2192,7 @@ export function VenueProfileViewPage() {
             icon={<Ban className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              if (!allowDisableVenues) {
-                toast.error('Disabling venues is turned off in Venue Management settings')
-                return
-              }
+              if (!ensureOwnerPartner()) return
               setSuspendModalOpen(true)
             }}
           >
@@ -2113,7 +2210,7 @@ export function VenueProfileViewPage() {
                   toast.success(res?.message || 'Owner blocked successfully')
                 },
                 onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to block user')
+                  toast.error(getApiErrorMessage(err, 'Failed to block user'))
                 },
               })
             }}
@@ -2122,10 +2219,33 @@ export function VenueProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
+            icon={<Flag className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              if (!resolvedVenueId) {
+                toast.error('Venue ID is missing.')
+                return
+              }
+              if (!ownerPartnerId) {
+                toast.error('Venue partner ID is missing.')
+                return
+              }
+              if (!authUser?.id) {
+                toast.error('Admin session is required to report a venue.')
+                return
+              }
+              setReportVenueOpen(true)
+            }}
+          >
+            Report Venue
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
             icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
             className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
             onClick={() => {
               setProfileMenuOpen(false)
+              if (!ensureOwnerPartner()) return
               setDeleteModalOpen(true)
             }}
           >
@@ -2186,7 +2306,7 @@ export function VenueProfileViewPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
+      <div className="grid grid-cols-1 gap-5 @min-[900px]/main:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <ProfileSidebar
           data={fullView}
           tickets={activeTickets}
@@ -2242,16 +2362,12 @@ export function VenueProfileViewPage() {
       <DecisionActionModal
         open={suspendModalOpen}
         variant="suspend"
-        title="Suspend Venue"
-        headerDescription="Are you sure you want to suspend this venue? This action will prevent new bookings and notify existing customers."
-        description=""
-        submitLabel="Suspend"
-        showHeroIcon={false}
-        submitIcon="none"
+        title="Suspend User"
+        description="Are you sure you want to suspend this user? This will restrict the owner partner account."
+        submitLabel="Suspend User"
         reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
-        showReasonsLabel
         showTimeline
         startDate={suspendStartDate}
         onStartDateChange={setSuspendStartDate}
@@ -2268,29 +2384,26 @@ export function VenueProfileViewPage() {
         onAdminNotesChange={setSuspendAdminNotes}
         onClose={closeSuspendModal}
         onSubmit={handleSuspendSubmit}
-        isSubmitting={suspendVenueMutation.isPending}
+        isSubmitting={suspendExpertMutation.isPending}
       />
 
       <DecisionActionModal
         open={deleteModalOpen}
         variant="delete"
-        title="Delete Venue"
-        headerDescription="Are you sure you want to delete this venue? This action will prevent new bookings and notify existing customers."
+        title="Delete User"
         description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete User"
+        submitIcon="x"
         heroLayout="stack"
         reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
-        showReasonsLabel
-        confirmationLabel="I confirm the documents are not approved due to above reasons."
-        confirmationChecked={deleteConfirmed}
-        onConfirmationChange={setDeleteConfirmed}
+        showReasonsLabel={false}
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
-        isSubmitting={deleteVenueMutation.isPending}
+        isSubmitting={deactivateExpertMutation.isPending}
       />
 
       <AddTagModal
@@ -2302,7 +2415,7 @@ export function VenueProfileViewPage() {
 
       <AdminNotesModal
         open={notesModalOpen}
-        initialNotes={fullView.overview.venue.adminInternalNotes || ''}
+        initialNotes=""
         onClose={() => setNotesModalOpen(false)}
         onSubmit={handleSaveNotes}
       />
@@ -2315,6 +2428,22 @@ export function VenueProfileViewPage() {
           void refetchReports()
         }}
       />
+
+      {reportVenueOpen && authUser && resolvedVenueId ? (
+        <VenueReportSubmitModal
+          open={reportVenueOpen}
+          venueId={resolvedVenueId}
+          partnerId={ownerPartnerId}
+          venueName={venue.name}
+          reporterId={authUser.id}
+          reporterName={authUser.fullname || authUser.email || 'Admin'}
+          onClose={() => setReportVenueOpen(false)}
+          onSubmitted={() => {
+            void refetchReports()
+            navigate('/venues/management/reported')
+          }}
+        />
+      ) : null}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Eye, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, Tag, Trash2, User } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -155,7 +155,6 @@ export function FinanceServicesPage() {
       setAppliedFilters({})
     }
 
-    // Always refetch for the tab (cache was keeping prior tab data until full refresh)
     if (tabId === 'escrow') {
       void queryClient.invalidateQueries({ queryKey: ['finance-escrow'] })
     } else {
@@ -217,7 +216,6 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              // Escrow rows use EscrowHold._id — payment detail API expects Payment._id
               navigate(
                 record.tab === 'escrow'
                   ? `/finance/escrow/${record.id}`
@@ -226,6 +224,21 @@ export function FinanceServicesPage() {
             }}
           >
             View Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-[18px] text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+            onClick={() => {
+              setActiveDropdownId(null)
+              const partnerId = String(record.partnerId || '').trim()
+              if (!partnerId || partnerId === '—') {
+                toast.error('Partner profile is not available for this record')
+                return
+              }
+              navigate(`/experts/management/profile/${encodeURIComponent(partnerId)}`)
+            }}
+          >
+            View Partner
           </TableActionsItem>
           <TableActionsItem
             icon={<Tag className="size-[18px] text-slate-700" aria-hidden="true" />}
@@ -285,7 +298,7 @@ export function FinanceServicesPage() {
             if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
           }}
           onChange={toggleVisibleRows}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -295,7 +308,7 @@ export function FinanceServicesPage() {
           checked={selectedRowIds.includes(row.original.id)}
           onChange={() => toggleRowSelection(row.original.id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -355,12 +368,16 @@ export function FinanceServicesPage() {
       'transaction-id': {
         id: 'transaction-id',
         header: 'Transaction ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.transactionId || '—'}</FinanceTableCellText>
+        ),
       },
       module: {
         id: 'module',
         header: 'Module',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.module || '—'}</FinanceTableCellText>
+        ),
       },
       'related-entity-id': {
         id: 'related-entity-id',
@@ -370,7 +387,9 @@ export function FinanceServicesPage() {
       'client-id': {
         id: 'client-id',
         header: 'Client ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.clientId || '—'}</FinanceTableCellText>
+        ),
       },
       'client-name': {
         id: 'client-name',
@@ -380,7 +399,9 @@ export function FinanceServicesPage() {
       'partner-id': {
         id: 'partner-id',
         header: 'Partner ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.partnerId || '—'}</FinanceTableCellText>
+        ),
       },
       'partner-name': {
         id: 'partner-name',
@@ -390,7 +411,9 @@ export function FinanceServicesPage() {
       'transaction-date': {
         id: 'transaction-date',
         header: 'Transaction Date',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.transactionDate || '—'}</FinanceTableCellText>
+        ),
       },
       'gross-amount': {
         id: 'gross-amount',
@@ -400,53 +423,77 @@ export function FinanceServicesPage() {
       discount: {
         id: 'discount',
         header: 'Discount',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.discount || '—'}</FinanceTableCellText>
+        ),
       },
-      tax: { id: 'tax', header: 'Tax', cell: () => <FinanceTableCellText>—</FinanceTableCellText> },
+      tax: {
+        id: 'tax',
+        header: 'Tax',
+        cell: ({ row }) => <FinanceTableCellText>{row.original.tax || '—'}</FinanceTableCellText>,
+      },
       'gateway-charges': {
         id: 'gateway-charges',
         header: 'Gateway Charges',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.gatewayCharges || '—'}</FinanceTableCellText>
+        ),
       },
       'platform-commission-pct': {
         id: 'platform-commission-pct',
         header: 'Platform Commission %',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.platformCommissionPct || '—'}</FinanceTableCellText>
+        ),
       },
       'platform-commission': {
         id: 'platform-commission',
         header: 'Platform Commission',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.platformCommission || '—'}</FinanceTableCellText>
+        ),
       },
       'partner-payout': {
         id: 'partner-payout',
         header: 'Partner Payout',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.partnerPayout || '—'}</FinanceTableCellText>
+        ),
       },
       'refund-amount': {
         id: 'refund-amount',
         header: 'Refund Amount',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.refundAmount || '—'}</FinanceTableCellText>
+        ),
       },
       'net-revenue': {
         id: 'net-revenue',
         header: 'Net Revenue',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.netRevenue || '—'}</FinanceTableCellText>
+        ),
       },
       'net-profit': {
         id: 'net-profit',
         header: 'Net Profit',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.netProfit || '—'}</FinanceTableCellText>
+        ),
       },
       'payment-method': {
         id: 'payment-method',
         header: 'Payment Method',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.paymentMethod || '—'}</FinanceTableCellText>
+        ),
       },
       gateway: {
         id: 'gateway',
         header: 'Gateway',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.gateway || '—'}</FinanceTableCellText>
+        ),
       },
       'transaction-status': {
         id: 'transaction-status',
@@ -456,17 +503,23 @@ export function FinanceServicesPage() {
       'settlement-status': {
         id: 'settlement-status',
         header: 'Settlement Status',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.settlementStatus || '—'}</FinanceTableCellText>
+        ),
       },
       'settlement-date': {
         id: 'settlement-date',
         header: 'Settlement Date',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.settlementDate || '—'}</FinanceTableCellText>
+        ),
       },
       'invoice-id': {
         id: 'invoice-id',
         header: 'Invoice ID',
-        cell: () => <FinanceTableCellText>—</FinanceTableCellText>,
+        cell: ({ row }) => (
+          <FinanceTableCellText>{row.original.invoiceId || '—'}</FinanceTableCellText>
+        ),
       },
     }
 
@@ -507,14 +560,14 @@ export function FinanceServicesPage() {
           <h1 className="text-h2 text-brand-text tracking-tight">
             {isEscrowTab ? 'Escrow Management' : 'Services'}
           </h1>
-          <p className="text-body-sm text-muted mt-1 leading-[20px]">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             {isEscrowTab
               ? 'Track revenue, payouts, and financial performance'
               : 'Manage service bookings, expert commissions, and payouts'}
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-              Finance Management
+              Payment &amp; Finance
             </Link>
             <span> / </span>
             <span className="text-brand-text font-semibold">Services</span>
@@ -524,7 +577,7 @@ export function FinanceServicesPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-services?section=table')}
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>

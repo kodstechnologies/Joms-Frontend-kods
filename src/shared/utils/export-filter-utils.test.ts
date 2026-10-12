@@ -30,6 +30,8 @@ import {
   createFilteredExportHandler,
   createFinanceServicesFilteredExportHandler,
   createFinanceVenuesFilteredExportHandler,
+  pickExportColumns,
+  resolveVisibleExportColumnIds,
   createReferralFilteredExportHandler,
   createRevenueFilteredExportHandler,
   createServiceFilteredExportHandler,
@@ -114,6 +116,27 @@ describe('export-filter-utils builders', () => {
     expect(buildSupportTicketsListQueryParams(filters, opts).search).toBe('q')
     expect(buildExpertProfileServicesQueryParams(filters, opts).page).toBe(3)
     expect(buildPrefixedListQueryParams(filters, opts).page).toBe(3)
+  })
+
+  it('maps expert membership status filters and column search aliases', () => {
+    const params = buildExpertMembershipsListQueryParams(
+      { 'memberships.status': ['active', 'paused'], 'memberships.autoRenew': ['true'] },
+      {
+        page: 1,
+        limit: 10,
+        searchByStatus: 'expired',
+        searchById: 'CTM001',
+        searchByName: 'Marcus',
+        searchByDate: '2026-01-15',
+      },
+    )
+
+    expect(params.status).toBe('active,paused,expired')
+    expect(params.autoRenew).toBe('true')
+    expect(params.subscriptionId).toBe('CTM001')
+    expect(params.partnerName).toBe('Marcus')
+    expect(params.startedAtMin).toBe('2026-01-15')
+    expect(params.startedAtMax).toBe('2026-01-15')
   })
 
   it('maps referral table search params to API query fields', () => {
@@ -246,5 +269,56 @@ describe('export-filter-utils builders', () => {
     await createFinanceServicesFilteredExportHandler(wrapped, columnMap, 'fin-services')({}, 'csv')
     await createFinanceVenuesFilteredExportHandler(wrapped, columnMap, 'fin-venues')({}, 'csv')
     await createClientFilteredExportHandler(() => [{ name: 'Ada' }], columnMap, 'client')({}, 'csv')
+  })
+
+  it('pickExportColumns matches catalog kebab and prefixed ids to map keys', () => {
+    const columnMap = {
+      bookingId: { header: 'Order / Booking ID', accessor: () => 'B-1' },
+      fullname: { header: 'Username', accessor: () => 'Ada' },
+      adminCode: { header: 'User ID', accessor: () => 'ADM-1' },
+      hidden: { header: 'Hidden', accessor: () => 'no' },
+    }
+
+    const picked = pickExportColumns(columnMap, {
+      columnIds: ['booking-id', 'users-fullname', 'users-admin-code'],
+      catalogOrder: ['users-admin-code', 'booking-id', 'users-fullname'],
+    })
+
+    expect(picked.map((col) => col.header)).toEqual(['User ID', 'Order / Booking ID', 'Username'])
+  })
+
+  it('pickExportColumns keeps only requested columns and does not dump the full map', () => {
+    const columnMap = {
+      invoiceId: { header: 'Invoice ID', accessor: () => 'INV-1' },
+      amount: { header: 'Amount', accessor: () => '100' },
+      hidden: { header: 'Hidden', accessor: () => 'no' },
+    }
+
+    expect(
+      pickExportColumns(columnMap, { columnIds: ['invoice-id'] }).map((col) => col.header),
+    ).toEqual(['Invoice ID'])
+
+    expect(pickExportColumns(columnMap, { columnIds: ['missing-column'] })).toEqual([])
+  })
+
+  it('resolveVisibleExportColumnIds uses exact Manage Metrics prefs without a min-column fallback', () => {
+    const catalog = ['invoice-id', 'client-name', 'amount', 'status']
+    const defaults = ['invoice-id', 'client-name', 'amount']
+
+    expect(
+      resolveVisibleExportColumnIds({
+        visibleColumnIds: ['status'],
+        defaultColumnIds: defaults,
+        catalogColumnIds: catalog,
+      }),
+    ).toEqual(['status'])
+
+    expect(
+      resolveVisibleExportColumnIds({
+        visibleColumnIds: [],
+        defaultColumnIds: defaults,
+        catalogColumnIds: catalog,
+      }),
+    ).toEqual(defaults)
   })
 })

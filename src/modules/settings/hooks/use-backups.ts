@@ -24,6 +24,10 @@ export const useBackups = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: backupKeys.list(params),
     queryFn: () => fetchBackups(params),
+    refetchInterval: (query) => {
+      const rows = query.state.data?.data ?? []
+      return rows.some((row) => row.status === 'Pending') ? 5000 : false
+    },
   })
 
 export const useRunBackup = () => {
@@ -39,7 +43,8 @@ export const useRunBackup = () => {
 
 export const useRestoreBackup = () =>
   useMutation({
-    mutationFn: ({ id, mode }: { id: string; mode: string }) => restoreBackup(id, { mode }),
+    mutationFn: ({ id, mode, scheduledAt }: { id: string; mode: string; scheduledAt?: string }) =>
+      restoreBackup(id, { mode, scheduledAt, confirm: 'CONFIRM' }),
   })
 
 export const useDeleteBackup = () => {

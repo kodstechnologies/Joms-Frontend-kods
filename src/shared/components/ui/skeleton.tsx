@@ -76,7 +76,6 @@ export function DetailViewSkeleton({
 }) {
   return (
     <div className="space-y-6" aria-hidden="true">
-      {/* Header Skeleton */}
       <div className="flex items-start gap-3">
         <Skeleton className="size-8 shrink-0 rounded-lg" />
         <div className="space-y-2">
@@ -85,7 +84,6 @@ export function DetailViewSkeleton({
         </div>
       </div>
 
-      {/* Main Top Card Skeleton */}
       <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
         <div className="mb-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -95,7 +93,6 @@ export function DetailViewSkeleton({
           <Skeleton className="h-6 w-20 rounded-full" />
         </div>
 
-        {/* Info pills grid */}
         <div className="flex flex-wrap gap-3">
           {Array.from({ length: pillCount }).map((_, i) => (
             <div
@@ -108,7 +105,6 @@ export function DetailViewSkeleton({
           ))}
         </div>
 
-        {/* Description / Content placeholder */}
         <div className="mt-6 space-y-2">
           <Skeleton className="h-3.5 w-24" />
           <Skeleton className="h-4 w-full" />
@@ -116,7 +112,6 @@ export function DetailViewSkeleton({
         </div>
       </div>
 
-      {/* Additional Detail Cards */}
       {Array.from({ length: cardCount }).map((_, i) => (
         <div
           key={i}

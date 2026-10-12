@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { getExportFormatLabel } from '@/modules/settings/utils/export-format'
 
 import type { FilterValues, ModuleFilterKey } from '@/shared/types/data-filter'
 
@@ -56,8 +58,8 @@ export function useModuleExportFilters({
       }
 
       setIsAdvancedFilterOpen(false)
-    } catch {
-      toast.error('Failed to apply filters')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to apply filters'))
     } finally {
       setIsApplying(false)
     }
@@ -70,7 +72,7 @@ export function useModuleExportFilters({
       try {
         if (onExportData) {
           await onExportData(filterValues, format)
-          toast.success(`Exported ${config.moduleName} as ${format.toUpperCase()}`)
+          toast.success(`Exported ${config.moduleName} as ${getExportFormatLabel(format)}`)
         } else {
           toast.success(`Export started for ${config.moduleName} in ${format.toUpperCase()} format`)
         }
@@ -79,8 +81,10 @@ export function useModuleExportFilters({
       } catch (error) {
         if (error instanceof Error && error.message === 'NO_RECORDS') {
           toast.error('No records found to export')
+        } else if (error instanceof Error && error.message === 'NO_VISIBLE_COLUMNS') {
+          toast.error('No visible columns to export. Enable columns in Manage Metrics.')
         } else {
-          toast.error('Failed to export data')
+          toast.error(getApiErrorMessage(error, 'Failed to export data'))
         }
       } finally {
         setIsExporting(false)

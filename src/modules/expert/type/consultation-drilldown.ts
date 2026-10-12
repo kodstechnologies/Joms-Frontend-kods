@@ -73,6 +73,15 @@ export type ConsultationBookingRow = {
   price: number
   currency: string
   threadId: string | null
+  paymentId?: string | null
+  paymentMethod?: string | null
+  transactionId?: string | null
+  refundIssued?: boolean
+  refundRequested?: boolean
+  refundId?: string | null
+  refundAmount?: number | null
+  refundStatus?: string | null
+  refundedAt?: string | null
 }
 
 export type ConsultationBookingsResponse = {

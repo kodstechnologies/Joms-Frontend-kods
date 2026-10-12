@@ -11,6 +11,7 @@ import {
   fetchCommunications,
   pauseCommunication,
   resumeCommunication,
+  retryFailedCommunication,
   updateCommunication,
   type CommunicationListParams,
   type CreateCommunicationPayload,
@@ -121,6 +122,15 @@ export const useResumeCommunication = () => {
 
   return useMutation({
     mutationFn: (id: string) => resumeCommunication(id),
+    onSuccess: (_data, id) => invalidate(id),
+  })
+}
+
+export const useRetryFailedCommunication = () => {
+  const invalidate = useInvalidateCommunications()
+
+  return useMutation({
+    mutationFn: (id: string) => retryFailedCommunication(id),
     onSuccess: (_data, id) => invalidate(id),
   })
 }

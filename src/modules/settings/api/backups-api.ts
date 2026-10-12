@@ -32,14 +32,19 @@ export const runBackup = async (payload?: {
   const response = await settingsApiClient.post<ApiEnvelope<BackupHistoryRow>>(
     '/settings/backups/run',
     payload,
+    { timeout: 10 * 60 * 1000 },
   )
   return response.data.data
 }
 
-export const restoreBackup = async (id: string, payload: { mode: string; confirm?: string }) => {
+export const restoreBackup = async (
+  id: string,
+  payload: { mode: string; confirm?: string; scheduledAt?: string },
+) => {
   const response = await settingsApiClient.post<ApiEnvelope<unknown>>(
     `/settings/backups/${encodeURIComponent(id)}/restore`,
-    payload,
+    { ...payload, confirm: payload.confirm || 'CONFIRM' },
+    { timeout: 10 * 60 * 1000 },
   )
   return response.data.data
 }

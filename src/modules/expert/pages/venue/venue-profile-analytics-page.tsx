@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -18,6 +20,7 @@ import {
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
 import { exportVenueProfileAnalyticsToExcel } from '../../utils/export-venue-profile-analytics'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -44,11 +47,11 @@ const TABS: { key: AnalyticsTabKey; label: string }[] = [
 
 export function VenueProfileAnalyticsPage() {
   const navigate = useNavigate()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { venueId } = useParams<{ venueId: string }>()
   const { data } = useVenueFullView(venueId ?? '')
   const [activeTab, setActiveTab] = useState<AnalyticsTabKey>('overview')
 
-  // Fetch real-time venue profile analytics from venue-service (port 8005)
   const analyticsQuery = useVenueProfileAnalytics(venueId)
   const analyticsData = analyticsQuery.data
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
@@ -93,21 +96,32 @@ export function VenueProfileAnalyticsPage() {
     }
 
     try {
-      await exportVenueProfileAnalyticsToExcel({
-        venueName,
-        venueId,
-        metricCards: venueAnalyticsCards,
-        analytics: analyticsData,
-      })
-      toast.success('Export downloaded')
+      await exportVenueProfileAnalyticsToExcel(
+        {
+          venueName,
+          venueId,
+          metricCards: venueAnalyticsCards,
+          analytics: analyticsData,
+        },
+        fileFormat,
+      )
+      toast.success(`Exported as ${exportFormat}`)
     } catch (error) {
       if (error instanceof Error && error.message === 'NO_RECORDS') {
         toast.error('No analytics data available to export')
         return
       }
-      toast.error('Failed to export analytics data')
+      toast.error(getApiErrorMessage(error, 'Failed to export analytics data'))
     }
-  }, [analyticsData, analyticsQuery.isLoading, venueAnalyticsCards, venueId, venueName])
+  }, [
+    analyticsData,
+    analyticsQuery.isLoading,
+    exportFormat,
+    fileFormat,
+    venueAnalyticsCards,
+    venueId,
+    venueName,
+  ])
 
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5">
@@ -123,10 +137,14 @@ export function VenueProfileAnalyticsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Profile Analytics</span>
           </button>
-          <div className="text-body-sm-medium text-muted mt-2 flex items-center gap-1.5 pl-7">
-            <span>{venueName}</span>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Profile Analytics</span>
+          <div className="mt-2 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Venue Management', to: '/venues/management' },
+                { label: venueName, to: `/venues/management/profile/${venueId}` },
+                { label: 'Profile Analytics', isActive: true },
+              ]}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -134,7 +152,7 @@ export function VenueProfileAnalyticsPage() {
             className="ui-manage-metrics ui-cta ui-cta-primary h-9"
             onClick={() => navigate(manageMetricsPath)}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
           <Button className="ui-export-data h-9" onClick={handleExportData}>

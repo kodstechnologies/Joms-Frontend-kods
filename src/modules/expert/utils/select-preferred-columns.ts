@@ -20,12 +20,9 @@ export function selectPreferredColumns<T>(
 
   const fromPrefs = normalize(rawVisibleIds)
   const fallback = normalize(defaultVisibleIds)
-  const minColumns = Math.min(3, fallback.length)
-  const useFallback =
-    fromPrefs.length === 0 || (fromPrefs.length < minColumns && fallback.length > fromPrefs.length)
 
   const selected = sortIdsByCatalogOrder(
-    useFallback ? fallback : fromPrefs,
+    fromPrefs.length ? fromPrefs : fallback,
     catalogOrder.length ? catalogOrder : defaultVisibleIds,
   )
     .map((id) => dataColumnsById[id])

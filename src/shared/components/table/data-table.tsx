@@ -6,7 +6,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { ArrowUpDown, ArrowDown, ArrowUp, Search } from 'lucide-react'
+import { ArrowDown, ArrowUp, Search } from 'lucide-react'
+import { SortOutlineIcon } from '@/shared/components/icons/action-button-icons'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -304,11 +305,11 @@ export function DataTable<TData>({
 
                   const sortIcon =
                     sorted?.desc === false ? (
-                      <ArrowUp className="text-brand-primary size-[18px]" aria-hidden="true" />
+                      <ArrowUp className="text-brand-primary size-4" aria-hidden="true" />
                     ) : sorted?.desc === true ? (
-                      <ArrowDown className="text-brand-primary size-[18px]" aria-hidden="true" />
+                      <ArrowDown className="text-brand-primary size-4" aria-hidden="true" />
                     ) : (
-                      <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
+                      <SortOutlineIcon className="text-white" />
                     )
 
                   return (

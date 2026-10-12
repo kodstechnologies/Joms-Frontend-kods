@@ -48,6 +48,7 @@ export const useSupportTicket = (id?: string) =>
     enabled: Boolean(id),
   })
 
+// Past tickets are not loaded until a reporter id is known.
 export const usePastTickets = (userId?: string, params?: SupportTicketsParams) =>
   useQuery({
     queryKey: ['support-past-tickets', userId, params],
@@ -55,6 +56,7 @@ export const usePastTickets = (userId?: string, params?: SupportTicketsParams) =
     enabled: Boolean(userId),
   })
 
+// The open ticket keeps its past-ticket count when the update does not send a new one.
 export const useUpdateSupportTicket = () => {
   const queryClient = useQueryClient()
   return useMutation({
@@ -76,7 +78,12 @@ export const useUpdateSupportTicket = () => {
               ...current,
               data: {
                 ...current.data,
-                ticket: { ...current.data.ticket, ...updated },
+                ticket: {
+                  ...current.data.ticket,
+                  ...updated,
+                  pastTicketsCount:
+                    updated.pastTicketsCount ?? current.data.ticket.pastTicketsCount ?? 0,
+                },
                 queueItem: current.data.queueItem
                   ? { ...current.data.queueItem, ...updated }
                   : current.data.queueItem,
@@ -85,7 +92,9 @@ export const useUpdateSupportTicket = () => {
           },
         )
       }
+      queryClient.invalidateQueries({ queryKey: ['support-ticket', vars.id] })
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+      queryClient.invalidateQueries({ queryKey: ['support-past-tickets'] })
     },
   })
 }
@@ -187,6 +196,7 @@ export const useSupportAgents = (enabled = true) =>
     enabled,
   })
 
+// A burst of ticket updates is refreshed once after a short wait, instead of once per message.
 export const useLiveSupportUpdates = () => {
   const queryClient = useQueryClient()
   const token = useAuthStore((state) => state.token)
@@ -210,6 +220,7 @@ export const useLiveSupportUpdates = () => {
         if (ticketId) {
           queryClient.invalidateQueries({ queryKey: ['support-ticket', ticketId] })
           queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+          queryClient.invalidateQueries({ queryKey: ['support-past-tickets'] })
           return
         }
         refresh()

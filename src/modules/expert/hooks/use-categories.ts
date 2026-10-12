@@ -4,7 +4,7 @@ import { fetchCategories, fetchSubcategories } from '../api/category-api'
 export const useCategories = (params?: { search?: string; page?: number; limit?: number }) => {
   return useQuery({
     queryKey: ['categories', params],
-    queryFn: () => fetchCategories(params),
+    queryFn: () => fetchCategories({ ...params, categoryType: 'service' }),
   })
 }
 

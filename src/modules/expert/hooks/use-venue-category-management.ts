@@ -25,6 +25,7 @@ import {
   softDeleteVenueCategory,
   softDeleteVenueSubCategory,
   updateVenueCategory,
+  updateVenueSubCategory,
 } from '../api/venue-category-api'
 import { mapVenueCategoryToUi } from '../utils/category-mapper'
 
@@ -218,6 +219,27 @@ export const useHardDeleteVenueSubCategory = () => {
   return useMutation({
     mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
       hardDeleteVenueSubCategory(categoryId, subCategoryId),
+    onSuccess: () => invalidateVenueCategories(queryClient),
+  })
+}
+
+export const useUpdateVenueSubCategory = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      categoryId,
+      subCategoryId,
+      payload,
+    }: {
+      categoryId: string
+      subCategoryId: string
+      payload: {
+        name?: string
+        description?: string
+        vectorIcon?: string
+        vectorIconFile?: File | null
+      }
+    }) => updateVenueSubCategory(categoryId, subCategoryId, payload),
     onSuccess: () => invalidateVenueCategories(queryClient),
   })
 }

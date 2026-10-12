@@ -25,13 +25,17 @@ import {
   fetchSubAdminInvites,
   fetchAllInvites,
   reinviteSubAdmin,
+  revokeRole,
   revokeSubAdminInvite,
+  revokeSubAdminRole,
   fetchSubAdmins,
   suspendSubAdmin,
   reactivateSubAdmin,
+  resetSubAdminMfa,
   updateRole,
   updateSubAdmin,
   updateSubAdminPassword,
+  updateMyPassword,
 } from '../api/rbac-api'
 import type {
   CompleteContactSetupPayload,
@@ -39,6 +43,7 @@ import type {
   CreateSubAdminPayload,
   InviteActionPayload,
   UpdateSubAdminPasswordPayload,
+  AdminProfile,
 } from '../types/rbac'
 
 export const rbacKeys = {
@@ -60,20 +65,28 @@ export const rbacKeys = {
   allInvites: (params?: object) => ['rbac', 'all-invites', params] as const,
 }
 
-export function useRbacMe() {
-  return useQuery({
+export function useRbacMe(options?: { refetchInterval?: number }) {
+  return useQuery<{ success: boolean; data: AdminProfile }>({
     queryKey: rbacKeys.me,
     queryFn: fetchRbacMe,
     retry: false,
+    refetchInterval: options?.refetchInterval,
   })
 }
 
-export function useContactSetupProfile(enabled = true) {
+export function useContactSetupProfile(
+  enabled = true,
+  options?: { refetchInterval?: number; staleTime?: number },
+) {
   return useQuery({
     queryKey: rbacKeys.contactSetup,
     queryFn: fetchContactSetupProfile,
     enabled,
     retry: false,
+    staleTime: options?.staleTime ?? (options?.refetchInterval ? 0 : 5 * 60 * 1000),
+    refetchInterval: options?.refetchInterval,
+    refetchOnWindowFocus: Boolean(options?.refetchInterval),
+    refetchOnReconnect: true,
   })
 }
 
@@ -198,10 +211,14 @@ export function useSubAdminLogs(
   })
 }
 
-export function useMySubAdminLogs(params?: { page?: number; limit?: number; search?: string }) {
+export function useMySubAdminLogs(
+  params?: Record<string, unknown>,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: rbacKeys.myLogs(params),
     queryFn: () => fetchMySubAdminLogs(params),
+    enabled: options?.enabled ?? true,
   })
 }
 
@@ -333,6 +350,37 @@ export function useDeleteRole() {
   })
 }
 
+export function useRevokeRole() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => revokeRole(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useRevokeSubAdminRole() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ subAdminId, roleId }: { subAdminId: string; roleId?: string }) =>
+      revokeSubAdminRole(subAdminId, roleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useResetSubAdminMfa() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (subAdminId: string) => resetSubAdminMfa(subAdminId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
 export function useCreateSubAdmin() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -390,6 +438,17 @@ export function useUpdateSubAdminPassword() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateSubAdminPasswordPayload }) =>
       updateSubAdminPassword(id, payload),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useUpdateMyPassword() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: UpdateSubAdminPasswordPayload) => updateMyPassword(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.me })
       queryClient.invalidateQueries({ queryKey: rbacKeys.all })
     },
   })

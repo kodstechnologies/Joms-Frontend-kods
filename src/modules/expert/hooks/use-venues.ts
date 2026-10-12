@@ -10,6 +10,7 @@ import {
   activateVenue,
   deleteVenue,
   restoreVenue,
+  purgeVenue,
   setVenueOwnerPassword,
   bulkDeleteVenues,
   bulkPauseVenues,
@@ -34,7 +35,8 @@ export const useVenues = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: isDeletedList ? ['venues', 'deleted', params] : ['venues', params],
     queryFn: () => fetchVenues(params),
-    refetchOnMount: isDeletedList ? 'always' : true,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }
 
@@ -51,6 +53,8 @@ export const useVenueFullView = (venueId?: string, spaceId?: string) => {
     queryKey: ['venue-full-view', venueId, spaceId],
     queryFn: () => fetchVenueFullView(venueId as string, spaceId),
     enabled: !!venueId,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }
 
@@ -132,6 +136,18 @@ export const useRestoreVenue = () => {
 
   return useMutation({
     mutationFn: (venueId: string) => restoreVenue(venueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const usePurgeVenue = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ venueId, adminNotes }: { venueId: string; adminNotes?: string }) =>
+      purgeVenue(venueId, adminNotes ? { adminNotes } : undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },

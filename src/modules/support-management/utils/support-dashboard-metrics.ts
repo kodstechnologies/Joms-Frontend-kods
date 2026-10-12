@@ -25,20 +25,25 @@ const defaultTrend = {
 }
 
 const defaultValues: Record<string, string> = {
-  'total-tickets': '0',
-  'open-tickets': '0',
-  'tickets-in-progress': '0',
-  'assigned-to-me': '0',
-  'escalated-by-me': '0',
-  'average-first-response-time': '00:00:00',
-  'average-resolution-time': '00:00:00',
-  'tickets-resolved-today': '0',
-  // legacy keys fallback
   'total-open-tickets': '0',
   'new-tickets-today': '0',
+  'tickets-in-progress': '0',
   'escalated-tickets': '0',
-  'resolved-today': '0',
+  'tickets-resolved-today': '0',
+  'total-tickets-resolved': '0',
   'priority-tickets': '0',
+  'sla-breached-tickets': '0',
+  'average-first-response-time': '00:00:00',
+  'average-resolution-time': '00:00:00',
+  'average-tickets-per-agent': '0.0',
+  'first-contact-resolution': '0.0%',
+  'customer-satisfaction': '0.0%',
+  'active-support-agents': '0',
+  'total-tickets': '0',
+  'open-tickets': '0',
+  'assigned-to-me': '0',
+  'escalated-by-me': '0',
+  'resolved-today': '0',
   'avg-response-time': '00:00:00',
   'avg-resolution-time': '00:00:00',
 }
@@ -74,8 +79,8 @@ export function buildSupportDashboardMetricCardsFromApi(
       title: labelById.get(id) ?? card.title,
       value: displayValue(id, card.value),
       trend: {
-        direction: (card.changeDirection ?? 'up') as 'up' | 'down',
-        percentage: card.changePercent ?? 0,
+        direction: card.changeDirection ?? ((card.changePercent ?? 0) < 0 ? 'down' : 'up'),
+        percentage: Math.abs(card.changePercent ?? 0),
         label: 'vs last month',
       },
     })

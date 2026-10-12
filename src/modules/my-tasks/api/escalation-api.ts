@@ -8,7 +8,13 @@ export type AdminEscalationEntityType =
   | 'consultation'
   | 'venue_space'
   | 'refund'
+  | 'finance'
   | 'membership_upgrade'
+  | 'support_ticket'
+  | 'settings_log'
+  | 'incident'
+  | 'category'
+  | 'referral'
 
 export type AdminEscalation = {
   _id?: string
@@ -18,7 +24,7 @@ export type AdminEscalation = {
   partnerId?: string
   venueId?: string
   moduleKey?: string
-  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
+  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'finance' | 'membership_upgrade'
   applicationUrl?: string
   escalatedToSubAdminId?: string
   escalatedToAuthAdminId?: string
@@ -35,13 +41,14 @@ export type AdminEscalation = {
 }
 
 export type EscalateAdminEntityPayload = {
-  assigneeSubAdminId: string
+  assigneeSubAdminId?: string
   assigneeName?: string
+  assigneeAuthAdminId?: string
   adminNote: string
   venueId?: string
   applicationUrl?: string
   entityTitle?: string
-  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
+  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'finance' | 'membership_upgrade'
   partnerId?: string
   priority?: 'Low' | 'Medium' | 'High' | 'Critical'
   metadata?: Record<string, unknown>
@@ -61,12 +68,16 @@ export type EscalateAdminEntityPayload = {
   adminNotes?: string
   sourceApp?: string
   username?: string
+  changeType?: 'upgrade' | 'downgrade' | 'extend' | string
+  endDate?: string
+  currentExpiresAt?: string
 }
 
 export type EscalationListItem = {
   escalationId: string
   roleId: string
   roleName: string
+  entityTitle?: string
   escalationType: string
   priority: 'Low' | 'Medium' | 'High' | 'Critical'
   status: 'Open' | 'In Review' | 'Resolved'
@@ -187,6 +198,50 @@ export const escalateMembershipUpgradeApplication = async (
 ) => {
   const response = await adminApiClient.patch(
     `/admin/internal/admin/membership-upgrades/${subscriptionId}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateSettingsLogApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/settings-logs/${id}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateIncidentApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/incidents/${id}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateCategoryApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/categories/${id}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateReferralApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/referrals/${id}/escalate`,
     payload,
   )
   return response.data

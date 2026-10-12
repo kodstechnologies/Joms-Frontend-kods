@@ -27,7 +27,7 @@ const CategoryDetailsCard = ({
   onImageChange,
 }: CategoryDetailsCardProps) => {
   return (
-    <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
+    <div className="rounded-xl bg-[#141414] p-6">
       <h2 className={categoryFormTheme.sectionTitleClass}>Category Details</h2>
 
       <p className={`mt-1 ${categoryFormTheme.sectionSubtitleClass}`}>
@@ -35,7 +35,7 @@ const CategoryDetailsCard = ({
       </p>
 
       <div className="mt-6">
-        <label className="text-body-sm-medium text-brand-text mb-2 block">
+        <label className="text-body-sm-medium mb-2 block text-white">
           Category Name <RequiredMark />
         </label>
 
@@ -49,7 +49,7 @@ const CategoryDetailsCard = ({
       </div>
 
       <div className="mt-5">
-        <label className="text-body-sm-medium text-brand-text mb-2 block">
+        <label className="text-body-sm-medium mb-2 block text-white">
           Description <RequiredMark />
         </label>
 
@@ -63,14 +63,12 @@ const CategoryDetailsCard = ({
         />
       </div>
 
-      <p className={`mt-6 ${categoryFormTheme.sectionSubtitleClass}`}>
-        Upload either a 3D icon or an image — not both. Choosing one replaces the other.
-      </p>
-
-      <div className="mt-3 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         <UploadBox
           label="3D Icon"
           helperText="Displayed as a clickable 3D-style icon"
+          tooltipWidth={141}
+          tooltipMinHeight={44}
           placeholderText="Upload icon here"
           preview={iconPreview}
           onChange={onIconChange}
@@ -80,6 +78,8 @@ const CategoryDetailsCard = ({
         <UploadBox
           label="Image"
           helperText="Displayed as the header image on the category detail screen"
+          tooltipWidth={175}
+          tooltipMinHeight={50}
           placeholderText="Upload Image here"
           preview={imagePreview}
           onChange={onImageChange}

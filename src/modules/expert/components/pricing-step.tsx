@@ -95,8 +95,10 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
           {!allowBaseRates && (
             <p className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-              Hourly and full-day rates are disabled in Venue Management settings. Enable at least
-              one to set pricing.
+              Hourly and full-day rates are disabled in Venue Management settings.
+              {allowWeekend
+                ? ' Weekday price is not required. Enter weekend pricing to continue.'
+                : ' Enable at least one rate type to set pricing.'}
             </p>
           )}
 

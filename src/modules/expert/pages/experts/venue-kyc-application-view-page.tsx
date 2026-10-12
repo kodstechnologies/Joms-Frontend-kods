@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
   Banknote,
   ClipboardList,
-  ExternalLink,
   FileText,
   History,
   ImageOff,
@@ -47,9 +47,14 @@ import {
   type DocumentDecisionVariant,
   type DocumentReviewStatus,
 } from '../../components/document-review-viewer'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
+import { areUploadedDocumentsApproved } from '../../utils/document-review'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { formatApplicationExpertId } from './expert-list-format'
+import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
+import { getVenueKycApplicationPath } from '../../utils/expert-application-navigation'
+import { isSubmittedKycStatus } from '../../utils/expert-application-helpers'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -75,6 +80,95 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'kyc', label: 'KYC Details' },
   { key: 'banking', label: 'Banking Details' },
 ]
+
+const extractDocumentUrl = (value: unknown): string | null => {
+  if (value == null || value === '') return null
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        return extractDocumentUrl(JSON.parse(trimmed))
+      } catch {
+        return trimmed
+      }
+    }
+    return trimmed
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const url = extractDocumentUrl(item)
+      if (url) return url
+    }
+    return null
+  }
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return extractDocumentUrl(
+      record.url ??
+        record.fileUrl ??
+        record.secure_url ??
+        record.documentUrl ??
+        record.path ??
+        record.uri ??
+        record.href,
+    )
+  }
+  return null
+}
+
+const asDocumentUrlList = (value: unknown): string[] => {
+  if (value == null || value === '') return []
+  if (Array.isArray(value)) {
+    const urls: string[] = []
+    const seen = new Set<string>()
+    for (const item of value) {
+      const url = extractDocumentUrl(item)
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      urls.push(url)
+    }
+    return urls
+  }
+  if (typeof value === 'object') {
+    const direct = extractDocumentUrl(value)
+    if (direct) return [direct]
+    const urls: string[] = []
+    const seen = new Set<string>()
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      const url = extractDocumentUrl(item)
+      if (!url || seen.has(url)) continue
+      seen.add(url)
+      urls.push(url)
+    }
+    return urls
+  }
+  const url = extractDocumentUrl(value)
+  return url ? [url] : []
+}
+
+const isFileDocumentUrl = (url?: string | null) => {
+  if (!url) return false
+  const clean = url.split('?')[0]?.toLowerCase() || ''
+  return (
+    /^https?:\/\//i.test(url) ||
+    url.startsWith('//') ||
+    url.startsWith('data:') ||
+    clean.includes('cloudinary') ||
+    clean.includes('/kyc/') ||
+    clean.includes('/uploads/') ||
+    /\.(pdf|png|jpe?g|webp|gif|heic|bmp|svg|avif|doc|docx)$/i.test(clean)
+  )
+}
+
+const humanizeDocumentKey = (key: string) => {
+  const spaced = key
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim()
+  if (!spaced) return 'Other Document'
+  return spaced.replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
 
 const displayValue = (value?: string | number | null) => {
   if (value === null || value === undefined) return 'N/A'
@@ -180,7 +274,7 @@ function InfoField({
   )
 }
 
-function VenueImage({ src, alt }: { src: string; alt: string }) {
+function VenueImage({ src, alt, onOpen }: { src: string; alt: string; onOpen?: () => void }) {
   const [errored, setErrored] = useState(false)
 
   if (errored) {
@@ -192,10 +286,9 @@ function VenueImage({ src, alt }: { src: string; alt: string }) {
   }
 
   return (
-    <a
-      href={src}
-      target="_blank"
-      rel="noreferrer"
+    <button
+      type="button"
+      onClick={onOpen}
       className="block aspect-square overflow-hidden rounded-xl border border-white/5 bg-black"
     >
       <img
@@ -205,17 +298,26 @@ function VenueImage({ src, alt }: { src: string; alt: string }) {
         loading="lazy"
         onError={() => setErrored(true)}
       />
-    </a>
+    </button>
   )
 }
 
 export function VenueKycApplicationViewPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
+  const [partnerKycLookupDone, setPartnerKycLookupDone] = useState(false)
 
-  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const tabFromQuery = searchParams.get('tab')
+  const initialTab: TabKey =
+    tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview'
+      ? tabFromQuery
+      : 'overview'
+
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
+  const [syncedQueryTab, setSyncedQueryTab] = useState(`${id}:${tabFromQuery}`)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalVariant, setModalVariant] = useState<DecisionVariant>('approve')
   const [modalTarget, setModalTarget] = useState<DecisionTarget>('kyc')
@@ -225,11 +327,51 @@ export function VenueKycApplicationViewPage() {
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
+  const [undertakingOpen, setUndertakingOpen] = useState(false)
+
+  const queryTabKey = `${id}:${tabFromQuery}`
+  if (queryTabKey !== syncedQueryTab) {
+    setSyncedQueryTab(queryTabKey)
+    if (tabFromQuery === 'banking' || tabFromQuery === 'kyc' || tabFromQuery === 'overview') {
+      setActiveTab(tabFromQuery)
+    }
+  }
 
   const { data, isLoading, isError, error } = useApplicationDetails(id)
   const { data: assigneesData } = useEscalationAssignees()
   const application = data?.data
   const partnerId = application?.header?.partnerId ?? undefined
+
+  const applicationNotFound =
+    Boolean(id) &&
+    isError &&
+    (error as { response?: { status?: number } })?.response?.status === 404
+  const isResolvingPartnerKyc = applicationNotFound && !partnerKycLookupDone
+
+  useEffect(() => {
+    if (!applicationNotFound || !id || partnerKycLookupDone) return
+
+    let cancelled = false
+
+    fetchVenueKycByPartnerId(id)
+      .then((response) => {
+        const kycId = String(response?.data?._id || '').trim()
+        if (cancelled) return
+        if (kycId && kycId !== id) {
+          navigate(getVenueKycApplicationPath(kycId), { replace: true })
+          return
+        }
+        setPartnerKycLookupDone(true)
+      })
+      .catch(() => {
+        if (!cancelled) setPartnerKycLookupDone(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [applicationNotFound, id, navigate, partnerKycLookupDone])
 
   const updateKyc = useUpdateVenueKycStatus(id)
   const updateBanking = useUpdateVenueBankingStatus(id)
@@ -301,6 +443,7 @@ export function VenueKycApplicationViewPage() {
           assigneeName: selectedAssignee?.fullname || '',
           adminNote: adminNotes.trim(),
           escalationTarget: modalTarget,
+          applicationUrl: `/experts/management/application/${id}?source=venue_kyc`,
         },
         {
           onSuccess: () => {
@@ -475,12 +618,16 @@ export function VenueKycApplicationViewPage() {
     )
   }
 
-  const isBankingSubmitted = ['PENDING', 'APPROVED', 'REJECTED'].includes(
-    application?.bankingDetails?.status || application?.header?.bankingStatus || '',
+  const isBankingSubmitted = isSubmittedKycStatus(
+    application?.bankingDetails?.status || application?.header?.bankingStatus,
+  )
+  const isKycSubmitted = isSubmittedKycStatus(
+    application?.kycDetails?.status || application?.header?.kycStatus,
   )
 
   const decisionDisabled =
     (decisionTargetForTab === 'banking' && !isBankingSubmitted) ||
+    (decisionTargetForTab === 'kyc' && !isKycSubmitted) ||
     activeDecisionStatus !== 'PENDING' ||
     activeMutationPending
 
@@ -519,7 +666,7 @@ export function VenueKycApplicationViewPage() {
       value: item.id,
     })) ?? []
 
-  if (isLoading) {
+  if (isLoading || isResolvingPartnerKyc) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
@@ -532,7 +679,7 @@ export function VenueKycApplicationViewPage() {
       <div className="space-y-4">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
+          onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
           className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
@@ -548,10 +695,13 @@ export function VenueKycApplicationViewPage() {
   const { header, overview, kycDetails, bankingDetails } = application
   const applicant = overview.applicant
   const venue = overview.venue
-  const documents = kycDetails.documents
+  const documents = (kycDetails.documents || {}) as ApplicationKycDocuments
   const compliance = kycDetails.compliance
   const account = bankingDetails.account
-  const otherCertificates = documents?.otherCertificates || []
+  const otherCertificates = [
+    ...asDocumentUrlList(documents?.otherCertificates),
+    ...asDocumentUrlList(documents?.otherDocuments),
+  ].filter((url, index, list) => isFileDocumentUrl(url) && list.indexOf(url) === index)
   const venueImages = overview.venueImages || []
 
   const applicantName = header.applicantName || applicant?.fullName || 'Venue Partner'
@@ -566,7 +716,7 @@ export function VenueKycApplicationViewPage() {
   const uploadedDocuments = primaryDocDefs
     .map((def) => {
       const docKey = def.key as keyof ApplicationKycDocuments
-      const url = documents?.[docKey] as string | undefined
+      const url = extractDocumentUrl(documents?.[docKey])
       return {
         label: def.label,
         key: def.key,
@@ -610,6 +760,7 @@ export function VenueKycApplicationViewPage() {
     { label: 'FSSAI License', key: 'fssaiLicense' },
     { label: 'Property Lease Agreement', key: 'propertyLeaseAgreement' },
     { label: 'Authorized Signatory ID', key: 'authorizedSignatoryId' },
+    { label: 'GST Undertaking', key: 'gstUndertakingDocument' },
   ]
 
   const otherDocuments: Array<{
@@ -621,8 +772,8 @@ export function VenueKycApplicationViewPage() {
 
   categoryDocDefs.forEach((def) => {
     const docKey = def.key as keyof ApplicationKycDocuments
-    const url = documents?.[docKey] as string | undefined
-    if (url) {
+    const url = extractDocumentUrl(documents?.[docKey])
+    if (url && isFileDocumentUrl(url)) {
       otherDocuments.push({
         label: def.label,
         key: def.key,
@@ -633,15 +784,64 @@ export function VenueKycApplicationViewPage() {
     }
   })
 
+  const handledOtherKeys = new Set([
+    'panCard',
+    'gstCertificate',
+    'businessRegistration',
+    'otherCertificates',
+    'otherDocuments',
+    ...categoryDocDefs.map((def) => def.key),
+  ])
+  const seenOtherUrls = new Set(
+    otherDocuments.map((document) => document.url).filter((url): url is string => Boolean(url)),
+  )
+
   otherCertificates.forEach((certUrl, index) => {
+    if (!certUrl || seenOtherUrls.has(certUrl)) return
+    seenOtherUrls.add(certUrl)
     otherDocuments.push({
       label: `Other Certificate ${index + 1}`,
-      key: `otherCertificates_${index}`,
+      key: 'otherCertificates',
       url: certUrl,
       reviewStatus: (kycDetails.documentReviews?.otherCertificates?.status ||
         null) as DocumentReviewStatus | null,
     })
   })
+
+  Object.entries(documents || {}).forEach(([key, value]) => {
+    if (handledOtherKeys.has(key)) return
+    const urls = asDocumentUrlList(value).filter(
+      (url) => isFileDocumentUrl(url) && !seenOtherUrls.has(url),
+    )
+    urls.forEach((url, index) => {
+      seenOtherUrls.add(url)
+      otherDocuments.push({
+        label:
+          urls.length > 1 ? `${humanizeDocumentKey(key)} ${index + 1}` : humanizeDocumentKey(key),
+        key,
+        url,
+        reviewStatus: (kycDetails.documentReviews?.[key]?.status ||
+          null) as DocumentReviewStatus | null,
+      })
+    })
+  })
+
+  const kycDocsApproved = areUploadedDocumentsApproved(
+    [...uploadedDocuments, ...otherDocuments].map((doc) => ({
+      uploaded: doc.url,
+      status: doc.reviewStatus,
+    })),
+  )
+
+  const bankingDocsApproved = areUploadedDocumentsApproved([
+    {
+      uploaded: isBankingSubmitted ? bankingDetails.cancelledCheque : null,
+      status: bankingDetails.documentReviews?.cancelledCheque?.status || null,
+    },
+  ])
+
+  const sectionDocsApproved =
+    decisionTargetForTab === 'banking' ? bankingDocsApproved : kycDocsApproved
 
   const openDocumentViewer = (document: {
     key: string
@@ -671,18 +871,14 @@ export function VenueKycApplicationViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
         </button>
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="hover:text-brand-text transition-colors"
-          >
-            Expert management
-          </button>
-          <span className="text-muted">/</span>
-          <span>Manage Expert</span>
-          <span className="text-muted">/</span>
-          <span className="font-bold text-white">{applicantName}</span>
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={[
+              { label: 'Venue Management', to: '/venues/management' },
+              { label: 'Manage Venues', to: '/venues/management' },
+              { label: applicantName, isActive: true },
+            ]}
+          />
         </div>
       </header>
 
@@ -691,25 +887,18 @@ export function VenueKycApplicationViewPage() {
       <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-bold text-white">{applicantName}</h3>
-              {header.partnerId && (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/experts/management/profile/${header.partnerId}`)}
-                  className="hover:text-brand-accent text-muted rounded-md p-1 transition-colors hover:bg-white/5"
-                  aria-label="Open expert profile"
-                >
-                  <ExternalLink className="size-4" />
-                </button>
-              )}
-            </div>
-            {appliedLabel && <p className="text-body-sm text-muted mt-1">{appliedLabel}</p>}
+            <h3 className="text-2xl font-bold text-white">{applicantName}</h3>
+            {isKycSubmitted && appliedLabel && (
+              <p className="text-body-sm text-muted mt-1">{appliedLabel}</p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <StatusPill status={header.kycStatus} label={header.kycStatusLabel} />
             <StatusPill
-              status={header.bankingStatus}
+              status={isKycSubmitted ? header.kycStatus : 'DRAFT'}
+              label={isKycSubmitted ? header.kycStatusLabel : 'Not Submitted'}
+            />
+            <StatusPill
+              status={isBankingSubmitted ? header.bankingStatus : 'DRAFT'}
               label={isBankingSubmitted ? header.bankingStatusLabel : 'Not Submitted'}
             />
           </div>
@@ -725,7 +914,7 @@ export function VenueKycApplicationViewPage() {
           <div className="rounded-lg border border-white/5 bg-black p-4">
             <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
-              {formatDateTime(header.submittedAt)}
+              {isKycSubmitted ? formatDateTime(header.submittedAt) : 'N/A'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
@@ -778,13 +967,17 @@ export function VenueKycApplicationViewPage() {
               title="Venue Information"
               icon={<ClipboardList className="text-brand-accent size-4" />}
             >
-              <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
-                <InfoField label="Venue Name" value={venue?.venueName} />
-                <InfoField label="Venue Type" value={venue?.venueType} />
-                <InfoField label="Address" value={venue?.address} />
-                <InfoField label="City" value={venue?.city} />
-                <InfoField label="Pincode" value={venue?.pincode} />
-              </div>
+              {isKycSubmitted ? (
+                <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+                  <InfoField label="Venue Name" value={venue?.venueName} />
+                  <InfoField label="Venue Type" value={venue?.venueType} />
+                  <InfoField label="Address" value={venue?.address} />
+                  <InfoField label="City" value={venue?.city} />
+                  <InfoField label="Pincode" value={venue?.pincode} />
+                </div>
+              ) : (
+                <p className="text-body-sm text-muted">KYC is not submitted by partner</p>
+              )}
             </SectionCard>
           </div>
 
@@ -792,20 +985,33 @@ export function VenueKycApplicationViewPage() {
             title="Venue Images"
             icon={<FileText className="text-brand-accent size-4" />}
           >
-            {venueImages.length > 0 ? (
+            {isKycSubmitted && venueImages.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:max-w-[520px]">
                 {venueImages.slice(0, 6).map((image, index) => (
-                  <VenueImage key={`${image}-${index}`} src={image} alt={`Venue ${index + 1}`} />
+                  <VenueImage
+                    key={`${image}-${index}`}
+                    src={image}
+                    alt={`Venue ${index + 1}`}
+                    onOpen={() => setMediaIndex(index)}
+                  />
                 ))}
               </div>
             ) : (
-              <p className="text-body-sm text-muted">No venue images uploaded.</p>
+              <p className="text-body-sm text-muted">
+                {isKycSubmitted ? 'No venue images uploaded.' : 'KYC is not submitted by partner'}
+              </p>
             )}
           </SectionCard>
         </div>
       )}
 
-      {activeTab === 'kyc' && (
+      {activeTab === 'kyc' && !isKycSubmitted && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          KYC is not submitted by partner
+        </div>
+      )}
+
+      {activeTab === 'kyc' && isKycSubmitted && (
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
@@ -855,14 +1061,13 @@ export function VenueKycApplicationViewPage() {
                           {getDocumentMeta(compliance.gstUndertakingDocument)}
                         </p>
                       </div>
-                      <a
-                        href={compliance.gstUndertakingDocument}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => setUndertakingOpen(true)}
                         className="text-body-sm text-brand-action ml-auto font-semibold hover:underline"
                       >
                         View
-                      </a>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -893,22 +1098,32 @@ export function VenueKycApplicationViewPage() {
             icon={<FileText className="text-brand-accent size-4" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {otherDocuments.map((document) => (
-                <ReviewableDocumentCard
-                  key={document.label}
-                  label={document.label}
-                  url={document.url}
-                  reviewStatus={document.reviewStatus}
-                  uploadedAt={header.submittedAt || header.appliedAt}
-                  onView={() => openDocumentViewer(document)}
-                />
-              ))}
+              {otherDocuments.length > 0 ? (
+                otherDocuments.map((document) => (
+                  <ReviewableDocumentCard
+                    key={`${document.key}-${document.label}`}
+                    label={document.label}
+                    url={document.url}
+                    reviewStatus={document.reviewStatus}
+                    uploadedAt={header.submittedAt || header.appliedAt}
+                    onView={() => openDocumentViewer(document)}
+                  />
+                ))
+              ) : (
+                <p className="text-body-sm text-muted">No other documents uploaded.</p>
+              )}
             </div>
           </SectionCard>
         </div>
       )}
 
-      {activeTab === 'banking' && (
+      {activeTab === 'banking' && !isBankingSubmitted && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          Banking is not submitted by partner
+        </div>
+      )}
+
+      {activeTab === 'banking' && isBankingSubmitted && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <SectionCard
             title="Account Information"
@@ -983,11 +1198,28 @@ export function VenueKycApplicationViewPage() {
             </p>
           )}
 
+          {decisionTargetForTab === 'kyc' && !isKycSubmitted && (
+            <p className="text-body-sm text-muted mb-4 rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
+              KYC is not submitted by partner. Approve and reject are available only after the
+              partner submits KYC details.
+            </p>
+          )}
+
           {activeDecisionStatus !== 'PENDING' &&
-            !(decisionTargetForTab === 'banking' && !isBankingSubmitted) && (
+            !(decisionTargetForTab === 'banking' && !isBankingSubmitted) &&
+            !(decisionTargetForTab === 'kyc' && !isKycSubmitted) && (
               <p className="text-body-sm text-muted mb-4 rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
                 {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
                 {String(activeDecisionStatus).toLowerCase()}.
+              </p>
+            )}
+
+          {activeDecisionStatus === 'PENDING' &&
+            !(decisionTargetForTab === 'banking' && !isBankingSubmitted) &&
+            !(decisionTargetForTab === 'kyc' && !isKycSubmitted) &&
+            !sectionDocsApproved && (
+              <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
+                Approve each uploaded document before approving this section.
               </p>
             )}
 
@@ -997,7 +1229,7 @@ export function VenueKycApplicationViewPage() {
             onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
             onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
             showEscalate
-            approveDisabled={decisionDisabled}
+            approveDisabled={decisionDisabled || !sectionDocsApproved}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}
@@ -1081,11 +1313,31 @@ export function VenueKycApplicationViewPage() {
             ? !isBankingSubmitted ||
               (application?.bankingDetails?.status || application?.header?.bankingStatus) !==
                 'PENDING'
-            : (application?.kycDetails?.status || application?.header?.kycStatus) !== 'PENDING')
+            : !isKycSubmitted ||
+              (application?.kycDetails?.status || application?.header?.kycStatus) !== 'PENDING')
         }
         isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
         onClose={() => setViewerDocument(null)}
         onSubmitDecision={handleDocumentDecision}
+      />
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={venueImages.map((url, index) => ({ url, title: `Venue ${index + 1}` }))}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
+
+      <InPageMediaViewer
+        open={undertakingOpen && Boolean(compliance?.gstUndertakingDocument)}
+        items={
+          compliance?.gstUndertakingDocument
+            ? [{ url: compliance.gstUndertakingDocument, title: 'Undertaking Document' }]
+            : []
+        }
+        index={0}
+        onClose={() => setUndertakingOpen(false)}
       />
     </div>
   )

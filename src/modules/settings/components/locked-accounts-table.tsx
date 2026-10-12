@@ -1,6 +1,7 @@
 import { useActivateExpert, useExperts } from '@/modules/expert/hooks/use-expert'
 import { toast } from 'sonner'
 import { SettingsSectionCard } from './settings-section-card'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—'
@@ -71,7 +72,7 @@ export function LockedAccountsTable() {
                           onSuccess: () => toast.success('Expert unlocked'),
                           onError: (error: unknown) => {
                             const err = error as { response?: { data?: { message?: string } } }
-                            toast.error(err?.response?.data?.message || 'Failed to unlock expert')
+                            toast.error(getApiErrorMessage(err, 'Failed to unlock expert'))
                           },
                         })
                       }

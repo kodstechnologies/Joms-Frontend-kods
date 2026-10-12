@@ -64,8 +64,15 @@ export function PausePlanModal({
           From <span className="text-[#d3191c]">*</span>
         </span>
         <div className="grid grid-cols-2 gap-3">
-          <DateField value={startDate} onChange={onStartDateChange} />
-          <DateField value={endDate} onChange={onEndDateChange} />
+          <DateField
+            value={startDate}
+            max={endDate || undefined}
+            onChange={(next) => {
+              onStartDateChange(next)
+              if (endDate && next && endDate < next) onEndDateChange('')
+            }}
+          />
+          <DateField value={endDate} min={startDate || undefined} onChange={onEndDateChange} />
         </div>
       </div>
 
@@ -85,7 +92,12 @@ export function PausePlanModal({
         submitLabel="Pause Plan"
         submitTone="gold"
         disabled={
-          isSubmitting || !startDate || !endDate || !selectedReasons.length || !adminNotes.trim()
+          isSubmitting ||
+          !startDate ||
+          !endDate ||
+          endDate < startDate ||
+          !selectedReasons.length ||
+          !adminNotes.trim()
         }
       />
     </PlanModalShell>
@@ -315,11 +327,23 @@ function StatCell({
   )
 }
 
-function DateField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+function DateField({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: string
+  onChange: (value: string) => void
+  min?: string
+  max?: string
+}) {
   return (
     <input
       type="date"
       value={value}
+      min={min || undefined}
+      max={max || undefined}
       onChange={(e) => onChange(e.target.value)}
       className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white [color-scheme:dark] outline-none focus:border-white/30"
     />

@@ -21,8 +21,8 @@ import {
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 
 import { useExpertProfile } from '../../hooks/use-expert-profile'
 import { useConsultation, useUpdateConsultationStatus } from '../../hooks/use-services'
@@ -34,6 +34,8 @@ import {
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
 import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { isApprovedListingStatus } from '../../lib/service-navigation'
+import { isSubmittedListingStatus } from '../../utils/management-status'
 
 type ConsultationDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
@@ -112,7 +114,7 @@ export const ConsultationViewPage = () => {
     useUpdateConsultationStatus()
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
-    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectConsultation)
   const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
 
@@ -274,11 +276,7 @@ export const ConsultationViewPage = () => {
       }
       closeDecisionModal()
     } catch (err) {
-      toast.error(
-        axios.isAxiosError(err)
-          ? err.response?.data?.message || 'Failed to update consultation status.'
-          : 'Failed to update consultation status.',
-      )
+      toast.error(getApiErrorMessage(err, 'Failed to update consultation status.'))
     }
   }
 
@@ -313,6 +311,24 @@ export const ConsultationViewPage = () => {
     )
   }
 
+  if (!isSubmittedListingStatus(consultation.status)) {
+    return (
+      <div className="relative mx-auto flex w-full max-w-[1200px] flex-col gap-5 pb-8 text-white">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
+        >
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>Consultation View</span>
+        </button>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          This listing is not submitted by partner
+        </div>
+      </div>
+    )
+  }
+
   const topics = consultation.topics || []
   const categoryName =
     topics
@@ -339,7 +355,8 @@ export const ConsultationViewPage = () => {
   }))
   const submittedAt = consultation.submittedAt || consultation.createdAt
   const showApprovalControls = isPendingReview(consultation.status)
-  const escalateDisabled = !showApprovalControls || escalateConsultation.isPending
+  const escalateDisabled =
+    isApprovedListingStatus(consultation.status) || escalateConsultation.isPending
   const escalation = escalationData?.data
   const escalationOptions: DecisionActionModalOption[] =
     assigneesData?.data.map((assignee) => ({
@@ -423,42 +440,25 @@ export const ConsultationViewPage = () => {
           <span>Consultation View</span>
         </button>
 
-        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-          {fromExpert ? (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                All Experts
-              </button>
-              <span className="text-muted">/</span>
-              <button
-                type="button"
-                onClick={() => expertId && navigate(`/experts/management/profile/${expertId}`)}
-                className="hover:text-brand-text transition-colors"
-              >
-                {expertName}
-              </button>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">Consultation View</span>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-                className="hover:text-brand-text transition-colors"
-              >
-                Service management
-              </button>
-              <span className="text-muted">/</span>
-              <span>Service View</span>
-              <span className="text-muted">/</span>
-              <span className="font-bold text-white">{expertName}</span>
-            </>
-          )}
+        <div className="pl-7">
+          <PageBreadcrumb
+            items={
+              fromExpert
+                ? [
+                    { label: 'Expert Management', to: '/experts/management' },
+                    {
+                      label: expertName,
+                      to: expertId ? `/experts/management/profile/${expertId}` : undefined,
+                    },
+                    { label: 'Consultation View', isActive: true },
+                  ]
+                : [
+                    { label: 'Service Management', to: '/services/management' },
+                    { label: 'Manage Services', to: '/services/management' },
+                    { label: expertName, isActive: true },
+                  ]
+            }
+          />
         </div>
       </header>
 
@@ -630,12 +630,7 @@ export const ConsultationViewPage = () => {
         </div>
       </div>
 
-      <div
-        className={cn(
-          'grid grid-cols-1 gap-5',
-          showApprovalControls ? 'lg:grid-cols-2' : 'max-w-2xl',
-        )}
-      >
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl bg-[#141414] p-5">
           <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
@@ -653,19 +648,27 @@ export const ConsultationViewPage = () => {
           </div>
         </div>
 
-        {showApprovalControls && (
-          <div className="rounded-xl bg-[#141414] p-5">
-            <DecisionControlsHeader className="mb-4" />
-            <DecisionControlButtons
-              onApprove={() => openDecisionModal('approve')}
-              onRequestChanges={() => openDecisionModal('requestChanges')}
-              onEscalate={() => openDecisionModal('escalate')}
-              onReject={() => openDecisionModal('reject')}
-              showEscalate
-              escalateDisabled={escalateDisabled}
-            />
-          </div>
-        )}
+        <div className="rounded-xl bg-[#141414] p-5">
+          <DecisionControlsHeader className="mb-4" />
+          {!showApprovalControls ? (
+            <p className="text-body-sm text-muted mb-4 rounded-md bg-black px-3 py-2 font-medium">
+              This listing is currently{' '}
+              <span className="font-bold text-white">{consultation.status || '—'}</span>. Approve
+              and reject are available only while review is pending.
+            </p>
+          ) : null}
+          <DecisionControlButtons
+            onApprove={() => openDecisionModal('approve')}
+            onRequestChanges={() => openDecisionModal('requestChanges')}
+            onEscalate={() => openDecisionModal('escalate')}
+            onReject={() => openDecisionModal('reject')}
+            showEscalate
+            approveDisabled={!showApprovalControls || isUpdatingStatus}
+            requestChangesDisabled={!showApprovalControls || isUpdatingStatus}
+            escalateDisabled={escalateDisabled}
+            rejectDisabled={!showApprovalControls || isUpdatingStatus}
+          />
+        </div>
       </div>
     </div>
   )

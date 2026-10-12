@@ -44,8 +44,13 @@ export const SubCategoryViewPage = () => {
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <CategoryHeader
             title={category.name}
-            breadcrumbItems={[category.name, subCategory.name]}
+            items={[
+              { label: 'Category Management', to: scope.basePath },
+              { label: category.name, to: id ? categoryPath(scope, `view/${id}`) : undefined },
+              { label: subCategory.name, isActive: true },
+            ]}
             backPath={id ? categoryPath(scope, `view/${id}`) : scope.basePath}
+            listPath={scope.basePath}
           />
           <SubCategoryViewHeaderActions />
         </div>

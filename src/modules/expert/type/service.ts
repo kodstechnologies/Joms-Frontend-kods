@@ -5,9 +5,20 @@ export interface Service {
   serviceid?: string
   title: string
   partnerId: string
-  status: 'live' | 'in_review' | 'suspended' | 'deleted' | 'pending' | 'preview' | 'rejected'
+  status:
+    | 'live'
+    | 'in_review'
+    | 'submitted'
+    | 'suspended'
+    | 'deleted'
+    | 'pending'
+    | 'preview'
+    | 'rejected'
+    | 'paused'
   serviceStatus?: ServiceRawStatus
   isSuspend?: boolean
+  isPaused?: boolean
+  isDeleted?: boolean
   createdAt: string
   serviceType: string
   categoryName: string
@@ -60,6 +71,13 @@ export interface SuspendServicePayload {
   startDate?: string
   endDate?: string
   reasonDetails: string
+  adminNotes: string
+}
+
+export interface UpdateServiceSuspensionPayload {
+  suspendIndefinitely: boolean
+  startDate?: string
+  endDate?: string
   adminNotes: string
 }
 
@@ -283,7 +301,15 @@ export interface CreateServicePayload {
 export interface CreateServiceResponse {
   success: boolean
   message: string
-  data: { _id: string }
+  data: { _id: string; id?: string }
+}
+
+export type UpdateServiceBasicPayload = Omit<CreateServicePayload, 'partnerId'>
+
+export interface UpdateServiceBasicResponse {
+  success: boolean
+  message: string
+  data: ServiceDetail
 }
 
 export type UpdateServicePricingPayload =

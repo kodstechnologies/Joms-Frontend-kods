@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { VenueReportItem } from '../components/venue-report-detail-modal'
 import type { Venue } from '../type/venue'
 import { getVenueDisplayId, getVenueDisplaySpaceId } from './venue-list'
-import { getManagementStatusDisplay } from './management-status'
+import { getListingStatusDisplay } from './management-status'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 
 export function pickVenuePreferenceColumns<T>(
@@ -41,7 +41,7 @@ export function createVenueSelectColumn({
           if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
         }}
         onChange={toggleVisible}
-        className="rounded border-slate-700 bg-transparent"
+        className="ui-table-checkbox"
       />
     ),
     cell: ({ row }) => (
@@ -51,7 +51,7 @@ export function createVenueSelectColumn({
         checked={selectedVenueIds.includes(row.original._id)}
         onChange={() => toggleOne(row.original._id)}
         onClick={(event) => event.stopPropagation()}
-        className="rounded border-slate-700 bg-transparent"
+        className="ui-table-checkbox"
       />
     ),
     meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
@@ -266,8 +266,11 @@ export function buildVenueDataColumnsById(): Record<string, ColumnDef<Venue>> {
       accessorKey: 'status',
       header: 'Venue Status',
       cell: ({ row }) => {
-        const { label, className } = getManagementStatusDisplay(row.original.status, {
-          isSuspend: row.original.isSuspend,
+        const statusToShow = row.original.spaceStatus || row.original.status
+        const { label, className } = getListingStatusDisplay(statusToShow, {
+          isSuspend:
+            row.original.isSuspend ||
+            String(row.original.spaceStatus || '').toLowerCase() === 'suspended',
         })
         return <span className={className}>{label}</span>
       },
@@ -318,8 +321,12 @@ export function buildVenueDataColumnsById(): Record<string, ColumnDef<Venue>> {
       accessorKey: 'spaceStatus',
       header: 'Space Status',
       cell: ({ row }) => {
-        const status = row.original.spaceStatus || 'submitted'
-        const { label, className } = getManagementStatusDisplay(status, {})
+        if (!row.original.spaceStatus) {
+          return <span className="text-slate-500">—</span>
+        }
+        const { label, className } = getListingStatusDisplay(row.original.spaceStatus, {
+          isSuspend: String(row.original.spaceStatus || '').toLowerCase() === 'suspended',
+        })
         return <span className={className}>{label}</span>
       },
     },

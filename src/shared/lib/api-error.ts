@@ -5,6 +5,13 @@ export const MAX_UPLOAD_FILE_SIZE_BYTES = MAX_UPLOAD_FILE_SIZE_MB * 1024 * 1024
 
 export const FILE_TOO_LARGE_MESSAGE = `Image size is too large. Maximum upload size is ${MAX_UPLOAD_FILE_SIZE_MB}MB.`
 
+const readMessage = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+// Uses the message from the server. A file that is too large, and a broken upload, are shown as the size limit. A raw status code is not shown.
 export function getApiErrorMessage(
   error: unknown,
   fallback = 'Something went wrong. Please try again.',
@@ -14,10 +21,8 @@ export function getApiErrorMessage(
     const data = error.response?.data
 
     if (typeof data === 'object' && data !== null && 'message' in data) {
-      const message = (data as { message?: unknown }).message
-      if (typeof message === 'string' && message.trim()) {
-        return message
-      }
+      const message = readMessage((data as { message?: unknown }).message)
+      if (message) return message
     }
 
     if (typeof data === 'string' && data.trim()) {
@@ -25,9 +30,8 @@ export function getApiErrorMessage(
       if (trimmed.startsWith('{')) {
         try {
           const parsed = JSON.parse(trimmed) as { message?: unknown }
-          if (typeof parsed.message === 'string' && parsed.message.trim()) {
-            return parsed.message
-          }
+          const message = readMessage(parsed.message)
+          if (message) return message
         } catch {
           return FILE_TOO_LARGE_MESSAGE
         }
@@ -53,11 +57,20 @@ export function getApiErrorMessage(
         return 'You are offline. Check your connection and try again.'
       }
     }
+
+    return fallback
   }
+
+  const shaped = error as { response?: { data?: { message?: unknown } } }
+  const shapedMessage = readMessage(shaped?.response?.data?.message)
+  if (shapedMessage) return shapedMessage
 
   if (error instanceof Error && error.message.trim()) {
     if (/status code 413/i.test(error.message)) {
       return FILE_TOO_LARGE_MESSAGE
+    }
+    if (/^request failed with status code \d+$/i.test(error.message.trim())) {
+      return fallback
     }
     return error.message
   }
@@ -69,13 +82,10 @@ export function apiErrorMessage(
   error: unknown,
   fallback = 'Something went wrong. Please try again.',
 ) {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || fallback
-  }
-  const shaped = error as { response?: { data?: { message?: string } } }
-  return shaped?.response?.data?.message || fallback
+  return getApiErrorMessage(error, fallback)
 }
 
+// Refuses a file larger than 100 MB.
 export function assertFileWithinUploadLimit(file: File) {
   if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
     throw new Error(FILE_TOO_LARGE_MESSAGE)

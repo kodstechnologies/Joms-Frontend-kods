@@ -57,12 +57,14 @@ export const titleCase = (value?: string | null) => {
 
 const PRICING_TYPE_SUFFIX = /\s*\((fixed|tiered|custom|milestone)\)\s*$/i
 
+// The pricing type in brackets is taken off the service name.
 export const displayServiceTitle = (value?: string | null) => {
   if (!value) return ''
   const cleaned = String(value).replace(PRICING_TYPE_SUFFIX, '').trim()
   return cleaned || String(value)
 }
 
+// The pricing type is shown as a service label, and the word Service is not added twice.
 export const formatServiceTypeLabel = (pricingType?: string | null) => {
   if (!pricingType) return '—'
   const fromSuffix = String(pricingType).match(PRICING_TYPE_SUFFIX)?.[1]
@@ -70,14 +72,127 @@ export const formatServiceTypeLabel = (pricingType?: string | null) => {
   return /service$/i.test(label) ? label : `${label} Service`
 }
 
+// Paid and fulfilled are shown as paid. Failed and expired are shown as failed. Everything else stays pending.
 export const mapPaymentStatus = (status: string) => {
   if (status === 'paid' || status === 'fulfilled') return 'Paid' as const
   if (status === 'failed' || status === 'expired') return 'Failed' as const
   return 'Pending' as const
 }
 
-export const mapPaymentToRevenueRow = (payment: FinancePayment) => {
+const firstNonEmpty = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return null
+}
+
+// A partner name is still needed when the stored name is missing, or is only the partner id or the customer id.
+export const needsPartnerDisplayName = (payment: FinancePayment, snapshotName?: string | null) => {
+  const partnerId = firstNonEmpty(payment.partnerId, payment.moduleSnapshot?.partnerId)
+  const name = firstNonEmpty(snapshotName, payment.moduleSnapshot?.partnerName)
+  if (!partnerId) return false
+  if (!name) return true
+  if (name === partnerId) return true
+  if (name === payment.userId) return true
+  return false
+}
+
+const roundMoney = (value: unknown) => Math.round((Number(value) || 0) * 100) / 100
+const moneyNumber = (value: unknown, fallback = 0) => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+// Tax defaults to 18 percent. Commission defaults to 20 percent for a venue and 10 percent otherwise, and to nothing when the platform is the one being paid. Membership pays the partner nothing.
+export const derivePaymentMoneyFields = (payment: FinancePayment) => {
   const snapshot = payment.moduleSnapshot || {}
+  const moduleData = payment.moduleData || {}
+  const gross = roundMoney(payment.amount)
+  const discounts = roundMoney(
+    payment.discountAmount ??
+      snapshot.discountAmount ??
+      snapshot.discounts ??
+      moduleData.discountAmount ??
+      moduleData.discounts,
+  )
+  const refundAmount = roundMoney(
+    payment.refundAmount ?? snapshot.refundAmount ?? snapshot.refunds ?? moduleData.refundAmount,
+  )
+  const afterDiscounts = roundMoney(gross - discounts)
+  const afterRefunds = roundMoney(afterDiscounts - refundAmount)
+  const gstRate = moneyNumber(snapshot.taxRate ?? snapshot.taxRateApplied, 18)
+  const taxAmount = roundMoney(
+    payment.taxAmount ?? snapshot.taxAmount ?? (afterRefunds * gstRate) / 100,
+  )
+  const isVenue = payment.module === 'venue' || Boolean(snapshot.venueId)
+  const isReceivable = payment.direction === 'receivable' || payment.module === 'membership'
+  const commissionPct = moneyNumber(
+    payment.platformCommissionPercent ?? snapshot.platformCommissionPercent,
+    isReceivable ? 0 : isVenue ? 20 : 10,
+  )
+  const gatewayPct = moneyNumber(snapshot.convenienceFeePercent, 2)
+  const platformCommission = roundMoney(
+    payment.platformCommission ?? (afterRefunds * commissionPct) / 100,
+  )
+  const gatewayCharges = roundMoney(
+    payment.gatewayCharges ??
+      snapshot.gatewayFee ??
+      snapshot.convenienceFee ??
+      (gross * gatewayPct) / 100,
+  )
+  const partnerPayout = isReceivable
+    ? 0
+    : roundMoney(payment.partnerPayout ?? afterRefunds - platformCommission)
+  const netRevenue = payment.netRevenue != null ? roundMoney(payment.netRevenue) : afterRefunds
+  const netProfit =
+    payment.netProfit != null
+      ? roundMoney(payment.netProfit)
+      : roundMoney(platformCommission - gatewayCharges)
+
+  return {
+    discounts,
+    refundAmount,
+    taxAmount,
+    netRevenue,
+    platformCommission,
+    platformCommissionPercent: commissionPct,
+    gatewayCharges,
+    partnerPayout,
+    netProfit,
+  }
+}
+
+const formatPct = (value: number) => `${Number(value || 0).toFixed(value % 1 === 0 ? 0 : 2)}%`
+// A dummy payment is labelled Dummy. Anything with a Razorpay id is labelled Razorpay.
+const gatewayLabel = (payment: FinancePayment) => {
+  const method = String(payment.paymentMethod || '').toUpperCase()
+  if (method === 'DUMMY') return 'Dummy'
+  if (method.includes('RAZOR') || payment.razorpayPaymentId) return 'Razorpay'
+  return method || 'Razorpay'
+}
+
+// The owner name ignores a snapshot that is only an id, then falls back to the partner lookup.
+export const mapPaymentToRevenueRow = (
+  payment: FinancePayment,
+  partnerNameMap?: Record<string, string> | null,
+) => {
+  const snapshot = payment.moduleSnapshot || {}
+  const partnerId = firstNonEmpty(payment.partnerId, snapshot.partnerId)
+  const snapshotPartnerName = firstNonEmpty(snapshot.partnerName, payment.moduleData?.partnerName)
+  const lookedUp = partnerId && partnerNameMap ? firstNonEmpty(partnerNameMap[partnerId]) : null
+  const ownerName =
+    (snapshotPartnerName &&
+    snapshotPartnerName !== partnerId &&
+    snapshotPartnerName !== payment.userId
+      ? snapshotPartnerName
+      : null) ||
+    lookedUp ||
+    snapshotPartnerName ||
+    partnerId ||
+    payment.userId ||
+    '—'
+  const money = derivePaymentMoneyFields(payment)
+
   return {
     id: payment._id,
     transactionId: payment.orderId || payment.razorpayPaymentId || payment._id,
@@ -86,23 +201,26 @@ export const mapPaymentToRevenueRow = (payment: FinancePayment) => {
     entityId: payment.referenceId || payment.orderId,
     entityName: (snapshot.title as string) || payment.description || payment.orderId,
     category: (snapshot.category as string) || titleCase(payment.module),
-    subCategory: (snapshot.subCategory as string) || '—',
+    subCategory:
+      firstNonEmpty(snapshot.subCategory, snapshot.subcategory, snapshot.serviceSubCategory) || '—',
     ownerType: payment.userType === 'partner' ? 'Expert' : titleCase(payment.userType),
-    ownerName: (snapshot.partnerName as string) || payment.partnerId || payment.userId || '—',
+    ownerName,
+    partnerId: partnerId || undefined,
     grossAmount: formatInr(payment.amount),
-    discounts: '—',
-    refundAmount: '—',
-    taxAmount: '—',
-    netRevenue: '—',
-    platformCommission: '—',
-    netProfit: '—',
+    discounts: formatInr(money.discounts),
+    refundAmount: formatInr(money.refundAmount),
+    taxAmount: formatInr(money.taxAmount),
+    netRevenue: formatInr(money.netRevenue),
+    platformCommission: formatInr(money.platformCommission),
+    netProfit: formatInr(money.netProfit),
     status: mapPaymentStatus(payment.status),
-    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : '—',
-    complianceStatus: '—',
+    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Pending',
+    complianceStatus: payment.complianceStatus ? titleCase(payment.complianceStatus) : '—',
     lastUpdated: formatDate(payment.updatedAt || payment.createdAt),
   }
 }
 
+// Held is shown as active. Released to a payout is shown as released. Refunded or cancelled is shown as a dispute. Any other status stays active.
 export const mapEscrowStatus = (status: string): 'Active' | 'Released' | 'Dispute' => {
   if (status === 'held') return 'Active'
   if (status === 'released_to_payout') return 'Released'
@@ -126,6 +244,7 @@ export const mapEscrowToRow = (escrow: FinanceEscrowHold) => ({
   lastUpdated: formatDate(escrow.createdAt),
 })
 
+// A venue partner, expert, or organisation keeps that label. Any other type is shown in title case.
 export const mapPayeeType = (value?: string | null) => {
   if (value === 'venue_partner') return 'Venue Partner'
   if (value === 'expert') return 'Expert'
@@ -133,6 +252,7 @@ export const mapPayeeType = (value?: string | null) => {
   return titleCase(value)
 }
 
+// A payout paused for a dispute is shown as on hold. Anything not paid, failed, processing, or cancelled stays pending.
 export const mapPayoutStatus = (status: string) => {
   if (status === 'paid') return 'Paid' as const
   if (status === 'failed') return 'Failed' as const
@@ -142,6 +262,7 @@ export const mapPayoutStatus = (status: string) => {
   return 'Pending' as const
 }
 
+// A payout can be released only when it is scheduled, waiting for approval, or has already failed.
 export const canReleasePayout = (status?: string | null) =>
   ['scheduled', 'pending_approval', 'failed'].includes(String(status || ''))
 
@@ -188,6 +309,7 @@ export const mapPayoutToAdminRow = (payout: FinancePayout) => {
   }
 }
 
+// A full or partial refund is shown as resolved. Waiting for information and an escalation are both shown as in review.
 export const mapDisputeStatus = (status: string) => {
   if (status === 'resolved_full_refund' || status === 'resolved_partial_refund') {
     return 'Resolved' as const
@@ -199,6 +321,7 @@ export const mapDisputeStatus = (status: string) => {
   return titleCase(status) as 'Resolved' | 'Rejected' | 'Pending' | 'Open' | 'In Review'
 }
 
+// A processed refund is shown as resolved. One that was started or failed stays pending.
 export const mapRefundStatus = (status: string) => {
   if (status === 'processed') return 'Resolved' as const
   if (status === 'rejected') return 'Rejected' as const
@@ -213,12 +336,15 @@ export const mapDisputeToRefundRow = (dispute: FinanceDispute) => ({
   kind: 'dispute' as const,
   relatedEntity: titleCase(dispute.module),
   amount: formatInr(dispute.originalAmount),
+  amountValue: Number(dispute.originalAmount) || 0,
   reason: dispute.reason || dispute.summary || '—',
   initiatedDate: formatDate(dispute.createdAt),
   description: dispute.summary || dispute.reason || '—',
   status: mapDisputeStatus(dispute.status),
   rawStatus: dispute.status,
   transactionId: dispute.paymentId || '—',
+  paymentId: dispute.paymentId || undefined,
+  partnerId: dispute.partnerId || undefined,
   module: titleCase(dispute.module),
   customerName: '—',
   refundMode: '—',
@@ -235,12 +361,15 @@ export const mapRefundToRow = (refund: FinanceRefund) => ({
   kind: 'refund' as const,
   relatedEntity: titleCase(refund.module),
   amount: formatInr(refund.amount),
+  amountValue: Number(refund.amount) || 0,
   reason: refund.reason || '—',
   initiatedDate: formatDate(refund.createdAt),
   description: titleCase(refund.refundType),
   status: mapRefundStatus(refund.status),
   rawStatus: refund.status,
   transactionId: refund.paymentId || '—',
+  paymentId: refund.paymentId || undefined,
+  partnerId: refund.partnerId || undefined,
   module: titleCase(refund.module),
   customerName: refund.beneficiary || '—',
   refundMode: refund.refundMode || '—',
@@ -317,6 +446,7 @@ export const mapPaymentToServiceRow = (
 ) => {
   const snapshot = payment.moduleSnapshot || {}
   const paid = mapPaymentStatus(payment.status) === 'Paid'
+  const money = derivePaymentMoneyFields(payment)
   return {
     id: payment._id,
     tab,
@@ -324,9 +454,31 @@ export const mapPaymentToServiceRow = (
     name: displayServiceTitle((snapshot.title as string) || payment.description) || payment.orderId,
     expertName: (snapshot.partnerName as string) || payment.partnerId || '—',
     bookingId: payment.referenceId || payment.orderId,
-    userName: (snapshot.userName as string) || payment.userId || '—',
+    userName:
+      firstNonEmpty(snapshot.userName, snapshot.clientName, snapshot.username) ||
+      payment.userId ||
+      '—',
     status: (paid ? 'Paid' : 'Pending') as 'Paid' | 'Pending',
     revenue: formatInr(payment.amount),
+    transactionId: payment.orderId || payment.razorpayPaymentId || payment._id,
+    module: titleCase(payment.module),
+    clientId: payment.userId || '—',
+    partnerId: payment.partnerId || firstNonEmpty(snapshot.partnerId) || '—',
+    transactionDate: formatDate(payment.createdAt),
+    discount: formatInr(money.discounts),
+    tax: formatInr(money.taxAmount),
+    gatewayCharges: formatInr(money.gatewayCharges),
+    platformCommissionPct: formatPct(money.platformCommissionPercent),
+    platformCommission: formatInr(money.platformCommission),
+    partnerPayout: formatInr(money.partnerPayout),
+    refundAmount: formatInr(money.refundAmount),
+    netRevenue: formatInr(money.netRevenue),
+    netProfit: formatInr(money.netProfit),
+    paymentMethod: payment.paymentMethod ? titleCase(payment.paymentMethod) : '—',
+    gateway: gatewayLabel(payment),
+    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Pending',
+    settlementDate: formatDate(payment.settlementDate),
+    invoiceId: payment.invoiceNumber || '—',
   }
 }
 
@@ -341,12 +493,32 @@ export const mapEscrowToServiceRow = (escrow: FinanceEscrowHold) => ({
   status: (mapEscrowStatus(escrow.status) === 'Released' ? 'Paid' : 'Pending') as
     'Paid' | 'Pending',
   revenue: formatInr(escrow.amountHeld),
+  transactionId: String(escrow.transactionId || escrow.paymentOrderId || escrow.paymentId || '—'),
+  module: titleCase(escrow.module),
+  clientId: escrow.userId || '—',
+  partnerId: escrow.partnerId || '—',
+  transactionDate: formatDate(escrow.heldAt || escrow.createdAt),
+  discount: '—',
+  tax: '—',
+  gatewayCharges: '—',
+  platformCommissionPct: '—',
+  platformCommission: formatInr(escrow.platformFee),
+  partnerPayout: '—',
+  refundAmount: '—',
+  netRevenue: formatInr(escrow.amountHeld),
+  netProfit: '—',
+  paymentMethod: '—',
+  gateway: '—',
+  settlementStatus: mapEscrowStatus(escrow.status),
+  settlementDate: formatDate(escrow.releasedAt),
+  invoiceId: '—',
 })
 
 export const mapPaymentToVenueRow = (payment: FinancePayment) => {
   const snapshot = (payment.moduleSnapshot || {}) as Record<string, unknown>
   const fulfilled = (payment.fulfillmentResult || {}) as Record<string, unknown>
   const status = mapPaymentStatus(payment.status)
+  const money = derivePaymentMoneyFields(payment)
   const venueName =
     (typeof snapshot.venueName === 'string' && snapshot.venueName) ||
     (typeof fulfilled.venueName === 'string' && fulfilled.venueName) ||
@@ -375,6 +547,29 @@ export const mapPaymentToVenueRow = (payment: FinancePayment) => {
     status: (status === 'Paid' ? 'Completed' : status === 'Failed' ? 'Cancelled' : 'Pending') as
       'Completed' | 'Pending' | 'Cancelled',
     revenue: formatInr(payment.amount),
+    transactionId: payment.orderId || payment.razorpayPaymentId || payment._id,
+    module: titleCase(payment.module),
+    clientId: payment.userId || firstNonEmpty(snapshot.userId) || '—',
+    clientName:
+      firstNonEmpty(snapshot.userName, snapshot.clientName, snapshot.username) ||
+      payment.userId ||
+      '—',
+    partnerId: payment.partnerId || firstNonEmpty(snapshot.partnerId) || '—',
+    transactionDate: formatDate(payment.createdAt),
+    discount: formatInr(money.discounts),
+    tax: formatInr(money.taxAmount),
+    gatewayCharges: formatInr(money.gatewayCharges),
+    platformCommissionPct: formatPct(money.platformCommissionPercent),
+    platformCommission: formatInr(money.platformCommission),
+    partnerPayout: formatInr(money.partnerPayout),
+    refundAmount: formatInr(money.refundAmount),
+    netRevenue: formatInr(money.netRevenue),
+    netProfit: formatInr(money.netProfit),
+    paymentMethod: payment.paymentMethod ? titleCase(payment.paymentMethod) : '—',
+    gateway: gatewayLabel(payment),
+    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Pending',
+    settlementDate: formatDate(payment.settlementDate),
+    invoiceId: payment.invoiceNumber || '—',
   }
 }
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import {
   useDashboardMetricPreferences,
@@ -96,6 +97,7 @@ import {
   SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS,
   SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY,
 } from '@/modules/expert/config/service-category-management-metrics.config'
+import { EXPERT_CATEGORY_MANAGEMENT_MODULE_KEY } from '@/modules/expert/api/ui-preferences-api'
 import {
   SERVICE_DASHBOARD_METRICS_CATALOG,
   SERVICE_DASHBOARD_METRIC_IDS,
@@ -218,7 +220,10 @@ export function ModuleMetricsPage({
       return VENUE_VIEW_ANALYTICS_METRICS_CATALOG
     }
 
-    if (moduleKey === SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY) {
+    if (
+      moduleKey === SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY ||
+      moduleKey === EXPERT_CATEGORY_MANAGEMENT_MODULE_KEY
+    ) {
       return SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG
     }
 
@@ -345,7 +350,10 @@ export function ModuleMetricsPage({
     if (moduleKey === VENUE_VIEW_ANALYTICS_MODULE_KEY) {
       return sortIdsByCatalogOrder(result, VENUE_VIEW_ANALYTICS_METRIC_IDS)
     }
-    if (moduleKey === SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY) {
+    if (
+      moduleKey === SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY ||
+      moduleKey === EXPERT_CATEGORY_MANAGEMENT_MODULE_KEY
+    ) {
       return sortIdsByCatalogOrder(result, SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS)
     }
     if (moduleKey === SERVICE_DASHBOARD_MODULE_KEY) {
@@ -438,7 +446,6 @@ export function ModuleMetricsPage({
     saveMetricsMutation.isPending ||
     resetMetricsMutation.isPending
 
-  // Only render sections that were requested AND have catalog data
   const showDashboard = includeDashboard && resolvedMetricCatalog.length > 0
   const showTableColumns = includeTableColumns && resolvedColumnCatalog.length > 0
 
@@ -457,7 +464,8 @@ export function ModuleMetricsPage({
               onReset: () => {
                 resetMetricsMutation.mutate(undefined, {
                   onSuccess: () => toast.success('Dashboard metrics reset to default'),
-                  onError: () => toast.error('Failed to reset dashboard metrics'),
+                  onError: (error) =>
+                    toast.error(getApiErrorMessage(error, 'Failed to reset dashboard metrics')),
                 })
               },
             }
@@ -471,7 +479,8 @@ export function ModuleMetricsPage({
               onReset: () => {
                 resetColumnsMutation.mutate(undefined, {
                   onSuccess: () => toast.success('Column preferences reset to default'),
-                  onError: () => toast.error('Failed to reset column preferences'),
+                  onError: (error) =>
+                    toast.error(getApiErrorMessage(error, 'Failed to reset column preferences')),
                 })
               },
             }
@@ -504,8 +513,8 @@ export function ModuleMetricsPage({
           await Promise.all(tasks)
           toast.success('Metrics configuration saved')
           goBack()
-        } catch {
-          toast.error('Failed to save metrics configuration')
+        } catch (error) {
+          toast.error(getApiErrorMessage(error, 'Failed to save metrics configuration'))
         }
       }}
     />

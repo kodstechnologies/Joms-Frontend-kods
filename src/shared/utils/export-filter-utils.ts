@@ -13,6 +13,31 @@ export type ExportHandlerOptions = {
   catalogOrder?: string[]
 }
 
+function kebabToCamel(id: string): string {
+  return id.replace(/-([a-z0-9])/gi, (_, char: string) => char.toUpperCase())
+}
+
+export function resolveExportColumnMapKey<T>(
+  columnMap: ExportColumnMap<T>,
+  id: string,
+  seen: Set<string> = new Set(),
+): string | undefined {
+  if (!id || seen.has(id)) return undefined
+  seen.add(id)
+
+  if (Object.prototype.hasOwnProperty.call(columnMap, id)) return id
+
+  const camel = kebabToCamel(id)
+  if (camel !== id && Object.prototype.hasOwnProperty.call(columnMap, camel)) return camel
+
+  const hyphen = id.indexOf('-')
+  if (hyphen > 0) {
+    return resolveExportColumnMapKey(columnMap, id.slice(hyphen + 1), seen)
+  }
+
+  return undefined
+}
+
 export function pickExportColumns<T>(
   columnMap: ExportColumnMap<T>,
   options?: ExportHandlerOptions,
@@ -22,14 +47,23 @@ export function pickExportColumns<T>(
     return Object.values(columnMap)
   }
 
-  const ordered = options?.catalogOrder?.length
+  const sourceIds = options?.catalogOrder?.length
     ? sortIdsByCatalogOrder(
-        columnIds.filter((id) => columnMap[id]),
+        columnIds.filter((id) => Boolean(id)),
         options.catalogOrder,
       )
-    : columnIds.filter((id) => columnMap[id])
+    : columnIds
 
-  return ordered.map((id) => columnMap[id])
+  const orderedKeys: string[] = []
+  const seenKeys = new Set<string>()
+  for (const id of sourceIds) {
+    const key = resolveExportColumnMapKey(columnMap, id)
+    if (!key || seenKeys.has(key) || !columnMap[key]) continue
+    seenKeys.add(key)
+    orderedKeys.push(key)
+  }
+
+  return orderedKeys.map((id) => columnMap[id])
 }
 
 export function resolveVisibleExportColumnIds({
@@ -60,11 +94,8 @@ export function resolveVisibleExportColumnIds({
 
   const fromPrefs = normalize(visibleColumnIds ?? [])
   const fallback = normalize(defaultColumnIds)
-  const minColumns = Math.min(3, fallback.length)
-  const useFallback =
-    fromPrefs.length === 0 || (fromPrefs.length < minColumns && fallback.length > fromPrefs.length)
 
-  return sortIdsByCatalogOrder(useFallback ? fallback : fromPrefs, [...catalogColumnIds])
+  return sortIdsByCatalogOrder(fromPrefs.length ? fromPrefs : fallback, [...catalogColumnIds])
 }
 
 export function buildExportColumnMapFromCatalog<T>(
@@ -154,6 +185,10 @@ async function exportMappedRows<T>(
   }
 
   const exportCols = pickExportColumns(columnMap, options)
+  if (exportCols.length === 0) {
+    throw new Error('NO_VISIBLE_COLUMNS')
+  }
+
   await exportDataToFile(
     exportCols.map((col) => col.header),
     items.map((item) => exportCols.map((col) => col.accessor(item))),
@@ -350,6 +385,7 @@ export function buildServiceListQueryParams(
     const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
 
     const resolveParamBase = () => {
+      if (section === 'services' && fieldId === 'category') return 'category'
       if (section === 'experts' && fieldId === 'category') return 'expertCategory'
       if (section === 'customers' && fieldId === 'lifetimeSpend') return 'customerLifetimeSpend'
       if (section === 'customers' && fieldId === 'cancellationRate')
@@ -819,6 +855,9 @@ type CommunicationListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  [key: string]: unknown
 }
 
 const COMMUNICATION_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
@@ -830,9 +869,10 @@ export function buildCommunicationListQueryParams(
   filterValues: FilterValues,
   options: CommunicationListQueryOptions = {},
 ): Record<string, unknown> {
+  const { page, limit, search, sortBy, sortOrder, ...rest } = options
   const params: Record<string, unknown> = {
-    page: options.page ?? 1,
-    limit: options.limit ?? 10,
+    page: page ?? 1,
+    limit: limit ?? 10,
   }
 
   const assignParam = (key: string, value: string) => {
@@ -875,9 +915,18 @@ export function buildCommunicationListQueryParams(
     }
   })
 
-  if (options.search?.trim()) {
-    params.search = options.search.trim()
+  if (search?.trim()) {
+    params.search = search.trim()
   }
+
+  if (sortBy) params.sortBy = sortBy
+  if (sortOrder) params.sortOrder = sortOrder
+
+  Object.entries(rest).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+    if (params[key] !== undefined) return
+    params[key] = value
+  })
 
   return params
 }
@@ -1381,13 +1430,58 @@ export function buildExpertMembershipsListQueryParams(
   filterValues: FilterValues,
   options: FinanceListQueryOptions = {},
 ): Record<string, unknown> {
-  const params = buildRevenueListQueryParams(filterValues, options)
+  const {
+    searchById,
+    searchByName,
+    searchByStatus,
+    searchByDate,
+    status: optionStatus,
+    ...restOptions
+  } = options as FinanceListQueryOptions & {
+    searchById?: string
+    searchByName?: string
+    searchByStatus?: string
+    searchByDate?: string
+    status?: string
+  }
+
+  const params = buildRevenueListQueryParams(filterValues, restOptions)
+
   if (params.purchasedPriceMin != null && params.amountMin == null) {
     params.amountMin = params.purchasedPriceMin
   }
   if (params.purchasedPriceMax != null && params.amountMax == null) {
     params.amountMax = params.purchasedPriceMax
   }
+
+  if (typeof searchById === 'string' && searchById.trim() && params.subscriptionId == null) {
+    params.subscriptionId = searchById.trim()
+  }
+  if (typeof searchByName === 'string' && searchByName.trim() && params.partnerName == null) {
+    params.partnerName = searchByName.trim()
+  }
+  if (typeof searchByDate === 'string' && searchByDate.trim()) {
+    if (params.startedAtMin == null) params.startedAtMin = searchByDate.trim()
+    if (params.startedAtMax == null) params.startedAtMax = searchByDate.trim()
+  }
+
+  const statusParts = [
+    typeof params.status === 'string' ? params.status : '',
+    typeof optionStatus === 'string' ? optionStatus : '',
+    typeof searchByStatus === 'string' ? searchByStatus : '',
+  ]
+    .flatMap((value) =>
+      String(value || '')
+        .split(',')
+        .map((part) => part.trim().toLowerCase())
+        .filter(Boolean),
+    )
+    .map((part) => (part === 'canceled' ? 'cancelled' : part))
+
+  if (statusParts.length) {
+    params.status = [...new Set(statusParts)].join(',')
+  }
+
   return params
 }
 

@@ -1,8 +1,12 @@
 import type { SVGProps } from 'react'
-import { ArrowLeft, TrendingUp } from 'lucide-react'
+import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
-import { useCommunication } from '../hooks/use-communications'
+import { canRetryFailedMessages } from '../api/communication-api'
+import { useCommunication, useRetryFailedCommunication } from '../hooks/use-communications'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function SolidUserIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
@@ -37,6 +41,7 @@ export function CommunicationDetails() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useCommunication(id)
+  const retryMutation = useRetryFailedCommunication()
 
   if (isLoading) {
     return <div className="text-muted py-16 text-center text-sm">Loading communication...</div>
@@ -104,7 +109,7 @@ export function CommunicationDetails() {
             onClick={() => navigate('/communication/management')}
             className="hover:text-brand-text transition-colors"
           >
-            Communication management
+            Communication
           </button>
           <span> / </span>
           <span className="text-brand-text font-semibold">View Details</span>
@@ -208,8 +213,37 @@ export function CommunicationDetails() {
           </div>
         ) : null}
 
-        <div className="border-t border-white/[0.06] pt-5">
-          <p className="text-body-sm-semibold text-brand-text mb-4">Delivery Analytics</p>
+        <div id="delivery-report" className="scroll-mt-24 border-t border-white/[0.06] pt-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-body-sm-semibold text-brand-text">Delivery Analytics</p>
+            {canRetryFailedMessages(data) ? (
+              <button
+                type="button"
+                className="ui-cta ui-cta-primary inline-flex items-center gap-2"
+                disabled={retryMutation.isPending}
+                onClick={() => {
+                  retryMutation.mutate(data.id, {
+                    onSuccess: (updated) => {
+                      if (updated.status === 'failed' || (updated.analytics?.failed ?? 0) > 0) {
+                        toast.error(
+                          updated.deliveryMeta?.note ||
+                            updated.failureReason ||
+                            'Retry did not deliver every message',
+                        )
+                        return
+                      }
+                      toast.success(updated.deliveryMeta?.note || 'Failed messages retried')
+                    },
+                    onError: (error) =>
+                      toast.error(getApiErrorMessage(error, 'Failed to retry messages')),
+                  })
+                }}
+              >
+                <RotateCcw className="size-4" />
+                {retryMutation.isPending ? 'Retrying...' : 'Retry Failed Messages'}
+              </button>
+            ) : null}
+          </div>
           {data.deliveryMeta?.note ? (
             <p className="text-body-sm text-muted mb-4">{data.deliveryMeta.note}</p>
           ) : null}
@@ -225,10 +259,7 @@ export function CommunicationDetails() {
                   <p className="mt-1 text-2xl font-bold text-white">{card.value}</p>
                 </div>
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded bg-[#00A63E]/20 px-2 py-0.5 text-xs font-semibold text-[#00D062]">
-                    <TrendingUp className="size-3" />
-                    6.7%
-                  </span>
+                  <TrendBadge direction="up">6.7%</TrendBadge>
                   <span className="text-xs text-neutral-400">vs last month</span>
                 </div>
               </div>

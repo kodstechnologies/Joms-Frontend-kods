@@ -1,14 +1,21 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react'
+import { AlertCircle, ArrowLeft, CheckCircle2, Eye, FileText, MessageSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { SERVICE_PENDING_APPROVALS_MODULE_KEY } from '../../api/ui-preferences-api'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
+import { DataTable } from '@/shared/components/table/data-table'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import {
   DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
+  SERVICE_PENDING_APPROVALS_MODULE_KEY,
   SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG,
 } from '../../config/service-management-table-columns.config'
 import { useServiceStatusList } from '../../hooks/use-service-status-list'
@@ -18,7 +25,7 @@ import {
   buildServiceDataColumnsById,
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
-import { DataTable } from '@/shared/components/table/data-table'
+import { SERVICE_PENDING_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_PENDING_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
@@ -27,49 +34,20 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(price)
-
-const formatExportDateTime = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : ''
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
-  serviceId: { header: 'Listing ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
-  title: { header: 'Listing Name', accessor: (s) => exportDisplayValue(s.title) },
-  categoryName: { header: 'Category', accessor: (s) => exportDisplayValue(s.categoryName) },
-  serviceType: { header: 'Listing Type', accessor: (s) => exportDisplayValue(s.serviceType) },
-  pricing: {
-    header: 'Base Price',
-    accessor: (s) => exportDisplayValue(s.pricing ? formatPrice(s.pricing) : undefined),
-  },
-  expertId: {
-    header: 'Expert ID',
-    accessor: (s) => exportDisplayValue(s.expertid || s.partnerId),
-  },
-  expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
-  submittedAt: { header: 'Submitted At', accessor: (s) => formatExportDateTime(s.submittedAt) },
-  lastUpdatedAt: {
-    header: 'Last Updated At',
-    accessor: (s) => formatExportDateTime(s.lastUpdatedAt),
-  },
-}
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalateConsultationApplication,
+  escalateServiceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 export function PendingApprovalsPage() {
   const navigate = useNavigate()
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
+  const [escalateTarget, setEscalateTarget] = useState<Service | null>(null)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
   const catalogColumnIds = useMemo(
     () => SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
     [],
@@ -77,14 +55,11 @@ export function PendingApprovalsPage() {
 
   const list = useServiceStatusList({
     moduleKey: SERVICE_PENDING_APPROVALS_MODULE_KEY,
-    status: 'in_review',
+    status: 'pending',
     defaultVisibleColumnIds: DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
     exportFileName: 'pending_services_export',
-    exportColumnMap: EXPORT_COLUMN_MAP,
-    // Match prior pending export: full mapped columns, no live search params.
-    restrictExportToVisibleColumns: false,
-    includeSearchInExport: false,
+    exportColumnMap: SERVICE_PENDING_EXPORT_COLUMN_MAP,
   })
 
   const {
@@ -102,6 +77,16 @@ export function PendingApprovalsPage() {
     onExport,
     exportFilterModals,
   } = list
+
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const visibleServiceIds = useMemo(() => services.map((service) => service._id), [services])
   const allVisibleServicesSelected =
@@ -128,6 +113,83 @@ export function PendingApprovalsPage() {
     )
   }, [])
 
+  const closeEscalateModal = useCallback(() => {
+    setEscalateTarget(null)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const openCommunicateWithExpert = useCallback(
+    (service: Service) => {
+      const partnerId = String(service.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openViewSubmittedDocuments = useCallback(
+    (service: Service) => {
+      navigate(getServiceManagementViewPath(service, { section: 'documents' }))
+    },
+    [navigate],
+  )
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (!escalateTarget) return
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const isConsultation = String(escalateTarget.serviceType || '')
+      .toLowerCase()
+      .includes('consultation')
+    const payload = {
+      assigneeSubAdminId: selectedEscalationOption,
+      assigneeName: selectedAssignee?.fullname || '',
+      adminNote: escalateAdminNotes.trim(),
+      entityTitle: escalateTarget.title,
+      applicationUrl: getServiceManagementViewPath(escalateTarget),
+    }
+
+    setIsEscalating(true)
+    try {
+      if (isConsultation) {
+        await escalateConsultationApplication(escalateTarget._id, payload)
+      } else {
+        await escalateServiceApplication(escalateTarget._id, payload)
+      }
+      toast.success('Listing escalated')
+      closeEscalateModal()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to escalate listing.'))
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    escalateTarget,
+    selectedEscalationOption,
+  ])
+
   const columns = useMemo<ColumnDef<Service>[]>(() => {
     const dataColumnsById = buildServiceDataColumnsById()
 
@@ -145,7 +207,7 @@ export function PendingApprovalsPage() {
                   input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
               }}
               onChange={toggleVisibleServices}
-              className="rounded border-slate-700 bg-transparent"
+              className="ui-table-checkbox"
             />
           ),
           cell: ({ row }) => (
@@ -155,7 +217,7 @@ export function PendingApprovalsPage() {
               checked={selectedServiceIds.includes(row.original._id)}
               onChange={() => toggleServiceSelection(row.original._id)}
               onClick={(event) => event.stopPropagation()}
-              className="rounded border-slate-700 bg-transparent"
+              className="ui-table-checkbox"
             />
           ),
           meta: {
@@ -185,7 +247,8 @@ export function PendingApprovalsPage() {
                 label={`Open actions for ${service.title}`}
                 isOpen={isOpen}
                 onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-                menuWidth={190}
+                menuWidth={240}
+                maxVisibleItems={8}
               >
                 <TableActionsItem
                   icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -205,6 +268,42 @@ export function PendingApprovalsPage() {
                 >
                   Approve Application
                 </TableActionsItem>
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(getServiceManagementViewPath(service))
+                  }}
+                >
+                  Preview Listing
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    openCommunicateWithExpert(service)
+                  }}
+                >
+                  Communicate with Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<FileText className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    openViewSubmittedDocuments(service)
+                  }}
+                >
+                  View Submitted Documents
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<AlertCircle className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    setEscalateTarget(service)
+                  }}
+                >
+                  Escalate Listing
+                </TableActionsItem>
               </TableActionsDropdown>
             )
           },
@@ -216,7 +315,10 @@ export function PendingApprovalsPage() {
     activeDropdownId,
     allVisibleServicesSelected,
     navigate,
+    openCommunicateWithExpert,
+    openViewSubmittedDocuments,
     selectedServiceIds,
+    setActiveDropdownId,
     someVisibleServicesSelected,
     toggleServiceSelection,
     toggleVisibleServices,
@@ -236,16 +338,13 @@ export function PendingApprovalsPage() {
             <span>Pending Approvals</span>
           </button>
 
-          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-              className="transition-colors hover:text-white"
-            >
-              Service Management
-            </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Pending Approvals</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Service Management', to: '/services/management' },
+                { label: 'Pending Approvals', isActive: true },
+              ]}
+            />
           </div>
         </header>
         <Button
@@ -256,7 +355,7 @@ export function PendingApprovalsPage() {
             )
           }
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
@@ -273,7 +372,7 @@ export function PendingApprovalsPage() {
         onColumnSearchChange={enhancedSearch.setColumnSearch}
         onColumnSearchRemove={enhancedSearch.removeColumnSearch}
         onClearAllSearches={enhancedSearch.clearAll}
-        searchPlaceholder="Search by service name or ID"
+        searchPlaceholder="Search by title or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
         {...serverSort.dataTableSortProps}
@@ -288,6 +387,24 @@ export function PendingApprovalsPage() {
         emptyMessage="No pending approvals found."
       />
       {exportFilterModals}
+
+      <DecisionActionModal
+        open={Boolean(escalateTarget)}
+        variant="escalate"
+        title="Escalate Listing"
+        description="Are you sure you want to escalate this listing? It will be reviewed by the selected sub-admin."
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }

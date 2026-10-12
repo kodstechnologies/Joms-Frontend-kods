@@ -10,6 +10,7 @@ import {
   type MaintenanceStatus,
 } from '@/app/providers/use-maintenance'
 
+// Reads the public maintenance switch without the signed-in token.
 async function fetchMaintenanceStatus(): Promise<MaintenanceStatus> {
   const response = await axios.get<{
     success: boolean
@@ -23,6 +24,7 @@ async function fetchMaintenanceStatus(): Promise<MaintenanceStatus> {
   }
 }
 
+// Maintenance blocks everyone except a super admin. The status is checked again every 30 seconds.
 export function MaintenanceProvider({ children }: PropsWithChildren) {
   const user = useAuthStore((state) => state.user)
   const query = useQuery({
@@ -34,7 +36,6 @@ export function MaintenanceProvider({ children }: PropsWithChildren) {
   })
 
   const status = query.data || DEFAULT_MAINTENANCE_STATUS
-  // Super admins who are already logged in can keep access to turn maintenance off.
   const isBlocked = Boolean(status.active) && !user?.isSuperAdmin
   const isLoading = query.isLoading
   const refetch = query.refetch

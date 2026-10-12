@@ -2,9 +2,10 @@ import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { SecurityQuestionsModal } from './security-questions-modal'
-import { MFA_METHOD_KEYS, countEnabledMfaMethods } from '../utils/security-settings'
+import { selectSingleMfaMethod, selectedMfaMethod } from '../utils/security-settings'
 import {
   blockReuseOptions,
   maxResetAttemptsOptions,
@@ -113,20 +114,11 @@ export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAcce
   const patchMfa = (patchValue: Partial<SecuritySettings['mfa']>) =>
     patch({ mfa: { ...value.mfa, ...patchValue } })
 
-  const patchMfaMethod = (key: (typeof MFA_METHOD_KEYS)[number], checked: boolean) => {
-    if (!checked && countEnabledMfaMethods(value.mfa) <= 1 && value.mfa[key]) {
-      toast.error('At least one MFA method must stay enabled')
-      return
-    }
-    patchMfa({ [key]: checked })
-  }
-
   const patchReset = (patchValue: Partial<SecuritySettings['passwordReset']>) =>
     patch({ passwordReset: { ...value.passwordReset, ...patchValue } })
 
   return (
     <div className="security-access-panel">
-      {/* Session timeout */}
       <section className="security-section">
         <header className="security-section-header">
           <h2 className="security-section-title">Session Timeout</h2>
@@ -150,7 +142,6 @@ export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAcce
         </div>
       </section>
 
-      {/* Password & MFA Settings — single card */}
       <section className="security-section">
         <header className="security-section-header">
           <h2 className="security-section-title">Password & MFA Settings</h2>
@@ -216,29 +207,46 @@ export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAcce
 
           <div className="security-nested-block">
             <div className="security-toggle-header">
-              <h3 className="security-subheading">Multi-Factor Authentication (MFA)</h3>
+              <div>
+                <h3 className="security-subheading">Multi-Factor Authentication (MFA)</h3>
+                <p className="security-section-desc">Require MFA for all admin users</p>
+              </div>
               <SecurityToggle
                 checked={value.mfa.requireForAllSubAdmins}
-                onChange={(checked) => patchMfa({ requireForAllSubAdmins: checked })}
-                ariaLabel="Require MFA for all sub-admins"
+                onChange={(checked) =>
+                  patchMfa({
+                    requireForAllSubAdmins: checked,
+                    ...(checked ? selectSingleMfaMethod(selectedMfaMethod(value.mfa)) : {}),
+                  })
+                }
+                ariaLabel="Require MFA for all admin users"
               />
             </div>
-            <SecurityCheckboxRow
-              label="MFA Methods"
-              options={[
-                { key: 'authenticatorApp', label: 'Authenticator App' },
-                { key: 'smsOtp', label: 'SMS OTP' },
-                { key: 'emailOtp', label: 'Email OTP' },
-              ]}
-              values={{
-                authenticatorApp: value.mfa.authenticatorApp,
-                smsOtp: value.mfa.smsOtp,
-                emailOtp: value.mfa.emailOtp,
-              }}
-              onChange={(key, checked) =>
-                patchMfaMethod(key as (typeof MFA_METHOD_KEYS)[number], checked)
-              }
-            />
+            {value.mfa.requireForAllSubAdmins ? (
+              <div className="security-checkbox-block">
+                <p className="security-subheading">MFA Methods</p>
+                <div className="security-checkbox-row">
+                  {(
+                    [
+                      { key: 'authenticatorApp', label: 'Authenticator App' },
+                      { key: 'smsOtp', label: 'SMS OTP' },
+                      { key: 'emailOtp', label: 'Email OTP' },
+                    ] as const
+                  ).map((option) => (
+                    <label key={option.key} className="security-checkbox-item">
+                      <input
+                        type="radio"
+                        name="mfa-method"
+                        checked={selectedMfaMethod(value.mfa) === option.key}
+                        onChange={() => patchMfa(selectSingleMfaMethod(option.key))}
+                        className="security-radio-input"
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="security-nested-divider" />
@@ -315,7 +323,6 @@ export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAcce
         </div>
       </section>
 
-      {/* Quick links */}
       <div className="security-quick-links">
         <QuickLinkCard
           title="Locked Accounts"
@@ -347,8 +354,8 @@ export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAcce
             await onPersist(nextConfig)
             setSecurityQuestionsOpen(false)
             toast.success('Security questions saved')
-          } catch {
-            toast.error('Failed to save security questions')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to save security questions'))
           }
         }}
       />

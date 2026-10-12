@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -33,10 +33,6 @@ import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SUPPORT_TICKET_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
-import {
-  TableActionsDropdown,
-  TableActionsItem,
-} from '@/shared/components/table/table-actions-dropdown'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -47,7 +43,17 @@ import {
   createSupportTicketsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
-const PAST_TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(PAST_TICKETS_TABLE_COLUMNS_CATALOG)
+const PAST_TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(PAST_TICKETS_TABLE_COLUMNS_CATALOG, {
+  'ticket-id': 'ticketId',
+  'assigned-to': 'assignedToName',
+  'assigned-by': 'assignedByName',
+  'assigned-on': 'assignedAt',
+  'resolved-at': 'resolvedAt',
+  'resolved-by': 'resolvedByName',
+  'last-updated-at': 'updatedAt',
+  'sla-timer': null,
+  'resolution-time': null,
+})
 
 const EXPORT_COLUMN_MAP: Record<
   string,
@@ -147,26 +153,6 @@ export function PastTicketsPage() {
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
 
-  const renderActions = useCallback(
-    (record: SupportTicket) => (
-      <TableActionsDropdown
-        label="Open ticket actions"
-        isOpen={false}
-        onOpenChange={() => {}}
-        menuWidth={180}
-      >
-        <TableActionsItem
-          icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
-          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-          onClick={() => navigate(`/support/tickets/${record.id}`)}
-        >
-          View Details
-        </TableActionsItem>
-      </TableActionsDropdown>
-    ),
-    [navigate],
-  )
-
   const columns = useMemo<ColumnDef<SupportTicket>[]>(() => {
     const nowrap = {
       headerClassName: 'whitespace-nowrap',
@@ -180,14 +166,12 @@ export function PastTicketsPage() {
 
     const selectColumn: ColumnDef<SupportTicket> = {
       id: 'select',
-      header: () => (
-        <input type="checkbox" aria-label="Select all" className="rounded border-white/20" />
-      ),
+      header: () => <input type="checkbox" aria-label="Select all" className="ui-table-checkbox" />,
       cell: ({ row }) => (
         <input
           type="checkbox"
           aria-label={`Select ${row.original.id}`}
-          className="rounded border-white/20"
+          className="ui-table-checkbox"
         />
       ),
       meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
@@ -316,18 +300,8 @@ export function PastTicketsPage() {
       .map((id) => dataColumnsById[id])
       .filter(Boolean)
 
-    const actionsColumn: ColumnDef<SupportTicket> = {
-      id: 'actions',
-      header: 'Actions',
-      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-      cell: ({ row }) => renderActions(row.original),
-    }
-
-    return withServerSortMeta(
-      [selectColumn, ...preferenceColumns, actionsColumn],
-      PAST_TICKET_SORT_FIELD_MAP,
-    )
-  }, [renderActions, tableColumnPreferencesQuery.data])
+    return withServerSortMeta([selectColumn, ...preferenceColumns], PAST_TICKET_SORT_FIELD_MAP)
+  }, [tableColumnPreferencesQuery.data])
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -384,7 +358,7 @@ export function PastTicketsPage() {
           </button>
           <div>
             <h1 className="text-h2 text-brand-text tracking-tight">Past Tickets</h1>
-            <p className="text-body-md text-muted mt-1 leading-5">
+            <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
               {tickets[0]?.reporter ?? userId ?? 'Reporter'}
             </p>
           </div>
@@ -394,7 +368,7 @@ export function PastTicketsPage() {
           onClick={() => navigate('/metrics/past-tickets?section=table')}
           className="ui-manage-metrics ui-cta ui-cta-primary shrink-0"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </button>
       </div>

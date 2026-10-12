@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import { AlertCircle, ArrowLeft, FileText, Flag, Lightbulb, Upload, User } from 'lucide-react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import {
@@ -20,9 +21,16 @@ import {
   useFinanceRefund,
   useFinanceTaxDetail,
 } from '@/modules/payments/hooks/use-finance'
-import type { FinanceAdminNote } from '@/modules/payments/types/finance-api'
+import {
+  financeEscalateAssigneeName,
+  type FinanceAdminNote,
+} from '@/modules/payments/types/finance-api'
 import { escalateKind } from '@/modules/payments/utils/finance-escalate'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
+import {
+  useAdminEscalation,
+  useEscalationAssignees,
+} from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -46,10 +54,13 @@ function Card({ className, children }: { className?: string; children: ReactNode
 }
 
 function InfoItem({ label, value }: { label: string; value: ReactNode }) {
+  const title = typeof value === 'string' || typeof value === 'number' ? String(value) : undefined
   return (
-    <div className="min-w-[130px] shrink-0 space-y-1.5 sm:min-w-0 sm:shrink">
+    <div className="min-w-0 space-y-1.5">
       <p className={labelClass}>{label}</p>
-      <div className={valueClass}>{value}</div>
+      <div className={cn(valueClass, 'min-w-0 break-all')} title={title}>
+        {value}
+      </div>
     </div>
   )
 }
@@ -165,6 +176,9 @@ export function FinanceEscalationDetailPage() {
   const refundQuery = useFinanceRefund(kind === 'refund' ? id : '')
   const notesQuery = useFinanceNotes(id)
   const addNote = useAddFinanceNote()
+  const escalationEntityType = kind === 'refund' ? 'refund' : 'finance'
+  const adminEscalationQuery = useAdminEscalation(escalationEntityType, id || undefined)
+  const assigneesQuery = useEscalationAssignees('finance.*')
 
   const [selectedEvidenceId, setSelectedEvidenceId] = useState('')
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
@@ -177,6 +191,30 @@ export function FinanceEscalationDetailPage() {
   const notes = useMemo(() => notesQuery.data?.data ?? [], [notesQuery.data?.data])
   const escalateNotes = notes.filter((note) => note.action === 'escalate')
   const latestEscalate = escalateNotes[0]
+  const adminEscalation = adminEscalationQuery.data?.data
+  const assignees = useMemo(() => {
+    const list = assigneesQuery.data?.data
+    return Array.isArray(list) ? list : []
+  }, [assigneesQuery.data?.data])
+
+  const assigneeFromNote = financeEscalateAssigneeName(latestEscalate)
+  const assigneeFromEscalation = String(adminEscalation?.escalatedToName || '').trim()
+  const assigneeId =
+    latestEscalate?.escalateToAdminId ||
+    adminEscalation?.escalatedToSubAdminId ||
+    adminEscalation?.escalatedToAuthAdminId ||
+    ''
+  const assigneeFromDirectory = useMemo(() => {
+    if (!assigneeId) return ''
+    const match = assignees.find((item) => item.id === assigneeId)
+    return String(match?.fullname || '').trim()
+  }, [assigneeId, assignees])
+  const assignedTo =
+    assigneeFromQuery ||
+    assigneeFromNote ||
+    assigneeFromEscalation ||
+    assigneeFromDirectory ||
+    'Unassigned'
 
   const isLoading =
     (kind === 'refund' && refundQuery.isLoading) ||
@@ -257,7 +295,6 @@ export function FinanceEscalationDetailPage() {
     (typeof snapshot?.email === 'string' && snapshot.email) ||
     (typeof snapshot?.userEmail === 'string' && snapshot.userEmail) ||
     '—'
-  const assignedTo = assigneeFromQuery || latestEscalate?.escalateToAdminId || 'Assigned admin'
   const escalationNote = latestEscalate?.adminNote || '—'
   const priority = titleCase(latestEscalate?.priority || 'normal')
   const openedDate = formatDate(
@@ -285,8 +322,8 @@ export function FinanceEscalationDetailPage() {
       .reverse()
       .map((note, index) => ({
         step: String(index + 2).padStart(2, '0'),
-        title: 'Escalated to Admin',
-        actor: assignedTo || 'Admin',
+        title: assignedTo !== 'Unassigned' ? `Escalated to ${assignedTo}` : 'Escalated to Admin',
+        actor: assignedTo !== 'Unassigned' ? assignedTo : 'Admin',
         timestamp: formatDate(note.createdAt),
         description: note.adminNote || 'Escalated for senior review',
       })),
@@ -317,7 +354,8 @@ export function FinanceEscalationDetailPage() {
             ])
             toast.success(`${file.name} added to escalation evidence`)
           },
-          onError: () => toast.error(`Failed to attach ${file.name}`),
+          onError: (error) =>
+            toast.error(getApiErrorMessage(error, `Failed to attach ${file.name}`)),
         },
       )
     })
@@ -356,26 +394,24 @@ export function FinanceEscalationDetailPage() {
             </div>
             <span className="text-body-sm-medium bg-brand-bg text-brand-text inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-3 py-1.5">
               <Flag className="size-3.5" aria-hidden="true" />
-              Escalated to Admin
+              {assignedTo !== 'Unassigned' ? `Escalated to ${assignedTo}` : 'Escalated to Admin'}
             </span>
           </div>
 
           <div className="my-5 border-b border-white/[0.06]" />
 
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <div className="flex min-w-max gap-6 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
-              <InfoItem label="Record ID" value={recordId} />
-              <InfoItem label="Transaction ID" value={payment?._id || escrow?.paymentId || id} />
-              <InfoItem label="Opened Date" value={openedDate} />
-              <InfoItem
-                label="Status"
-                value={
-                  <FinanceStatusBadge status={status} toneClass={financeEscalationStatusClass} />
-                }
-              />
-              <InfoItem label="Module type" value={moduleType} />
-              <InfoItem label="Payment mode" value={paymentMode} />
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            <InfoItem label="Record ID" value={recordId} />
+            <InfoItem label="Transaction ID" value={payment?._id || escrow?.paymentId || id} />
+            <InfoItem label="Opened Date" value={openedDate} />
+            <InfoItem
+              label="Status"
+              value={
+                <FinanceStatusBadge status={status} toneClass={financeEscalationStatusClass} />
+              }
+            />
+            <InfoItem label="Module type" value={moduleType} />
+            <InfoItem label="Payment mode" value={paymentMode} />
           </div>
         </Card>
 
@@ -385,7 +421,7 @@ export function FinanceEscalationDetailPage() {
               <div className="mb-5">
                 <h2 className={sectionTitleClass}>Support Team Assessment</h2>
                 <p className={sectionSubtitleClass}>
-                  Escalated{assignedTo ? ` to ${assignedTo}` : ''} on {openedDate}
+                  Escalated{assignedTo !== 'Unassigned' ? ` to ${assignedTo}` : ''} on {openedDate}
                 </p>
               </div>
 
@@ -561,7 +597,7 @@ export function FinanceEscalationDetailPage() {
                 toast.success('Note saved')
                 setIsNoteModalOpen(false)
               },
-              onError: () => toast.error('Failed to save note'),
+              onError: (error) => toast.error(getApiErrorMessage(error, 'Failed to save note')),
             },
           )
         }}

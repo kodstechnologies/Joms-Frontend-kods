@@ -345,7 +345,6 @@ function ScheduleMaintenanceModalContent({
 
         <div className="sm-modal-body">
           <div className="sm-modal-grid">
-            {/* Left: calendar + date fields */}
             <div className="sm-left">
               <div className="sm-calendar">
                 <div className="sm-calendar-nav">
@@ -412,7 +411,6 @@ function ScheduleMaintenanceModalContent({
               </div>
             </div>
 
-            {/* Right: time triggers + hours/mins picker */}
             <div className="sm-right">
               <div className="sm-time-triggers">
                 <div className="sm-field">

@@ -5,25 +5,34 @@ import type {
 } from '../type/expert-application-view'
 import type { ExpertServiceCategoryGroups } from '../api/expert-onboarding-api'
 
+// Identity counts only when both the PAN number and the PAN file are on the profile.
 export const hasAdminIdentityKyc = (expert?: ExpertApplicationExpert) => {
   const identity = expert?.identityVerification
   return Boolean(identity?.panNumber && identity?.panCardFile)
 }
 
+// Approved when final review says so, or when the profile is verified and the PAN is on file.
 export const isAdminKycApproved = (expert?: ExpertApplicationExpert) =>
   expert?.finalReview?.approvalStatus === 'approved' ||
   (expert?.finalReview?.isVerified === true && hasAdminIdentityKyc(expert))
 
+// Pending, approved, and rejected all count as submitted. A blank status does not.
+export const isSubmittedKycStatus = (status?: string | null) => {
+  const normalized = String(status || '').toUpperCase()
+  return normalized === 'PENDING' || normalized === 'APPROVED' || normalized === 'REJECTED'
+}
+
+// A partner who is exempt, or whose KYC is not mandatory, is treated as already submitted.
 export const isKycSubmittedForApplication = (
   expert?: ExpertApplicationExpert,
   kyc?: ExpertApplicationKyc,
 ) =>
-  Boolean(kyc?._id) ||
-  kyc?.status === 'APPROVED' ||
   (kyc as { kycMandatory?: boolean })?.kycMandatory === false ||
   (kyc as { isExempt?: boolean })?.isExempt === true ||
+  isSubmittedKycStatus(kyc?.status) ||
   isAdminKycApproved(expert)
 
+// When the KYC record has no status, an approved identity review is shown as approved.
 export const getDisplayKycStatus = (
   expert?: ExpertApplicationExpert,
   kyc?: ExpertApplicationKyc,
@@ -39,13 +48,15 @@ export const formatServiceTypeDisplay = (serviceType?: string) => {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
+// The role shown is the job they marked as current. A past job is not used.
 export const getExpertCurrentRole = (expert?: ExpertApplicationExpert) => {
   const currentJob = expert?.workExperience?.find((entry) => entry.currentlyWorking)
   const jobTitle = currentJob?.jobTitle?.trim()
   return jobTitle || undefined
 }
 
-const MONGO_ID_RE = /^[a-fA-F0-9]{24}$/
+export const LOOKS_LIKE_CATEGORY_ID =
+  /^(?:[a-fA-F0-9]{24}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|c[a-z0-9]{20,})$/i
 
 const getSubCategoryId = (entry: unknown) => {
   if (typeof entry === 'string') return entry
@@ -58,6 +69,7 @@ const getSubCategoryId = (entry: unknown) => {
   return String(entry ?? '')
 }
 
+// A stored display name is used as it is. An id is replaced with the category name, and a bare id is left blank.
 export const resolveExpertServiceCategoryDisplay = (
   expert?: ExpertApplicationExpert,
   categoryGroups?: ExpertServiceCategoryGroups,
@@ -80,14 +92,14 @@ export const resolveExpertServiceCategoryDisplay = (
   const resolveOne = (entry: unknown) => {
     if (entry && typeof entry === 'object' && 'name' in entry) {
       const namedEntry = entry as { name?: string }
-      if (namedEntry.name?.trim() && !MONGO_ID_RE.test(namedEntry.name.trim())) {
+      if (namedEntry.name?.trim() && !LOOKS_LIKE_CATEGORY_ID.test(namedEntry.name.trim())) {
         return namedEntry.name.trim()
       }
     }
 
     const id = getSubCategoryId(entry)
     if (!id) return ''
-    return idToName.get(id) || (MONGO_ID_RE.test(id) ? '' : id)
+    return idToName.get(id) || (LOOKS_LIKE_CATEGORY_ID.test(id) ? '' : id)
   }
 
   const fromProfile = expert?.basicProfile?.serviceCategory ?? []

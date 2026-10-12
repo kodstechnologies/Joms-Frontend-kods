@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -11,21 +11,33 @@ import {
   Trash2,
   Upload,
   Ban,
-  Hourglass,
   LayoutDashboard,
+  CalendarDays,
+  Wallet,
+  Eye,
   Bell,
   Mail,
   FileText,
+  MessageSquare,
+  User,
   XCircle,
   EyeOff,
-  TrendingUp,
+  Hourglass,
+  Flag,
   type LucideIcon,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 import { VENUE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
+import { ensureTrendChangeSign, TrendBadge } from '@/shared/components/dashboard/trend-badge'
 import {
   useVenues,
   useSuspendVenue,
@@ -59,7 +71,6 @@ import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/sta
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
-import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -70,13 +81,14 @@ import {
   getVenueDisplaySpaceId,
   getVenuePartnerId,
 } from '../../utils/venue-list'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildVenueListQueryParams,
   createVenueFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
-import { getManagementStatusDisplay } from '../../utils/management-status'
+import { getListingStatusDisplay } from '../../utils/management-status'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -87,6 +99,13 @@ import {
   escalatePartnerApplication,
   escalateVenueSpaceApplication,
 } from '@/modules/my-tasks/api/escalation-api'
+import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
+import {
+  getVenueKycApplicationPath,
+  openVenuePartnerProfile,
+} from '../../utils/expert-application-navigation'
+import { VenueReportSubmitModal } from '../../components/venue-report-submit-modal'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 type ManagementMetric = {
   id: string
@@ -104,6 +123,7 @@ import {
   VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
@@ -197,6 +217,7 @@ const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 export const VenueManagementPage = () => {
+  const authUser = useAuthStore((state) => state.user)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
@@ -213,6 +234,7 @@ export const VenueManagementPage = () => {
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [reportVenueTarget, setReportVenueTarget] = useState<Venue | null>(null)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
 
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
@@ -264,6 +286,7 @@ export const VenueManagementPage = () => {
     defaultColumnIds: DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
   })
+  const { fileFormat } = useDefaultExportFormat()
 
   const confirmBulkDelete = useCallback(() => {
     if (selectedVenueIds.length === 0) return
@@ -292,7 +315,7 @@ export const VenueManagementPage = () => {
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to delete venues')
+          toast.error(getApiErrorMessage(error, 'Failed to delete venues'))
         },
       },
     )
@@ -315,6 +338,21 @@ export const VenueManagementPage = () => {
       return
     }
 
+    if (!bulkPauseIndefinitely && (!bulkPauseStartDate || !bulkPauseEndDate)) {
+      toast.error('Please provide a pause timeline or choose indefinitely.')
+      return
+    }
+
+    if (!bulkPauseIndefinitely && isStartBeforeToday(bulkPauseStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!bulkPauseIndefinitely && isEndOnOrBeforeStart(bulkPauseStartDate, bulkPauseEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
+      return
+    }
+
     bulkPauseMutation.mutate(
       {
         venueIds: selectedVenueIds,
@@ -334,7 +372,7 @@ export const VenueManagementPage = () => {
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to pause venues')
+          toast.error(getApiErrorMessage(error, 'Failed to pause venues'))
         },
       },
     )
@@ -358,7 +396,7 @@ export const VenueManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to hide venues')
+        toast.error(getApiErrorMessage(error, 'Failed to hide venues'))
       },
     })
   }, [selectedVenueIds, bulkHideMutation])
@@ -372,14 +410,31 @@ export const VenueManagementPage = () => {
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to disable venues')
+        toast.error(getApiErrorMessage(error, 'Failed to disable venues'))
       },
     })
   }, [selectedVenueIds, bulkDisableMutation])
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const viewFromUrl = searchParams.get('view') || ''
+  const categoryIdFromUrl = searchParams.get('categoryId')?.trim() || ''
+  const categoryFromUrl = searchParams.get('category')?.trim() || ''
+  const subCategoryFromUrl = searchParams.get('subCategory')?.trim() || ''
 
   const { currentPage, setCurrentPage, activeStatus } = useVenueStore()
+
+  useEffect(() => {
+    if (!categoryIdFromUrl && !categoryFromUrl && !subCategoryFromUrl) return
+
+    setAppliedAdvancedFilters({
+      ...(categoryIdFromUrl ? { 'venues.categoryId': categoryIdFromUrl } : {}),
+      ...(categoryFromUrl ? { 'venues.category': categoryFromUrl } : {}),
+      ...(subCategoryFromUrl ? { 'venues.subCategory': subCategoryFromUrl } : {}),
+    })
+    setCurrentPage(1)
+  }, [categoryIdFromUrl, categoryFromUrl, subCategoryFromUrl, setCurrentPage])
+
   const serverSort = useServerTableSort({
     sortFieldMap: VENUE_COLUMN_SORT_FIELDS,
     onPageReset: () => setCurrentPage(1),
@@ -403,8 +458,18 @@ export const VenueManagementPage = () => {
         ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
+        view: viewFromUrl || undefined,
+        categoryId: categoryIdFromUrl || undefined,
       }),
-    [appliedAdvancedFilters, currentPage, enhancedSearch, activeStatus, serverSort.sortParams],
+    [
+      appliedAdvancedFilters,
+      currentPage,
+      enhancedSearch,
+      activeStatus,
+      serverSort.sortParams,
+      viewFromUrl,
+      categoryIdFromUrl,
+    ],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -419,10 +484,19 @@ export const VenueManagementPage = () => {
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
           ...enhancedSearch.buildSearchParams(),
+          view: viewFromUrl || undefined,
+          categoryId: categoryIdFromUrl || undefined,
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
+    [
+      activeStatus,
+      catalogColumnIds,
+      categoryIdFromUrl,
+      enhancedSearch,
+      exportColumnIds,
+      viewFromUrl,
+    ],
   )
 
   const {
@@ -468,34 +542,21 @@ export const VenueManagementPage = () => {
     }
 
     try {
-      const headers = [
-        'Venue ID',
-        'Venue Name',
-        'Space ID',
-        'Partner / Expert',
-        'Partner ID',
-        'Category',
-        'City',
-        'Status',
-        'Created At',
-      ]
-      const rows = selectedVenues.map((venue) => [
-        getVenueDisplayId(venue),
-        venue.venueName || 'N/A',
-        getVenueDisplaySpaceId(venue),
-        venue.expertName || venue.partnerName || 'N/A',
-        getVenuePartnerId(venue) || 'N/A',
-        venue.venueCategory || 'N/A',
-        venue.city || 'N/A',
-        venue.status || 'N/A',
-        venue.createdAt ? new Date(venue.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, 'excel', 'selected_venues_export')
-      toast.success(`Exported ${selectedVenues.length} selected venue(s)`)
-    } catch {
-      toast.error('Failed to export selected venues.')
+      void exportMappedItemsToFile(
+        EXPORT_COLUMN_MAP,
+        selectedVenues,
+        fileFormat,
+        'selected_venues_export',
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      )
+        .then(() => toast.success(`Exported ${selectedVenues.length} selected venue(s)`))
+        .catch((error) => {
+          toast.error(getApiErrorMessage(error, 'Failed to export selected venues.'))
+        })
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected venues.'))
     }
-  }, [selectedVenueCount, selectedVenues])
+  }, [catalogColumnIds, exportColumnIds, fileFormat, selectedVenueCount, selectedVenues])
 
   const handleBulkNotify = useCallback(() => {
     if (selectedPartnerIds.length === 0) {
@@ -522,6 +583,71 @@ export const VenueManagementPage = () => {
     })
     navigate(`/communication/create?${params.toString()}`)
   }, [navigate, selectedPartnerIds])
+
+  const openCommunicateWithHost = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'venue-partners',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openSpaceRoute = useCallback(
+    (venue: Venue, suffix = '') => {
+      const venueApiId = getVenueApiId(venue)
+      const spaceApiId = getVenueApiSpaceId(venue)
+      if (!venueApiId || !spaceApiId) {
+        toast.error('This row does not have a space to open.')
+        return
+      }
+      navigate(`/venues/management/profile/${venueApiId}/space/${spaceApiId}${suffix}`)
+    },
+    [navigate],
+  )
+
+  const openViewHostProfile = useCallback(
+    (venue: Venue) => {
+      const partnerId = getVenuePartnerId(venue)
+      if (!partnerId) {
+        toast.error('Venue partner ID is missing.')
+        return
+      }
+      void openVenuePartnerProfile(partnerId, navigate)
+    },
+    [navigate],
+  )
+
+  const handleExportVenueRow = useCallback(
+    async (venue: Venue) => {
+      try {
+        await exportMappedItemsToFile(
+          EXPORT_COLUMN_MAP,
+          [venue],
+          fileFormat,
+          `venue_${getVenueDisplayId(venue)}`,
+          { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+        )
+        toast.success('Venue exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export venue'))
+      }
+    },
+    [catalogColumnIds, exportColumnIds, fileFormat],
+  )
+
+  const openEscalateForVenue = useCallback((venue: Venue) => {
+    setSelectedVenueIds([venue._id])
+    setIsEscalateModalOpen(true)
+  }, [])
 
   const handleEscalateSubmit = useCallback(async () => {
     if (selectedVenues.length === 0) {
@@ -568,10 +694,15 @@ export const VenueManagementPage = () => {
             return Promise.reject(new Error(`No partner found for ${venue.venueName || venueId}`))
           }
 
-          return escalatePartnerApplication(partnerId, {
-            ...payload,
-            escalationTarget: 'application',
-            applicationUrl: `/experts/management/application/${partnerId}?source=venue_kyc`,
+          return fetchVenueKycByPartnerId(partnerId).then((response) => {
+            const kycId = String(response?.data?._id || '').trim()
+            return escalatePartnerApplication(partnerId, {
+              ...payload,
+              escalationTarget: 'application',
+              applicationUrl: kycId
+                ? getVenueKycApplicationPath(kycId)
+                : getVenueKycApplicationPath(partnerId),
+            })
           })
         }),
       )
@@ -582,7 +713,7 @@ export const VenueManagementPage = () => {
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
           PromiseRejectedResult | undefined
-        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate venues.')
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate venues.'))
         return
       }
 
@@ -594,7 +725,7 @@ export const VenueManagementPage = () => {
       setSelectedVenueIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getApiErrorMessage(err) || 'Failed to escalate venues.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate venues.'))
     } finally {
       setIsEscalating(false)
     }
@@ -707,7 +838,7 @@ export const VenueManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to delete venue.')
+          toast.error(getApiErrorMessage(err, 'Failed to delete venue.'))
         },
       },
     )
@@ -738,6 +869,16 @@ export const VenueManagementPage = () => {
 
     if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
       toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 
@@ -781,7 +922,7 @@ export const VenueManagementPage = () => {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to suspend venue. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to suspend venue. Please try again.'))
         },
       },
     )
@@ -839,7 +980,6 @@ export const VenueManagementPage = () => {
   const metricsLoading = managementMetricsQuery.isLoading
   const skeletonCount = activeMetricIds?.length || defaultMetricIds.length
 
-  // Status quick-links are always shown (not controlled by Manage Metrics)
   const statusCards: {
     id: string
     label: string
@@ -908,7 +1048,7 @@ export const VenueManagementPage = () => {
             if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
           }}
           onChange={toggleVisibleVenues}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       cell: ({ row }) => (
@@ -918,7 +1058,7 @@ export const VenueManagementPage = () => {
           checked={selectedVenueIds.includes(row.original._id)}
           onChange={() => toggleVenueSelection(row.original._id)}
           onClick={(event) => event.stopPropagation()}
-          className="rounded border-slate-700 bg-transparent"
+          className="ui-table-checkbox"
         />
       ),
       meta: {
@@ -947,16 +1087,14 @@ export const VenueManagementPage = () => {
         id: 'category',
         accessorKey: 'venueCategory',
         header: 'Venue Category',
-        cell: ({ row }) => (
-          <span className="text-slate-300">{row.original.venueCategory || '—'}</span>
-        ),
+        cell: ({ row }) => <span className="text-white">{row.original.venueCategory || '—'}</span>,
       },
       'venue-type': {
         id: 'venue-type',
         accessorKey: 'venueType',
         header: 'Venue Type',
         cell: ({ row }) => (
-          <span className="text-slate-300">
+          <span className="text-white">
             {row.original.venueType || row.original.eventType || '—'}
           </span>
         ),
@@ -994,8 +1132,11 @@ export const VenueManagementPage = () => {
         accessorKey: 'status',
         header: 'Venue Status',
         cell: ({ row }) => {
-          const { label, className } = getManagementStatusDisplay(row.original.status, {
-            isSuspend: row.original.isSuspend,
+          const statusToShow = row.original.spaceStatus || row.original.status
+          const { label, className } = getListingStatusDisplay(statusToShow, {
+            isSuspend:
+              row.original.isSuspend ||
+              String(row.original.spaceStatus || '').toLowerCase() === 'suspended',
           })
 
           return <span className={className}>{label}</span>
@@ -1013,7 +1154,7 @@ export const VenueManagementPage = () => {
         id: 'space-name',
         accessorKey: 'spaceName',
         header: 'Space Name',
-        cell: ({ row }) => row.original.spaceName || '—',
+        cell: ({ row }) => <span className="text-white">{row.original.spaceName || '—'}</span>,
       },
       'space-category': {
         id: 'space-category',
@@ -1047,8 +1188,12 @@ export const VenueManagementPage = () => {
         accessorKey: 'spaceStatus',
         header: 'Space Status',
         cell: ({ row }) => {
-          const status = row.original.spaceStatus || 'active'
-          const { label, className } = getManagementStatusDisplay(status, {})
+          if (!row.original.spaceStatus) {
+            return <span className="text-slate-500">—</span>
+          }
+          const { label, className } = getListingStatusDisplay(row.original.spaceStatus, {
+            isSuspend: String(row.original.spaceStatus || '').toLowerCase() === 'suspended',
+          })
           return <span className={className}>{label}</span>
         },
       },
@@ -1178,6 +1323,8 @@ export const VenueManagementPage = () => {
             label={`Open actions for ${venue.venueName}`}
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
+            menuWidth={220}
+            maxVisibleItems={10}
           >
             <TableActionsItem
               icon={<LayoutDashboard className="size-3.5 text-slate-700" />}
@@ -1188,6 +1335,39 @@ export const VenueManagementPage = () => {
               }}
             >
               View Profile
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<Eye className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSpaceRoute(venue)
+              }}
+            >
+              View Space Details
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<CalendarDays className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSpaceRoute(venue, '/bookings')
+              }}
+            >
+              View Bookings
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<Wallet className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSpaceRoute(venue, '/revenue')
+              }}
+            >
+              View Revenue & Payouts
             </TableActionsItem>
 
             <TableActionsItem
@@ -1224,6 +1404,61 @@ export const VenueManagementPage = () => {
             >
               Delete Venue
             </TableActionsItem>
+
+            <TableActionsItem
+              icon={<Flag className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                setReportVenueTarget(venue)
+              }}
+            >
+              Report Venue
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openViewHostProfile(venue)
+              }}
+            >
+              View Host Profile
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<MessageSquare className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openCommunicateWithHost(venue)
+              }}
+            >
+              Communicate with Host
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<FileText className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openEscalateForVenue(venue)
+              }}
+            >
+              Escalate
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<ExportDataIcon className="size-3.5" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                void handleExportVenueRow(venue)
+              }}
+            >
+              Export Venue Data
+            </TableActionsItem>
           </TableActionsDropdown>
         )
       },
@@ -1237,10 +1472,15 @@ export const VenueManagementPage = () => {
     activeDropdownId,
     allVisibleVenuesSelected,
     allowDisableVenues,
+    handleExportVenueRow,
     navigate,
+    openCommunicateWithHost,
     openDeleteModal,
+    openEscalateForVenue,
     openSuspendModal,
     openTagModal,
+    openSpaceRoute,
+    openViewHostProfile,
     selectedVenueIds,
     someVisibleVenuesSelected,
     tableColumnPreferencesQuery.data,
@@ -1284,17 +1524,15 @@ export const VenueManagementPage = () => {
       icon: Mail,
       onClick: handleBulkMessage,
     },
-    {
-      label: 'Suspend selected venues (Suspend Venues)',
-      icon: PauseCircle,
-      onClick: () => {
-        if (!allowDisableVenues) {
-          toast.error('Disabling venues is turned off in Venue Management settings')
-          return
-        }
-        setIsBulkPauseModalOpen(true)
-      },
-    },
+    ...(allowDisableVenues
+      ? [
+          {
+            label: 'Suspend selected venues (Suspend Venues)',
+            icon: PauseCircle,
+            onClick: () => setIsBulkPauseModalOpen(true),
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -1302,7 +1540,7 @@ export const VenueManagementPage = () => {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold text-white md:text-3xl">Venue Management</h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
+          <p className="ui-page-subtitle mt-1 text-[16px] leading-5 font-medium tracking-normal text-[#FFFFFF80]">
             Comprehensive user data and admin controls
           </p>
         </div>
@@ -1311,24 +1549,19 @@ export const VenueManagementPage = () => {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/metrics')}
           >
-            <ManageMetricsIcon className="size-4 shrink-0" />
+            <ManageMetricsIcon />
             Manage Metrics
           </Button>
-          <Button
-            type="button"
-            className="h-9 w-full md:w-auto"
-            disabled={!allowAddVenues}
-            onClick={() => {
-              if (!allowAddVenues) {
-                toast.error('Creating venues is turned off in Venue Management settings')
-                return
-              }
-              navigate('/venues/management/onboarding')
-            }}
-          >
-            <img src={createIcon} alt="create" className="size-4" />
-            Create Account
-          </Button>
+          {allowAddVenues ? (
+            <Button
+              type="button"
+              className="h-9 w-full md:w-auto"
+              onClick={() => navigate('/venues/management/onboarding')}
+            >
+              <img src={createIcon} alt="create" className="size-4" />
+              Create Account
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -1354,19 +1587,12 @@ export const VenueManagementPage = () => {
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   {metric.change ? (
                     <>
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                          metric.changeType === 'down'
-                            ? 'bg-brand-danger/10 text-brand-danger'
-                            : 'bg-brand-positive/15 text-brand-positive',
+                      <TrendBadge direction={metric.changeType === 'down' ? 'down' : 'up'}>
+                        {ensureTrendChangeSign(
+                          metric.change,
+                          metric.changeType === 'down' ? 'down' : 'up',
                         )}
-                      >
-                        <TrendingUp
-                          className={cn('size-3', metric.changeType === 'down' && 'rotate-180')}
-                        />
-                        {metric.change}
-                      </span>
+                      </TrendBadge>
                       {metric.changeNote ? (
                         <span className="text-muted text-[10px]">{metric.changeNote}</span>
                       ) : null}
@@ -1604,6 +1830,19 @@ export const VenueManagementPage = () => {
         initialTags={initialTags}
         onSubmit={saveTags}
       />
+
+      {reportVenueTarget && authUser ? (
+        <VenueReportSubmitModal
+          open={Boolean(reportVenueTarget)}
+          venueId={getVenueApiId(reportVenueTarget)}
+          partnerId={getVenuePartnerId(reportVenueTarget)}
+          venueName={reportVenueTarget.venueName || getVenueDisplayId(reportVenueTarget)}
+          reporterId={authUser.id}
+          reporterName={authUser.fullname || authUser.email || 'Admin'}
+          onClose={() => setReportVenueTarget(null)}
+          onSubmitted={() => navigate('/venues/management/reported')}
+        />
+      ) : null}
     </div>
   )
 }

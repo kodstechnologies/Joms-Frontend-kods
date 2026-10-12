@@ -4,12 +4,15 @@ import { useQuery } from '@tanstack/react-query'
 
 import { fetchAmenityMasters } from '../api/venue-api'
 import type { VenueFormData } from '../utils/venue-form'
+import { resolveAmenityMediaUrl } from '../utils/venue-form'
 
 type AmenitySubCategory = {
   _id: string
   name: string
   image?: string
   icon?: string
+  icon3D?: string
+  vectorIcon?: string
 }
 
 type AmenityCategory = {
@@ -136,7 +139,7 @@ export const ManageAmenitiesModal = ({
                               category._id,
                               item._id,
                               item.name,
-                              item.image || item.icon || '',
+                              item.image || item.icon || item.icon3D || item.vectorIcon || '',
                             )
                           }
                           className={`text-body-sm flex items-center gap-2 rounded-md border px-4 py-2 transition ${
@@ -145,9 +148,9 @@ export const ManageAmenitiesModal = ({
                               : 'border-white/10 bg-black text-white'
                           }`}
                         >
-                          {(item.image || item.icon) && (
+                          {resolveAmenityMediaUrl(item) && (
                             <img
-                              src={item.image || item.icon}
+                              src={resolveAmenityMediaUrl(item) || ''}
                               alt={item.name}
                               className="h-4 w-4 object-contain"
                             />

@@ -12,6 +12,7 @@ import {
 export type PermissionModule = PermissionModuleKey
 export { normalizePermissionKey, normalizeUserPermissions }
 
+// A signed-out admin has no modules. A super admin has all of them.
 export function hasModuleAccess(
   user: AdminUser | null | undefined,
   module: PermissionModule,
@@ -25,6 +26,7 @@ type NavFilterContext = {
   allowedModule?: PermissionModule
 }
 
+// My Tasks stays in the menu for every signed-in admin. A sub-admin otherwise sees only modules they were granted, plus the expert application item.
 function isNavItemVisible(
   item: NavItem,
   user: AdminUser | null | undefined,
@@ -32,12 +34,12 @@ function isNavItemVisible(
 ): boolean {
   const isSuperAdmin = user?.isSuperAdmin ?? false
 
-  if (item.superAdminOnly && !isSuperAdmin) {
-    return false
-  }
-
   if (item.permissionModule) {
     return hasModuleAccess(user, item.permissionModule)
+  }
+
+  if (item.superAdminOnly && !isSuperAdmin) {
+    return false
   }
 
   if (item.key === 'my-task') {
@@ -55,6 +57,7 @@ function isNavItemVisible(
   return true
 }
 
+// A group is dropped when none of its children are left for this admin.
 function filterNavItem(
   item: NavItem,
   user: AdminUser | null | undefined,
@@ -83,12 +86,14 @@ function filterNavItem(
   return { ...item, children }
 }
 
+// The menu is the config with every item this admin cannot open removed.
 export function getVisibleNavigation(user: AdminUser | null | undefined): NavItem[] {
   return navigationConfig
     .map((item) => filterNavItem(item, user))
     .filter((item): item is NavItem => item !== null)
 }
 
+// A super admin lands on the executive dashboard. A sub-admin lands on the first module they can open, or My Tasks when they have none.
 export function getDefaultHomeRoute(user: AdminUser | null | undefined): string {
   if (!user) {
     return '/auth/login'
@@ -120,6 +125,10 @@ export function getDefaultHomeRoute(user: AdminUser | null | undefined): string 
 
   if (hasModuleAccess(user, 'referrals')) {
     return '/referrals/management'
+  }
+
+  if (hasModuleAccess(user, 'support')) {
+    return '/support/dashboard'
   }
 
   if (hasModuleAccess(user, 'settings')) {

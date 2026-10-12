@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -8,10 +8,18 @@ import {
   Image as ImageIcon,
   Info,
   Play,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 
 import { Button } from '@/shared/components/ui/button'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -32,11 +40,7 @@ import {
 } from '../../hooks/use-service-drilldown'
 import { useSuspendService } from '../../hooks/use-services'
 import { VersionHistoryDrawer } from '../../components/service-drilldown/version-history-drawer'
-import {
-  DetailChip,
-  EmptyState,
-  ShimmerBlock,
-} from '../../components/service-drilldown/drilldown-primitives'
+import { DetailChip, ShimmerBlock } from '../../components/service-drilldown/drilldown-primitives'
 import {
   DASH,
   displayServiceTitle,
@@ -82,6 +86,7 @@ export const ServiceDetailPage = () => {
   const tickets = ticketsResponse?.data ?? []
 
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [imageViewerOpen, setImageViewerOpen] = useState(false)
   const [activeTierIndex, setActiveTierIndex] = useState(0)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [activeAction, setActiveAction] = useState<DetailAction>(null)
@@ -111,6 +116,29 @@ export const ServiceDetailPage = () => {
   const imageCount = images.length
   const activeImage =
     imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
+
+  const handlePrevImage = useCallback(() => {
+    if (imageCount <= 0) return
+    setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
+  }, [imageCount])
+
+  const handleNextImage = useCallback(() => {
+    if (imageCount <= 0) return
+    setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
+  }, [imageCount])
+
+  const closeImageViewer = useCallback(() => setImageViewerOpen(false), [])
+
+  useEffect(() => {
+    if (!imageViewerOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeImageViewer()
+      if (event.key === 'ArrowLeft') handlePrevImage()
+      if (event.key === 'ArrowRight') handleNextImage()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [imageViewerOpen, closeImageViewer, handleNextImage, handlePrevImage])
 
   const tierDetails = useMemo(() => {
     const tiers = service?.pricing?.tiers ?? []
@@ -248,6 +276,14 @@ export const ServiceDetailPage = () => {
         toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
         return
       }
+      if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+        toast.error(START_BEFORE_TODAY_MESSAGE)
+        return
+      }
+      if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+        toast.error(END_MUST_AFTER_START_MESSAGE)
+        return
+      }
       if (!adminNotes.trim()) {
         toast.error('Admin notes are required.')
         return
@@ -312,6 +348,9 @@ export const ServiceDetailPage = () => {
 
   const pricing = service.pricing
   const expertName = service.expert?.name || 'Expert'
+  const isSuspended = Boolean(
+    service.isSuspend || service.displayStatus === 'suspended' || service.suspension?.isSuspended,
+  )
 
   const modalConfig =
     activeAction === 'pause'
@@ -363,19 +402,19 @@ export const ServiceDetailPage = () => {
   const expertRole = service.expert?.serviceType ? titleCase(service.expert.serviceType) : 'Expert'
   const money = (value?: number | null) => formatCurrency(value, pricing.currency, 2)
   const headerActionClass =
-    'h-10 shrink-0 gap-1.5 rounded-lg border-white px-3.5 text-[13px] font-medium'
+    'ui-cta ui-cta-outline box-border inline-flex !h-10 !min-h-10 !max-h-10 !min-w-[135px] shrink-0 items-center justify-center !gap-2.5 !rounded-[10px] border border-white !p-2.5 text-[12px] leading-5 font-semibold tracking-normal whitespace-nowrap text-white'
+  const versionHistoryActionClass = `${headerActionClass} !w-[135px] !max-w-[135px]`
 
-  const ticketStatusClass = (status?: string) => {
+  const ticketStatusClass = 'bg-[#3D2814] text-[#E0A263]'
+
+  const formatTicketStatus = (status?: string) => {
     const normalized = String(status || '')
+      .trim()
       .toLowerCase()
       .replace(/[_-]+/g, ' ')
-    if (normalized.includes('progress') || normalized === 'open' || normalized === 'pending') {
-      return 'bg-[#E0A263] text-black'
-    }
-    if (normalized.includes('resolv') || normalized.includes('close')) {
-      return 'bg-[#6B4A3A] text-white'
-    }
-    return 'bg-white/15 text-white'
+    if (normalized.includes('progress')) return 'In - Progress'
+    if (normalized.includes('resolv')) return 'Resolved'
+    return titleCase(status)
   }
 
   return (
@@ -431,90 +470,92 @@ export const ServiceDetailPage = () => {
             <span>Service Details</span>
           </button>
 
-          <div className="text-body-sm text-muted mt-1 flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigate('/experts/management')}
-              className="hover:text-brand-text transition-colors"
-            >
-              All Experts
-            </button>
-            <span>/</span>
-            <button
-              type="button"
-              onClick={() => navigate(`/experts/management/profile/${expertId}`)}
-              className="hover:text-brand-text transition-colors"
-            >
-              {expertName}
-            </button>
-            <span>/</span>
-            <span className="font-bold text-white">Service Details</span>
+          <div className="mt-1 pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Expert Management', to: '/experts/management' },
+                { label: expertName, to: `/experts/management/profile/${expertId}` },
+                { label: 'Service Details', isActive: true },
+              ]}
+            />
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <Button
             variant="outline"
-            className={headerActionClass}
+            className={versionHistoryActionClass}
             onClick={() => setShowVersionHistory(true)}
           >
-            <Ban className="size-3.5" aria-hidden="true" />
-            Version History
+            <Ban className="!size-5 shrink-0 text-white" aria-hidden="true" />
+            <span className="inline-flex h-5 w-[85px] items-center text-[12px] leading-5 font-semibold tracking-normal text-white">
+              Version History
+            </span>
           </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => (service.isPaused ? handleUnpause() : openModal('pause'))}
-            disabled={pauseMutation.isPending || unpauseMutation.isPending}
-          >
-            {service.isPaused ? (
-              <Play className="size-3.5" aria-hidden="true" />
-            ) : (
-              <Ban className="size-3.5" aria-hidden="true" />
-            )}
-            {service.isPaused ? 'Resume Service' : 'Pause Service'}
-          </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => openModal('requestChanges')}
-          >
-            <Ban className="size-3.5" aria-hidden="true" />
-            Request Changes
-          </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => (service.isFlagged ? handleUnflag() : openModal('flag'))}
-            disabled={flagMutation.isPending || unflagMutation.isPending}
-          >
-            <Ban className="size-3.5" aria-hidden="true" />
-            {service.isFlagged ? 'Remove Flag' : 'Flag for Review'}
-          </Button>
-          <Button
-            variant="outline"
-            className={headerActionClass}
-            onClick={() => openModal('suspend')}
-            disabled={service.isSuspend}
-          >
-            <Ban className="size-3.5" aria-hidden="true" />
-            Suspend Service
-          </Button>
+          {!isSuspended ? (
+            <>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => (service.isPaused ? handleUnpause() : openModal('pause'))}
+                disabled={pauseMutation.isPending || unpauseMutation.isPending}
+              >
+                {service.isPaused ? (
+                  <Play className="size-5 shrink-0 text-white" aria-hidden="true" />
+                ) : (
+                  <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                )}
+                {service.isPaused ? 'Resume Service' : 'Pause Service'}
+              </Button>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => openModal('requestChanges')}
+              >
+                <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                Request Changes
+              </Button>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => (service.isFlagged ? handleUnflag() : openModal('flag'))}
+                disabled={flagMutation.isPending || unflagMutation.isPending}
+              >
+                <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                {service.isFlagged ? 'Remove Flag' : 'Flag for Review'}
+              </Button>
+              <Button
+                variant="outline"
+                className={headerActionClass}
+                onClick={() => openModal('suspend')}
+              >
+                <Ban className="size-5 shrink-0 text-white" aria-hidden="true" />
+                Suspend Service
+              </Button>
+            </>
+          ) : null}
         </div>
       </header>
 
-      <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-5">
-          <div className="relative h-[320px] w-full overflow-hidden rounded-xl bg-black">
+      {isSuspended ? (
+        <p className="rounded-[10px] bg-[#AF52DE]/15 px-4 py-3 text-sm font-medium text-[#E0C3FF]">
+          This service is suspended. It is hidden from the marketplace and cannot be edited, paused,
+          or approved until it is reactivated.
+        </p>
+      ) : null}
+
+      <div className="grid grid-cols-1 items-start gap-8 @min-[980px]/main:grid-cols-[minmax(0,438px)_minmax(0,1fr)]">
+        <div className="flex w-full max-w-[438px] flex-col gap-5">
+          <div className="relative h-[248px] w-full max-w-[384px] shrink-0 overflow-hidden rounded-[10px] bg-[#D9D9D9]">
             {activeImage ? (
-              <a
-                href={activeImage}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                aria-label="Open image viewer"
+                onClick={() => setImageViewerOpen(true)}
                 className="block h-full w-full cursor-zoom-in"
               >
                 <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
-              </a>
+              </button>
             ) : (
               <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                 <ImageIcon className="size-8" aria-hidden="true" />
@@ -527,9 +568,10 @@ export const ServiceDetailPage = () => {
                 <button
                   type="button"
                   aria-label="Previous image"
-                  onClick={() =>
-                    setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
-                  }
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
                   className="absolute top-1/2 left-3 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronLeft className="size-4" />
@@ -537,9 +579,10 @@ export const ServiceDetailPage = () => {
                 <button
                   type="button"
                   aria-label="Next image"
-                  onClick={() =>
-                    setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
-                  }
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
                   className="absolute top-1/2 right-3 z-10 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
                 >
                   <ChevronRight className="size-4" />
@@ -553,53 +596,112 @@ export const ServiceDetailPage = () => {
             </div>
           </div>
 
-          <section className="rounded-xl bg-[#141414] p-5">
-            <h3 className="text-body-md font-semibold text-white">Support &amp; Admin</h3>
-
-            <p className="text-muted mt-4 text-[12px] font-medium">All Tickets</p>
-            {isTicketsLoading ? (
-              <div className="mt-3 space-y-2">
-                <ShimmerBlock className="h-16 w-full" />
-                <ShimmerBlock className="h-16 w-full" />
+          {imageViewerOpen && activeImage ? (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+              onClick={closeImageViewer}
+            >
+              <button
+                type="button"
+                aria-label="Close image viewer"
+                onClick={closeImageViewer}
+                className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+              >
+                <X className="size-5" />
+              </button>
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handlePrevImage()
+                  }}
+                  className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronLeft className="size-6" />
+                </button>
+              ) : null}
+              <div
+                className="flex max-h-[85vh] max-w-[min(900px,90vw)] flex-col items-center"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <img
+                  src={activeImage}
+                  alt={service.title}
+                  className="max-h-[80vh] max-w-full rounded-lg object-contain"
+                />
+                <p className="mt-3 text-[13px] text-white/70">
+                  {activeImageIndex + 1} / {imageCount}
+                </p>
               </div>
-            ) : tickets.length === 0 ? (
-              <EmptyState message="No support tickets raised by this expert." />
-            ) : (
-              <ul className="mt-3 space-y-3">
-                {tickets.map((ticket) => (
-                  <li key={ticket._id}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/support/tickets/${ticket._id}`)}
-                      className="flex w-full items-start justify-between gap-3 text-left"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-body-sm truncate font-medium text-white">
-                          # {ticket.ticketNumber} – {ticket.subject}
-                        </p>
-                        <p className="text-muted mt-1 text-[11px]">
-                          Updated: {formatRelativeTime(ticket.updatedAt || ticket.createdAt)}
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
-                          ticketStatusClass(ticket.status),
-                        )}
-                      >
-                        {titleCase(ticket.status)}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+              {imageCount > 1 ? (
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleNextImage()
+                  }}
+                  className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronRight className="size-6" />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
-            <p className="text-muted mt-5 text-[12px] font-medium">Admin notes</p>
-            <div className="text-body-sm mt-2 min-h-[72px] rounded-lg bg-black/60 p-4 text-white">
-              {service.adminNote?.trim() || 'None.'}
+          <section className="box-border flex h-[291px] w-full max-w-[438px] shrink-0 flex-col overflow-hidden rounded-[10px] bg-[#141414] p-3.5">
+            <h3 className="text-body-md shrink-0 font-semibold text-white">Support &amp; Admin</h3>
+
+            <div className="mt-2 box-border h-[143px] w-full shrink-0 overflow-y-auto rounded-[10px] bg-[#050505] px-3 py-2.5">
+              <p className="text-[12px] font-medium text-[#8E8E93]">All Tickets</p>
+              {isTicketsLoading ? (
+                <div className="mt-2 space-y-2">
+                  <ShimmerBlock className="h-10 w-full" />
+                  <ShimmerBlock className="h-10 w-full" />
+                </div>
+              ) : tickets.length === 0 ? (
+                <p className="text-muted mt-3 text-[12px]">
+                  No support tickets raised by this expert.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-3">
+                  {tickets.map((ticket) => (
+                    <li key={ticket._id}>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/support/tickets/${ticket._id}`)}
+                        className="flex w-full items-start justify-between gap-3 text-left"
+                      >
+                        <p className="text-body-sm min-w-0 truncate font-medium text-white underline underline-offset-2">
+                          # {ticket.ticketNumber} - {ticket.subject}
+                        </p>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <span
+                            className={cn(
+                              'rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
+                              ticketStatusClass,
+                            )}
+                          >
+                            {formatTicketStatus(ticket.status)}
+                          </span>
+                          <span className="text-[11px] text-[#8E8E93]">
+                            Updated: {formatRelativeTime(ticket.updatedAt || ticket.createdAt)}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-[10px] bg-[#050505] px-3 py-2.5">
+              <p className="text-[12px] font-medium text-[#8E8E93]">Admin notes</p>
+              <p className="text-body-sm mt-2 text-white">{service.adminNote?.trim() || 'None'}</p>
               {service.flagDetails?.reason ? (
-                <p className="mt-3 text-[#E0A263]">
+                <p className="mt-2 text-[12px] text-[#E0A263]">
                   Flagged: {service.flagDetails.reason}
                   {service.flagDetails.flaggedByName
                     ? ` (by ${service.flagDetails.flaggedByName})`
@@ -725,10 +827,12 @@ export const ServiceDetailPage = () => {
           <button
             type="button"
             onClick={() => navigate(servicePerformancePath(expertId, serviceId))}
-            className="mt-8 flex w-full items-center justify-between rounded-lg border border-white px-4 py-3 text-left text-[14px] font-medium text-white transition-colors hover:bg-white/5"
+            className="mt-8 box-border flex h-12 w-full max-w-[634px] items-center rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] p-px text-left transition-[filter] hover:brightness-110"
           >
-            <span>Service Performance</span>
-            <ChevronRight className="size-4" aria-hidden="true" />
+            <span className="flex h-full w-full items-center justify-between rounded-[9px] bg-[#050505] px-[18px] text-[16px] leading-none font-semibold tracking-normal text-white">
+              Service Performance
+              <ChevronRight className="size-4 shrink-0 text-white" aria-hidden="true" />
+            </span>
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+// A price that is not a number is treated as zero.
 export const parsePrice = (value: string) => {
   const numeric = value.replace(/[^\d.]/g, '')
   const parsed = Number.parseFloat(numeric)
@@ -8,9 +9,11 @@ export const DISCOUNT_PRESET_PCTS = [10, 15, 20] as const
 
 export const formatDiscountChip = (pct: number) => `${pct}%`
 
+// A blank or non-numeric discount is treated as zero.
 export const parseDiscountPct = (value: string) =>
   Number.parseInt(String(value).replace('%', ''), 10) || 0
 
+// The discount is taken off first. The platform fee and GST are then taken from that price, and earnings never go below zero.
 export const computeListingFeeBreakdown = (
   price: number,
   discountPct: number,
@@ -30,6 +33,7 @@ export const computeListingFeeBreakdown = (
   }
 }
 
+// A singular day, week, or month is stored in the plural. Anything else is stored as days.
 export const normalizeTimelineUnit = (unit: string): 'days' | 'weeks' | 'months' => {
   const normalized = unit.trim().toLowerCase().replace(/s$/, '')
   switch (normalized) {
@@ -45,8 +49,4 @@ export const normalizeTimelineUnit = (unit: string): 'days' | 'weeks' | 'months'
 
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const
 
-export const CONSULTATION_MODES = [
-  { label: 'Audio', value: 'audio' },
-  { label: 'Video', value: 'video' },
-  { label: 'Chat', value: 'chat' },
-] as const
+export const CONSULTATION_MODES = [{ label: 'Audio', value: 'audio' }] as const

@@ -1,5 +1,3 @@
-/** Shared metric-catalog helpers — keeps page configs data-first without repeated map boilerplate. */
-
 export type MetricCatalogEntry = {
   id: string
   label: string

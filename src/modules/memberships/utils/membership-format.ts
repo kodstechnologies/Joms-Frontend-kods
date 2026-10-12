@@ -1,6 +1,7 @@
 import type { MembershipFeatures, MembershipPlan, MembershipPlanConfig } from '../types/membership'
 import type { MembershipSubscription } from '../types/membership-subscription'
 
+// A populated plan name is used first. A stored name that already ends with the billing cycle has that cycle stripped off.
 export const resolveSubscriptionPlanName = (
   subscription: MembershipSubscription,
   plan?: MembershipPlan | null,
@@ -54,13 +55,17 @@ export const formatMembershipDate = (value?: string | null) => {
 export const formatMembershipDateTime = (value?: string | null) => {
   if (!value) return '—'
 
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+
   return new Intl.DateTimeFormat('en-IN', {
-    day: 'numeric',
+    day: '2-digit',
     month: 'short',
+    year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
-  }).format(new Date(value))
+  }).format(date)
 }
 
 export const formatMembershipTimelineDate = (value?: string | null) => {
@@ -108,6 +113,7 @@ export const getHistoryActionTitle = (action: string) => {
   }
 }
 
+// An upgrade done by the platform is worded as a platform change. A downgrade is worded as a request, not a completed change.
 export const getHistoryActionDescription = (entry: HistoryEntry, fallbackPrice?: number) => {
   const priceText = fallbackPrice ? formatCurrency(fallbackPrice) : ''
   const cycleSuffix = entry.billingCycleName
@@ -135,6 +141,7 @@ export const getHistoryActionDescription = (entry: HistoryEntry, fallbackPrice?:
   }
 }
 
+// A user plan is labelled Users. Every other type is labelled Experts.
 export const getTypeLabel = (type: MembershipPlan['type']) =>
   type === 'user' ? 'Users' : 'Experts'
 
@@ -144,20 +151,31 @@ export const getStatusLabel = (status: MembershipPlan['status']) =>
 export const getStatusClassName = (status: MembershipPlan['status']) => {
   switch (status) {
     case 'active':
-      return 'bg-brand-teal/35 text-brand-progress border-brand-positive/25'
+      return 'bg-[#00A63E33] text-[#00A63E] border-transparent'
     case 'paused':
-      return 'bg-amber-500/15 text-amber-300 border-amber-500/25'
+      return 'bg-[#E0A26333] text-[#E0A263] border-transparent'
     case 'inactive':
-      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
+      return 'bg-[#F6CB8633] text-[#F6CB86] border-transparent'
     case 'cancelled':
-      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
+      return 'bg-[#C8C8C833] text-[#C8C8C8] border-transparent'
     case 'deleted':
-      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
+      return 'bg-[#D3191C33] text-[#D3191C] border-transparent'
     default:
-      return 'bg-white/10 text-brand-muted border-white/10'
+      return 'bg-white/10 text-brand-muted border-transparent'
   }
 }
 
+export const formatMembershipDateSlash = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const yyyy = date.getFullYear()
+  return `${dd}-${mm}-${yyyy}`
+}
+
+// A benefit that is switched off is left out. An older plan still lists the fixed profile and account-manager lines.
 export const getFeatureLines = (
   features: MembershipFeatures | MembershipPlanConfig | undefined,
 ) => {
@@ -186,6 +204,7 @@ export const getFeatureLines = (
   return lines
 }
 
+// A zero discount leaves the price unchanged.
 export const getDiscountedPrice = (price: number, discount: number) => {
   if (!discount) return price
   return price - (price * discount) / 100

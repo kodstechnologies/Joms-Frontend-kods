@@ -39,10 +39,18 @@ export const VenueSubCategoryViewPage = () => {
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <CategoryHeader
             title={category.name}
-            breadcrumbItems={[category.name, subCategory.name]}
+            items={[
+              { label: 'Category Management', to: '/venues/categories/management' },
+              {
+                label: category.name,
+                to: id ? `/venues/categories/management/view/${id}` : undefined,
+              },
+              { label: subCategory.name, isActive: true },
+            ]}
             backPath={
               id ? `/venues/categories/management/view/${id}` : '/venues/categories/management'
             }
+            listPath="/venues/categories/management"
           />
           <VenueSubCategoryViewHeaderActions />
         </div>

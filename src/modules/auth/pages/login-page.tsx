@@ -1,9 +1,38 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
+import lockUserIcon from '@/assets/JOMS_ICONS-2/lock-user.svg'
+
+const ClarityEyeShowSolidIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 36 36"
+    width={18}
+    height={18}
+    className={className}
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M33.62 17.53c-3.37-6.23-9.28-10-15.82-10S5.34 11.3 2 17.53l-.28.47l.26.48c3.37 6.23 9.28 10 15.82 10s12.46-3.72 15.82-10l.26-.48Zm-15.82 8.9C12.17 26.43 7 23.29 4 18c3-5.29 8.17-8.43 13.8-8.43S28.54 12.72 31.59 18c-3.05 5.29-8.17 8.43-13.79 8.43" />
+    <circle cx="18.09" cy="18.03" r="6.86" />
+  </svg>
+)
+
+const ClarityEyeHideSolidIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 36 36"
+    width={18}
+    height={18}
+    className={className}
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M18.37 11.17a6.8 6.8 0 0 0-2.37.43l8.8 8.8a6.8 6.8 0 0 0 .43-2.4a6.86 6.86 0 0 0-6.86-6.83" />
+    <path d="M34.29 17.53c-3.37-6.23-9.28-10-15.82-10a16.8 16.8 0 0 0-5.24.85L14.84 10a14.8 14.8 0 0 1 3.63-.47c5.63 0 10.75 3.14 13.8 8.43a17.8 17.8 0 0 1-4.37 5.1l1.42 1.42a19.9 19.9 0 0 0 5-6l.26-.48Z" />
+    <path d="m4.87 5.78l4.46 4.46a19.5 19.5 0 0 0-6.69 7.29l-.26.47l.26.48c3.37 6.23 9.28 10 15.82 10a16.9 16.9 0 0 0 7.37-1.69l5 5l1.75-1.5l-26-26Zm8.3 8.3a6.85 6.85 0 0 0 9.55 9.55l1.6 1.6a14.9 14.9 0 0 1-5.86 1.2c-5.63 0-10.75-3.14-13.8-8.43a17.3 17.3 0 0 1 6.12-6.3Z" />
+  </svg>
+)
 
 const LinkedInIcon = () => (
   <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor" aria-hidden="true">
@@ -28,11 +57,13 @@ const InstagramIcon = () => (
   </svg>
 )
 
-// Material Design mdiAccountLock Icon
 const AccountLockIcon = () => (
-  <svg viewBox="0 0 24 24" className="size-6 text-white" fill="currentColor" aria-hidden="true">
-    <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14M18,16A2,2 0 0,1 20,18V19H21V23H15V19H16V18A2,2 0 0,1 18,16M18,17A1,1 0 0,0 17,18V19H19V18A1,1 0 0,0 18,17Z" />
-  </svg>
+  <img
+    src={lockUserIcon}
+    alt=""
+    className="size-6 shrink-0 brightness-0 invert"
+    aria-hidden="true"
+  />
 )
 
 import type { AdminSessionUser } from '@/modules/auth/api/auth-api'
@@ -50,6 +81,7 @@ import { type OtpSchema, otpSchema } from '@/modules/auth/validations/otp-schema
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { OtpInput } from '@/shared/components/form/otp-input'
 
+// When the login response has no admin record, the session is treated as a super admin so the panel can still open.
 function buildSessionUser(admin: AdminSessionUser | undefined, fallbackEmail: string): AdminUser {
   if (admin) {
     return {
@@ -62,6 +94,8 @@ function buildSessionUser(admin: AdminSessionUser | undefined, fallbackEmail: st
       mfaEnabled: admin.mfaEnabled,
       status: admin.status,
       subAdminId: admin.subAdminId ?? undefined,
+      requiresContactSetup: Boolean(admin.requiresContactSetup),
+      contactSetupCompleted: Boolean(admin.contactSetupCompleted),
     }
   }
 
@@ -83,10 +117,8 @@ export function LoginPage() {
   const { mutateAsync: login, isPending: isLoginPending } = useLoginMutation()
   const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
-  const loginSubmitLockRef = useRef(false)
-  const otpSubmitLockRef = useRef(false)
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
-  const [mfaMethod, setMfaMethod] = useState<'emailOtp' | 'authenticator'>('emailOtp')
+  const [mfaMethod, setMfaMethod] = useState<'emailOtp' | 'authenticator' | 'smsOtp'>('emailOtp')
   const [showPassword, setShowPassword] = useState(false)
 
   const credentialsForm = useForm<LoginSchema>({
@@ -102,6 +134,7 @@ export function LoginPage() {
     defaultValues: { code: '' },
   })
 
+  // Sends them back to the page they were opening, unless that page is the sign-in screen.
   const postLoginPath = (sessionUser: AdminUser) => {
     const from = (
       location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null
@@ -113,6 +146,7 @@ export function LoginPage() {
     return getDefaultHomeRoute(sessionUser)
   }
 
+  // The session is saved before the profile loads. Contact details still owed send them to that page even if the profile request fails.
   const finalizeLogin = async (
     token: string,
     admin: AdminSessionUser | undefined,
@@ -121,31 +155,41 @@ export function LoginPage() {
     let sessionUser = buildSessionUser(admin, email)
     setSession(sessionUser, token)
 
-    if (!sessionUser.isSuperAdmin) {
-      try {
-        const profileResponse = await fetchRbacMe()
-        const profile = profileResponse.data
-        const resolvedSubAdminId = profile.subAdminId || admin?.subAdminId || undefined
-        updateUser({
-          subAdminId: resolvedSubAdminId,
-          permissions: normalizeUserPermissions(profile.permissions ?? []),
-          requiresContactSetup: Boolean(profile.requiresContactSetup),
-          contactSetupCompleted: Boolean(profile.contactSetupCompleted),
-        })
+    try {
+      const profileResponse = await fetchRbacMe()
+      const profile = profileResponse.data
+      const resolvedSubAdminId = profile.subAdminId || admin?.subAdminId || undefined
+      updateUser({
+        subAdminId: resolvedSubAdminId,
+        permissions: normalizeUserPermissions(profile.permissions ?? sessionUser.permissions),
+        requiresContactSetup: Boolean(profile.requiresContactSetup),
+        contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+        mfaEnabled: Boolean(
+          profile.mfaEnabled ?? profile.profile?.mfaEnabled ?? sessionUser.mfaEnabled,
+        ),
+        fullname: profile.name || sessionUser.fullname,
+      })
 
-        sessionUser = {
-          ...sessionUser,
-          subAdminId: resolvedSubAdminId,
-          permissions: normalizeUserPermissions(profile.permissions ?? []),
-        }
+      sessionUser = {
+        ...sessionUser,
+        subAdminId: resolvedSubAdminId,
+        permissions: normalizeUserPermissions(profile.permissions ?? sessionUser.permissions),
+        requiresContactSetup: Boolean(profile.requiresContactSetup),
+        contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+        mfaEnabled: Boolean(
+          profile.mfaEnabled ?? profile.profile?.mfaEnabled ?? sessionUser.mfaEnabled,
+        ),
+      }
 
-        if (profile.requiresContactSetup) {
-          toast.success('Please complete your contact information')
-          navigate('/auth/contact-information', { replace: true })
-          return
-        }
-      } catch {
-        // Fall through to default home if profile fetch fails
+      if (profile.requiresContactSetup) {
+        toast.success('Please complete your contact information')
+        navigate('/auth/contact-information', { replace: true })
+        return
+      }
+    } catch {
+      if (sessionUser.requiresContactSetup) {
+        navigate('/auth/contact-information', { replace: true })
+        return
       }
     }
 
@@ -153,9 +197,9 @@ export function LoginPage() {
     navigate(postLoginPath(sessionUser), { replace: true })
   }
 
+  // A password that does not need a second step signs them in at once. Otherwise the code step is shown and the token is held back.
   const onSubmitCredentials = async (values: LoginSchema) => {
-    if (loginSubmitLockRef.current || isLoginPending) return
-    loginSubmitLockRef.current = true
+    if (isLoginPending) return
     try {
       if (!values.email) {
         toast.error('Email is required')
@@ -175,33 +219,43 @@ export function LoginPage() {
       }
 
       setPendingEmail(values.email)
-      setMfaMethod(session?.mfaMethod === 'authenticator' ? 'authenticator' : 'emailOtp')
-      setStep('otp')
-      toast.success(
+      const nextMfaMethod =
         session?.mfaMethod === 'authenticator'
-          ? 'Enter the code from your authenticator app'
-          : 'OTP sent to your email',
-      )
+          ? 'authenticator'
+          : session?.mfaMethod === 'smsOtp'
+            ? 'smsOtp'
+            : 'emailOtp'
+      setMfaMethod(nextMfaMethod)
+      otpForm.reset({ code: '' })
+      setStep('otp')
+      if (nextMfaMethod === 'authenticator') {
+        toast.success('Enter the code from your authenticator app')
+      } else if (nextMfaMethod === 'smsOtp') {
+        toast.success('OTP sent to your phone')
+      } else {
+        toast.success('OTP sent to your email')
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Invalid credentials'))
-    } finally {
-      loginSubmitLockRef.current = false
     }
   }
 
+  // An SMS code is 4 digits. Email and authenticator codes are 6. A missing email sends them back to the password step.
   const onSubmitOtp = async (values: OtpSchema) => {
-    if (otpSubmitLockRef.current || isVerifyPending) return
+    if (isVerifyPending) return
     if (!pendingEmail) {
       setStep('credentials')
       return
     }
 
-    if (!/^\d{6}$/.test(values.code)) {
-      toast.error('Enter a valid 6 digit code')
+    const expectedLength = mfaMethod === 'smsOtp' ? 4 : 6
+    if (!new RegExp(`^\\d{${expectedLength}}$`).test(values.code)) {
+      toast.error(
+        expectedLength === 4 ? 'Enter a valid 4 digit code' : 'Enter a valid 6 digit code',
+      )
       return
     }
 
-    otpSubmitLockRef.current = true
     try {
       const response = await verifyOtp({ email: pendingEmail, otp: values.code })
       const session = response?.data
@@ -214,9 +268,13 @@ export function LoginPage() {
 
       await finalizeLogin(token, session?.admin, pendingEmail)
     } catch {
-      toast.error('Invalid or expired OTP')
-    } finally {
-      otpSubmitLockRef.current = false
+      toast.error(
+        mfaMethod === 'authenticator'
+          ? 'Invalid authenticator code'
+          : mfaMethod === 'smsOtp'
+            ? 'Invalid or expired OTP'
+            : 'Invalid or expired OTP',
+      )
     }
   }
 
@@ -228,19 +286,21 @@ export function LoginPage() {
           'linear-gradient(125deg, #797365 0%, #9c9483 25%, #d5c7a5 58%, #eee3c8 75%, #cec0a1 100%)',
       }}
     >
-      {/* Top Left Branding */}
       <header className="absolute top-8 left-8 flex items-center gap-3">
         <img src={jomsLogo} alt="JOMS" className="size-9 rounded-full object-contain shadow-sm" />
         <p className="text-lg font-semibold tracking-wider text-white">JOMS</p>
       </header>
 
-      {/* Main Login / 2FA Card Center */}
       <div className="flex flex-1 items-center justify-center px-4 py-20">
-        <div className="w-full max-w-[565px] rounded-[32px] bg-[#050505] px-10 py-12 shadow-[0_25px_60px_rgba(0,0,0,0.65)] sm:px-14 sm:py-14">
+        <div
+          className={
+            step === 'otp'
+              ? 'w-full max-w-[565px] rounded-[32px] bg-[#050505] px-10 py-12 shadow-[0_25px_60px_rgba(0,0,0,0.65)] sm:px-14 sm:py-14'
+              : 'flex h-[478px] w-full max-w-[565px] flex-col justify-center rounded-[32px] bg-[#050505] px-10 py-12 shadow-[0_25px_60px_rgba(0,0,0,0.65)] sm:px-14 sm:py-14'
+          }
+        >
           {step === 'otp' ? (
-            /* Two Factor Authentication View */
             <div className="space-y-6">
-              {/* Account Lock Icon Badge */}
               <div className="flex justify-center">
                 <div className="grid size-12 place-items-center rounded-full bg-[#1E1E1E] shadow-sm">
                   <AccountLockIcon />
@@ -254,7 +314,9 @@ export function LoginPage() {
                 <p className="text-sm font-normal text-[#717182]">
                   {mfaMethod === 'authenticator'
                     ? 'Enter the 6 digit code from your authenticator app.'
-                    : 'Enter 6 digit authorisation code sent to your email.'}
+                    : mfaMethod === 'smsOtp'
+                      ? 'Enter 4 digit authorisation code sent to your phone.'
+                      : 'Enter 6 digit authorisation code sent to your email.'}
                 </p>
               </div>
 
@@ -265,11 +327,10 @@ export function LoginPage() {
                     name="code"
                     render={({ field }) => (
                       <OtpInput
-                        length={6}
+                        length={mfaMethod === 'smsOtp' ? 4 : 6}
                         value={field.value}
                         onChange={field.onChange}
-                        className="gap-2.5 sm:gap-3"
-                        slotClassName="w-11 sm:w-13 h-12 sm:h-14 rounded-b-2xl border-0 border-b-2 border-[#717182]/50 bg-transparent text-center text-xl sm:text-2xl font-semibold text-white outline-none focus:border-b-2 focus:border-[#E0A263] focus:ring-0 transition-colors"
+                        autoFocus
                       />
                     )}
                   />
@@ -280,7 +341,6 @@ export function LoginPage() {
                   ) : null}
                 </div>
 
-                {/* Login button with #FFFFF0 */}
                 <button
                   type="submit"
                   disabled={isVerifyPending}
@@ -291,13 +351,12 @@ export function LoginPage() {
               </form>
             </div>
           ) : (
-            /* Credentials View */
             <div>
-              <div className="space-y-1.5 text-center">
-                <h1 className="text-[28px] font-semibold tracking-tight text-white sm:text-[30px]">
+              <div className="space-y-2 text-center">
+                <h1 className="font-sans text-[32px] leading-5 font-semibold tracking-normal text-white">
                   Login
                 </h1>
-                <p className="text-sm font-normal text-[#717182]">
+                <p className="text-center font-sans text-[18px] leading-6 font-normal tracking-normal text-[#717182]">
                   Enter your credentials to access the admin panel
                 </p>
               </div>
@@ -306,7 +365,6 @@ export function LoginPage() {
                 className="mt-8 space-y-6"
                 onSubmit={credentialsForm.handleSubmit(onSubmitCredentials)}
               >
-                {/* Email ID Field */}
                 <div className="space-y-1.5">
                   <label className="block text-[13px] font-normal text-white" htmlFor="login-email">
                     Email ID
@@ -328,7 +386,6 @@ export function LoginPage() {
                   ) : null}
                 </div>
 
-                {/* Password Field */}
                 <div className="space-y-1.5">
                   <label
                     className="block text-[13px] font-normal text-white"
@@ -336,11 +393,11 @@ export function LoginPage() {
                   >
                     Password
                   </label>
-                  <div className="relative flex items-center border-b border-[#717182]/50 transition-colors focus-within:border-[#E0A263]">
+                  <div className="flex items-center gap-2 border-b border-[#717182]/50 transition-colors focus-within:border-[#E0A263]">
                     <input
                       id="login-password"
                       type={showPassword ? 'text' : 'password'}
-                      className="w-full bg-transparent py-2 pr-8 text-sm text-white outline-none placeholder:text-[#717182] focus:outline-none"
+                      className="min-w-0 flex-1 bg-transparent py-2 text-sm leading-none text-white outline-none placeholder:text-[#717182] focus:outline-none"
                       placeholder="Enter your password"
                       autoComplete="current-password"
                       {...credentialsForm.register('password')}
@@ -348,13 +405,13 @@ export function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-0 cursor-pointer text-[#717182] transition-colors hover:text-white focus:outline-none"
+                      className="mb-px grid size-[18px] shrink-0 cursor-pointer place-items-center text-white opacity-100 transition-opacity hover:opacity-80 focus:outline-none"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
-                        <EyeOff className="size-[18px]" />
+                        <ClarityEyeHideSolidIcon className="size-[18px]" />
                       ) : (
-                        <Eye className="size-[18px]" />
+                        <ClarityEyeShowSolidIcon className="size-[18px]" />
                       )}
                     </button>
                   </div>
@@ -365,7 +422,6 @@ export function LoginPage() {
                   ) : null}
                 </div>
 
-                {/* Sign In Button */}
                 <button
                   type="submit"
                   disabled={isLoginPending}
@@ -379,12 +435,11 @@ export function LoginPage() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="w-full border-t border-black/10 bg-transparent px-8 py-3.5 text-[11px] text-black sm:text-xs">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/company/justonemorestep/"
               target="_blank"
               rel="noreferrer"
               className="text-black transition-colors hover:opacity-75"
@@ -392,14 +447,19 @@ export function LoginPage() {
               <LinkedInIcon />
             </a>
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/joms_justonemorestep"
               target="_blank"
               rel="noreferrer"
               className="text-black transition-colors hover:opacity-75"
             >
               <InstagramIcon />
             </a>
-            <span className="font-normal text-black">Email: hello@joms.in</span>
+            <span className="font-normal text-black">
+              Email:{' '}
+              <a href="mailto:hello@joms.in" className="hover:underline">
+                hello@joms.in
+              </a>
+            </span>
           </div>
 
           <div className="text-center text-black">
@@ -407,16 +467,36 @@ export function LoginPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 text-black">
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/disclaimer"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Disclaimer
             </a>
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/terms-of-service"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Terms of Service
             </a>
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/privacy"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Privacy
             </a>
-            <a href="#" className="hover:underline">
+            <a
+              href="https://www.joms.in/cookies-policy"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
+            >
               Cookies
             </a>
           </div>

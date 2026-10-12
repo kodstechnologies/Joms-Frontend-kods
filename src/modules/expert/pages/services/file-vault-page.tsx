@@ -4,6 +4,7 @@ import { Folder } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 
 import { useAdminConsultationBooking } from '../../hooks/use-consultation-drilldown'
 import {
@@ -34,20 +35,29 @@ function truncateFileName(name: string) {
 }
 
 function FileTile({ file }: { file: AdminVaultFile }) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <a
-      href={file.fileUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="flex w-[120px] flex-col items-center gap-2"
-    >
-      <div className="grid size-[110px] place-items-center rounded-xl bg-[#1A1A1A]">
-        <Folder className="size-10 fill-[#F6CB86] text-[#F6CB86]" />
-      </div>
-      <p className="w-full truncate text-center text-[12px] text-white" title={file.fileName}>
-        {truncateFileName(file.fileName)}
-      </p>
-    </a>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex w-[120px] flex-col items-center gap-2"
+      >
+        <div className="grid size-[110px] place-items-center rounded-xl bg-[#1A1A1A]">
+          <Folder className="size-10 fill-[#F6CB86] text-[#F6CB86]" />
+        </div>
+        <p className="w-full truncate text-center text-[12px] text-white" title={file.fileName}>
+          {truncateFileName(file.fileName)}
+        </p>
+      </button>
+      <InPageMediaViewer
+        open={open}
+        items={[{ url: file.fileUrl, title: file.fileName }]}
+        index={0}
+        onClose={() => setOpen(false)}
+      />
+    </>
   )
 }
 
@@ -104,7 +114,7 @@ export function FileVaultPage() {
         title={isConsultation ? 'Consultation Performance' : 'Service Details'}
         onBack={() => navigateBackOrFallback(navigate, backPath)}
         crumbs={[
-          { label: 'All Experts', onClick: () => navigate('/experts/management') },
+          { label: 'Expert Management', onClick: () => navigate('/experts/management') },
           { label: expertName, onClick: () => navigate(`/experts/management/profile/${expertId}`) },
           {
             label: isConsultation ? 'Consultation Performance' : 'Service listing',

@@ -11,6 +11,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 
 export function CreateRolePage() {
   const { id } = useParams()
@@ -38,9 +39,6 @@ export function CreateRolePage() {
 
   const catalog = catalogData?.data ?? {}
   const pageTitle = isEdit ? 'Edit Role' : 'Create New Role'
-  const pageSubtitle = isEdit
-    ? 'Role Based Access / Edit Role'
-    : 'Role Based Access / Create New Role'
 
   const handleSubmit = async () => {
     const trimmedName = name.trim()
@@ -101,7 +99,14 @@ export function CreateRolePage() {
           <ArrowLeft className="size-5" aria-hidden="true" />
           <span>{pageTitle}</span>
         </button>
-        <p className="create-role-breadcrumb">{pageSubtitle}</p>
+        <div className="create-role-breadcrumb">
+          <PageBreadcrumb
+            items={[
+              { label: 'Role Based Access Control', to: '/settings/access' },
+              { label: isEdit ? 'Edit Role' : 'Create New Role', isActive: true },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="create-role-card">

@@ -5,14 +5,20 @@ import { ManageAmenitiesModal } from './manage-amenities-modal'
 import { AddAmenityModal } from './add-amenity-modal'
 import { useQuery } from '@tanstack/react-query'
 import { fetchAmenityMasters } from '../api/venue-api'
-import type { VenueFormData } from '../utils/venue-form'
-import { rebuildVenueGalleryPreviewsFromForm } from '../utils/venue-form'
+import {
+  rebuildVenueGalleryPreviewsFromForm,
+  resolveAmenityMediaUrl,
+  type VenueFormData,
+} from '../utils/venue-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 type AmenitySubCategory = {
   _id: string
   name: string
   image?: string
   icon?: string
+  icon3D?: string
+  vectorIcon?: string
 }
 
 type AmenityCategory = {
@@ -246,7 +252,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                           category._id,
                           item._id,
                           item.name,
-                          item.image || item.icon || '',
+                          item.image || item.icon || item.icon3D || item.vectorIcon || '',
                         )
                       }
                       className={`text-body-sm flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-all ${
@@ -255,9 +261,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                           : 'border-white/10 bg-transparent text-white hover:border-white/30'
                       }`}
                     >
-                      {(item.image || item.icon) && (
+                      {resolveAmenityMediaUrl(item) && (
                         <img
-                          src={item.image || item.icon}
+                          src={resolveAmenityMediaUrl(item) || ''}
                           alt={item.name}
                           className="h-3.5 w-3.5 object-contain"
                         />
@@ -279,7 +285,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="mb-2 text-xs font-medium text-white">Venue Cover Image</p>
+              <p className="mb-2 text-xs font-medium text-white">
+                Venue Cover Image <RequiredMark />
+              </p>
               <input
                 ref={coverImageRef}
                 type="file"
@@ -323,7 +331,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-medium text-white">Venue Image</p>
+              <p className="mb-2 text-xs font-medium text-white">
+                Venue Image <RequiredMark />
+              </p>
               <input
                 ref={venueImageRef}
                 type="file"
@@ -368,7 +378,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
           </div>
 
           <div className="mt-4">
-            <p className="mb-2 text-xs font-medium text-white">Photo Gallery</p>
+            <p className="mb-2 text-xs font-medium text-white">
+              Photo Gallery <RequiredMark />
+            </p>
             <input
               ref={galleryRef}
               type="file"

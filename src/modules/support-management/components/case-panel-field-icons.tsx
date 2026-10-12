@@ -1,3 +1,5 @@
+import moduleIcon from '@/assets/JOMS_ICONS-2/icons8-module-24.svg'
+
 const iconClass = 'size-4 shrink-0 text-white'
 
 export function CaseTicketStatusIcon() {
@@ -18,18 +20,12 @@ export function CasePriorityIcon() {
 
 export function CaseModuleIcon() {
   return (
-    <span className="relative inline-flex size-4 shrink-0" aria-hidden>
-      <svg viewBox="0 0 16 16" className={`${iconClass} absolute inset-0`} fill="currentColor">
-        <path d="M2.5 3h11v10.5h-11V3zm1 1v2h2.25V4H3.5zm3 0v2H9V4H6.5zm3.25 0V6H12V4H9.75zM3.5 7.25h9v5.25h-9V7.25z" />
-      </svg>
-      <svg
-        viewBox="0 0 8 8"
-        className="absolute -bottom-0.5 -left-0.5 size-2.5 text-white"
-        fill="currentColor"
-      >
-        <path d="M4 0 4.9 2.9H8 5.2 5.8 6.7 6.7 9.5 4 7.8 1.3 9.5 2.2 6.7 0 5.2 3.1 2.9 4 0z" />
-      </svg>
-    </span>
+    <img
+      src={moduleIcon}
+      alt=""
+      className="size-4 shrink-0 brightness-0 invert"
+      aria-hidden="true"
+    />
   )
 }
 

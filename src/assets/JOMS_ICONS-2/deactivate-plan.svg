@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <!-- material-symbols:tab-close-inactive-rounded — Figma Deactivate Plan -->
+  <path
+    d="M5 11v7.5A1.5 1.5 0 0 0 6.5 20H14"
+    stroke="#D3191C"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-dasharray="2.4 2.2"
+  />
+  <rect x="8.25" y="5" width="10.75" height="10.75" rx="2" fill="#D3191C"/>
+  <path
+    d="M11.2 8.15 13.6 10.55 16 8.15M16 12.95 13.6 10.55 11.2 12.95"
+    stroke="#fff"
+    stroke-width="1.75"
+    stroke-linecap="round"
+  />
+</svg>

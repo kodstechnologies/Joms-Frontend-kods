@@ -102,6 +102,21 @@ export function StatusPill({ status, label }: { status?: string | null; label?: 
   )
 }
 
+export function TableStatusPill({ status, label }: { status?: string | null; label?: string }) {
+  const normalized = String(status || '').toLowerCase()
+  if (!normalized && !label) return <>{DASH}</>
+  return (
+    <span
+      className={cn(
+        'inline-flex h-5 min-w-[50px] items-center justify-center rounded-[10px] px-2.5 text-center text-[10px] leading-[14px] font-semibold tracking-normal whitespace-nowrap',
+        STATUS_TONES[normalized] || 'text-muted bg-white/10',
+      )}
+    >
+      {label || titleCase(status) || DASH}
+    </span>
+  )
+}
+
 export function ShimmerBlock({ className }: { className?: string }) {
   return <div className={cn('animate-pulse rounded bg-white/10', className)} />
 }

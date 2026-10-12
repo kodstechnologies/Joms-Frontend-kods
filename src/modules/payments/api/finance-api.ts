@@ -136,6 +136,7 @@ export const escalateFinanceDispute = async (
     priority?: 'urgent' | 'high' | 'normal'
     adminNotes?: string
     escalateToAdminId?: string
+    escalateToAdminName?: string
   },
 ) => {
   const response = await paymentApiClient.post<ApiSuccess<FinanceDispute>>(
@@ -183,6 +184,7 @@ export const escalateFinanceRefund = async (
     priority?: 'urgent' | 'high' | 'normal'
     adminNotes?: string
     escalateToAdminId?: string
+    escalateToAdminName?: string
   },
 ) => {
   const response = await paymentApiClient.post<ApiSuccess<FinanceRefund>>(
@@ -241,6 +243,24 @@ export const seedFinanceRefundCase = async (body: {
     paymentSource: 'mid_state',
     ...body,
   })
+  return response.data
+}
+
+export const initiateFinanceRefund = async (body: {
+  paymentId: string
+  amount?: number | null
+  reason?: string
+  adminNotes?: string
+}) => {
+  const response = await paymentApiClient.post<
+    ApiSuccess<{
+      payment?: { _id?: string; orderId?: string; module?: string; amount?: number }
+      maxRefundableAmount?: number
+      dispute?: { _id?: string; disputeId?: string } | null
+      refund?: { _id?: string; refundId?: string; status?: string; amount?: number }
+      created?: boolean
+    }>
+  >('/admin/finance/refunds/initiate', body)
   return response.data
 }
 
@@ -314,10 +334,11 @@ export const escalateFinanceResource = async (
   adminNote: string,
   escalateToAdminId?: string,
   priority?: 'urgent' | 'high' | 'normal',
+  escalateToAdminName?: string,
 ) => {
   const response = await paymentApiClient.post<ApiSuccess<unknown>>(
     `/admin/finance/${id}/escalate`,
-    { resourceType, adminNote, escalateToAdminId, priority },
+    { resourceType, adminNote, escalateToAdminId, escalateToAdminName, priority },
   )
   return response.data
 }

@@ -20,7 +20,7 @@ const EXPERT_PROFILE_METRIC_DEFS: MetricRowTuple[] = [
   ['membership-type', 'Membership Type', 'Text', 'Subscription', true],
   ['expert-category', 'Expert Category', 'Text', 'Category', true],
   ['overall-rating', 'Overall Rating', 'Average', 'Avg rating', true],
-  ['profile-views', 'Profile Views', 'Count', 'Profile visits', true],
+  ['profile-views', 'Profile Views', 'Count', 'Times users opened this profile', true],
   ['services-listed', 'Services Listed', 'Count', 'Services created', true],
   ['active-services', 'Active Services', 'Count', 'Live services'],
   ['paused-services', 'Paused Services', 'Count', 'Paused'],

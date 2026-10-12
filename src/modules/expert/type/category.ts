@@ -9,6 +9,8 @@ export interface CategoryApiSubCategory {
   name: string
   description?: string
   vectorIcon?: string | null
+  icon?: string | null
+  icon3D?: string | null
   status?: CategoryApiStatus
   isDeleted?: boolean
   isPaused?: boolean
@@ -18,6 +20,7 @@ export interface CategoryApiSubCategory {
   createdBy?: string | null
   createdByName?: string | null
   activeListings?: number
+  managementVisibleListings?: number
   totalListings?: number
   experts?: number
   services?: number
@@ -40,6 +43,7 @@ export interface ServiceCategoryApi {
   name: string
   description?: string
   icon3D?: string | null
+  icon?: string | null
   image?: string | null
   status: CategoryApiStatus
   deletedAt?: string | null
@@ -50,6 +54,7 @@ export interface ServiceCategoryApi {
   createdByName?: string | null
   subCategoryCount?: number
   activeListings?: number
+  managementVisibleListings?: number
   totalListings?: number
   experts?: number
   services?: number
@@ -69,6 +74,7 @@ export interface VenueCategoryApi {
   name: string
   description?: string
   icon?: string | null
+  icon3D?: string | null
   image?: string | null
   isDeleted?: boolean
   isPaused?: boolean

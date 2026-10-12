@@ -40,6 +40,7 @@ export const REFERRAL_METRICS_SEED: ReferralMetricsValues = {
 
 export const REFERRAL_METRIC_TREND_PERCENT = 0
 
+// A reward unlocks on the first booking or a membership purchase. Retention is counted for 30 days.
 export const REFERRAL_REWARD_UNLOCK_RULE = {
   goalEvents: ['signup', 'kyc', 'first_booking', 'membership_purchase'] as const,
   unlockAnyOf: ['first_booking', 'membership_purchase'] as const,
@@ -84,12 +85,12 @@ export const REFERRAL_METRIC_DEFINITIONS: ReferralMetricDefinition[] =
     registryType: item.type as ReferralMetricDefinition['registryType'],
   })).filter((item) => Boolean(item.key))
 
+// A blank or non-numeric figure is a dash. A day average gets the word Days.
 export function formatReferralMetricValue(
   format: ReferralMetricFormat,
   value: number | string | undefined | null,
   options?: { appendDays?: boolean },
 ): string {
-  // null / undefined / empty → em dash (cannot compute or not tracked)
   if (value === undefined || value === null || value === '') {
     return '—'
   }
@@ -98,7 +99,6 @@ export function formatReferralMetricValue(
     return text || '—'
   }
   if (typeof value !== 'number' || Number.isNaN(value)) return '—'
-  // Real zeros render as 0 / 0%
   if (format === 'integer') return value.toLocaleString('en-US')
   if (format === 'percentage') return `${value}%`
   const decimal = value.toLocaleString('en-US', {
@@ -109,12 +109,12 @@ export function formatReferralMetricValue(
   return decimal
 }
 
+// A null figure from the server is replaced by the seed value so a card does not go blank.
 export function mergeReferralMetrics(partial?: Partial<ReferralMetrics> | null): ReferralMetrics {
   const merged = {
     ...REFERRAL_METRICS_SEED,
     ...(partial ?? {}),
   } as ReferralMetrics
-  // Coerce any lingering nulls from older API payloads to seed defaults (0 / "—")
   for (const key of Object.keys(REFERRAL_METRICS_SEED) as Array<keyof ReferralMetricsValues>) {
     if (merged[key] === null || merged[key] === undefined) {
       ;(merged as ReferralMetricsValues)[key] = REFERRAL_METRICS_SEED[key] as never

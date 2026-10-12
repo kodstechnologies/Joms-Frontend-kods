@@ -5,6 +5,7 @@ import {
   POLICY_SETTINGS_TABS,
   policyListPath,
 } from '../utils/policy-navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { cn } from '@/shared/lib/cn'
 
 export function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: string }) {
@@ -38,34 +39,18 @@ type PolicyBreadcrumbProps = {
 }
 
 export function PolicyBreadcrumb({ current, application = 'expert' }: PolicyBreadcrumbProps) {
-  const navigate = useNavigate()
-
   return (
-    <nav
-      className="policy-page-breadcrumb flex flex-wrap items-center gap-1.5"
-      aria-label="Breadcrumb"
-    >
-      <button
-        type="button"
-        className="policy-breadcrumb-link"
-        onClick={() => navigate(platformControlsPath(), { state: { settingsTab: 'platform' } })}
-      >
-        Platform Control
-      </button>
-      <span className="text-muted">/</span>
-      <button
-        type="button"
-        className="policy-breadcrumb-link"
-        onClick={() => navigate(policyListPath(application))}
-      >
-        Policy Management
-      </button>
-      {current ? (
-        <>
-          <span className="text-muted">/</span>
-          <span className="policy-breadcrumb-current">{current}</span>
-        </>
-      ) : null}
-    </nav>
+    <PageBreadcrumb
+      className="policy-page-breadcrumb"
+      items={[
+        {
+          label: 'Settings',
+          to: platformControlsPath(),
+          state: { settingsTab: 'platform' },
+        },
+        { label: 'Policy Management', to: policyListPath(application) },
+        ...(current ? [{ label: current, isActive: true }] : []),
+      ]}
+    />
   )
 }

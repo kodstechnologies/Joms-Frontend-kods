@@ -21,7 +21,6 @@ export function getModuleMetricsDefinition(moduleKey: string) {
   return undefined
 }
 
-/** Flat key→definition map for tests and callers that iterate all modules. */
 export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = Object.assign(
   {},
   ...DOMAIN_METRICS,

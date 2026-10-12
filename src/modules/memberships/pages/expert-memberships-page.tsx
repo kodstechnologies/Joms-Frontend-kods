@@ -1,39 +1,56 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   CircleArrowDown,
   CircleArrowUp,
   CircleX,
   ClipboardList,
-  Flag,
+  CreditCard,
+  IndianRupee,
+  MessageSquare,
+  PauseCircle,
+  PlayCircle,
+  RefreshCw,
+  User,
   Waypoints,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import { exportMappedItemsToFile } from '@/shared/utils/export-filter-utils'
+import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 
-import { EscalateMembershipUpgradeModal } from '../components/escalate-membership-upgrade-modal'
 import { MembershipActionModals } from '../components/membership-action-modals'
+import { MembershipHistoryModal } from '../components/membership-history-modal'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
+import { IssueRefundModal } from '@/modules/payments/components/issue-refund-modal'
+import { initiateFinanceRefund } from '@/modules/payments/api/finance-api'
 import {
   DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
   MEMBERSHIPS_MODULE_KEY,
+  MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
 } from '../config/membership-metrics.config'
 import { EXPERT_MEMBERSHIP_SORT_FIELD_MAP } from '../config/membership-table-sort-fields'
 import {
   useCancelSubscription,
-  useDowngradeSubscription,
   useExpertSubscriptions,
-  useExtendSubscription,
-  useUpgradeSubscription,
+  usePauseSubscription,
+  useResumeSubscription,
 } from '../hooks/use-membership-subscriptions'
 import { useExpertMembershipStore } from '../store/expert-membership-store'
 import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
 import { buildMembershipDataColumnsById } from '../utils/membership-preference-columns'
+import {
+  submitMembershipExtendForApproval,
+  submitMembershipPlanChangeForApproval,
+} from '../utils/submit-membership-plan-change-approval'
 import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
-import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { Button } from '@/shared/components/ui/button'
@@ -153,15 +170,19 @@ const EXPORT_COLUMN_MAP: Record<
 
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
-  const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
+  const [searchParams] = useSearchParams()
+  const queryClient = useQueryClient()
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
     null,
   )
   const [actionType, setActionType] = useState<
-    'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
+    'upgrade' | 'downgrade' | 'extend' | 'renew' | 'cancel' | 'pause' | 'resume' | null
   >(null)
-  const [escalateOpen, setEscalateOpen] = useState(false)
+  const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
+  const [historyTarget, setHistoryTarget] = useState<MembershipSubscription | null>(null)
+  const [refundTarget, setRefundTarget] = useState<MembershipSubscription | null>(null)
+  const { fileFormat } = useDefaultExportFormat()
 
   const { currentPage, setCurrentPage } = useExpertMembershipStore()
   const serverSort = useServerTableSort({
@@ -170,25 +191,47 @@ export function ExpertMembershipsPage() {
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const urlPlanName = searchParams.get('planName')?.trim() || ''
+  const urlBillingCycleName = searchParams.get('billingCycleName')?.trim() || ''
 
-  const listQueryParams = useMemo(
-    () =>
-      buildExpertMembershipsListQueryParams(appliedFilters, {
-        page: currentPage,
-        limit: 10,
-        ...enhancedSearch.buildSearchParams(),
-        ...serverSort.sortParams,
-      }),
-    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
-  )
+  const listQueryParams = useMemo(() => {
+    const params = buildExpertMembershipsListQueryParams(appliedFilters, {
+      page: currentPage,
+      limit: 10,
+      ...enhancedSearch.buildSearchParams(),
+      ...serverSort.sortParams,
+    })
+
+    if (urlPlanName && params.planName == null) params.planName = urlPlanName
+    if (urlBillingCycleName && params.billingCycleName == null) {
+      params.billingCycleName = urlBillingCycleName
+    }
+
+    return params
+  }, [
+    appliedFilters,
+    currentPage,
+    enhancedSearch,
+    serverSort.sortParams,
+    urlPlanName,
+    urlBillingCycleName,
+  ])
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
   const tableColumnPreferencesQuery = useTableColumnPreferences(MEMBERSHIPS_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
-  const upgradeMutation = useUpgradeSubscription()
-  const downgradeMutation = useDowngradeSubscription()
-  const extendMutation = useExtendSubscription()
   const cancelMutation = useCancelSubscription()
+  const pauseMutation = usePauseSubscription()
+  const resumeMutation = useResumeSubscription()
 
   const subscriptions = data?.data?.subscriptions ?? []
   const meta = data?.data?.meta
@@ -212,8 +255,9 @@ export function ExpertMembershipsPage() {
       EXPORT_COLUMN_MAP,
       'expert_memberships_export',
       { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [enhancedSearch.globalSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -227,6 +271,29 @@ export function ExpertMembershipsPage() {
 
   const openAction = useCallback(
     (subscription: MembershipSubscription, action: typeof actionType) => {
+      const status = String(subscription.status || '').toLowerCase()
+      if (
+        (action === 'upgrade' ||
+          action === 'downgrade' ||
+          action === 'extend' ||
+          action === 'renew' ||
+          action === 'pause') &&
+        (status === 'cancelled' || status === 'expired')
+      ) {
+        toast.error(`Cannot ${action} a ${status} membership`)
+        setActiveDropdownId(null)
+        return
+      }
+      if (action === 'pause' && status !== 'active') {
+        toast.error('Only active memberships can be paused')
+        setActiveDropdownId(null)
+        return
+      }
+      if (action === 'resume' && status !== 'paused') {
+        toast.error('Only paused memberships can be resumed')
+        setActiveDropdownId(null)
+        return
+      }
       setSelectedSubscription(subscription)
       setActionType(action)
       setActiveDropdownId(null)
@@ -239,60 +306,189 @@ export function ExpertMembershipsPage() {
     setActionType(null)
   }
 
+  const openViewUserProfile = useCallback(
+    (subscription: MembershipSubscription) => {
+      const partnerId = String(subscription.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      void openPartnerProfile({ id: partnerId }, navigate)
+    },
+    [navigate],
+  )
+
+  const openCommunicate = useCallback(
+    (subscription: MembershipSubscription) => {
+      const partnerId = String(subscription.partnerId || '').trim()
+      if (!partnerId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel: 'email',
+        audience: 'experts',
+        partnerIds: partnerId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [navigate],
+  )
+
+  const openRefundPayment = useCallback((subscription: MembershipSubscription) => {
+    const paymentId = String(subscription.paymentInfo?.paymentId || '').trim()
+    if (!paymentId) {
+      toast.error('No payment found for this membership. Cannot refund.')
+      return
+    }
+    setRefundTarget(subscription)
+  }, [])
+
+  const refundOriginalAmount = Number(
+    refundTarget?.paymentInfo?.amount ?? refundTarget?.purchasedPrice ?? 0,
+  )
+
+  const handleExportSubscription = useCallback(
+    async (subscription: MembershipSubscription) => {
+      try {
+        await exportMappedItemsToFile(
+          EXPORT_COLUMN_MAP,
+          [subscription],
+          fileFormat,
+          `subscription_${subscription.subscriptionId || subscription._id}`,
+          {
+            columnIds: exportColumnIds,
+            catalogOrder: catalogColumnIds,
+          },
+        )
+        toast.success('Subscription exported')
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, 'Failed to export subscription'))
+      }
+    },
+    [catalogColumnIds, exportColumnIds, fileFormat],
+  )
+
   const renderActions = useCallback(
-    (subscription: MembershipSubscription) => (
-      <TableActionsDropdown
-        label={`Actions for ${subscription.partnerName}`}
-        isOpen={activeDropdownId === subscription._id}
-        onOpenChange={(open) => setActiveDropdownId(open ? subscription._id : null)}
-        menuWidth={180}
-      >
-        <TableActionsItem
-          icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
-          onClick={() => navigate(`/memberships/experts/${subscription._id}`)}
+    (subscription: MembershipSubscription) => {
+      const status = String(subscription.status || '').toLowerCase()
+      return (
+        <TableActionsDropdown
+          label={`Actions for ${subscription.partnerName}`}
+          isOpen={activeDropdownId === subscription._id}
+          onOpenChange={(open) => setActiveDropdownId(open ? subscription._id : null)}
+          menuWidth={240}
+          maxVisibleItems={9}
         >
-          View Details
-        </TableActionsItem>
-        <TableActionsItem
-          icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
-          onClick={() => openAction(subscription, 'upgrade')}
-        >
-          Upgrade plan
-        </TableActionsItem>
-        {isSuperAdmin ? (
           <TableActionsItem
-            icon={<Flag className="size-4" strokeWidth={1.85} />}
+            icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
+            onClick={() => navigate(`/memberships/experts/${subscription._id}`)}
+          >
+            View Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
+            onClick={() => openAction(subscription, 'upgrade')}
+          >
+            Upgrade plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
+            onClick={() => openAction(subscription, 'downgrade')}
+          >
+            Downgrade Plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Waypoints className="size-4" strokeWidth={1.85} />}
+            onClick={() => openAction(subscription, 'extend')}
+          >
+            Extend Plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CircleX className="size-4" strokeWidth={1.85} />}
+            className="ui-table-actions-item-danger"
+            onClick={() => openAction(subscription, 'cancel')}
+          >
+            Cancel Plan
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<User className="size-3.5" aria-hidden="true" />}
             onClick={() => {
               setActiveDropdownId(null)
-              setSelectedSubscription(subscription)
-              setEscalateOpen(true)
+              openViewUserProfile(subscription)
             }}
           >
-            Escalate Upgrade
+            View User Profile
           </TableActionsItem>
-        ) : null}
-        <TableActionsItem
-          icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
-          onClick={() => openAction(subscription, 'downgrade')}
-        >
-          Downgrade Plan
-        </TableActionsItem>
-        <TableActionsItem
-          icon={<Waypoints className="size-4" strokeWidth={1.85} />}
-          onClick={() => openAction(subscription, 'extend')}
-        >
-          Extend Plan
-        </TableActionsItem>
-        <TableActionsItem
-          icon={<CircleX className="size-4" strokeWidth={1.85} />}
-          className="ui-table-actions-item-danger"
-          onClick={() => openAction(subscription, 'cancel')}
-        >
-          Cancel Plan
-        </TableActionsItem>
-      </TableActionsDropdown>
-    ),
-    [activeDropdownId, isSuperAdmin, navigate, openAction],
+          <TableActionsItem
+            icon={<RefreshCw className="size-3.5" aria-hidden="true" />}
+            onClick={() => openAction(subscription, 'renew')}
+          >
+            Renew Membership
+          </TableActionsItem>
+          {status === 'paused' ? (
+            <TableActionsItem
+              icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
+              onClick={() => openAction(subscription, 'resume')}
+            >
+              Resume Membership
+            </TableActionsItem>
+          ) : (
+            <TableActionsItem
+              icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+              onClick={() => openAction(subscription, 'pause')}
+            >
+              Pause Membership
+            </TableActionsItem>
+          )}
+          <TableActionsItem
+            icon={<MessageSquare className="size-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              openCommunicate(subscription)
+            }}
+          >
+            Communicate
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<CreditCard className="size-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setHistoryTarget(subscription)
+            }}
+          >
+            View Payment History
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<IndianRupee className="size-3.5" aria-hidden="true" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              openRefundPayment(subscription)
+            }}
+          >
+            Refund Payment
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<ExportDataIcon className="size-3.5" />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              void handleExportSubscription(subscription)
+            }}
+          >
+            Export Subscription
+          </TableActionsItem>
+        </TableActionsDropdown>
+      )
+    },
+    [
+      activeDropdownId,
+      handleExportSubscription,
+      navigate,
+      openAction,
+      openCommunicate,
+      openRefundPayment,
+      openViewUserProfile,
+    ],
   )
 
   const columns = useMemo<ColumnDef<MembershipSubscription>[]>(() => {
@@ -327,12 +523,12 @@ export function ExpertMembershipsPage() {
             )
           }
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </Button>
       </div>
 
-      <MembershipStatsBar />
+      <MembershipStatsBar type="expert" />
 
       <div className="flex justify-center">
         <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
@@ -372,12 +568,42 @@ export function ExpertMembershipsPage() {
 
       {exportFilterModals}
 
-      <EscalateMembershipUpgradeModal
-        open={escalateOpen}
-        subscription={selectedSubscription}
-        onClose={() => {
-          setEscalateOpen(false)
-          setSelectedSubscription(null)
+      {historyTarget ? (
+        <MembershipHistoryModal
+          open={Boolean(historyTarget)}
+          onClose={() => setHistoryTarget(null)}
+          subscription={historyTarget}
+        />
+      ) : null}
+
+      <IssueRefundModal
+        open={Boolean(refundTarget)}
+        originalAmount={formatCurrency(refundOriginalAmount)}
+        maxRefundableAmount={refundOriginalAmount}
+        defaultAmount={refundOriginalAmount > 0 ? String(refundOriginalAmount) : undefined}
+        onClose={() => setRefundTarget(null)}
+        onSubmit={async ({ refundAmount, reason, adminNotes }) => {
+          if (!refundTarget) return
+          const paymentId = String(refundTarget.paymentInfo?.paymentId || '').trim()
+          if (!paymentId) {
+            toast.error('No payment found for this membership. Cannot refund.')
+            throw new Error('Missing paymentId')
+          }
+          try {
+            await initiateFinanceRefund({
+              paymentId,
+              amount: Number(String(refundAmount).replace(/,/g, '')),
+              reason,
+              adminNotes,
+            })
+            toast.success('Refund issued')
+            setRefundTarget(null)
+            void queryClient.invalidateQueries({ queryKey: ['expert-subscriptions'] })
+            void queryClient.invalidateQueries({ queryKey: ['finance-refunds'] })
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to refund payment'))
+            throw error
+          }
         }}
       />
 
@@ -386,48 +612,69 @@ export function ExpertMembershipsPage() {
         action={actionType}
         onClose={closeAction}
         isSubmitting={
-          upgradeMutation.isPending ||
-          downgradeMutation.isPending ||
-          extendMutation.isPending ||
-          cancelMutation.isPending
+          isPlanChangeSubmitting ||
+          cancelMutation.isPending ||
+          pauseMutation.isPending ||
+          resumeMutation.isPending
         }
         onUpgrade={async (payload) => {
           if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
           try {
-            await upgradeMutation.mutateAsync({
-              id: selectedSubscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Upgrade request submitted')
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'upgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Upgrade sent for approval — check My Tasks')
             closeAction()
-          } catch {
-            toast.error('Failed to upgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send upgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onDowngrade={async (payload) => {
           if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
           try {
-            await downgradeMutation.mutateAsync({
-              id: selectedSubscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Downgrade request submitted')
+            await submitMembershipPlanChangeForApproval(selectedSubscription, 'downgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Downgrade sent for approval — check My Tasks')
             closeAction()
-          } catch {
-            toast.error('Failed to downgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send downgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onExtend={async (payload) => {
           if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
           try {
-            await extendMutation.mutateAsync({
-              id: selectedSubscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Extension request submitted')
+            await submitMembershipExtendForApproval(selectedSubscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Extend sent for approval — check My Tasks')
             closeAction()
-          } catch {
-            toast.error('Failed to extend membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send extend for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
+          }
+        }}
+        onRenew={async (payload) => {
+          if (!selectedSubscription) return
+          setIsPlanChangeSubmitting(true)
+          try {
+            await submitMembershipExtendForApproval(selectedSubscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Renewal sent for approval — check My Tasks')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send renewal for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onCancel={async (payload) => {
@@ -439,8 +686,34 @@ export function ExpertMembershipsPage() {
             })
             toast.success('Cancellation request submitted')
             closeAction()
-          } catch {
-            toast.error('Failed to cancel membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to cancel membership'))
+          }
+        }}
+        onPause={async (payload) => {
+          if (!selectedSubscription) return
+          try {
+            await pauseMutation.mutateAsync({
+              id: selectedSubscription._id,
+              payload: { ...payload, updatedBy: 'Admin' },
+            })
+            toast.success('Membership paused')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to pause membership'))
+          }
+        }}
+        onResume={async (payload) => {
+          if (!selectedSubscription) return
+          try {
+            await resumeMutation.mutateAsync({
+              id: selectedSubscription._id,
+              payload: { ...payload, updatedBy: 'Admin' },
+            })
+            toast.success('Membership resumed')
+            closeAction()
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to resume membership'))
           }
         }}
       />

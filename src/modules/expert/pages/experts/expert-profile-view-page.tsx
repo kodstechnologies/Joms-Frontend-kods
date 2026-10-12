@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams, type NavigateFunction } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
-import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
+import editIcon from '@/assets/JOMS_ICONS-2/edit-text.svg'
+import notepadIcon from '@/assets/JOMS_ICONS-2/icons8-notepad-24.svg'
 import bagSolidIcon from '@/assets/JOMS_ICONS-2/basil-bag-solid.svg'
 import { toast } from 'sonner'
+import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-export-format'
+import {
+  END_MUST_AFTER_START_MESSAGE,
+  isEndOnOrBeforeStart,
+  isStartBeforeToday,
+  START_BEFORE_TODAY_MESSAGE,
+} from '@/shared/utils/date-range'
 import {
   AlertOctagon,
   ArrowLeft,
@@ -29,10 +38,9 @@ import {
   Pencil,
   Phone,
   Plus,
-  RefreshCw,
+  RotateCw,
   Search,
   Share2,
-  SlidersHorizontal,
   Star,
   Tag,
   Trash2,
@@ -41,15 +49,25 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { AdvanceFilterIcon, ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import {
+  AdvanceFilterIcon,
+  ExportDataIcon,
+  ManageMetricsIcon,
+} from '@/shared/components/icons/action-button-icons'
 
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
 import {
   consultationPerformancePath,
   getExpertServiceDrilldownPath,
   getServiceManagementViewPath,
+  isPendingListingReview,
 } from '../../lib/service-navigation'
-import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import {
+  isVenuePartner,
+  openExpertKycFromProfile,
+  resolveVenuePartnerProfilePath,
+} from '../../utils/expert-application-navigation'
+import { LOOKS_LIKE_CATEGORY_ID } from '../../utils/expert-application-helpers'
 import {
   useDeactivateExpert,
   useSetExpertPassword,
@@ -59,18 +77,20 @@ import {
 } from '../../hooks/use-expert'
 import {
   useDeleteService,
-  useSuspendService,
   useUpdateConsultationStatus,
   useBulkDeleteServices,
   useBulkPauseServices,
   useBulkHideServices,
   useBulkDisableServices,
 } from '../../hooks/use-services'
+import { usePauseConsultationListing } from '../../hooks/use-consultation-drilldown'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { buildExpertProfileServicesQueryParams } from '@/shared/utils/export-filter-utils'
-import { apiErrorMessage } from '@/shared/lib/api-error'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useServiceListingControls } from '@/modules/settings/hooks/use-service-public-settings'
+import { RESTRICTION_MESSAGES } from '@/modules/settings/hooks/use-app-restrictions'
 import {
   useExpertAnalytics,
   useExpertAvailability,
@@ -113,6 +133,7 @@ import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { ShareProfileModal } from '@/shared/components/modal/share-profile-modal'
 import { CustomUrlModal } from '../../components/custom-url-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
+import { adminNoteTextsNewestFirst } from '@/modules/expert/utils/admin-notes-display'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -126,6 +147,10 @@ import {
 import { formatListingExpertId } from './expert-list-format'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
+import {
+  getListingStatusDisplay,
+  getProfileServiceListingStatusDisplay,
+} from '../../utils/management-status'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { fetchSupportTickets } from '@/modules/support-management/api/support-api'
@@ -142,6 +167,25 @@ type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | '
 
 type ListingSubTab = 'services' | 'consultations'
 
+const PROFILE_TAB_KEYS = new Set<TabKey>([
+  'overview',
+  'service-listings',
+  'availability',
+  'analytics',
+  'health',
+])
+
+const parseProfileTab = (value: string | null): TabKey | null => {
+  if (!value) return null
+  const normalized = value.trim().toLowerCase().replace(/_/g, '-')
+  if (PROFILE_TAB_KEYS.has(normalized as TabKey)) return normalized as TabKey
+  if (normalized === 'listings' || normalized === 'services') return 'service-listings'
+  if (normalized === 'reports' || normalized === 'tickets' || normalized === 'disputes') {
+    return 'health'
+  }
+  return null
+}
+
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'service-listings', label: 'Service Listings' },
@@ -153,14 +197,23 @@ const TABS: { key: TabKey; label: string }[] = [
 const PROFILE_BTN_PRIMARY =
   'inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-1.5 text-[12px] font-semibold text-[#050505] transition-[filter] hover:brightness-95'
 
+const PROFILE_BTN_VIEW =
+  'inline-flex h-[25px] min-w-[48px] items-center justify-center rounded-[8px] bg-[#F6CB86] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-black transition-[filter] hover:brightness-95'
+
+const PROFILE_BTN_CHECK_TIMELINES =
+  'inline-flex h-[30px] min-w-[110px] items-center justify-center gap-2.5 rounded-[10px] bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-[#050505] transition-[filter] hover:brightness-95'
+
 const PROFILE_HEADER_BTN =
   'inline-flex h-[25px] items-center justify-center gap-1.5 rounded-[12px] bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 text-[11px] leading-none font-semibold whitespace-nowrap text-[#050505] transition-[filter] hover:brightness-95'
 
-const PROFILE_CARD = 'rounded-xl bg-[#141414]'
+const PROFILE_CARD = 'rounded-[10px] bg-[#141414]'
 
 const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505]'
 
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
+
+const PROFILE_HEALTH_CHIP =
+  'inline-flex h-[25px] items-center justify-center rounded-[10px] px-[10px] text-[12px] leading-[12px] font-semibold tracking-normal whitespace-nowrap text-white'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
@@ -173,9 +226,6 @@ const OPEN_REPORT_STATUSES = new Set([
   'open',
 ])
 const VIOLATION_ISSUE_TYPES = new Set(['fraud', 'misconduct', 'spam', 'fake profile', 'harassment'])
-
-const getApiErrorMessage = (error: unknown) =>
-  apiErrorMessage(error, 'Unable to load expert profile.')
 
 const resolveCustomUrl = (profile: ExpertProfileDetail, analytics?: ExpertAnalyticsData) =>
   profile.customUrl ||
@@ -293,15 +343,22 @@ const viewExpertService = async (
 
   try {
     await fetchServiceById(service._id)
+    const isPending = isPendingListingReview(service.status)
     navigate(
-      getExpertServiceDrilldownPath(
-        {
-          _id: service._id,
-          serviceType: 'Service',
-          partnerId: expertId,
-        },
-        expertId,
-      ),
+      isPending
+        ? getServiceManagementViewPath({
+            _id: service._id,
+            serviceType: 'Service',
+            partnerId: expertId,
+          })
+        : getExpertServiceDrilldownPath(
+            {
+              _id: service._id,
+              serviceType: 'Service',
+              partnerId: expertId,
+            },
+            expertId,
+          ),
     )
   } catch {
     toast.error('Service not found')
@@ -392,18 +449,36 @@ const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: stri
   if (finalReview?.approvalStatus === 'approved') {
     return {
       label: 'KYC Verified',
-      className: 'bg-[#143D2B] text-white border border-[#1E563D]/50',
+      className:
+        'inline-flex h-[25px] items-center justify-center rounded-[10px] bg-[#00A63E4D] px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-white',
     }
   }
   return {
     label: 'Review Pending',
-    className: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+    className:
+      'inline-flex h-[25px] items-center justify-center rounded-[10px] border border-amber-500/30 bg-amber-500/15 px-2.5 text-[12px] font-semibold leading-[14px] tracking-normal text-amber-300',
   }
 }
 
 const formatServiceType = (value?: string) => {
   if (!value) return '—'
   return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+const formatExpertCategory = (basic?: ExpertProfileDetail['basicProfile']) => {
+  const displayed = Array.isArray(basic?.serviceCategoryDisplay) ? basic.serviceCategoryDisplay : []
+  const stored = Array.isArray(basic?.serviceCategory) ? basic.serviceCategory : []
+  const names = [...displayed, ...stored]
+    .map((item) => {
+      if (typeof item === 'string') return item.trim()
+      if (item && typeof item === 'object' && 'name' in item) {
+        return String((item as { name?: string }).name || '').trim()
+      }
+      return String(item || '').trim()
+    })
+    .filter((name) => name && !LOOKS_LIKE_CATEGORY_ID.test(name))
+  const unique = [...new Set(names)]
+  return unique.length > 0 ? unique.join(', ') : '—'
 }
 
 const formatPricingType = (value?: string) => {
@@ -422,11 +497,26 @@ const formatPricing = (option: { durationMinutes: number; pricingType: string; p
   return `${mins} (₹${option.price.toLocaleString('en-IN')})`
 }
 
-function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
+function SidebarRow({
+  label,
+  children,
+  emphasizeLabel = false,
+}: {
+  label: string
+  children: ReactNode
+  emphasizeLabel?: boolean
+}) {
   return (
-    <div className="flex items-center justify-between gap-2 py-3">
-      <span className="text-body-sm text-muted shrink-0">{label}</span>
-      <span className="max-w-[65%] min-w-0 truncate text-right text-[13px] font-semibold text-white">
+    <div className="flex items-start justify-between gap-2 py-3 sm:items-center">
+      <span
+        className={cn(
+          'max-w-[45%] shrink-0 text-[14px] leading-[14px] tracking-normal sm:text-[16px]',
+          emphasizeLabel ? 'font-semibold text-white' : 'font-normal text-white/50',
+        )}
+      >
+        {label}
+      </span>
+      <span className="max-w-[55%] min-w-0 truncate text-right text-[14px] leading-5 font-semibold tracking-normal text-white sm:max-w-[65%] sm:text-[16px]">
         {children}
       </span>
     </div>
@@ -501,18 +591,24 @@ function ProfileSidebar({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className={cn(PROFILE_CARD, 'p-5')}>
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-[13px] font-semibold text-white">Profile &amp; Account</h3>
-          <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycBadge.className)}>
-            {kycBadge.label}
-          </span>
+      <div
+        className={cn(
+          PROFILE_CARD,
+          'box-border flex min-h-[596px] w-full min-w-0 flex-col overflow-x-hidden p-4 sm:p-5',
+        )}
+      >
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-[16px] leading-5 font-semibold tracking-normal text-white">
+            Profile &amp; Account
+          </h3>
+          <span className={kycBadge.className}>{kycBadge.label}</span>
         </div>
 
         <SidebarRow label="Expert ID">{formatExpertId(partnerId)}</SidebarRow>
         <SidebarRow label="Expert Type">
           {formatServiceType(profile.servicetype || basic?.serviceType)}
         </SidebarRow>
+        <SidebarRow label="Expert Category">{formatExpertCategory(basic)}</SidebarRow>
         <SidebarRow label="Expert Custom URL">
           {customUrl ? (
             customLinkVisible ? (
@@ -520,7 +616,7 @@ function ProfileSidebar({
                 type="button"
                 title={deepLink ? `Custom URL: ${customUrl}\nDeep Link: ${deepLink}` : customUrl}
                 onClick={() => onOpenCustomUrl?.()}
-                className="block max-w-full truncate font-medium text-white underline transition-colors hover:text-[#E0A263]"
+                className="block max-w-full truncate text-right text-[16px] leading-5 font-semibold tracking-normal text-white underline decoration-solid underline-offset-auto transition-colors hover:text-[#E0A263]"
               >
                 {customUrl}
               </button>
@@ -528,9 +624,9 @@ function ProfileSidebar({
               <button
                 type="button"
                 onClick={() => onOpenCustomUrl?.()}
-                className="font-medium text-white/50 underline transition-colors hover:text-[#E0A263]"
+                className="text-right text-[16px] leading-5 font-semibold tracking-normal text-white/50 underline decoration-solid transition-colors hover:text-[#E0A263]"
               >
-                Hidden
+                Suspended
               </button>
             )
           ) : (
@@ -538,12 +634,12 @@ function ProfileSidebar({
           )}
         </SidebarRow>
         <SidebarRow label="Ratings">
-          <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
+          <span className="inline-flex items-center justify-end gap-1 text-[16px] leading-5 font-semibold tracking-normal text-white">
+            <Star className="size-3.5 shrink-0 fill-[#E0A263] text-[#E0A263]" />
             {ratingsAvailable && ratingAverage !== undefined && ratingAverage !== null
               ? Number(ratingAverage).toFixed(1)
               : '—'}
-            <span className="text-body-sm text-muted font-normal">
+            <span className="font-semibold text-white">
               ({ratingsAvailable && ratingCount != null ? ratingCount : 0})
             </span>
           </span>
@@ -563,7 +659,7 @@ function ProfileSidebar({
         <SidebarRow label="Last Active">
           {formatLastActive(profile.lastActiveAt || profile.updatedAt)}
         </SidebarRow>
-        <SidebarRow label="KYC">
+        <SidebarRow label="KYC" emphasizeLabel>
           <button
             type="button"
             onClick={() =>
@@ -573,13 +669,13 @@ function ProfileSidebar({
                 navigate,
               )
             }
-            className={PROFILE_BTN_PRIMARY}
+            className={PROFILE_BTN_VIEW}
           >
             View
           </button>
         </SidebarRow>
-        <SidebarRow label="Timelines">
-          <button type="button" onClick={onCheckTimelines} className={PROFILE_BTN_PRIMARY}>
+        <SidebarRow label="Timelines" emphasizeLabel>
+          <button type="button" onClick={onCheckTimelines} className={PROFILE_BTN_CHECK_TIMELINES}>
             Check Timelines
           </button>
         </SidebarRow>
@@ -587,41 +683,72 @@ function ProfileSidebar({
 
       <div className={cn(PROFILE_CARD, 'p-5')}>
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
-        <div className="rounded-lg bg-[#050505] p-3">
-          <p className="text-muted text-[10px]">Active Tickets</p>
-          {ticketsLoading ? (
-            <p className="text-body-sm text-muted mt-1 font-medium">Loading...</p>
-          ) : tickets.length === 0 ? (
-            <p className="text-body-sm mt-1 font-medium text-white">None</p>
-          ) : (
-            <ul className="mt-2 space-y-2">
-              {tickets.slice(0, 3).map((ticket) => (
-                <li key={ticket.id}>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/support/tickets/${ticket.id}`)}
-                    className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
-                  >
-                    # {ticket.id} – {ticket.subject}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="mt-3 rounded-lg bg-[#050505] p-3">
-          <p className="text-muted text-[10px]">Admin notes</p>
-          <p className="text-body-sm mt-1 font-medium text-white">
-            {profile.finalReview?.internalNotes || 'None'}
-          </p>
-        </div>
+        {(() => {
+          const notes = adminNoteTextsNewestFirst(
+            profile.finalReview?.adminNotesLog,
+            profile.finalReview?.internalNotes,
+          )
+          const itemCard = 'rounded-lg bg-[#050505] p-3'
+          const cardsScroll =
+            'max-h-[11.5rem] space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]'
+
+          return (
+            <>
+              <div className="space-y-2">
+                <p className="text-muted text-[10px]">Active Tickets</p>
+                {ticketsLoading ? (
+                  <div className={itemCard}>
+                    <p className="text-body-sm text-muted font-medium">Loading...</p>
+                  </div>
+                ) : tickets.length === 0 ? (
+                  <div className={itemCard}>
+                    <p className="text-body-sm font-medium text-white">None</p>
+                  </div>
+                ) : (
+                  <div className={tickets.length > 3 ? cardsScroll : 'space-y-2'}>
+                    {tickets.map((ticket) => (
+                      <div key={ticket.id} className={itemCard}>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/support/tickets/${ticket.id}`)}
+                          className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
+                        >
+                          # {ticket.id} – {ticket.subject}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <p className="text-muted text-[10px]">Admin notes</p>
+                {notes.length === 0 ? (
+                  <div className={itemCard}>
+                    <p className="text-body-sm font-medium text-white">None</p>
+                  </div>
+                ) : (
+                  <div className={notes.length > 3 ? cardsScroll : 'space-y-2'}>
+                    {notes.map((note, index) => (
+                      <div key={`${index}-${note.slice(0, 24)}`} className={itemCard}>
+                        <p className="text-body-sm font-medium whitespace-pre-wrap text-white">
+                          {note}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )
+        })()}
       </div>
     </div>
   )
 }
 
 function ProfileGallery({ images }: { images: string[] }) {
-  const visibleCount = 4
+  const visibleCount = 5
   const maxOffset = Math.max(0, images.length - visibleCount)
   const [offset, setOffset] = useState(0)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
@@ -677,7 +804,7 @@ function ProfileGallery({ images }: { images: string[] }) {
           </button>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="flex flex-wrap gap-[23px]">
           {visibleImages.map((image, index) => {
             const actualIndex = clampedOffset + index
             return (
@@ -685,7 +812,7 @@ function ProfileGallery({ images }: { images: string[] }) {
                 key={`${image}-${actualIndex}`}
                 type="button"
                 onClick={() => setActiveIndex(actualIndex)}
-                className="aspect-square overflow-hidden rounded-xl bg-[#050505]"
+                className="size-[100px] shrink-0 overflow-hidden rounded-[10px] bg-[#050505]"
               >
                 <SafeImage
                   src={image}
@@ -800,10 +927,10 @@ function OverviewTab({
   const reviews: PartnerInsightReview[] = insightsRes?.data?.reviews ?? []
 
   return (
-    <div className={cn(PROFILE_CARD, 'p-6')}>
-      <section>
-        <h3 className="text-[15px] font-semibold text-white">About</h3>
-        <p className="mt-3 text-[13px] leading-relaxed text-white/70">
+    <div className={cn(PROFILE_CARD, 'min-w-0 overflow-x-hidden p-4 sm:p-6')}>
+      <section className="min-w-0">
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">About</h3>
+        <p className="mt-3 text-[16px] leading-7 font-normal tracking-normal break-words text-white/50">
           {profile.bio || basic?.bio || 'No bio provided.'}
         </p>
         {tags.length > 0 ? (
@@ -821,45 +948,58 @@ function OverviewTab({
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Core Offerings</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+          Core Offerings
+        </h3>
         {offerings.length > 0 ? (
-          <ul className="mt-4 space-y-2.5">
+          <ul className="mt-4 space-y-3">
             {offerings.map((item) => (
-              <li key={item} className="flex items-center gap-2.5 text-[13px] text-white/70">
+              <li
+                key={item}
+                className="flex items-center gap-2.5 text-[16px] leading-[14px] font-normal tracking-normal text-white/50"
+              >
                 <Check className="size-4 shrink-0 text-white" strokeWidth={2.5} />
                 {item}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-[13px] text-white/40">No core offerings added yet.</p>
+          <p className="mt-3 text-[16px] leading-[14px] font-normal text-white/40">
+            No core offerings added yet.
+          </p>
         )}
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Gallery</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">Gallery</h3>
         {galleryImages.length > 0 ? (
           <ProfileGallery images={galleryImages} />
         ) : (
-          <p className="mt-3 text-[13px] text-white/40">No gallery images yet.</p>
+          <p className="mt-3 text-[16px] leading-[14px] font-normal text-white/40">
+            No gallery images yet.
+          </p>
         )}
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Work Experience</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+          Work Experience
+        </h3>
         {workExperience.length > 0 ? (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-4">
             {workExperience.map((entry) => (
               <div
                 key={entry._id || `${entry.jobTitle}-${entry.companyName}`}
-                className="flex items-start gap-3"
+                className="flex items-center gap-4"
               >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#050505]">
+                <div className="flex h-[55px] w-[65px] shrink-0 items-center justify-center rounded-[10px] bg-black">
                   <img src={bagSolidIcon} alt="" className="size-6 brightness-0 invert" />
                 </div>
-                <div className="min-w-0 pt-0.5">
-                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
-                  <p className="mt-0.5 text-[12px] text-white/45">
+                <div className="min-w-0">
+                  <p className="text-[16px] leading-none font-semibold tracking-[-0.01em] text-white">
+                    {entry.jobTitle || '—'}
+                  </p>
+                  <p className="mt-2 text-[14px] leading-none font-normal tracking-[-0.01em] text-white/50">
                     {entry.companyName || 'Company name'} | {formatWorkPeriod(entry)}
                   </p>
                 </div>
@@ -867,12 +1007,16 @@ function OverviewTab({
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-[13px] text-white/40">No work experience added yet.</p>
+          <p className="mt-3 text-[16px] leading-[14px] font-normal text-white/40">
+            No work experience added yet.
+          </p>
         )}
       </section>
 
       <section className="mt-6 border-t border-white/5 pt-6">
-        <h3 className="text-[15px] font-semibold text-white">Reviews &amp; Ratings</h3>
+        <h3 className="text-[14px] leading-5 font-semibold tracking-normal text-white">
+          Reviews &amp; Ratings
+        </h3>
         <div className="mt-4 mb-4 flex flex-wrap gap-2">
           {[
             { key: 'all', label: 'All Reviews' },
@@ -1003,15 +1147,22 @@ function ConsultationDetailCard({
     .split(/[.\n]/)
     .map((item) => item.trim())
     .filter(Boolean)
+  const isSuspended = Boolean(consultation.isSuspend)
+  const isPaused = Boolean(consultation.isPaused)
+  const listingStatus = getListingStatusDisplay(consultation.status, {
+    isSuspend: isSuspended,
+    isDeleted: Boolean(consultation.isDeleted),
+  })
+  const statusLabel = isPaused && !isSuspended ? 'Paused' : listingStatus.label
 
   return (
-    <div className="rounded-xl bg-[#141414] p-6">
+    <div className="min-w-0 overflow-x-hidden rounded-xl bg-[#141414] p-4 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-stretch gap-3">
             <span className="bg-brand-accent w-[3px] shrink-0 rounded-full" aria-hidden="true" />
             <div className="min-w-0">
-              <h3 className="text-[18px] leading-tight font-bold text-white">
+              <h3 className="text-[18px] leading-tight font-bold break-words text-white">
                 <button
                   type="button"
                   className="text-left hover:underline"
@@ -1020,6 +1171,18 @@ function ConsultationDetailCard({
                   {consultation.title || 'Untitled Consultation'}
                 </button>
               </h3>
+              {statusLabel ? (
+                <span
+                  className={cn(
+                    'mt-1 inline-flex rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+                    isPaused && !isSuspended
+                      ? 'bg-white/15 text-white/80'
+                      : listingStatus.className,
+                  )}
+                >
+                  {statusLabel}
+                </span>
+              ) : null}
               <p className="text-muted mt-1 text-[13px]">Business</p>
             </div>
           </div>
@@ -1028,7 +1191,7 @@ function ConsultationDetailCard({
               {(consultation.topics ?? []).map((topic) => (
                 <span
                   key={topic._id}
-                  className="rounded-md bg-[#8E8E93] px-3.5 py-1 text-xs font-semibold text-black"
+                  className="inline-flex items-center justify-center rounded-[6px] border border-[#FFFFFF1A] bg-[#FFFFFF80] p-[10px] text-[12px] leading-none font-semibold tracking-normal text-[#050505]"
                 >
                   {topic.name}
                 </span>
@@ -1036,54 +1199,56 @@ function ConsultationDetailCard({
             </div>
           )}
         </div>
-        <TableActionsDropdown
-          label={`Open actions for ${consultation.title || 'consultation'}`}
-          isOpen={menuOpen}
-          onOpenChange={onMenuOpenChange}
-          menuWidth={220}
-          tone="light"
-        >
-          <TableActionsItem
+        {!isSuspended ? (
+          <TableActionsDropdown
+            label={`Open actions for ${consultation.title || 'consultation'}`}
+            isOpen={menuOpen}
+            onOpenChange={onMenuOpenChange}
+            menuWidth={200}
             tone="light"
-            icon={<RefreshCw className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onRequestChanges()
-            }}
           >
-            Request Changes
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<PauseCircle className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onPause()
-            }}
-          >
-            Pause Consultation
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Trash2 className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onDelete()
-            }}
-          >
-            Delete Consultation
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Pencil className="size-3.5" />}
-            onClick={() => {
-              onMenuOpenChange(false)
-              onEdit()
-            }}
-          >
-            Edit Consultation
-          </TableActionsItem>
-        </TableActionsDropdown>
+            <TableActionsItem
+              tone="light"
+              icon={<RotateCw className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onRequestChanges()
+              }}
+            >
+              Request Changes
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<PauseCircle className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onPause()
+              }}
+            >
+              Pause Consultation
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Trash2 className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onDelete()
+              }}
+            >
+              Delete Consultation
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Pencil className="size-3.5" />}
+              onClick={() => {
+                onMenuOpenChange(false)
+                onEdit()
+              }}
+            >
+              Edit Consultation
+            </TableActionsItem>
+          </TableActionsDropdown>
+        ) : null}
       </div>
 
       {outlineItems.length > 0 && (
@@ -1098,15 +1263,15 @@ function ConsultationDetailCard({
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           {consultation.whoItsFor && (
-            <div>
+            <div className="min-w-0">
               <p className="text-body-sm mb-1.5 font-semibold text-white">Who is it for?</p>
-              <p className="text-body-sm text-white/50">{consultation.whoItsFor}</p>
+              <p className="text-body-sm break-words text-white/50">{consultation.whoItsFor}</p>
             </div>
           )}
 
-          <div>
+          <div className="min-w-0">
             <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex flex-col items-center gap-1.5">
@@ -1121,7 +1286,7 @@ function ConsultationDetailCard({
                 <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
                   <Languages className="size-5 text-white" />
                 </div>
-                <span className="text-[11px] font-medium text-white/60">
+                <span className="max-w-[100px] truncate text-[11px] font-medium text-white/60">
                   {(consultation.languages ?? [])[0] || 'English'}
                 </span>
               </div>
@@ -1139,17 +1304,17 @@ function ConsultationDetailCard({
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="min-w-0">
             <p className="text-body-sm mb-1 font-semibold text-white">Pre-session requirement</p>
-            <p className="text-body-sm text-white/50">
+            <p className="text-body-sm break-words text-white/50">
               {consultation.preSessionRequirement || 'Keep your requirements and questions ready.'}
             </p>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <p className="text-body-sm mb-1 font-semibold text-white">Post Session Requirement</p>
-            <p className="text-body-sm text-white/50">
+            <p className="text-body-sm break-words text-white/50">
               {consultation.postSessionMessage || 'Keep your requirements and questions ready.'}
             </p>
           </div>
@@ -1209,6 +1374,7 @@ function ServicesSubTab({
   fallbackServices?: ExpertService[]
 }) {
   const navigate = useNavigate()
+  const { fileFormat } = useDefaultExportFormat()
   const [searchQuery, setSearchQuery] = useState('')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -1343,7 +1509,7 @@ function ServicesSubTab({
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to delete services')
+          toast.error(getApiErrorMessage(error, 'Failed to delete services'))
         },
       },
     )
@@ -1388,7 +1554,7 @@ function ServicesSubTab({
           },
           onError: (err: unknown) => {
             const error = err as { response?: { data?: { message?: string } } }
-            toast.error(error?.response?.data?.message || 'Failed to pause services')
+            toast.error(getApiErrorMessage(error, 'Failed to pause services'))
           },
         },
       )
@@ -1405,7 +1571,7 @@ function ServicesSubTab({
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to hide services')
+        toast.error(getApiErrorMessage(error, 'Failed to hide services'))
       },
     })
   }, [selectedServiceIds, bulkHideMutation])
@@ -1419,7 +1585,7 @@ function ServicesSubTab({
       },
       onError: (err: unknown) => {
         const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to disable services')
+        toast.error(getApiErrorMessage(error, 'Failed to disable services'))
       },
     })
   }, [selectedServiceIds, bulkDisableMutation])
@@ -1449,12 +1615,12 @@ function ServicesSubTab({
         String(service.priceStarts ?? 'N/A'),
         service.submittedAt ? new Date(service.submittedAt).toLocaleDateString() : 'N/A',
       ])
-      exportDataToFile(headers, rows, 'excel', 'expert_selected_services_export')
+      exportDataToFile(headers, rows, fileFormat, 'expert_selected_services_export')
       toast.success(`Exported ${selectedServices.length} selected service(s)`)
-    } catch {
-      toast.error('Failed to export selected services.')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to export selected services.'))
     }
-  }, [expertId, selectedServices])
+  }, [expertId, fileFormat, selectedServices])
 
   const handleBulkNotify = useCallback(() => {
     if (!expertId) {
@@ -1524,7 +1690,7 @@ function ServicesSubTab({
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
           PromiseRejectedResult | undefined
-        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
+        toast.error(getApiErrorMessage(firstError?.reason, 'Failed to escalate services.'))
         return
       }
 
@@ -1536,7 +1702,7 @@ function ServicesSubTab({
       setSelectedServiceIds([])
       closeEscalateModal()
     } catch (err) {
-      toast.error(getApiErrorMessage(err) || 'Failed to escalate services.')
+      toast.error(getApiErrorMessage(err, 'Failed to escalate services.'))
     } finally {
       setIsEscalating(false)
     }
@@ -1552,14 +1718,14 @@ function ServicesSubTab({
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-[50px] min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[#FFFFFF33] bg-[#141414] px-3">
+        <div className="flex h-[50px] w-full min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#FFFFFF33] bg-[#141414] px-3 sm:min-w-[220px]">
           <Search className="text-muted size-4 shrink-0" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by service title"
-            className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
+            className="text-body-sm placeholder:text-muted w-full min-w-0 bg-transparent text-white outline-none"
           />
         </div>
 
@@ -1578,7 +1744,7 @@ function ServicesSubTab({
           type="checkbox"
           checked={allVisibleSelected}
           onChange={toggleSelectAll}
-          className="size-4 rounded border-white/30 bg-transparent"
+          className="ui-table-checkbox"
         />
         Select All
       </label>
@@ -1744,9 +1910,9 @@ function ServicesSubTab({
         heading={
           selectedServiceIds.length > 1
             ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
-            : 'Are you sure you want  Pause this Service.'
+            : undefined
         }
-        description="This will result in hiding this service from users."
+        description="Pausing this service will temporarily stop all new requests."
         submitLabel="Pause Service"
         reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
         onClose={() => setIsBulkPauseModalOpen(false)}
@@ -1799,43 +1965,31 @@ function ServiceListCard({
   const isDeleted = Boolean(service.isDeleted) || status === 'deleted' || status === 'deactivated'
   const isSuspended = Boolean(service.isSuspend) || status === 'suspended'
   const coverImage = service.images?.find(Boolean)
-  const statusLabel = (() => {
-    if (isDeleted) return 'Deleted'
-    if (isSuspended) return 'Suspended'
-    if (!status) return null
-    if (status === 'live' || status === 'instant') return 'Instant'
-    return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
-  })()
-  const statusClass = isDeleted
-    ? 'bg-rose-500/90 text-white'
-    : isSuspended
-      ? 'bg-amber-500/90 text-white'
-      : status === 'live' || status === 'instant' || status === 'preview'
-        ? 'bg-[#16A34A] text-white'
-        : status === 'rejected'
-          ? 'bg-rose-500/90 text-white'
-          : status === 'closed'
-            ? 'bg-amber-500/90 text-white'
-            : 'bg-[#16A34A] text-white'
+  const listingStatus = getProfileServiceListingStatusDisplay(service.status, {
+    isSuspend: isSuspended,
+    isDeleted,
+  })
+  const statusLabel = listingStatus.label
+  const statusClass = listingStatus.className
 
   return (
     <div
       onClick={() => viewExpertService(service, expertId, navigate)}
       className={cn(
-        'flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]',
+        'flex h-auto min-h-[110px] w-full min-w-0 cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-[10px] bg-black px-3 py-3 text-left transition-colors hover:bg-[#111] sm:h-[110px] sm:px-4 sm:py-0',
         selected && 'border border-blue-500 bg-blue-950/20',
       )}
     >
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <input
           type="checkbox"
           checked={selected}
           onClick={(event) => event.stopPropagation()}
           onChange={onToggleSelect}
-          className="size-5 shrink-0 rounded border-white/30 bg-transparent"
+          className="ui-table-checkbox"
         />
 
-        <div className="relative ml-1 h-28 w-32 shrink-0 overflow-hidden rounded-xl bg-black">
+        <div className="relative ml-0 h-[72px] w-[96px] shrink-0 overflow-hidden rounded-[10px] bg-[#D9D9D9] sm:ml-1 sm:h-[93px] sm:w-[125px]">
           <SafeImage
             src={coverImage}
             alt={service.title || 'Service'}
@@ -1847,25 +2001,24 @@ function ServiceListCard({
             }
           />
           {statusLabel && (
-            <span
-              className={cn(
-                'absolute top-2 left-2 rounded-md px-2 py-0.5 text-[10px] leading-none font-bold text-white shadow-xs',
-                statusClass,
-              )}
-            >
+            <span className={cn('absolute top-2 left-2 leading-none shadow-xs', statusClass)}>
               {statusLabel}
             </span>
           )}
         </div>
 
-        <div className="ml-1 min-w-0 flex-1">
-          <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
-          <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
-          <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
+        <div className="ml-0 min-w-0 flex-1 sm:ml-1">
+          <p className="truncate text-[16px] leading-5 font-semibold tracking-normal text-white">
+            {service.title || 'Untitled Service'}
+          </p>
+          <p className="text-body-sm text-muted mt-0.5 truncate">{service.category?.name || '—'}</p>
+          <p className="text-body-sm text-muted mt-0.5 truncate">
+            {formatPricingType(service.pricingType)}
+          </p>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
         {service.priceStarts != null && service.priceStarts > 0 && (
           <div className="text-right">
             <p className="text-[13px] font-bold text-white">
@@ -1901,17 +2054,15 @@ function ConsultationsSubTab({
   const [requestAdminNotes, setRequestAdminNotes] = useState('')
 
   const [pauseReasons, setPauseReasons] = useState<string[]>([])
-  const [pauseStartDate, setPauseStartDate] = useState('')
-  const [pauseEndDate, setPauseEndDate] = useState('')
-  const [pauseIndefinitely, setPauseIndefinitely] = useState(false)
   const [pauseAdminNotes, setPauseAdminNotes] = useState('')
+  const [pauseConfirmed, setPauseConfirmed] = useState(false)
 
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
 
   const updateConsultationStatus = useUpdateConsultationStatus()
-  const suspendServiceMutation = useSuspendService()
+  const pauseConsultationMutation = usePauseConsultationListing()
   const deleteServiceMutation = useDeleteService()
   const recordReasonUsage = useRecordModerationReasonUsage()
 
@@ -1932,10 +2083,8 @@ function ConsultationsSubTab({
   const closePauseModal = useCallback(() => {
     setPauseTarget(null)
     setPauseReasons([])
-    setPauseStartDate('')
-    setPauseEndDate('')
-    setPauseIndefinitely(false)
     setPauseAdminNotes('')
+    setPauseConfirmed(false)
   }, [])
 
   const closeDeleteModal = useCallback(() => {
@@ -1983,7 +2132,7 @@ function ConsultationsSubTab({
       closeRequestChangesModal()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to request changes.')
+      toast.error(getApiErrorMessage(err, 'Failed to request changes.'))
     }
   }, [
     buildRequestChangesReasonPayload,
@@ -2002,8 +2151,8 @@ function ConsultationsSubTab({
       toast.error('Please select at least one reason.')
       return
     }
-    if (!pauseIndefinitely && (!pauseStartDate || !pauseEndDate)) {
-      toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+    if (!pauseConfirmed) {
+      toast.error('Please confirm the pause reasons before continuing.')
       return
     }
     if (!pauseAdminNotes.trim()) {
@@ -2017,16 +2166,11 @@ function ConsultationsSubTab({
       return
     }
 
-    const toIso = (value: string) => new Date(`${value}T00:00:00.000Z`).toISOString()
-
     try {
-      await suspendServiceMutation.mutateAsync({
-        id: pauseTarget._id,
+      await pauseConsultationMutation.mutateAsync({
+        consultationId: pauseTarget._id,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
-          suspendIndefinitely: pauseIndefinitely,
-          startDate: pauseIndefinitely ? undefined : toIso(pauseStartDate),
-          endDate: pauseIndefinitely ? undefined : toIso(pauseEndDate),
           reasonDetails: reasonPayload.reasonDetails,
           adminNotes: pauseAdminNotes.trim(),
         },
@@ -2038,19 +2182,17 @@ function ConsultationsSubTab({
       closePauseModal()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to pause consultation.')
+      toast.error(getApiErrorMessage(err, 'Failed to pause consultation.'))
     }
   }, [
     buildPauseReasonPayload,
     closePauseModal,
     pauseAdminNotes,
-    pauseEndDate,
-    pauseIndefinitely,
+    pauseConfirmed,
     pauseReasons,
-    pauseStartDate,
     pauseTarget,
     recordReasonUsage,
-    suspendServiceMutation,
+    pauseConsultationMutation,
   ])
 
   const handleDeleteSubmit = useCallback(async () => {
@@ -2090,7 +2232,7 @@ function ConsultationsSubTab({
       closeDeleteModal()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to delete consultation.')
+      toast.error(getApiErrorMessage(err, 'Failed to delete consultation.'))
     }
   }, [
     buildDeleteReasonPayload,
@@ -2156,7 +2298,7 @@ function ConsultationsSubTab({
         }
         reason={requestReasonText}
         onReasonChange={setRequestReasonText}
-        reasonLabel="Request Changes"
+        reasonLabel="Request Change"
         adminNotes={requestAdminNotes}
         onAdminNotesChange={setRequestAdminNotes}
         onClose={closeRequestChangesModal}
@@ -2166,9 +2308,9 @@ function ConsultationsSubTab({
 
       <DecisionActionModal
         open={Boolean(pauseTarget)}
-        variant="suspend"
+        variant="pause"
         title="Pause Consultation"
-        description="Are you sure you want to pause this consultation? It will be hidden from clients until reactivated."
+        description="Pausing this consultation will temporarily stop all new requests."
         submitLabel="Pause Consultation"
         reasonOptions={pauseReasonOptions}
         selectedReasons={pauseReasons}
@@ -2179,24 +2321,22 @@ function ConsultationsSubTab({
               : [...current, value],
           )
         }
-        startDate={pauseStartDate}
-        onStartDateChange={setPauseStartDate}
-        endDate={pauseEndDate}
-        onEndDateChange={setPauseEndDate}
-        indefinite={pauseIndefinitely}
-        onIndefiniteChange={setPauseIndefinitely}
+        showReasonsLabel
+        confirmationChecked={pauseConfirmed}
+        onConfirmationChange={setPauseConfirmed}
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
         adminNotes={pauseAdminNotes}
         onAdminNotesChange={setPauseAdminNotes}
         onClose={closePauseModal}
         onSubmit={handlePauseSubmit}
-        isSubmitting={suspendServiceMutation.isPending}
+        isSubmitting={pauseConsultationMutation.isPending}
       />
 
       <DecisionActionModal
         open={Boolean(deleteTarget)}
         variant="delete"
         title="Delete Consultation"
-        description="Are you sure you want to delete this consultation? This will result in removal of the listing."
+        description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete Consultation"
         reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
@@ -2207,8 +2347,10 @@ function ConsultationsSubTab({
               : [...current, value],
           )
         }
+        showReasonsLabel
         confirmationChecked={deleteConfirmed}
         onConfirmationChange={setDeleteConfirmed}
+        confirmationLabel="I confirm the Consultation is not approved due to above reasons."
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}
@@ -2234,9 +2376,9 @@ function ServiceListingsTab({
 }) {
   const navigate = useNavigate()
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2">
           {(['services', 'consultations'] as const).map((tab) => (
             <button
               key={tab}
@@ -2254,7 +2396,7 @@ function ServiceListingsTab({
         <button
           type="button"
           onClick={() => navigate(`/experts/management/profile/${expertId}/clientele`)}
-          className={PROFILE_BTN_PRIMARY}
+          className={cn(PROFILE_BTN_PRIMARY, 'shrink-0')}
         >
           <Users className="size-3.5" />
           View Clientele
@@ -2400,9 +2542,9 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
         <button
           type="button"
           onClick={() => navigate(manageMetricsPath)}
-          className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+          className="ui-manage-metrics ui-cta ui-cta-primary"
         >
-          <ManageMetricsIcon className="size-4 shrink-0" />
+          <ManageMetricsIcon />
           Manage Metrics
         </button>
       </div>
@@ -2454,15 +2596,13 @@ function HealthTab({
       const isUnderReview =
         statusRaw === 'under review' || statusRaw === 'in review' || statusRaw === 'waiting'
 
-      const typeClass = isViolation
-        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
-        : 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+      const typeClass = isViolation ? 'bg-[#3D1414]' : 'bg-[#3D2814]'
 
-      const statusClass = isOpen
-        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
-        : isUnderReview
-          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
-          : 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
+      const statusClass = isUnderReview
+        ? 'bg-[#3D2814]'
+        : isOpen
+          ? 'bg-[#A619004D]'
+          : 'bg-[#143D2B] text-[#00E065]'
 
       return {
         id: report.id || report.reportId,
@@ -2489,17 +2629,20 @@ function HealthTab({
         ACTIVE_TICKET_STATUSES.has(statusRaw) || statusRaw === 'open' || statusRaw === 'in_progress'
       const isResolved = statusRaw === 'resolved' || statusRaw === 'closed'
 
+      const isOpenStatus = statusRaw === 'open'
       const statusClass = isResolved
-        ? 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
-        : isActive
-          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
-          : 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+        ? 'bg-[#143D2B] text-[#00E065]'
+        : isOpenStatus
+          ? 'bg-[#A619004D]'
+          : isActive
+            ? 'bg-[#3D2814]'
+            : 'bg-[#3D1414]'
 
       return {
         id: ticket.id,
         kind: 'reported-by',
         type: 'Reported By',
-        typeClass: 'bg-[#14243D] border border-[#1D365C]/50 text-white',
+        typeClass: 'bg-[#1447E64D]',
         status: ticket.status || 'Resolved',
         statusClass,
         title: ticket.subject || 'Spam Content Detected',
@@ -2549,10 +2692,8 @@ function HealthTab({
         </div>
         <span
           className={cn(
-            'rounded-full px-3.5 py-1 text-xs font-semibold text-white',
-            atRisk
-              ? 'border border-[#5C1D1D]/50 bg-[#3D1414]'
-              : 'border border-[#1E563D]/50 bg-[#143D2B]',
+            'inline-flex h-[33px] items-center justify-center rounded-[10px] px-1.5 text-[14px] leading-[17px] font-medium tracking-normal whitespace-nowrap text-white',
+            atRisk ? 'bg-[#D3191C33]' : 'bg-[#143D2B]',
           )}
         >
           Profile Health: {atRisk ? 'At Risk' : 'Healthy'}
@@ -2566,20 +2707,8 @@ function HealthTab({
           visible.map((incident) => (
             <div key={`${incident.kind}-${incident.id}`} className="rounded-xl bg-[#050505] p-5">
               <div className="flex items-center justify-between">
-                <span
-                  className={cn(
-                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
-                    incident.typeClass,
-                  )}
-                >
-                  {incident.type}
-                </span>
-                <span
-                  className={cn(
-                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
-                    incident.statusClass,
-                  )}
-                >
+                <span className={cn(PROFILE_HEALTH_CHIP, incident.typeClass)}>{incident.type}</span>
+                <span className={cn(PROFILE_HEALTH_CHIP, incident.statusClass)}>
                   {incident.status}
                 </span>
               </div>
@@ -2614,8 +2743,13 @@ function HealthTab({
 export function ExpertProfileViewPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { fileFormat, option: exportFormat } = useDefaultExportFormat()
   const { id } = useParams<{ id: string }>()
-  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { allowNewServiceListings, allowNewConsultationListings } = useServiceListingControls()
+  const canCreateListings = allowNewServiceListings || allowNewConsultationListings
+  const initialTab = parseProfileTab(searchParams.get('tab')) || 'overview'
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab)
   const [listingSubTab, setListingSubTab] = useState<ListingSubTab>('services')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
@@ -2676,6 +2810,39 @@ export function ExpertProfileViewPage() {
   })
 
   const profile = profileResponse?.data
+  const isVenueProfilePartner = Boolean(
+    profile &&
+    isVenuePartner({
+      id,
+      serviceType: profile.servicetype || profile.basicProfile?.serviceType,
+      servicetype: profile.servicetype,
+      basicProfile: profile.basicProfile,
+    }),
+  )
+  const [venueRedirectFailed, setVenueRedirectFailed] = useState(false)
+
+  useEffect(() => {
+    setVenueRedirectFailed(false)
+  }, [id])
+
+  useEffect(() => {
+    if (!id || !isVenueProfilePartner) return
+
+    let cancelled = false
+    void resolveVenuePartnerProfilePath(id).then((path) => {
+      if (cancelled) return
+      if (path) {
+        navigate(path, { replace: true })
+        return
+      }
+      setVenueRedirectFailed(true)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id, isVenueProfilePartner, navigate])
+
   const reports = useMemo(() => unwrapReportItems(reportsRes), [reportsRes])
   const allTickets = useMemo(() => ticketsRes?.data?.tickets ?? [], [ticketsRes])
   const activeTickets = useMemo(
@@ -2698,10 +2865,40 @@ export function ExpertProfileViewPage() {
     scrollToTimelineRef.current = false
   }, [activeTab])
 
+  useEffect(() => {
+    const fromQuery = parseProfileTab(searchParams.get('tab'))
+    if (fromQuery && fromQuery !== activeTab) {
+      setActiveTab(fromQuery)
+    }
+    const listing = String(searchParams.get('listing') || '')
+      .trim()
+      .toLowerCase()
+    if (listing === 'consultations' || listing === 'consultation') {
+      setListingSubTab('consultations')
+    } else if (listing === 'services' || listing === 'service') {
+      setListingSubTab('services')
+    }
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps -- sync URL → tab only
+
+  const selectProfileTab = useCallback(
+    (tab: TabKey) => {
+      setActiveTab(tab)
+      const next = new URLSearchParams(searchParams)
+      if (tab === 'overview') next.delete('tab')
+      else next.set('tab', tab)
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams],
+  )
+
   const navigateToCreateListing = useCallback(() => {
     if (!id) return
+    if (!canCreateListings) {
+      toast.error(RESTRICTION_MESSAGES.listingsCreate)
+      return
+    }
     navigate(`/services/management/create?partnerId=${encodeURIComponent(id)}`)
-  }, [id, navigate])
+  }, [canCreateListings, id, navigate])
 
   const closeSuspendModal = useCallback(() => {
     setSuspendModalOpen(false)
@@ -2740,7 +2937,7 @@ export function ExpertProfileViewPage() {
           setNotesModalOpen(false)
         },
         onError: (error: unknown) => {
-          toast.error(getApiErrorMessage(error) || 'Failed to save admin notes')
+          toast.error(getApiErrorMessage(error, 'Failed to save admin notes'))
         },
       })
     },
@@ -2828,10 +3025,10 @@ export function ExpertProfileViewPage() {
             exportCell((profile.adminTags || []).join(', ')),
           ],
         ],
-        'excel',
+        fileFormat,
         `expert_${expertCode}_profile`,
       )
-      toast.success('Profile exported')
+      toast.success(`Profile exported as ${exportFormat}`)
     } catch (error: unknown) {
       const message =
         error instanceof Error && error.message === 'NO_RECORDS'
@@ -2839,7 +3036,7 @@ export function ExpertProfileViewPage() {
           : 'Failed to export profile'
       toast.error(message)
     }
-  }, [analyticsRes?.data, id, profile])
+  }, [analyticsRes?.data, exportFormat, fileFormat, id, profile])
 
   const handlePasswordSubmit = useCallback(
     async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
@@ -2867,7 +3064,7 @@ export function ExpertProfileViewPage() {
         setPasswordModalOpen(false)
       } catch (error: unknown) {
         const err = error as { response?: { data?: { message?: string } } }
-        toast.error(err?.response?.data?.message || 'Failed to update password')
+        toast.error(getApiErrorMessage(err, 'Failed to update password'))
       }
     },
     [id, setExpertPasswordMutation],
@@ -2895,6 +3092,16 @@ export function ExpertProfileViewPage() {
 
     if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
       toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendIndefinitely && isStartBeforeToday(suspendStartDate)) {
+      toast.error(START_BEFORE_TODAY_MESSAGE)
+      return
+    }
+
+    if (!suspendIndefinitely && isEndOnOrBeforeStart(suspendStartDate, suspendEndDate)) {
+      toast.error(END_MUST_AFTER_START_MESSAGE)
       return
     }
 
@@ -2933,7 +3140,7 @@ export function ExpertProfileViewPage() {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to suspend expert. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to suspend expert. Please try again.'))
         },
       },
     )
@@ -2992,7 +3199,7 @@ export function ExpertProfileViewPage() {
         },
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { message?: string } } }
-          toast.error(err?.response?.data?.message || 'Failed to delete expert. Please try again.')
+          toast.error(getApiErrorMessage(err, 'Failed to delete expert. Please try again.'))
         },
       },
     )
@@ -3008,7 +3215,7 @@ export function ExpertProfileViewPage() {
     recordReasonUsage,
   ])
 
-  if (profileLoading) {
+  if (profileLoading || (isVenueProfilePartner && !venueRedirectFailed)) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
@@ -3028,7 +3235,7 @@ export function ExpertProfileViewPage() {
           <span>Expert Profile View</span>
         </button>
         <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
-          {getApiErrorMessage(profileErrorDetail)}
+          {getApiErrorMessage(profileErrorDetail, 'Unable to load expert profile.')}
         </div>
       </div>
     )
@@ -3048,11 +3255,15 @@ export function ExpertProfileViewPage() {
     expertRank != null && Number(expertRank) > 0 ? `# ${expertRank} Ranking` : 'Unranked'
 
   const headerActions = [
-    {
-      label: 'Create Listings',
-      icon: Plus,
-      onClick: navigateToCreateListing,
-    },
+    ...(canCreateListings
+      ? [
+          {
+            label: 'Create Listings',
+            icon: Plus,
+            onClick: navigateToCreateListing,
+          },
+        ]
+      : []),
     {
       label: 'Add Notes',
       icon: FileText,
@@ -3072,132 +3283,130 @@ export function ExpertProfileViewPage() {
   ]
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex items-start justify-between">
-        <div className="flex flex-col gap-2">
+    <div className="flex w-full max-w-full min-w-0 flex-col gap-5 overflow-x-hidden">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="group font-heading text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors hover:text-[#E0A263]"
+            className="group font-heading text-h3 flex w-fit max-w-full items-center gap-2 font-bold tracking-tight text-white transition-colors hover:text-[#E0A263]"
           >
-            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-            <span>Expert Profile View</span>
+            <ArrowLeft className="size-5 shrink-0 transition-transform group-hover:-translate-x-1" />
+            <span className="truncate">Expert Profile View</span>
           </button>
-          <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
-            <button
-              type="button"
-              onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-              className="hover:text-brand-text transition-colors"
-            >
-              Expert management
-            </button>
-            <span className="text-muted">/</span>
-            <span>Manage Expert</span>
-            <span className="text-muted">/</span>
-            <span className="font-bold text-white">{displayName}</span>
+          <div className="pl-7">
+            <PageBreadcrumb
+              items={[
+                { label: 'Expert Management', to: '/experts/management' },
+                { label: 'Manage Expert', to: '/experts/management' },
+                { label: displayName, isActive: true },
+              ]}
+            />
           </div>
         </div>
-        <TableActionsDropdown
-          label="Open expert profile actions"
-          isOpen={profileMenuOpen}
-          onOpenChange={setProfileMenuOpen}
-          menuWidth={220}
-          tone="light"
-        >
-          <TableActionsItem
+        <div className="shrink-0">
+          <TableActionsDropdown
+            label="Open expert profile actions"
+            isOpen={profileMenuOpen}
+            onOpenChange={setProfileMenuOpen}
+            menuWidth={220}
             tone="light"
-            icon={<img src={editIcon} alt="edit" className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              navigate(`/experts/management/create?expertId=${id}&mode=edit`)
-            }}
           >
-            Edit Profile
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Users className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              navigate(`/experts/management/profile/${id}/clientele`)
-            }}
-          >
-            View Clientele
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Eye className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              setPasswordModalOpen(true)
-            }}
-          >
-            Reset Password
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<AlertOctagon className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              if (!id) return
-              forceLogoutExpertMutation.mutate(id, {
-                onSuccess: (res) => {
-                  toast.success(
-                    res?.message ||
-                      'Expert sessions revoked. They will be logged out on the next app request.',
-                  )
-                },
-                onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to logout expert')
-                },
-              })
-            }}
-          >
-            Logout User
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<Ban className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              setSuspendModalOpen(true)
-            }}
-          >
-            Suspend User
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<CircleMinus className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              if (!id) return
-              blockExpertMutation.mutate(id, {
-                onSuccess: (res) => {
-                  toast.success(res?.message || 'Expert blocked successfully')
-                },
-                onError: (err: unknown) => {
-                  toast.error(getApiErrorMessage(err) || 'Failed to block expert')
-                },
-              })
-            }}
-          >
-            Block User
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
-            icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
-            className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
-            onClick={() => {
-              setProfileMenuOpen(false)
-              setDeleteModalOpen(true)
-            }}
-          >
-            Delete User
-          </TableActionsItem>
-        </TableActionsDropdown>
+            <TableActionsItem
+              tone="light"
+              icon={<img src={editIcon} alt="edit" className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                navigate(`/experts/management/create?expertId=${id}&mode=edit`)
+              }}
+            >
+              Edit Profile
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Users className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                navigate(`/experts/management/profile/${id}/clientele`)
+              }}
+            >
+              View Clientele
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Eye className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                setPasswordModalOpen(true)
+              }}
+            >
+              Reset Password
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<AlertOctagon className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                if (!id) return
+                forceLogoutExpertMutation.mutate(id, {
+                  onSuccess: (res) => {
+                    toast.success(
+                      res?.message ||
+                        'Expert sessions revoked. They will be logged out on the next app request.',
+                    )
+                  },
+                  onError: (err: unknown) => {
+                    toast.error(getApiErrorMessage(err, 'Failed to logout expert'))
+                  },
+                })
+              }}
+            >
+              Logout User
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<Ban className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                setSuspendModalOpen(true)
+              }}
+            >
+              Suspend User
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<CircleMinus className="size-3.5" />}
+              onClick={() => {
+                setProfileMenuOpen(false)
+                if (!id) return
+                blockExpertMutation.mutate(id, {
+                  onSuccess: (res) => {
+                    toast.success(res?.message || 'Expert blocked successfully')
+                  },
+                  onError: (err: unknown) => {
+                    toast.error(getApiErrorMessage(err, 'Failed to block expert'))
+                  },
+                })
+              }}
+            >
+              Block User
+            </TableActionsItem>
+            <TableActionsItem
+              tone="light"
+              icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
+              className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
+              onClick={() => {
+                setProfileMenuOpen(false)
+                setDeleteModalOpen(true)
+              }}
+            >
+              Delete User
+            </TableActionsItem>
+          </TableActionsDropdown>
+        </div>
       </header>
 
-      <div className="relative overflow-hidden rounded-xl bg-[#141414]">
+      <div className="relative min-w-0 overflow-hidden rounded-xl bg-[#141414]">
         <div className="h-40 w-full bg-[#050505]">
           <SafeImage
             src={coverImage}
@@ -3208,8 +3417,8 @@ export function ExpertProfileViewPage() {
             }
           />
         </div>
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="-mt-12 size-20 shrink-0 self-end overflow-hidden rounded-full border-2 border-[#E0A263] bg-[#141414]">
               <SafeImage
                 src={avatarImage}
@@ -3224,8 +3433,8 @@ export function ExpertProfileViewPage() {
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold text-white">{displayName}</h2>
-                <span className="rounded-full border border-[#1E563D]/50 bg-[#143D2B] px-2.5 py-0.5 text-[10px] font-bold text-white">
+                <h2 className="truncate text-lg font-bold text-white">{displayName}</h2>
+                <span className="inline-flex h-[25px] items-center justify-center rounded-[10px] border border-[#1E563D]/50 bg-[#143D2B] px-2.5 text-[12px] leading-[14px] font-semibold tracking-normal text-white">
                   {rankingBadgeText}
                 </span>
               </div>
@@ -3242,6 +3451,8 @@ export function ExpertProfileViewPage() {
               >
                 {action.label.toLowerCase().includes('export') ? (
                   <ExportDataIcon className="size-3 shrink-0" />
+                ) : action.label.toLowerCase().includes('notes') ? (
+                  <img src={notepadIcon} alt="" className="size-3 shrink-0" aria-hidden="true" />
                 ) : (
                   <action.icon className="size-3 shrink-0" strokeWidth={2.25} />
                 )}
@@ -3252,26 +3463,28 @@ export function ExpertProfileViewPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
-        <ProfileSidebar
-          profile={profile}
-          partnerId={id}
-          analytics={analyticsRes?.data}
-          tickets={activeTickets}
-          ticketsLoading={ticketsLoading}
-          onCheckTimelines={handleCheckTimelines}
-          onOpenCustomUrl={() => setCustomUrlModalOpen(true)}
-        />
+      <div className="grid w-full min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,438px)_minmax(0,1fr)]">
+        <div className="min-w-0">
+          <ProfileSidebar
+            profile={profile}
+            partnerId={id}
+            analytics={analyticsRes?.data}
+            tickets={activeTickets}
+            ticketsLoading={ticketsLoading}
+            onCheckTimelines={handleCheckTimelines}
+            onOpenCustomUrl={() => setCustomUrlModalOpen(true)}
+          />
+        </div>
 
-        <div className="flex flex-col gap-5">
-          <div className="flex h-[50px] items-stretch gap-1 overflow-x-auto rounded-xl bg-[#141414] px-2">
+        <div className="flex min-w-0 flex-col gap-5">
+          <div className="flex h-[50px] min-w-0 items-stretch gap-1 overflow-x-auto rounded-xl bg-[#141414] px-2">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => selectProfileTab(tab.key)}
                 className={cn(
-                  'relative flex-1 px-4 text-[13px] font-semibold whitespace-nowrap transition-colors',
+                  'relative shrink-0 px-3 text-[13px] font-semibold whitespace-nowrap transition-colors sm:flex-1 sm:px-4',
                   activeTab === tab.key
                     ? 'text-white after:absolute after:right-4 after:bottom-0 after:left-4 after:h-0.5 after:rounded-full after:bg-[#E0A263]'
                     : 'text-white/50 hover:text-white',
@@ -3370,7 +3583,7 @@ export function ExpertProfileViewPage() {
 
       <AdminNotesModal
         open={notesModalOpen}
-        initialNotes={profile.finalReview?.internalNotes || ''}
+        initialNotes=""
         onClose={() => setNotesModalOpen(false)}
         onSubmit={handleSaveNotes}
       />
@@ -3394,8 +3607,8 @@ export function ExpertProfileViewPage() {
             onSuccess: () => {
               toast.success(
                 visible
-                  ? 'Custom URL is now visible on the profile'
-                  : 'Custom URL is now hidden from the profile',
+                  ? 'Custom URL reinstated — visible on profile and partner app'
+                  : 'Custom URL suspended — partner app will show Custom link unavailable',
               )
             },
             onError: (error) => {

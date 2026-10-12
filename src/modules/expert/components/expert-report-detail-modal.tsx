@@ -2,7 +2,9 @@ import { X, User, AlertCircle, FileText, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
+import { InPageMediaViewer } from '@/shared/components/media/in-page-media-viewer'
 import { updateExpertReport } from '../api/expert-api'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 export interface ExpertReportItem {
   id: string
@@ -47,6 +49,7 @@ export function ExpertReportDetailModal({
   const [prevReport, setPrevReport] = useState<ExpertReportItem | null>(null)
   const [investigationStatus, setInvestigationStatus] = useState<string>('New')
   const [businessImpact, setBusinessImpact] = useState<string>('Low')
+  const [mediaIndex, setMediaIndex] = useState<number | null>(null)
   const [finalOutcome, setFinalOutcome] = useState<string>('')
   const [internalNotes, setInternalNotes] = useState<string>('')
   const [updating, setUpdating] = useState(false)
@@ -76,7 +79,7 @@ export function ExpertReportDetailModal({
       onUpdated?.()
       onClose()
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update report')
+      toast.error(getApiErrorMessage(err, 'Failed to update report'))
     } finally {
       setUpdating(false)
     }
@@ -152,15 +155,14 @@ export function ExpertReportDetailModal({
                   <span className="mb-1 block text-slate-500">Supporting Documents:</span>
                   <div className="flex flex-wrap gap-2">
                     {report.supportingDocuments.map((docUrl, idx) => (
-                      <a
+                      <button
                         key={idx}
-                        href={docUrl}
-                        target="_blank"
-                        rel="noreferrer"
+                        type="button"
+                        onClick={() => setMediaIndex(idx)}
                         className="rounded bg-white/5 px-2.5 py-1 text-xs text-[#E5B54E] hover:underline"
                       >
                         Attachment {idx + 1}
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -255,6 +257,17 @@ export function ExpertReportDetailModal({
           </Button>
         </div>
       </div>
+
+      <InPageMediaViewer
+        open={mediaIndex != null}
+        items={(report.supportingDocuments || []).map((url, idx) => ({
+          url,
+          title: `Attachment ${idx + 1}`,
+        }))}
+        index={mediaIndex ?? 0}
+        onClose={() => setMediaIndex(null)}
+        onIndexChange={setMediaIndex}
+      />
     </>
   )
 }

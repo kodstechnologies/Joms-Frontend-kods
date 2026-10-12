@@ -1,6 +1,4 @@
 import {
-  Ban,
-  CalendarRange,
   Check,
   CircleArrowDown,
   CircleArrowUp,
@@ -10,15 +8,18 @@ import {
   MoreVertical,
   Pause,
   Pencil,
-  PlayCircle,
-  Power,
+  Play,
+  RefreshCw,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import setPlanValidityIcon from '@/assets/JOMS_ICONS-2/set-plan-validity.svg'
+import deactivatePlanIcon from '@/assets/JOMS_ICONS-2/deactivate-plan.svg'
 
 import type { MembershipPlan } from '../types/membership'
 import {
   formatCurrency,
   formatMembershipDate,
+  formatMembershipDateSlash,
   getDiscountedPrice,
   getFeatureLines,
   getStatusClassName,
@@ -27,17 +28,11 @@ import {
 } from '../utils/membership-format'
 import { cn } from '@/shared/lib/cn'
 
-const MUTE = 'text-white/50'
+const MUTE = 'text-[#FFFFFF80]'
 const SEP = 'rgba(255, 255, 255, 0.1)'
 
 function HRule() {
-  return (
-    <div
-      className="mx-0 h-px w-full max-w-[394px] shrink-0"
-      style={{ backgroundColor: SEP }}
-      aria-hidden
-    />
-  )
+  return <div className="mx-0 h-px w-full shrink-0" style={{ backgroundColor: SEP }} aria-hidden />
 }
 
 function VRule() {
@@ -52,6 +47,7 @@ function VRule() {
 
 type MembershipPlanCardProps = {
   plan: MembershipPlan
+  onViewDetails?: (plan: MembershipPlan) => void
   onEdit?: (plan: MembershipPlan) => void
   onPause?: (plan: MembershipPlan) => void
   onResume?: (plan: MembershipPlan) => void
@@ -61,10 +57,33 @@ type MembershipPlanCardProps = {
   onViewFeatures?: (plan: MembershipPlan) => void
   onViewVersions?: (plan: MembershipPlan) => void
   onSetValidity?: (plan: MembershipPlan) => void
+  onViewSubscribers?: (plan: MembershipPlan, billingCycleName?: string) => void
+}
+
+function classifyBillingCycle(billingCycleName = ''): 'weekly' | 'threeMonths' | 'sixMonths' | '' {
+  const value = billingCycleName.toLowerCase().replace(/\s+/g, ' ').trim()
+  if (!value) return ''
+  const compact = value.replace(/[\s-]+/g, '')
+  if (compact.includes('week')) return 'weekly'
+  if (compact.includes('quarter') || compact.includes('3month')) return 'threeMonths'
+  if (compact.includes('halfyear') || compact.includes('6month')) return 'sixMonths'
+  return ''
+}
+
+function billingCycleForStat(
+  plan: MembershipPlan,
+  bucket: 'weekly' | 'threeMonths' | 'sixMonths',
+  fallback: string,
+) {
+  return (
+    plan.pricing.find((item) => classifyBillingCycle(item.billingCycleName) === bucket)
+      ?.billingCycleName || fallback
+  )
 }
 
 export function MembershipPlanCard({
   plan,
+  onViewDetails,
   onEdit,
   onPause,
   onResume,
@@ -74,12 +93,16 @@ export function MembershipPlanCard({
   onViewFeatures,
   onViewVersions,
   onSetValidity,
+  onViewSubscribers,
 }: MembershipPlanCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const featureLines = getFeatureLines(plan.features)
   const stats = plan.subscriptionStats
   const pricingSlots = [0, 1, 2].map((index) => plan.pricing[index] ?? null)
+  const primaryPrice = plan.pricing[0] ?? null
+  const isLifecycleCard = plan.status === 'paused' || plan.status === 'inactive'
+  const isDeleted = plan.status === 'deleted'
 
   useEffect(() => {
     if (!menuOpen) return
@@ -100,10 +123,10 @@ export function MembershipPlanCard({
   }
 
   return (
-    <article className="relative flex min-h-[623px] w-[394px] max-w-full flex-col rounded-[16px] border border-white/10 bg-black">
-      <div className="flex items-start justify-between gap-3 px-[22px] pt-5 pb-4">
+    <article className="relative mx-auto flex min-h-[567px] w-full max-w-[350px] flex-col rounded-[10px] bg-[#141414]">
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="bg-brand-surface flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10">
+          <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#050505]">
             {plan.icon ? (
               <img src={plan.icon} alt={plan.planName} className="size-full object-cover" />
             ) : (
@@ -112,169 +135,250 @@ export function MembershipPlanCard({
           </div>
 
           <div className="min-w-0">
-            <h3 className="text-body-md-semibold truncate text-white">{plan.planName}</h3>
-            <p className={cn('text-body-sm mt-0.5', MUTE)}>{plan.planId}</p>
+            <h3 className="truncate text-[14px] leading-5 font-semibold text-white">
+              {plan.planName}
+            </h3>
+            <p className={cn('mt-0.5 text-[12px] leading-[14px] font-medium', MUTE)}>
+              {plan.planId}
+            </p>
           </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={cn(
-              'rounded-brand-pill px-2.5 py-1 text-[10px] leading-[14px] font-semibold',
-              plan.type === 'user'
-                ? 'bg-brand-positive/15 text-brand-positive'
-                : 'bg-brand-accent/20 text-brand-accent',
-            )}
-          >
-            {getTypeLabel(plan.type)}
-          </span>
+          {isDeleted ? (
+            <span className="inline-flex h-5 max-w-full items-center justify-center rounded-[10px] bg-[#D3191C33] px-2.5 text-[10px] leading-[14px] font-semibold whitespace-nowrap text-[#D3191C]">
+              Deleted on {formatMembershipDateSlash(plan.updatedAt || plan.createdAt)}
+            </span>
+          ) : null}
 
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
+          {!isLifecycleCard && !isDeleted ? (
+            <span
               className={cn(
-                MUTE,
-                'hover:text-brand-text flex size-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10',
+                'inline-flex h-5 items-center justify-center rounded-[10px] px-2.5 text-[10px] leading-[14px] font-semibold',
+                plan.type === 'user'
+                  ? 'bg-[#00A63E33] text-[#00A63E]'
+                  : 'bg-[#F6CB8633] text-[#F6CB86]',
               )}
-              aria-label="Plan actions"
-              aria-expanded={menuOpen}
             >
-              <MoreVertical className="size-4" strokeWidth={1.75} />
-            </button>
+              {getTypeLabel(plan.type)}
+            </span>
+          ) : null}
 
-            {menuOpen ? (
-              <div className="ui-table-actions-menu absolute right-0 z-30 mt-2">
-                <MenuButton
-                  label="View Details"
-                  icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
-                  onClick={() => runAction(onEdit)}
-                />
-                <MenuButton
-                  label="View Version History"
-                  icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
-                  onClick={() => runAction(onViewVersions)}
-                />
-                <MenuButton
-                  label="View Feature List"
-                  icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
-                  onClick={() => runAction(onViewFeatures)}
-                />
-                <MenuButton
-                  label="Set Plan validity"
-                  icon={<CalendarRange className="size-4" strokeWidth={1.85} />}
-                  onClick={() => runAction(onSetValidity)}
-                />
-                {plan.status === 'active' ? (
+          {!isDeleted ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                className={cn(
+                  MUTE,
+                  'flex size-8 items-center justify-center rounded-lg transition-colors hover:bg-white/10 hover:text-white',
+                )}
+                aria-label="Plan actions"
+                aria-expanded={menuOpen}
+              >
+                <MoreVertical className="size-4" strokeWidth={1.75} />
+              </button>
+
+              {menuOpen ? (
+                <div className="ui-table-actions-menu absolute right-0 z-30 mt-2">
                   <MenuButton
-                    label="Pause Plan"
-                    icon={<Pause className="size-4" strokeWidth={1.85} />}
-                    onClick={() => runAction(onPause)}
-                    danger
+                    label="View Details"
+                    icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
+                    onClick={() => runAction(onViewDetails ?? onEdit)}
                   />
-                ) : null}
-                {plan.status === 'paused' ? (
                   <MenuButton
-                    label="Resume Plan"
-                    icon={<PlayCircle className="size-4" strokeWidth={1.85} />}
-                    onClick={() => runAction(onResume)}
+                    label="View Version History"
+                    icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
+                    onClick={() => runAction(onViewVersions)}
                   />
-                ) : null}
-                {plan.status === 'inactive' ? (
                   <MenuButton
-                    label="Activate Plan"
-                    icon={<Power className="size-4" strokeWidth={1.85} />}
-                    onClick={() => runAction(onActivate)}
+                    label="View Feature List"
+                    icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
+                    onClick={() => runAction(onViewFeatures)}
                   />
-                ) : null}
-                {plan.status !== 'deleted' ? (
-                  <>
-                    {plan.status === 'active' ? (
-                      <MenuButton
-                        label="Deactivate Plan"
-                        icon={<Ban className="size-4" strokeWidth={1.85} />}
-                        onClick={() => runAction(onDeactivate)}
-                        danger
-                      />
-                    ) : null}
+                  <MenuButton
+                    label="Set Plan validity"
+                    icon={
+                      <img src={setPlanValidityIcon} alt="" className="size-4" aria-hidden="true" />
+                    }
+                    onClick={() => runAction(onSetValidity)}
+                  />
+                  {plan.status === 'active' ? (
                     <MenuButton
-                      label="Delete Plan"
-                      icon={<CircleX className="size-4" strokeWidth={1.85} />}
-                      onClick={() => runAction(onDelete)}
+                      label="Pause Plan"
+                      icon={<Pause className="size-4" strokeWidth={1.85} />}
+                      onClick={() => runAction(onPause)}
                       danger
                     />
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+                  ) : null}
+                  {plan.status === 'paused' ? (
+                    <MenuButton
+                      label="Resume Plan"
+                      icon={<Play className="size-4" strokeWidth={1.85} />}
+                      onClick={() => runAction(onResume)}
+                    />
+                  ) : null}
+                  {plan.status === 'inactive' ? (
+                    <MenuButton
+                      label="Retrieve Plan"
+                      icon={<RefreshCw className="size-4" strokeWidth={1.85} />}
+                      onClick={() => runAction(onActivate)}
+                    />
+                  ) : null}
+                  {plan.status === 'active' ? (
+                    <MenuButton
+                      label="Deactivate Plan"
+                      icon={
+                        <img
+                          src={deactivatePlanIcon}
+                          alt=""
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                      }
+                      onClick={() => runAction(onDeactivate)}
+                      danger
+                    />
+                  ) : null}
+                  <MenuButton
+                    label="Delete Plan"
+                    icon={<CircleX className="size-4" strokeWidth={1.85} />}
+                    onClick={() => runAction(onDelete)}
+                    danger
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
       <HRule />
 
-      <div className="flex items-center px-2 py-4">
-        {pricingSlots.map((item, index) => (
-          <div
-            key={item?.billingCycleName ?? `empty-${index}`}
-            className="flex flex-1 items-center"
-          >
-            {index > 0 ? <VRule /> : null}
-            <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
-              <p className="text-[18px] leading-[26px] font-semibold text-white">
-                {item ? formatCurrency(getDiscountedPrice(item.price, item.discount)) : '—'}
-              </p>
-              <p className={cn('text-body-sm mt-1', MUTE)}>
-                {item?.billingCycleName ?? ['Weekly', '3 Months', '6 Months'][index]}
-              </p>
-            </div>
+      {isLifecycleCard ? (
+        <div className="flex items-stretch gap-4 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-[20px] leading-5 font-semibold text-white">
+              {primaryPrice
+                ? formatCurrency(getDiscountedPrice(primaryPrice.price, primaryPrice.discount))
+                : '—'}
+            </p>
+            <p className={cn('mt-1 text-[12px] leading-[14px] font-medium', MUTE)}>
+              {primaryPrice?.billingCycleName ?? 'Weekly'}
+            </p>
           </div>
-        ))}
-      </div>
+          <div
+            className="w-px shrink-0 self-stretch"
+            style={{ backgroundColor: SEP }}
+            aria-hidden
+          />
+        </div>
+      ) : (
+        <div className="flex items-center px-2 py-4">
+          {pricingSlots.map((item, index) => (
+            <div
+              key={item?.billingCycleName ?? `empty-${index}`}
+              className="flex flex-1 items-center"
+            >
+              {index > 0 ? <VRule /> : null}
+              <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
+                <p className="text-[18px] leading-[26px] font-semibold text-white">
+                  {item ? formatCurrency(getDiscountedPrice(item.price, item.discount)) : '—'}
+                </p>
+                <p className={cn('mt-1 text-[12px] leading-[14px] font-medium', MUTE)}>
+                  {item?.billingCycleName ?? ['Weekly', '3 Months', '6 Months'][index]}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <HRule />
 
-      <div className="px-[22px] py-4">
-        <p className={cn('text-body-sm mb-3', MUTE)}>Features</p>
-        <ul className="h-[125px] w-[291px] max-w-full space-y-2.5 overflow-hidden">
+      <div className="px-5 py-4">
+        <p className={cn('mb-3 text-[12px] leading-[14px] font-medium', MUTE)}>Features</p>
+        <ul className="max-h-[125px] space-y-2.5 overflow-hidden">
           {featureLines.slice(0, 4).map((feature) => (
-            <li key={feature} className="text-body-sm flex items-start gap-2.5 text-white">
+            <li
+              key={feature}
+              className="flex items-start gap-2.5 text-[14px] leading-5 font-medium text-white"
+            >
               <Check className="mt-0.5 size-3.5 shrink-0 text-white" strokeWidth={2.25} />
-              <span className="leading-[18px]">{feature}</span>
+              <span className="line-clamp-1">{feature}</span>
             </li>
           ))}
           {!featureLines.length ? (
-            <li className={cn('text-body-sm', MUTE)}>No features configured</li>
+            <li className={cn('text-[14px] leading-5', MUTE)}>No features configured</li>
           ) : null}
         </ul>
       </div>
 
       <HRule />
 
-      <div className="px-[22px] py-4">
-        <p className={cn('text-body-sm mb-3', MUTE)}>Subscription Stats</p>
-        <div className="flex gap-2">
-          <StatPill label="Total" value={stats?.total ?? 0} />
-          <StatPill label="Weekly" value={stats?.weekly ?? 0} />
-          <StatPill label="3 Months" value={stats?.threeMonths ?? 0} />
-          <StatPill label="6 Months" value={stats?.sixMonths ?? 0} />
+      <div className="px-5 py-4">
+        <p className={cn('mb-3 text-[12px] leading-[14px] font-medium', MUTE)}>
+          Subscription Stats
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          <StatPill
+            label="Total"
+            value={stats?.total ?? 0}
+            onClick={onViewSubscribers ? () => onViewSubscribers(plan) : undefined}
+          />
+          <StatPill
+            label="Weekly"
+            value={stats?.weekly ?? 0}
+            onClick={
+              onViewSubscribers
+                ? () => onViewSubscribers(plan, billingCycleForStat(plan, 'weekly', 'Weekly'))
+                : undefined
+            }
+          />
+          <StatPill
+            label="3 Months"
+            value={stats?.threeMonths ?? 0}
+            onClick={
+              onViewSubscribers
+                ? () =>
+                    onViewSubscribers(plan, billingCycleForStat(plan, 'threeMonths', '3 Months'))
+                : undefined
+            }
+          />
+          <StatPill
+            label="6 Months"
+            value={stats?.sixMonths ?? 0}
+            onClick={
+              onViewSubscribers
+                ? () => onViewSubscribers(plan, billingCycleForStat(plan, 'sixMonths', '6 Months'))
+                : undefined
+            }
+          />
         </div>
       </div>
 
-      <div className="mt-auto flex flex-col gap-3 px-[22px] pt-2 pb-5">
-        <div className="flex items-center justify-between gap-3">
-          <span className={cn('text-body-sm', MUTE)}>Version :{plan.version}</span>
-          <span
-            className={cn(
-              'rounded-brand-pill border px-2.5 py-0.5 text-[10px] leading-[14px] font-semibold',
-              getStatusClassName(plan.status),
-            )}
-          >
-            {getStatusLabel(plan.status)}
-          </span>
-        </div>
+      <div className="mt-auto flex flex-col gap-3 px-5 pt-1 pb-5">
+        {!isDeleted ? (
+          <div className="flex items-center justify-between gap-3">
+            <span className={cn('text-[12px] leading-[14px] font-medium', MUTE)}>
+              Version :{plan.version}
+            </span>
+            <span
+              className={cn(
+                'inline-flex h-5 items-center justify-center rounded-[10px] px-2.5 text-[10px] leading-[14px] font-semibold',
+                getStatusClassName(plan.status),
+              )}
+            >
+              {getStatusLabel(plan.status)}
+            </span>
+          </div>
+        ) : (
+          <p className={cn('text-[12px] leading-[14px] font-medium', MUTE)}>
+            Version :{plan.version}
+          </p>
+        )}
 
-        <div className={cn('text-body-sm space-y-1', MUTE)}>
+        <div className={cn('space-y-1 text-[12px] leading-[14px] font-medium', MUTE)}>
           <p>Created: {formatMembershipDate(plan.createdAt)}</p>
           <p>
             Updated: {formatMembershipDate(plan.updatedAt)}
@@ -282,7 +386,29 @@ export function MembershipPlanCard({
           </p>
         </div>
 
-        {plan.status !== 'deleted' ? (
+        {plan.status === 'paused' ? (
+          <button
+            type="button"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[10px] bg-[#00A63E] text-[14px] leading-5 font-semibold text-white transition-[filter] hover:brightness-95"
+            onClick={() => onResume?.(plan)}
+          >
+            Resume Plan
+            <Play className="size-4 fill-white" strokeWidth={1.75} />
+          </button>
+        ) : null}
+
+        {plan.status === 'inactive' ? (
+          <button
+            type="button"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[10px] bg-[#00A63E] text-[14px] leading-5 font-semibold text-white transition-[filter] hover:brightness-95"
+            onClick={() => onActivate?.(plan)}
+          >
+            Retrieve Plan
+            <RefreshCw className="size-4" strokeWidth={1.75} />
+          </button>
+        ) : null}
+
+        {plan.status === 'active' ? (
           <button
             type="button"
             className="ui-cta ui-cta-primary h-10 w-full"
@@ -297,12 +423,40 @@ export function MembershipPlanCard({
   )
 }
 
-function StatPill({ label, value }: { label: string; value: number }) {
+function StatPill({
+  label,
+  value,
+  onClick,
+}: {
+  label: string
+  value: number
+  onClick?: () => void
+}) {
+  const className =
+    'flex h-[66px] min-w-0 flex-col items-center justify-center rounded-[8px] bg-[#050505] px-1 text-center'
+  const content = (
+    <>
+      <p className={cn('text-[10px] leading-[14px] font-medium', MUTE)}>{label}</p>
+      <p className="mt-1 text-[14px] leading-5 font-semibold text-white tabular-nums">{value}</p>
+    </>
+  )
+
+  if (!onClick) {
+    return <div className={className}>{content}</div>
+  }
+
   return (
-    <div className="bg-brand-surface flex h-[66px] w-[80px] flex-col items-center justify-center rounded-[8px] px-1 text-center">
-      <p className={cn('text-[10px] leading-[14px]', MUTE)}>{label}</p>
-      <p className="mt-1 text-sm leading-5 font-semibold text-white tabular-nums">{value}</p>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        className,
+        'transition-colors hover:bg-[#1a1a1a] focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:outline-none',
+      )}
+      aria-label={`View ${label.toLowerCase()} subscribers`}
+    >
+      {content}
+    </button>
   )
 }
 

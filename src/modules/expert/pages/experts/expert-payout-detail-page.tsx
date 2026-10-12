@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 import { useBranding } from '@/app/providers/use-branding'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadInvoiceDocument, invoiceFromPayout } from '@/shared/utils/invoice-document'
@@ -126,9 +128,25 @@ export function ExpertPayoutDetailPage() {
               {serviceTitle} | {displayId}
             </span>
           </button>
-          <p className="mt-1 text-xs text-slate-400">
-            Expert Management / Payout Details / Payout History / {serviceTitle}
-          </p>
+          <PageBreadcrumb
+            className="mt-1"
+            items={[
+              { label: 'Expert Management', to: '/experts/management' },
+              {
+                label: 'Payout Details',
+                to: resolvedExpertId
+                  ? `/experts/management/profile/${resolvedExpertId}`
+                  : '/experts/management',
+              },
+              {
+                label: 'Payout History',
+                to: resolvedExpertId
+                  ? `/experts/management/profile/${resolvedExpertId}`
+                  : '/experts/management',
+              },
+              { label: serviceTitle, isActive: true },
+            ]}
+          />
         </div>
       </div>
 
@@ -146,7 +164,9 @@ export function ExpertPayoutDetailPage() {
             onClick={() => {
               void downloadInvoiceDocument(invoiceFromPayout(payout, { logoUrl }), payout.payoutId)
                 .then(() => toast.success('Invoice downloaded'))
-                .catch(() => toast.error('Failed to download invoice'))
+                .catch((error) =>
+                  toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+                )
             }}
             className="flex h-auto w-fit items-center gap-2 rounded-lg bg-[#E5B54E] px-4 py-2.5 text-xs font-semibold text-black shadow-md hover:bg-[#d4a53d]"
           >

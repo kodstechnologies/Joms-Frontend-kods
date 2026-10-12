@@ -6,19 +6,33 @@ import { displayExpertValue } from './expert-list-format'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import {
+  PageBreadcrumb,
+  type PageBreadcrumbItem,
+} from '@/shared/components/navigation/page-breadcrumb'
 
 export function ExpertListHeader({
   title,
   breadcrumb,
+  breadcrumbItems,
   metricsPath = '/experts/management/metrics?section=table',
   backTo = '/experts/management',
 }: {
   title: string
-  breadcrumb: string
+  breadcrumb?: string
+  breadcrumbItems?: PageBreadcrumbItem[]
   metricsPath?: string
   backTo?: string
 }) {
   const navigate = useNavigate()
+  const items =
+    breadcrumbItems ??
+    (breadcrumb
+      ? breadcrumb.split(' / ').map((label, index, parts) => ({
+          label,
+          isActive: index === parts.length - 1,
+        }))
+      : [])
 
   return (
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
@@ -31,13 +45,15 @@ export function ExpertListHeader({
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{title}</span>
         </button>
-        <p className="text-body-sm-medium text-muted pl-7">{breadcrumb}</p>
+        <div className="pl-7">
+          <PageBreadcrumb items={items} />
+        </div>
       </header>
       <Button
         className="ui-manage-metrics h-9 w-full md:w-auto"
         onClick={() => navigate(metricsPath)}
       >
-        <ManageMetricsIcon className="size-4 shrink-0" />
+        <ManageMetricsIcon />
         Manage Metrics
       </Button>
     </div>

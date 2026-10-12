@@ -1,22 +1,22 @@
-import { ArrowLeft, CircleArrowDown, CircleArrowUp, ExternalLink, Flag } from 'lucide-react'
+import { ArrowLeft, CircleArrowDown, CircleArrowUp, ExternalLink } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
-import { EscalateMembershipUpgradeModal } from '../components/escalate-membership-upgrade-modal'
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipHistoryModal } from '../components/membership-history-modal'
-import {
-  useCancelSubscription,
-  useDowngradeSubscription,
-  useExtendSubscription,
-  useSubscription,
-  useUpgradeSubscription,
-} from '../hooks/use-membership-subscriptions'
+import { useCancelSubscription, useSubscription } from '../hooks/use-membership-subscriptions'
 import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
-import { useAuthStore } from '@/modules/auth/store/auth-store'
+import {
+  submitMembershipExtendForApproval,
+  submitMembershipPlanChangeForApproval,
+} from '../utils/submit-membership-plan-change-approval'
 import { useBranding } from '@/app/providers/use-branding'
+import { PageBreadcrumb } from '@/shared/components/navigation/page-breadcrumb'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { openPartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 import {
   downloadInvoiceDocument,
   invoiceFromMembershipSubscription,
@@ -25,20 +25,17 @@ import {
 export function MembershipDetailsPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { logoUrl } = useBranding()
-  const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
-  const [escalateOpen, setEscalateOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [isPlanChangeSubmitting, setIsPlanChangeSubmitting] = useState(false)
 
   const { data, isLoading } = useSubscription(id)
   const subscription = data?.data
 
-  const upgradeMutation = useUpgradeSubscription()
-  const downgradeMutation = useDowngradeSubscription()
-  const extendMutation = useExtendSubscription()
   const cancelMutation = useCancelSubscription()
 
   if (isLoading) {
@@ -58,6 +55,11 @@ export function MembershipDetailsPage() {
 
   const paymentMethod = subscription.paymentInfo?.paymentMethod || 'Credit Card'
 
+  const membershipPlanDocId =
+    typeof subscription.membershipPlanId === 'string'
+      ? subscription.membershipPlanId
+      : subscription.membershipPlanId?._id || null
+
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col">
       <div className="mb-6 flex items-start gap-3">
@@ -71,9 +73,14 @@ export function MembershipDetailsPage() {
         </button>
         <div>
           <h1 className="text-h2 text-brand-text font-semibold">Membership Details</h1>
-          <p className="text-body-md text-muted mt-1">
-            Membership Management / <span className="text-brand-text">View Details</span>
-          </p>
+          <PageBreadcrumb
+            className="mt-1"
+            items={[
+              { label: 'Membership', to: '/memberships/plans' },
+              { label: 'Expert Memberships', to: '/memberships/experts' },
+              { label: 'View Details', isActive: true },
+            ]}
+          />
         </div>
       </div>
 
@@ -87,10 +94,18 @@ export function MembershipDetailsPage() {
             <DetailField
               label="Plan Name"
               value={
-                <span className="inline-flex items-center gap-1.5">
-                  {subscription.planName}
-                  <ExternalLink className="text-brand-text size-3.5" strokeWidth={1.75} />
-                </span>
+                membershipPlanDocId ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/memberships/plans/${membershipPlanDocId}/view`)}
+                    className="text-body-md-semibold text-brand-text hover:text-brand-text/80 inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    {subscription.planName}
+                    <ExternalLink className="size-3.5 shrink-0" strokeWidth={1.75} />
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">{subscription.planName}</span>
+                )
               }
             />
             <DetailField label="Billing Type" value={subscription.billingCycleName} />
@@ -116,7 +131,9 @@ export function MembershipDetailsPage() {
                     subscription.paymentInfo?.paymentId || subscription.subscriptionId,
                   )
                     .then(() => toast.success('Invoice downloaded'))
-                    .catch(() => toast.error('Failed to download invoice'))
+                    .catch((error) =>
+                      toast.error(getApiErrorMessage(error, 'Failed to download invoice')),
+                    )
                 }}
                 className="text-body-md-semibold text-brand-text hover:text-brand-text/80 underline underline-offset-[3px]"
               >
@@ -138,10 +155,22 @@ export function MembershipDetailsPage() {
             <DetailField
               label="Username"
               value={
-                <span className="inline-flex items-center gap-1.5">
-                  {subscription.partnerName}
-                  <ExternalLink className="text-brand-text size-3.5" strokeWidth={1.75} />
-                </span>
+                subscription.partnerId ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void openPartnerProfile({ id: subscription.partnerId }, navigate)
+                    }
+                    className="text-body-md-semibold text-brand-text hover:text-brand-text/80 inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    {subscription.partnerName || '—'}
+                    <ExternalLink className="size-3.5 shrink-0" strokeWidth={1.75} />
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    {subscription.partnerName || '—'}
+                  </span>
+                )
               }
             />
             <DetailField
@@ -166,16 +195,6 @@ export function MembershipDetailsPage() {
       </div>
 
       <div className="radius-lg bg-brand-surface mt-6 flex flex-wrap items-center justify-end gap-3 px-5 py-4">
-        {isSuperAdmin ? (
-          <button
-            type="button"
-            onClick={() => setEscalateOpen(true)}
-            className="ui-cta ui-cta-secondary inline-flex h-10 items-center gap-2 px-4"
-          >
-            Escalate Upgrade
-            <Flag className="size-4" strokeWidth={1.75} />
-          </button>
-        ) : null}
         <button
           type="button"
           onClick={() => setActionType('upgrade')}
@@ -200,56 +219,51 @@ export function MembershipDetailsPage() {
         subscription={subscription}
       />
 
-      <EscalateMembershipUpgradeModal
-        open={escalateOpen}
-        subscription={subscription}
-        onClose={() => setEscalateOpen(false)}
-      />
-
       <MembershipActionModals
         subscription={subscription}
         action={actionType}
         onClose={() => setActionType(null)}
-        isSubmitting={
-          upgradeMutation.isPending ||
-          downgradeMutation.isPending ||
-          extendMutation.isPending ||
-          cancelMutation.isPending
-        }
+        isSubmitting={isPlanChangeSubmitting || cancelMutation.isPending}
         onUpgrade={async (payload) => {
+          setIsPlanChangeSubmitting(true)
           try {
-            await upgradeMutation.mutateAsync({
-              id: subscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Membership upgraded')
+            await submitMembershipPlanChangeForApproval(subscription, 'upgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Upgrade sent for approval — check My Tasks')
             setActionType(null)
-          } catch {
-            toast.error('Failed to upgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send upgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onDowngrade={async (payload) => {
+          setIsPlanChangeSubmitting(true)
           try {
-            await downgradeMutation.mutateAsync({
-              id: subscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Membership downgraded')
+            await submitMembershipPlanChangeForApproval(subscription, 'downgrade', payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Downgrade sent for approval — check My Tasks')
             setActionType(null)
-          } catch {
-            toast.error('Failed to downgrade membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send downgrade for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onExtend={async (payload) => {
+          setIsPlanChangeSubmitting(true)
           try {
-            await extendMutation.mutateAsync({
-              id: subscription._id,
-              payload: { ...payload, updatedBy: 'Admin' },
-            })
-            toast.success('Membership extended')
+            await submitMembershipExtendForApproval(subscription, payload)
+            void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+            void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+            toast.success('Extend sent for approval — check My Tasks')
             setActionType(null)
-          } catch {
-            toast.error('Failed to extend membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to send extend for approval'))
+          } finally {
+            setIsPlanChangeSubmitting(false)
           }
         }}
         onCancel={async (payload) => {
@@ -260,8 +274,8 @@ export function MembershipDetailsPage() {
             })
             toast.success('Membership cancelled')
             setActionType(null)
-          } catch {
-            toast.error('Failed to cancel membership')
+          } catch (error) {
+            toast.error(getApiErrorMessage(error, 'Failed to cancel membership'))
           }
         }}
       />

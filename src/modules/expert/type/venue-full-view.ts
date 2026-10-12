@@ -49,6 +49,7 @@ export interface VenueFullViewVenue {
   status?: string
   venueStatus?: string
   isSuspend?: boolean
+  displayStatus?: string
   currentStep?: string
   profileImageUrl?: string
   coverImageUrl?: string
@@ -60,6 +61,12 @@ export interface VenueFullViewVenue {
   bookingsCount?: number
   insights?: VenueFullViewInsights
   adminInternalNotes?: string | null
+  adminNotesLog?: Array<{
+    id: string
+    text: string
+    createdAt?: string | null
+    createdBy?: string | null
+  }>
   adminTags?: string[]
   lastActiveAt?: string | null
   customUrl?: string | null
@@ -168,6 +175,8 @@ export interface VenueFullViewAmenities {
       name?: string | null
       image?: string | null
       icon?: string | null
+      icon3D?: string | null
+      vectorIcon?: string | null
       category?: string | null
     }>
     _id?: string

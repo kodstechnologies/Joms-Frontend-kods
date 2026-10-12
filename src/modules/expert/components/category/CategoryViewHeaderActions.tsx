@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
+import { Eye, FolderTree, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -8,26 +8,41 @@ import { Button } from '@/shared/components/ui/button'
 import { categoryPath, useCategoryManagementScope } from './category-management-scope'
 import { DeleteCategoryModal } from './delete-category-modal'
 import { PauseCategoryModal } from './pause-category-modal'
+import { EditCategoryGroupModal } from './edit-category-group-modal'
 import {
   usePauseServiceCategory,
-  useServiceCategory,
   useSoftDeleteServiceCategory,
 } from '../../hooks/use-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { buildRelatedListCategoryUrl } from '../../utils/related-list-category-link'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import type { Category } from './category-table-columns'
 
-export const CategoryViewHeaderActions = () => {
+type CategoryViewHeaderActionsProps = {
+  category?: Category | null
+}
+
+export const CategoryViewHeaderActions = ({ category = null }: CategoryViewHeaderActionsProps) => {
   const navigate = useNavigate()
   const { id } = useParams()
   const scope = useCategoryManagementScope()
   const [pauseModalOpen, setPauseModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [editGroupModalOpen, setEditGroupModalOpen] = useState(false)
   const pauseMutation = usePauseServiceCategory()
   const softDeleteMutation = useSoftDeleteServiceCategory()
-  const { data: category } = useServiceCategory(id)
-  const relatedListPath = id
-    ? `${scope.relatedListPath}?category=${encodeURIComponent(category?.name || '')}&categoryId=${encodeURIComponent(id)}`
-    : scope.relatedListPath
+
+  const categoryId = String(id || category?.id || '').trim()
+  const categoryName = String(category?.name || '').trim()
+
+  const handleViewRelatedList = () => {
+    navigate(
+      buildRelatedListCategoryUrl(scope.relatedListPath, {
+        categoryId,
+        categoryName,
+      }),
+    )
+  }
 
   return (
     <>
@@ -37,9 +52,22 @@ export const CategoryViewHeaderActions = () => {
           Add Sub-Category
         </Button>
 
-        <Button variant="secondary" onClick={() => navigate(relatedListPath)}>
+        <Button variant="secondary" onClick={handleViewRelatedList}>
           <Eye className="size-4" aria-hidden="true" />
           {scope.relatedListLabel}
+        </Button>
+
+        <Button
+          variant="secondary"
+          onClick={() => {
+            const el = document.getElementById('sub-categories-section')
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+        >
+          <FolderTree className="size-4" aria-hidden="true" />
+          Edit Group
         </Button>
 
         <Button variant="secondary" onClick={() => navigate(categoryPath(scope, `rename/${id}`))}>
@@ -97,6 +125,13 @@ export const CategoryViewHeaderActions = () => {
             },
           })
         }}
+      />
+
+      <EditCategoryGroupModal
+        open={editGroupModalOpen}
+        onClose={() => setEditGroupModalOpen(false)}
+        category={category || null}
+        isVenue={false}
       />
     </>
   )
