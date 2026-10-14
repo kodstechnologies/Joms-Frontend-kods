@@ -1,9 +1,4 @@
-import {
-  payoutsCashFlowChartSamples,
-  revenueProfitChartSamples,
-  summaryCardSamples,
-  type TrendMetric,
-} from '@/modules/payments/config/finance-dashboard.config'
+import { type TrendMetric } from '@/modules/payments/config/finance-dashboard.config'
 import type { FinanceDashboardSummary } from '@/modules/payments/types/finance-api'
 import { formatInr } from '@/modules/payments/utils/finance-mappers'
 import { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP } from '@/modules/payments/config/finance-dashboard-metrics.config'
@@ -12,50 +7,18 @@ export type FinanceDashboardMetricCard = TrendMetric & { id: string }
 
 export { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP }
 
-const designSamplesById = new Map<string, TrendMetric>()
-
-for (const metric of [
-  ...summaryCardSamples,
-  ...revenueProfitChartSamples,
-  ...payoutsCashFlowChartSamples,
-]) {
-  const catalogId = labelToMetricId(metric.label)
-  if (catalogId) designSamplesById.set(catalogId, metric)
-}
-
-function labelToMetricId(label: string): string | null {
-  const map: Record<string, string> = {
-    'Total In Escrow': 'total-amount-in-escrow',
-    'Total Amount in Escrow': 'total-amount-in-escrow',
-    'Pending Payout': 'pending-payouts',
-    'Pending Payouts': 'pending-payouts',
-    'Disputed Amount': 'disputed-amount',
-    'Total Platform Revenue': 'total-platform-revenue',
-    'Monthly Recurring Revenue': 'monthly-recurring-revenue',
-    'Monthly Recurring Revenue (MRR)': 'monthly-recurring-revenue',
-    'Gross Margin': 'platform-gross-margin',
-    'Platform Gross Margin': 'platform-gross-margin',
-    'Net Profit': 'net-profit',
-    'Avg. Payout Cycle Time': 'average-payout-cycle-time',
-    'Average Payout Cycle Time': 'average-payout-cycle-time',
-    'Refund Rate': 'refund-rate',
-    'Chargeback Rate': 'chargeback-rate',
-  }
-  return map[label] ?? null
-}
-
-// A missing change is filled in as 6.7 percent up versus last month.
 function withDesignTrend(metric: TrendMetric | undefined | null, fallbackLabel = '—'): TrendMetric {
   if (!metric) {
     return placeholder(fallbackLabel)
   }
 
   const change = metric.change ?? '—'
+  const hasPercent = change.includes('%')
 
   return {
     ...metric,
-    change: change.includes('%') ? change : '6.7%',
-    changeNote: metric.changeNote ?? 'vs last month',
+    change: hasPercent ? change : '—',
+    changeNote: hasPercent ? (metric.changeNote ?? 'vs last month') : undefined,
     changeType: metric.changeType ?? 'up',
   }
 }
@@ -70,15 +33,48 @@ function placeholder(label: string, value = '—'): TrendMetric {
   })
 }
 
-function designSampleOrPlaceholder(id: string, label: string, sampleValue?: string): TrendMetric {
-  return designSamplesById.get(id) ?? placeholder(label, sampleValue)
-}
-
 export function resolveFinanceDashboardMetricId(id: string): string {
   return FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id
 }
 
-// Escrow, payouts, disputes, and platform revenue use the live summary. Payout cycle time, chargeback rate, net revenue, and failed transactions stay on sample figures, and gross margin, net profit, and refund rate are added again from the sample set.
+function liveMoney(
+  summary: FinanceDashboardSummary | null | undefined,
+  value: number | undefined,
+  label: string,
+): TrendMetric {
+  if (!summary) return { label, value: '—', change: '—', changeType: 'up' }
+  return { label, value: formatInr(value ?? 0), change: '—', changeType: 'up' }
+}
+
+function livePercent(
+  summary: FinanceDashboardSummary | null | undefined,
+  value: number | undefined,
+  label: string,
+): TrendMetric {
+  if (!summary) return { label, value: '—', change: '—', changeType: 'up' }
+  return { label, value: `${value ?? 0}%`, change: '—', changeType: 'up' }
+}
+
+function liveCount(
+  summary: FinanceDashboardSummary | null | undefined,
+  value: number | undefined,
+  label: string,
+): TrendMetric {
+  if (!summary) return { label, value: '—', change: '—', changeType: 'up' }
+  return { label, value: String(value ?? 0), change: '—', changeType: 'up' }
+}
+
+function monthChange(
+  value: number | undefined,
+): Pick<TrendMetric, 'change' | 'changeType' | 'changeNote'> {
+  const change = value ?? 0
+  return {
+    change: `${change}%`,
+    changeType: change < 0 ? 'down' : 'up',
+    changeNote: 'vs last month',
+  }
+}
+
 export function buildFinanceDashboardMetricCards(
   summary?: FinanceDashboardSummary | null,
 ): FinanceDashboardMetricCard[] {
@@ -88,177 +84,75 @@ export function buildFinanceDashboardMetricCards(
     cards.push({ id, ...withDesignTrend(metric, fallbackLabel) })
   }
 
-  push(
-    'total-amount-in-escrow',
-    summary
-      ? {
-          label: 'Total Amount in Escrow',
-          value: formatInr(summary.totalInEscrow),
-          change: '6.7%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : designSampleOrPlaceholder('total-amount-in-escrow', 'Total Amount in Escrow', '₹8,43,290'),
-  )
+  const growth = summary
+    ? monthChange(summary.revenueGrowth)
+    : { change: '—', changeType: 'up' as const }
 
-  push(
-    'pending-payouts',
-    summary
-      ? {
-          label: 'Pending Payouts',
-          value: formatInr(summary.pendingPayouts),
-          change: '6.7%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : designSampleOrPlaceholder('pending-payouts', 'Pending Payouts', '₹5,67,120'),
-  )
-
-  push(
-    'disputed-amount',
-    summary
-      ? {
-          label: 'Disputed Amount',
-          value: formatInr(summary.disputedAmount),
-          change: '6.7%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : designSampleOrPlaceholder('disputed-amount', 'Disputed Amount', '₹1,24,650'),
-  )
-
-  push('gmv', designSampleOrPlaceholder('gmv', 'Gross Merchandise Value (GMV)', '₹10,00,000'))
-
+  push('total-amount-in-escrow', {
+    ...liveMoney(summary, summary?.totalInEscrow, 'Total Amount in Escrow'),
+  })
+  push('pending-payouts', liveMoney(summary, summary?.pendingPayouts, 'Pending Payouts'))
+  push('disputed-amount', liveMoney(summary, summary?.disputedAmount, 'Disputed Amount'))
+  push('gmv', liveMoney(summary, summary?.gmv, 'Gross Merchandise Value (GMV)'))
   push(
     'total-platform-revenue',
-    summary
-      ? {
-          label: 'Total Platform Revenue',
-          value: formatInr(summary.totalPlatformRevenue),
-          change: '6.7%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : designSampleOrPlaceholder('total-platform-revenue', 'Total Platform Revenue'),
+    liveMoney(summary, summary?.totalPlatformRevenue, 'Total Platform Revenue'),
   )
-
   push(
     'monthly-recurring-revenue',
-    summary
-      ? {
-          label: 'Monthly Recurring Revenue',
-          value: formatInr(summary.collectionsThisMonth),
-          change: '0%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : designSampleOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue'),
+    liveMoney(summary, summary?.charts?.monthlyComparison.at(-1)?.mrr, 'Monthly Recurring Revenue'),
   )
-
-  const grossMarginValue =
-    summary && summary.totalPlatformRevenue > 0
-      ? `${Math.round((Math.max(0, summary.totalPlatformRevenue - summary.pendingPayouts) / summary.totalPlatformRevenue) * 100)}%`
-      : '0%'
-
   push(
     'platform-gross-margin',
-    summary
-      ? {
-          label: 'Platform Gross Margin',
-          value: grossMarginValue,
-          change: '0%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : designSampleOrPlaceholder('platform-gross-margin', 'Platform Gross Margin', '0%'),
+    livePercent(summary, summary?.platformGrossMargin, 'Platform Gross Margin'),
   )
-
-  const netProfitValue = summary
-    ? Math.max(0, summary.totalPlatformRevenue - summary.pendingPayouts)
-    : 0
-
+  push('net-profit', liveMoney(summary, summary?.netProfit, 'Net Profit'))
+  push('net-revenue', liveMoney(summary, summary?.netRevenue, 'Net Revenue'))
+  push('revenue-growth', {
+    label: 'Revenue Growth',
+    value: summary ? `${summary.revenueGrowth ?? 0}%` : '—',
+    ...growth,
+  })
+  push('collections-this-month', {
+    ...liveMoney(summary, summary?.collectionsThisMonth, 'Collections This Month'),
+    ...growth,
+  })
   push(
-    'net-profit',
-    summary
-      ? {
-          label: 'Net Profit',
-          value: formatInr(netProfitValue),
-          change: '0%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : designSampleOrPlaceholder('net-profit', 'Net Profit'),
+    'payouts-released-this-month',
+    liveMoney(summary, summary?.payoutsReleasedThisMonth, 'Payouts Released This Month'),
   )
-
   push(
     'average-payout-cycle-time',
-    designSampleOrPlaceholder(
-      'average-payout-cycle-time',
-      'Average Payout Cycle Time',
-      '24-48 hrs',
-    ),
-  )
-
-  const refundRateValue =
-    summary && summary.totalPlatformRevenue > 0
-      ? `${((summary.disputedAmount / summary.totalPlatformRevenue) * 100).toFixed(1)}%`
-      : '0%'
-
-  push(
-    'refund-rate',
     summary
       ? {
-          label: 'Refund Rate',
-          value: refundRateValue,
-          change: '0%',
+          label: 'Average Payout Cycle Time',
+          value:
+            summary.averagePayoutCycleDays == null ? '—' : `${summary.averagePayoutCycleDays} days`,
+          change: '—',
           changeType: 'up',
-          changeNote: 'vs last month',
         }
-      : designSampleOrPlaceholder('refund-rate', 'Refund Rate', '0%'),
+      : { label: 'Average Payout Cycle Time', value: '—', change: '—', changeType: 'up' },
   )
-
-  push('chargeback-rate', designSampleOrPlaceholder('chargeback-rate', 'Chargeback Rate', '0%'))
-  designSampleOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue (MRR)')
-
+  push('refund-rate', livePercent(summary, summary?.refundRate, 'Refund Rate'))
+  push('chargeback-rate', livePercent(summary, summary?.chargebackRate, 'Chargeback Rate'))
   push(
-    'platform-gross-margin',
-    designSampleOrPlaceholder('platform-gross-margin', 'Platform Gross Margin', '42.5%'),
+    'failed-transactions',
+    liveCount(summary, summary?.failedTransactions, 'Failed Transactions'),
   )
-
-  push('net-profit', designSampleOrPlaceholder('net-profit', 'Net Profit'))
-  push('net-revenue', placeholder('Net Revenue', '₹3,12,400'))
-  push('refund-rate', designSampleOrPlaceholder('refund-rate', 'Refund Rate', '2.4%'))
-  push('chargeback-rate', designSampleOrPlaceholder('chargeback-rate', 'Chargeback Rate', '0.8%'))
-  push('failed-transactions', placeholder('Failed Transactions', '14'))
-
   push(
-    'collections-this-month',
-    summary
-      ? {
-          label: 'Collections This Month',
-          value: formatInr(summary.collectionsThisMonth),
-          change: '6.7%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        }
-      : placeholder('Collections This Month', '₹5,40,000'),
+    'escrow-release-rate',
+    livePercent(summary, summary?.escrowReleaseRate, 'Escrow Release Rate'),
   )
-
-  push('payouts-released-this-month', placeholder('Payouts Released This Month', '₹2,10,000'))
   push(
-    'average-payout-cycle-time',
-    designSampleOrPlaceholder(
-      'average-payout-cycle-time',
-      'Average Payout Cycle Time',
-      '3 Days 04:00',
-    ),
+    'platform-commission-earned',
+    liveMoney(summary, summary?.platformCommissionEarned, 'Platform Commission Earned'),
   )
-  push('escrow-release-rate', placeholder('Escrow Release Rate', '78.2%'))
-  push('platform-commission-earned', placeholder('Platform Commission Earned', '₹1,15,986'))
-  push('service-marketplace-commission', placeholder('Service Marketplace Commission', '₹62,400'))
-  push('event-commission', placeholder('Event Commission', '₹28,100'))
-  push('venue-commission', placeholder('Venue Commission', '₹25,486'))
-  push('revenue-growth', placeholder('Revenue Growth (7D / 30D / 90D / 1Y)', '12.4%'))
+  push(
+    'service-marketplace-commission',
+    liveMoney(summary, summary?.serviceMarketplaceCommission, 'Service Marketplace Commission'),
+  )
+  push('event-commission', liveMoney(summary, summary?.eventCommission, 'Event Commission'))
+  push('venue-commission', liveMoney(summary, summary?.venueCommission, 'Venue Commission'))
 
   return cards
 }

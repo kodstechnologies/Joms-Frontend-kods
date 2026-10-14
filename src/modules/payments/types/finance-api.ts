@@ -26,6 +26,27 @@ export type FinanceDashboardSummary = {
   totalPlatformRevenue: number
   collectionsThisMonth: number
   gmv?: number
+  netProfit?: number
+  netRevenue?: number
+  platformGrossMargin?: number
+  refundRate?: number
+  chargebackRate?: number
+  failedTransactions?: number
+  payoutsReleasedThisMonth?: number
+  averagePayoutCycleDays?: number | null
+  escrowReleaseRate?: number
+  platformCommissionEarned?: number
+  serviceMarketplaceCommission?: number
+  eventCommission?: number
+  venueCommission?: number
+  revenueGrowth?: number
+  charts?: {
+    revenueFeeTrends: { date: string; revenue: number; platformFee: number }[]
+    revenueByCategory: { name: string; amount: number }[]
+    monthlyComparison: { month: string; mrr: number; netProfit: number; totalRevenue: number }[]
+    escrowStatus: { label: string; value: number }[]
+    weeklyPayouts: { day: string; amount: number }[]
+  }
 }
 
 export type FinancePayment = {

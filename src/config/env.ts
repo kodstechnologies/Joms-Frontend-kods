@@ -1,7 +1,6 @@
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
 
 const LOCAL_API_BASE_URL = 'http://localhost'
-const DEFAULT_GOOGLE_MAPS_API_KEY = 'AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus'
 
 const PROD_SERVICE_URLS = {
   auth: 'https://auth.api.kods.online',
@@ -85,7 +84,5 @@ export const env = {
 
   internalServiceKey: import.meta.env.VITE_INTERNAL_SERVICE_KEY || '',
   googleMapsApiKey:
-    import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
-    import.meta.env.VITE_JOMS_GOOGLE_MAPS_KEY ||
-    DEFAULT_GOOGLE_MAPS_API_KEY,
+    import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_JOMS_GOOGLE_MAPS_KEY || '',
 }

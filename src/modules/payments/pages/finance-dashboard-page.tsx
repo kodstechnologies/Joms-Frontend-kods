@@ -25,14 +25,9 @@ import {
 import { useNavigate } from 'react-router-dom'
 import type { ComponentType, PropsWithChildren, ReactNode } from 'react'
 
-import {
-  escrowStatusBreakdown,
-  monthlyComparisonSeries,
-  revenueByCategorySeries,
-  revenueFeeTrendSeries,
-  weeklyPayoutSeries,
-  type RevenueCategoryPoint,
-  type TrendMetric,
+import type {
+  RevenueCategoryPoint,
+  TrendMetric,
 } from '@/modules/payments/config/finance-dashboard.config'
 import {
   DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
@@ -55,6 +50,30 @@ import { useDefaultExportFormat } from '@/modules/settings/hooks/use-default-exp
 import { exportFinanceDashboardToFile } from '@/modules/payments/utils/export-finance-dashboard'
 import { StatCardSkeleton, ChartSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Services: '#FBC078',
+  Consultations: '#A78BFA',
+  Memberships: '#1447E6',
+  Events: '#00A63E',
+  Venues: '#E5E7EB',
+}
+
+const ESCROW_COLORS: Record<string, string> = {
+  'Active holds': '#FBC078',
+  'Milestone hold': '#1447E6',
+  'Dispute hold': '#F54900',
+  'Ready to release': '#00A63E',
+}
+
+function chartScale(values: number[]) {
+  const max = Math.max(0, ...values, 0)
+  if (max <= 0) return { domain: [0, 1] as [number, number], ticks: [0, 1] }
+  const magnitude = 10 ** Math.floor(Math.log10(max))
+  const top = Math.ceil(max / magnitude) * magnitude
+  const ticks = [...new Set([0, 0.25, 0.5, 0.75, 1].map((part) => Math.round(top * part)))]
+  return { domain: [0, top] as [number, number], ticks }
+}
 
 const BRAND_GREEN = 'var(--brand-green)'
 const BRAND_ORANGE = 'var(--brand-orange)'
@@ -385,34 +404,58 @@ export function FinanceDashboardPage() {
     [visibleMetricCards],
   )
 
+  const revenueFeeTrends = summary?.charts?.revenueFeeTrends ?? []
+  const monthlyComparison = summary?.charts?.monthlyComparison ?? []
+  const weeklyPayouts = summary?.charts?.weeklyPayouts ?? []
+  const revenueByCategory = useMemo(() => {
+    const rows = summary?.charts?.revenueByCategory ?? []
+    const total = rows.reduce((sum, row) => sum + row.amount, 0)
+    return rows.map((row) => ({
+      name: row.name,
+      amount: row.amount,
+      percent: total > 0 ? Math.round((row.amount / total) * 100) : 0,
+      color: CATEGORY_COLORS[row.name] ?? '#E5E7EB',
+    }))
+  }, [summary])
+  const escrowStatus = useMemo(
+    () =>
+      (summary?.charts?.escrowStatus ?? []).map((item) => ({
+        ...item,
+        color: ESCROW_COLORS[item.label] ?? '#E5E7EB',
+      })),
+    [summary],
+  )
+  const escrowBarTotal = escrowStatus.reduce((sum, item) => sum + item.value, 0)
+  const revenueScale = chartScale(
+    revenueFeeTrends.flatMap((point) => [point.revenue, point.platformFee]),
+  )
+  const monthlyScale = chartScale(
+    monthlyComparison.flatMap((point) => [point.totalRevenue, point.mrr, point.netProfit]),
+  )
+  const weeklyScale = chartScale(weeklyPayouts.map((point) => point.amount))
+
   const keyFinancialMetrics = useMemo(
     () => [
       {
         label: 'GMV',
-        value: summary?.gmv ? formatInr(summary.gmv) : '₹10,00,000',
-        change: '18.4%',
-        changeType: 'up' as const,
+        value: summary ? formatInr(summary.gmv ?? 0) : '—',
         icon: RupeeGlyphIcon,
       },
       {
         label: 'Platform Revenue',
-        value: summary?.totalPlatformRevenue
-          ? formatInr(summary.totalPlatformRevenue)
-          : '₹1,16,986',
-        change: '22.3%',
-        changeType: 'up' as const,
+        value: summary ? formatInr(summary.totalPlatformRevenue) : '—',
         icon: RevenueChartIcon,
       },
       {
         label: 'In Escrow',
-        value: summary?.totalInEscrow ? formatInr(summary.totalInEscrow) : '₹8,43,290',
-        subtext: `${summary?.activeEscrows ?? 12} Holds`,
+        value: summary ? formatInr(summary.totalInEscrow) : '—',
+        subtext: summary ? `${summary.activeEscrows} Holds` : undefined,
         icon: EscrowLockIcon,
       },
       {
         label: 'Pending Payouts',
-        value: summary?.pendingPayouts ? formatInr(summary.pendingPayouts) : '₹2,14,500',
-        subtext: `${summary?.pendingPayoutCount ?? 5} Pending`,
+        value: summary ? formatInr(summary.pendingPayouts) : '—',
+        subtext: summary ? `${summary.pendingPayoutCount} Pending` : undefined,
         icon: null,
       },
     ],
@@ -435,11 +478,11 @@ export function FinanceDashboardPage() {
         {
           metrics: visibleMetricCards,
           keyFinancialMetrics,
-          revenueFeeTrends: revenueFeeTrendSeries,
-          revenueByCategory: revenueByCategorySeries,
-          monthlyComparison: monthlyComparisonSeries,
-          escrowStatus: escrowStatusBreakdown,
-          weeklyPayouts: weeklyPayoutSeries,
+          revenueFeeTrends,
+          revenueByCategory,
+          monthlyComparison,
+          escrowStatus,
+          weeklyPayouts,
         },
         fileFormat,
       )
@@ -447,7 +490,18 @@ export function FinanceDashboardPage() {
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to export finance dashboard'))
     }
-  }, [exportFormat, fileFormat, isLoading, keyFinancialMetrics, visibleMetricCards])
+  }, [
+    exportFormat,
+    fileFormat,
+    isLoading,
+    keyFinancialMetrics,
+    monthlyComparison,
+    revenueByCategory,
+    revenueFeeTrends,
+    escrowStatus,
+    weeklyPayouts,
+    visibleMetricCards,
+  ])
 
   return (
     <div className="space-y-6">
@@ -545,7 +599,7 @@ export function FinanceDashboardPage() {
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
-                    data={revenueFeeTrendSeries}
+                    data={revenueFeeTrends}
                     margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                   >
                     <defs>
@@ -566,8 +620,8 @@ export function FinanceDashboardPage() {
                       tick={{ fill: BRAND_MUTED, fontSize: 11 }}
                     />
                     <YAxis
-                      domain={[0, 60000]}
-                      ticks={[0, 20000, 40000, 60000]}
+                      domain={revenueScale.domain}
+                      ticks={revenueScale.ticks}
                       tickLine={false}
                       axisLine={false}
                       tick={{ fill: BRAND_MUTED, fontSize: 11 }}
@@ -604,7 +658,7 @@ export function FinanceDashboardPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={revenueByCategorySeries}
+                        data={revenueByCategory}
                         dataKey="amount"
                         nameKey="name"
                         innerRadius={60}
@@ -612,7 +666,7 @@ export function FinanceDashboardPage() {
                         stroke="rgba(255,255,255,0.06)"
                         strokeWidth={2}
                       >
-                        {revenueByCategorySeries.map((item) => (
+                        {revenueByCategory.map((item) => (
                           <Cell key={item.name} fill={item.color} />
                         ))}
                       </Pie>
@@ -620,7 +674,7 @@ export function FinanceDashboardPage() {
                   </ResponsiveContainer>
                 </div>
                 <div className="w-full flex-1">
-                  <CategoryLegend items={revenueByCategorySeries} />
+                  <CategoryLegend items={revenueByCategory} />
                 </div>
               </div>
             </ChartCard>
@@ -630,7 +684,7 @@ export function FinanceDashboardPage() {
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={monthlyComparisonSeries}
+                  data={monthlyComparison}
                   margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                   barGap={6}
                 >
@@ -642,8 +696,8 @@ export function FinanceDashboardPage() {
                     tick={{ fill: BRAND_MUTED, fontSize: 11 }}
                   />
                   <YAxis
-                    domain={[0, 100000]}
-                    ticks={[0, 20000, 40000, 60000, 80000, 100000]}
+                    domain={monthlyScale.domain}
+                    ticks={monthlyScale.ticks}
                     tickLine={false}
                     axisLine={false}
                     tick={{ fill: BRAND_MUTED, fontSize: 11 }}
@@ -690,8 +744,9 @@ export function FinanceDashboardPage() {
               isRefreshing={isRefetching}
             >
               <div className="space-y-5">
-                {escrowStatusBreakdown.map((item) => {
-                  const widthPercent = Math.round((item.value / totalEscrowAmount) * 100)
+                {escrowStatus.map((item) => {
+                  const widthPercent =
+                    escrowBarTotal > 0 ? Math.round((item.value / escrowBarTotal) * 100) : 0
 
                   return (
                     <div key={item.label} className="space-y-2">
@@ -726,10 +781,7 @@ export function FinanceDashboardPage() {
             >
               <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={weeklyPayoutSeries}
-                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                  >
+                  <BarChart data={weeklyPayouts} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                     <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
                     <XAxis
                       dataKey="day"
@@ -738,8 +790,8 @@ export function FinanceDashboardPage() {
                       tick={{ fill: BRAND_MUTED, fontSize: 11 }}
                     />
                     <YAxis
-                      domain={[0, 100000]}
-                      ticks={[0, 20000, 40000, 60000, 80000, 100000]}
+                      domain={weeklyScale.domain}
+                      ticks={weeklyScale.ticks}
                       tickLine={false}
                       axisLine={false}
                       tick={{ fill: BRAND_MUTED, fontSize: 11 }}
